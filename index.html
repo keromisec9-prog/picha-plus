@@ -1798,7 +1798,7 @@ function updateHero(index) {
   const bg = document.getElementById('heroBg');
   const title = item.title || item.name || '';
   const desc = item.overview || '';
-  const backdropPath = item.backdrop_path || (item.backdrop ? item.backdrop.replace('https://image.tmdb.org/t/p/w780','') : null);
+  const backdropPath = item.backdrop_path;
   const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
   const mediaType = item.media_type || 'movie';
@@ -1948,14 +1948,12 @@ async function showInfo(item) {
   // Backdrop
   const backdropEl = document.getElementById('infoBackdrop');
   const placeholderEl = document.getElementById('infoBackdropPlaceholder');
-  const backdropUrl = item.backdrop_path ? `${TMDB_IMG}w780${item.backdrop_path}`
-    : item.backdrop ? item.backdrop
-    : item.poster_path ? `${TMDB_IMG}w780${item.poster_path}`
-    : item.poster ? item.poster
-    : null;
-
-  if (backdropUrl) {
-    backdropEl.src = backdropUrl;
+  if (item.backdrop_path) {
+    backdropEl.src = `${TMDB_IMG}w780${item.backdrop_path}`;
+    backdropEl.style.display = 'block';
+    placeholderEl.style.display = 'none';
+  } else if (item.poster_path) {
+    backdropEl.src = `${TMDB_IMG}w780${item.poster_path}`;
     backdropEl.style.display = 'block';
     placeholderEl.style.display = 'none';
   } else {
