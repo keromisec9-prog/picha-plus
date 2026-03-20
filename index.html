@@ -1672,71 +1672,99 @@ window.addEventListener('load', async () => {
 
 // ── LOAD CONTENT ──────────────────────────────────────────────────────────────
 async function loadContent() {
-  // Load trending for hero
-  const trending = await tmdbTrending('all', 'week');
-  heroItems = trending.slice(0, 5);
-  if (heroItems.length) {
-    updateHero(0);
-    buildHeroDots();
-    startHeroRotation();
-  }
-
-  // Load new this week
-  const newMovies = await tmdbTrending('movie', 'day');
-  renderRow('newRow', newMovies.slice(0, 15));
-
-  // Latest on Picha+
   try {
+    // Fetch your catalog
     const catalogRes = await fetch(`${API}/videos`);
     const catalogData = await catalogRes.json();
-    const yourUploads = [...Object.values(catalogData.movies || {}), ...Object.values(catalogData.series || {})]
-      .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0))
-      .map(v => ({ id: v.tmdbId, title: v.title, poster_path: v.poster?.replace('https://image.tmdb.org/t/p/w300','') || null, overview: v.overview || '', vote_average: v.rating || 0, release_date: v.year ? v.year+'-01-01' : '', genre_ids: v.genreIds || [], media_type: v.type === 'series' ? 'tv' : 'movie', _isOwned: true }));
-    const tmdbFill = await tmdbDiscover(28, 'movie', 1);
-    renderRow('latestRow', [...yourUploads, ...tmdbFill].slice(0, 20));
-  } catch {
-    const fallback = await tmdbDiscover(28, 'movie', 1);
-    renderRow('latestRow', fallback.slice(0, 20));
-  }
+    const movies = Object.values(catalogData.movies || {});
+    const series = Object.values(catalogData.series || {});
+    const allUploads = [...movies, ...series].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
 
-  // Top 10
-  const top10 = await tmdbTrending('all', 'week');
-  renderTop10('top10Row', top10.slice(0, 10));
-
-  // Genre rows
-  const genreList = [
-    { id: 28, name: 'Action', type: 'movie' },
-    { id: 35, name: 'Comedy', type: 'movie' },
-    { id: 18, name: 'Drama', type: 'movie' },
-    { id: 27, name: 'Horror', type: 'movie' },
-    { id: 10749, name: 'Romance', type: 'movie' },
-    { id: 878, name: 'Sci-Fi', type: 'movie' },
-    { id: 53, name: 'Thriller', type: 'movie' },
-    { id: 16, name: 'Animation', type: 'movie' },
-    { id: 10765, name: 'Sci-Fi & Fantasy', type: 'tv' },
-    { id: 10759, name: 'Action & Adventure', type: 'tv' },
-  ];
-
-  const container = document.getElementById('genreRows');
-
-  for (const genre of genreList) {
-    const section = document.createElement('div');
-    section.className = 'content-section';
-    section.id = `genre-${genre.id}`;
-    section.innerHTML = `
-      <div class="row-header">
-        <div class="row-title">${genre.name}</div>
-        <button class="row-see-all" onclick="loadMoreGenre(${genre.id},'${genre.name}','${genre.type}')">See all</button>
-      </div>
-      <div class="scroll-row" id="row-${genre.id}">
-        ${Array(6).fill('<div class="skeleton skeleton-card"></div>').join('')}
-      </div>`;
-    container.appendChild(section);
-
-    // Load genre async
-    tmdbDiscover(genre.id, genre.type).then(items => {
-      renderRow(`row-${genre.id}`, items.slice(0, 20));
+    // Convert catalog entries to TMDB-style items
+    const toCard = v => ({
+      id: v.tmdbId,
+      title: v.title,
+      poster_path: v.poster?.replace('https://image.tmdb.org/t/p/w300', '') || null,
+      backdrop_path: v.backdrop?.replace('https://image.tmdb.org/t/p/w780', '') || null,
+      overview: v.overview || '',
+      vote_average: v.rating || 0,
+      release_date: v.year ? v.year + '-01-01' : '',
+      genre_ids: v.genreIds || [],
+      media_type: v.type === 'series' ? 'tv' : 'movie',
+      _isOwned: true,
     });
+
+    const cards = allUploads.map(toCard);
+
+    // Hero — rotate through your uploads
+    if (cards.length) {
+      heroItems = cards.slice(0, 5);
+      updateHero(0);
+      buildHeroDots();
+      if (heroItems.length > 1) startHeroRotation();
+    }
+
+    // Latest on Picha+
+    renderRow('latestRow', cards);
+
+    // New This Week — most recently added
+    renderRow('newRow', cards.slice(0, 10));
+
+    // Top 10
+    if (cards.length) {
+      renderTop10('top10Row', cards.slice(0, 10));
+    } else {
+      document.getElementById('top10Row').innerHTML = '<div style="color:#666;font-size:0.82rem;padding:1rem;">No content yet</div>';
+    }
+
+    // Genre rows — group your uploads by genre
+    const genreMap = {};
+    for (const card of cards) {
+      for (const gid of (card.genre_ids || [])) {
+        if (!genreMap[gid]) genreMap[gid] = [];
+        genreMap[gid].push(card);
+      }
+    }
+
+    const genreNames = {
+      28:'Action', 35:'Comedy', 18:'Drama', 27:'Horror', 10749:'Romance',
+      878:'Sci-Fi', 53:'Thriller', 16:'Animation', 10765:'Sci-Fi & Fantasy',
+      10759:'Action & Adventure', 80:'Crime', 99:'Documentary', 14:'Fantasy',
+      36:'History', 10402:'Music', 9648:'Mystery', 10752:'War'
+    };
+
+    const container = document.getElementById('genreRows');
+    container.innerHTML = '';
+
+    // Only show genres that have your content
+    const usedGenres = Object.keys(genreMap).filter(gid => genreMap[gid].length > 0);
+
+    if (usedGenres.length === 0 && cards.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">No content uploaded yet. Upload your first movie!</div>';
+    }
+
+    for (const gid of usedGenres) {
+      const name = genreNames[gid] || `Genre ${gid}`;
+      const section = document.createElement('div');
+      section.className = 'content-section';
+      section.innerHTML = `
+        <div class="row-header">
+          <div class="row-title">${name}</div>
+        </div>
+        <div class="scroll-row" id="row-${gid}"></div>`;
+      container.appendChild(section);
+      renderRow(`row-${gid}`, genreMap[gid]);
+    }
+
+    // If only one video, show it in all sections
+    if (cards.length === 1) {
+      document.getElementById('newRow').innerHTML = '';
+      renderRow('newRow', cards);
+    }
+
+  } catch (err) {
+    console.error('Failed to load content:', err);
+    document.getElementById('genreRows').innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">Failed to load content. Please refresh.</div>';
   }
 
   // Continue watching
