@@ -1354,14 +1354,6 @@ function saveProgress(id, pos, dur) {
     </div>
   </div>
 
-  <!-- VJ Filter -->
-  <div id="vjFilterSection" style="display:none;">
-    <div style="padding:0 4vw;margin-bottom:1rem;">
-      <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);margin-bottom:0.6rem;">Filter by VJ</div>
-      <div class="scroll-row" id="vjPills" style="padding:0;gap:0.5rem;"></div>
-    </div>
-  </div>
-
   <!-- Dynamic genre rows will be inserted here -->
   <div id="genreRows"></div>
 
@@ -1505,7 +1497,6 @@ function saveProgress(id, pos, dur) {
       <div class="info-meta" id="infoMeta"></div>
       <p class="info-desc" id="infoDesc"></p>
       <p class="info-genres" id="infoGenres"></p>
-      <p class="info-narrative" id="infoNarrative" style="font-size:0.75rem;color:var(--gold);margin-top:0.5rem;"></p>
     </div>
   </div>
 </div>
@@ -1701,9 +1692,6 @@ async function loadContent() {
       genre_ids: v.genreIds || [],
       media_type: v.type === 'series' ? 'tv' : 'movie',
       _isOwned: true,
-      _vj: v.vj || null,
-      _narrative: v.narrative || null,
-      _episode: v.episode || null,
     });
 
     const cards = allUploads.map(toCard);
@@ -1778,9 +1766,6 @@ async function loadContent() {
     console.error('Failed to load content:', err);
     document.getElementById('genreRows').innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">Failed to load content. Please refresh.</div>';
   }
-
-  // Build VJ filter pills
-  buildVJFilter(cards);
 
   // Continue watching
   renderContinueWatching();
@@ -1910,7 +1895,6 @@ function createCard(item, showProgress = false) {
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
         : `<div class="card-poster-placeholder">🎬</div>`}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
-      ${item._vj ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
       ${prog && progPct > 0 ? `<div class="card-progress"><div class="card-progress-fill" style="width:${progPct}%"></div></div>` : ''}
       <div class="card-overlay">
         <div class="card-meta-row">
@@ -1980,16 +1964,6 @@ async function showInfo(item) {
   if (item.genre_ids?.length) {
     const genreNames = item.genre_ids.map(id => GENRES[id]).filter(Boolean).slice(0, 3);
     document.getElementById('infoGenres').innerHTML = `Genres: <span>${genreNames.join(', ')}</span>`;
-  }
-
-  // VJ and narrative
-  const narrativeEl = document.getElementById('infoNarrative');
-  if (narrativeEl) {
-    const parts = [];
-    if (item._vj) parts.push(`🎙️ ${item._vj}`);
-    if (item._narrative) parts.push(`🌍 ${item._narrative}`);
-    if (item._episode) parts.push(`📺 ${item._episode}`);
-    narrativeEl.textContent = parts.join('  ·  ');
   }
 
   // My List button state
@@ -2349,70 +2323,6 @@ function closePayment() {
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-// ── VJ FILTER ─────────────────────────────────────────────────────────────────
-let allCards = [];
-let activeVJ = null;
-
-function buildVJFilter(cards) {
-  allCards = cards;
-  const vjs = [...new Set(cards.map(c => c._vj).filter(Boolean))];
-  const section = document.getElementById('vjFilterSection');
-  const pills = document.getElementById('vjPills');
-
-  if (!vjs.length) { section.style.display = 'none'; return; }
-
-  section.style.display = 'block';
-  pills.innerHTML = `
-    <button class="lang-pill active" onclick="filterByVJ(null, this)">All VJs</button>
-    ${vjs.map(vj => `<button class="lang-pill" onclick="filterByVJ('${vj}', this)">${vj}</button>`).join('')}
-  `;
-}
-
-function filterByVJ(vj, btn) {
-  document.querySelectorAll('#vjPills .lang-pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  activeVJ = vj;
-
-  const filtered = vj ? allCards.filter(c => c._vj === vj) : allCards;
-
-  // Update Latest row
-  renderRow('latestRow', filtered);
-
-  // Update genre rows
-  const genreMap = {};
-  for (const card of filtered) {
-    for (const gid of (card.genre_ids || [])) {
-      if (!genreMap[gid]) genreMap[gid] = [];
-      genreMap[gid].push(card);
-    }
-  }
-
-  const genreNames = {
-    28:'Action', 35:'Comedy', 18:'Drama', 27:'Horror', 10749:'Romance',
-    878:'Sci-Fi', 53:'Thriller', 16:'Animation', 10765:'Sci-Fi & Fantasy',
-    10759:'Action & Adventure', 80:'Crime', 99:'Documentary', 14:'Fantasy',
-    36:'History', 10402:'Music', 9648:'Mystery', 10752:'War'
-  };
-
-  const container = document.getElementById('genreRows');
-  container.innerHTML = '';
-
-  for (const gid of Object.keys(genreMap)) {
-    const name = genreNames[gid] || `Genre ${gid}`;
-    const section = document.createElement('div');
-    section.className = 'content-section';
-    section.innerHTML = `
-      <div class="row-header"><div class="row-title">${name}</div></div>
-      <div class="scroll-row" id="row-${gid}"></div>`;
-    container.appendChild(section);
-    renderRow(`row-${gid}`, genreMap[gid]);
-  }
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">No movies by this VJ yet.</div>';
-  }
-}
-
 function showToast(msg, type = '') {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div');
