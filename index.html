@@ -1782,6 +1782,9 @@ async function loadContent() {
   // Build VJ filter pills
   buildVJFilter(cards);
 
+  // Load jtzmag movies in background
+  setTimeout(() => loadJtzmag(), 500);
+
   // Continue watching
   renderContinueWatching();
 
@@ -2349,6 +2352,137 @@ function closePayment() {
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
+// ── JTZMAG INTEGRATION ───────────────────────────────────────────────────────
+async function loadJtzmag() {
+  try {
+    const res = await fetch(`${API}/jtzmag/movies`);
+    const data = await res.json();
+    const movies = data.movies || [];
+    if (!movies.length) return;
+
+    // Convert to card format
+    const jtzCards = movies.map(m => ({
+      id: 'jtzmag_' + m.id,
+      _jtzId: m.id,
+      title: m.title,
+      poster_path: null,
+      _poster: m.poster,
+      overview: '',
+      vote_average: 0,
+      release_date: m.year ? m.year + '-01-01' : '',
+      genre_ids: [],
+      _genre: m.genre,
+      _vj: m.vj || '',
+      _narrative: 'English → Luganda',
+      media_type: 'movie',
+      source: 'jtzmag',
+    }));
+
+    // Add "From Luganda Translated" row
+    const container = document.getElementById('genreRows');
+    const section = document.createElement('div');
+    section.className = 'content-section';
+    section.innerHTML = `
+      <div class="row-header">
+        <div class="row-title"><span class="row-title-accent">Luganda</span> Translated</div>
+      </div>
+      <div class="scroll-row" id="jtzRow"></div>`;
+    container.appendChild(section);
+    renderJtzRow('jtzRow', jtzCards);
+
+    // Group by genre and add genre rows
+    const genreMap = {};
+    for (const card of jtzCards) {
+      const g = card._genre || 'Other';
+      if (!genreMap[g]) genreMap[g] = [];
+      genreMap[g].push(card);
+    }
+
+    for (const [genre, cards] of Object.entries(genreMap)) {
+      if (cards.length < 2) continue;
+      const sec = document.createElement('div');
+      sec.className = 'content-section';
+      const rowId = 'jtz-' + genre.toLowerCase();
+      sec.innerHTML = `
+        <div class="row-header">
+          <div class="row-title">${genre} <span style="font-size:0.7rem;color:var(--gray);font-family:'Inter',sans-serif;font-weight:400;">· Luganda</span></div>
+        </div>
+        <div class="scroll-row" id="${rowId}"></div>`;
+      container.appendChild(sec);
+      renderJtzRow(rowId, cards);
+    }
+
+    // Add to VJ filter
+    allCards = [...allCards, ...jtzCards];
+    buildVJFilter(allCards);
+
+  } catch(err) {
+    console.log('jtzmag load failed:', err);
+  }
+}
+
+function renderJtzRow(rowId, cards) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  row.innerHTML = cards.map(card => {
+    const poster = card._poster || null;
+    const isLiked = liked.includes(card.id);
+    const isSaved = myList.some(m => m.id === card.id);
+    const cardJson = JSON.stringify(card).replace(/"/g, '&quot;');
+    return `
+      <div class="card" onclick="showInfo(${cardJson})">
+        ${poster
+          ? `<img class="card-poster" src="${poster}" alt="${esc(card.title)}" loading="lazy">`
+          : `<div class="card-poster-placeholder">🎬</div>`}
+        <div class="card-badge new">LUG</div>
+        ${card._vj ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${card._vj}</div>` : ''}
+        <div class="card-overlay">
+          <div class="card-meta-row">
+            ${card.release_date ? `<span class="card-year">${card.release_date.slice(0,4)}</span>` : ''}
+            ${card._genre ? `<span class="card-rating" style="color:var(--gray);">${card._genre}</span>` : ''}
+          </div>
+          <div class="card-title">${esc(card.title)}</div>
+          <div class="card-actions" onclick="event.stopPropagation()">
+            <button class="card-btn card-btn-play" onclick="handleJtzPlay(${cardJson})" title="Play">
+              <svg width="10" height="12" viewBox="0 0 12 14" fill="currentColor"><path d="M0 0l12 7-12 7z"/></svg>
+            </button>
+            <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(${cardJson}, this)" title="My List">
+              ${isSaved
+                ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6L9 17l-5-5"/></svg>'
+                : '<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function handleJtzPlay(card) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  if (!session.isSubscribed()) { scrollToSection('plans-section'); showToast('Subscribe to watch', 'error'); return; }
+
+  const jtzId = card._jtzId;
+  document.getElementById('playerTitle').textContent = card.title;
+  document.getElementById('playerModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const res = await fetch(`${API}/jtzmag/video?id=${jtzId}`, {
+      headers: { 'X-Session-Token': session.token }
+    });
+    const data = await res.json();
+    if (data.url) {
+      initPlayer(data.url, card);
+    } else {
+      closePlayer();
+      showToast('Video unavailable', 'error');
+    }
+  } catch {
+    closePlayer();
+    showToast('Failed to load video', 'error');
+  }
+}
+
 // ── VJ FILTER ─────────────────────────────────────────────────────────────────
 let allCards = [];
 let activeVJ = null;
