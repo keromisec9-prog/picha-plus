@@ -1948,12 +1948,14 @@ async function showInfo(item) {
   // Backdrop
   const backdropEl = document.getElementById('infoBackdrop');
   const placeholderEl = document.getElementById('infoBackdropPlaceholder');
-  if (item.backdrop_path) {
-    backdropEl.src = `${TMDB_IMG}w780${item.backdrop_path}`;
-    backdropEl.style.display = 'block';
-    placeholderEl.style.display = 'none';
-  } else if (item.poster_path) {
-    backdropEl.src = `${TMDB_IMG}w780${item.poster_path}`;
+  const backdropUrl = item.backdrop_path ? `${TMDB_IMG}w780${item.backdrop_path}`
+    : item.backdrop ? item.backdrop
+    : item.poster_path ? `${TMDB_IMG}w780${item.poster_path}`
+    : item.poster ? item.poster
+    : null;
+
+  if (backdropUrl) {
+    backdropEl.src = backdropUrl;
     backdropEl.style.display = 'block';
     placeholderEl.style.display = 'none';
   } else {
