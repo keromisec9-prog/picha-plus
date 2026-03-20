@@ -70,6 +70,14 @@ export default {
       const catalog = await env.KV.get('catalog', { type: 'json' });
       const entry = catalog?.movies?.[id] || catalog?.series?.[id];
       if (!entry) return errorResponse('Video not found', 404);
+
+      // Route by source
+      if (entry.source === 'jtzmag' && entry.jtzmag_id) {
+        const videoUrl = await getJtzmageUrl(entry.jtzmag_id);
+        if (!videoUrl) return errorResponse('Video unavailable', 404);
+        return jsonResponse({ url: videoUrl });
+      }
+
       const signedUrl = await signB2Url(entry.fileName, env);
       return jsonResponse({ url: signedUrl });
     }
@@ -231,6 +239,23 @@ async function getUser(request, env) {
     if (!userId) return null;
     const data = await env.KV.get(`user:${userId}`);
     return data ? JSON.parse(data) : null;
+  } catch { return null; }
+}
+
+async function getJtzmageUrl(jtzId) {
+  try {
+    const res = await fetch('https://lugandatranslatedmovies.com/movie_details.php?id=' + jtzId, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    const html = await res.text();
+    const marker = 'jtzmag.com/';
+    const idx = html.indexOf(marker);
+    if (idx === -1) return null;
+    const start = html.lastIndexOf('"', idx) + 1;
+    const end = html.indexOf('"', idx);
+    if (start < 1 || end === -1) return null;
+    const url = html.slice(start, end);
+    return url.includes('jtzmag.com') ? url : null;
   } catch { return null; }
 }
 
