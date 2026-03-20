@@ -2011,7 +2011,12 @@ function closeInfo() {
 function playFromInfo() {
   const item = currentInfoItem;
   closeInfo();
-  if (item) handleCardPlay(item);
+  if (!item) return;
+  if (item.source === 'jtzmag' && item._jtzId) {
+    handleJtzPlay(item);
+  } else {
+    handleCardPlay(item);
+  }
 }
 
 function toggleMyListFromInfo() {
