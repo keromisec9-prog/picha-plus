@@ -1798,7 +1798,7 @@ function updateHero(index) {
   const bg = document.getElementById('heroBg');
   const title = item.title || item.name || '';
   const desc = item.overview || '';
-  const backdropPath = item.backdrop_path;
+  const backdropPath = item.backdrop_path || (item.backdrop ? item.backdrop.replace('https://image.tmdb.org/t/p/w780','') : null);
   const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
   const mediaType = item.media_type || 'movie';
