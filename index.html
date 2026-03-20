@@ -1338,14 +1338,20 @@ function saveProgress(id, pos, dur) {
     <div class="scroll-row" id="myListRow"></div>
   </div>
 
-  <!-- Language filter -->
-  <div class="lang-filter">
-    <button class="lang-pill active" onclick="filterLang('all', this)">All Languages</button>
-    <button class="lang-pill" onclick="filterLang('en', this)">English</button>
-    <button class="lang-pill" onclick="filterLang('sw', this)">Swahili</button>
-    <button class="lang-pill" onclick="filterLang('lg', this)">Luganda</button>
-    <button class="lang-pill" onclick="filterLang('am', this)">Amharic</button>
-    <button class="lang-pill" onclick="filterLang('fr', this)">French</button>
+
+
+  <!-- Latest on Picha+ -->
+  <div class="content-section" id="latestSection">
+    <div class="row-header">
+      <div class="row-title"><span class="row-title-accent">Latest</span> on Picha+</div>
+    </div>
+    <div class="scroll-row" id="latestRow">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
   </div>
 
   <!-- Dynamic genre rows will be inserted here -->
@@ -1678,6 +1684,20 @@ async function loadContent() {
   // Load new this week
   const newMovies = await tmdbTrending('movie', 'day');
   renderRow('newRow', newMovies.slice(0, 15));
+
+  // Latest on Picha+
+  try {
+    const catalogRes = await fetch(`${API}/videos`);
+    const catalogData = await catalogRes.json();
+    const yourUploads = [...Object.values(catalogData.movies || {}), ...Object.values(catalogData.series || {})]
+      .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0))
+      .map(v => ({ id: v.tmdbId, title: v.title, poster_path: v.poster?.replace('https://image.tmdb.org/t/p/w300','') || null, overview: v.overview || '', vote_average: v.rating || 0, release_date: v.year ? v.year+'-01-01' : '', genre_ids: v.genreIds || [], media_type: v.type === 'series' ? 'tv' : 'movie', _isOwned: true }));
+    const tmdbFill = await tmdbDiscover(28, 'movie', 1);
+    renderRow('latestRow', [...yourUploads, ...tmdbFill].slice(0, 20));
+  } catch {
+    const fallback = await tmdbDiscover(28, 'movie', 1);
+    renderRow('latestRow', fallback.slice(0, 20));
+  }
 
   // Top 10
   const top10 = await tmdbTrending('all', 'week');
