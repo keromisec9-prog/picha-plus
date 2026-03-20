@@ -1983,8 +1983,9 @@ function closeInfo() {
 }
 
 function playFromInfo() {
+  const item = currentInfoItem;
   closeInfo();
-  if (currentInfoItem) handleCardPlay(currentInfoItem);
+  if (item) handleCardPlay(item);
 }
 
 function toggleMyListFromInfo() {
