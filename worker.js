@@ -67,7 +67,10 @@ export default {
       if (!user) return errorResponse('Sign in required', 401);
       if (!user.subscribed) return errorResponse('Subscription required', 402);
       if (user.subscriptionExpiry && Date.now() > user.subscriptionExpiry) return errorResponse('Subscription expired', 402);
-      const signedUrl = await signB2Url(id, env);
+      const catalog = await env.KV.get('catalog', { type: 'json' });
+      const entry = catalog?.movies?.[id] || catalog?.series?.[id];
+      if (!entry) return errorResponse('Video not found', 404);
+      const signedUrl = await signB2Url(entry.fileName, env);
       return jsonResponse({ url: signedUrl });
     }
 
@@ -95,6 +98,121 @@ export default {
       return jsonResponse({ likes: count });
     }
 
+    // ── PAYMENTS ──────────────────────────────────────────────────────────────
+    if (url.pathname === '/pay' && request.method === 'POST') {
+      const user = await getUser(request, env);
+      if (!user) return errorResponse('Not authenticated', 401);
+      const body = await request.json();
+      const plans = {
+        daily:     { amount: 2000,   days: 1,   label: 'Picha+ Daily Pass' },
+        monthly:   { amount: 15000,  days: 30,  label: 'Picha+ Monthly' },
+        quarterly: { amount: 60000,  days: 90,  label: 'Picha+ Quarterly' },
+        yearly:    { amount: 120000, days: 365, label: 'Picha+ Yearly' },
+      };
+      const plan = plans[body.plan];
+      if (!plan) return errorResponse('Invalid plan', 400);
+
+      try {
+        // Get PesaPal token
+        const tokenRes = await fetch('https://pay.pesapal.com/v3/api/Auth/RequestToken', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ consumer_key: env.PESAPAL_CONSUMER_KEY, consumer_secret: env.PESAPAL_CONSUMER_SECRET }),
+        });
+        const { token } = await tokenRes.json();
+        if (!token) return errorResponse('PesaPal auth failed', 500);
+
+        // Register IPN
+        const ipnRes = await fetch('https://pay.pesapal.com/v3/api/URLSetup/RegisterIPN', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ url: env.PESAPAL_IPN_URL, ipn_notification_type: 'GET' }),
+        });
+        const { ipn_id } = await ipnRes.json();
+
+        const orderRef = `PICHAPLUS-${Date.now()}-${user.googleId.slice(-6)}`;
+
+        // Submit order
+        const orderRes = await fetch('https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            id: orderRef,
+            currency: 'UGX',
+            amount: plan.amount,
+            description: plan.label,
+            callback_url: `${env.SITE_URL}?payment=success&plan=${body.plan}&session=${request.headers.get('X-Session-Token')}`,
+            notification_id: ipn_id,
+            billing_address: {
+              email_address: user.email || '',
+              first_name: (user.name || '').split(' ')[0] || 'User',
+              last_name: (user.name || '').split(' ').slice(1).join(' ') || '',
+            },
+          }),
+        });
+        const orderData = await orderRes.json();
+        if (!orderData.redirect_url) return errorResponse('Payment initiation failed', 500);
+
+        // Store pending order
+        await env.KV.put(`order:${orderData.order_tracking_id}`, JSON.stringify({
+          userId: user.googleId,
+          plan: body.plan,
+          days: plan.days,
+          amount: plan.amount,
+          createdAt: Date.now(),
+        }), { expirationTtl: 3600 });
+
+        return jsonResponse({ redirectUrl: orderData.redirect_url, orderTrackingId: orderData.order_tracking_id });
+      } catch (err) {
+        return errorResponse('Payment failed: ' + err.message, 500);
+      }
+    }
+
+    // ── IPN ───────────────────────────────────────────────────────────────────
+    if (url.pathname === '/ipn') {
+      const orderTrackingId = url.searchParams.get('OrderTrackingId');
+      const orderMerchantRef = url.searchParams.get('OrderMerchantReference');
+      if (!orderTrackingId) return new Response('OK');
+
+      try {
+        const tokenRes = await fetch('https://pay.pesapal.com/v3/api/Auth/RequestToken', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ consumer_key: env.PESAPAL_CONSUMER_KEY, consumer_secret: env.PESAPAL_CONSUMER_SECRET }),
+        });
+        const { token } = await tokenRes.json();
+
+        const statusRes = await fetch(`https://pay.pesapal.com/v3/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        const status = await statusRes.json();
+
+        if (status.payment_status_description === 'Completed') {
+          const orderData = await env.KV.get(`order:${orderTrackingId}`, { type: 'json' });
+          if (orderData) {
+            const userData = await env.KV.get(`user:${orderData.userId}`, { type: 'json' });
+            if (userData) {
+              userData.subscribed = true;
+              userData.subscriptionPlan = orderData.plan;
+              userData.subscriptionExpiry = Date.now() + (orderData.days * 24 * 60 * 60 * 1000);
+              await env.KV.put(`user:${orderData.userId}`, JSON.stringify(userData));
+              await env.KV.delete(`order:${orderTrackingId}`);
+            }
+          }
+        }
+      } catch {}
+      return new Response('OK');
+    }
+
+    // ── VERIFY PAYMENT ────────────────────────────────────────────────────────
+    if (url.pathname === '/verify') {
+      const orderTrackingId = url.searchParams.get('orderTrackingId');
+      if (!orderTrackingId) return errorResponse('Missing orderTrackingId', 400);
+      const user = await getUser(request, env);
+      if (!user) return errorResponse('Not authenticated', 401);
+      return jsonResponse({ completed: user.subscribed, user });
+    }
+
     if (url.pathname === '/auth/logout') {
       const session = request.headers.get('X-Session-Token');
       if (session) await env.KV.delete(`session:${session}`);
@@ -117,7 +235,6 @@ async function getUser(request, env) {
 }
 
 async function signB2Url(fileKey, env) {
-  const expiry = Math.floor(Date.now() / 1000) + 7200;
   const url = `https://${env.B2_BUCKET}.${env.B2_ENDPOINT}/${fileKey}`;
   return url;
 }

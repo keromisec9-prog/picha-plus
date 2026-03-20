@@ -2231,61 +2231,35 @@ const PLANS = {
 async function startPayment(plan) {
   if (!session.isLoggedIn()) { openSignin(); showToast('Please sign in first', 'error'); return; }
 
-  document.getElementById('paymentTitle').textContent = PLANS[plan]?.label || 'Subscribe';
+  const labels = {
+    daily: 'Daily Pass — UGX 2,000',
+    monthly: 'Monthly — UGX 15,000',
+    quarterly: 'Quarterly — UGX 60,000',
+    yearly: 'Yearly — UGX 120,000',
+  };
+
+  document.getElementById('paymentTitle').textContent = labels[plan] || 'Subscribe';
   document.getElementById('paymentLoading').style.display = 'flex';
   document.getElementById('paymentFrame').style.display = 'none';
   document.getElementById('paymentModal').classList.add('active');
   document.body.style.overflow = 'hidden';
 
   try {
-    // Get PesaPal token
-    const tokenRes = await fetch(`${PESAPAL_BASE}/api/Auth/RequestToken`, {
+    const res = await fetch(`${API}/pay`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ consumer_key: 'ILRd28kuNWooPxo1j2zUaaWFf5GvYEBW', consumer_secret: 'dPShYaP/T+X9oALpyJDq+ZSA6Z8=' }),
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify({ plan }),
     });
-    const { token } = await tokenRes.json();
-    if (!token) throw new Error('No token');
+    const data = await res.json();
 
-    // Register IPN
-    const ipnRes = await fetch(`${PESAPAL_BASE}/api/URLSetup/RegisterIPN`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ url: 'https://picha-plus-worker.kerosoftz522.workers.dev/ipn', ipn_notification_type: 'GET' }),
-    });
-    const { ipn_id } = await ipnRes.json();
-
-    const planData = PLANS[plan];
-    const orderRef = `PICHAPLUS-${Date.now()}`;
-
-    const orderRes = await fetch(`${PESAPAL_BASE}/api/Transactions/SubmitOrderRequest`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        id: orderRef,
-        currency: planData.currency,
-        amount: planData.amount,
-        description: `Picha+ ${planData.label}`,
-        callback_url: `https://keromisec9-prog.github.io/picha-plus/?payment=success&plan=${plan}&session=${session.token}`,
-        notification_id: ipn_id,
-        billing_address: {
-          email_address: session.user?.email || '',
-          first_name: (session.user?.name || '').split(' ')[0] || 'User',
-          last_name: (session.user?.name || '').split(' ').slice(1).join(' ') || '',
-        },
-      }),
-    });
-
-    const orderData = await orderRes.json();
-
-    if (orderData.redirect_url) {
+    if (data.redirectUrl) {
       document.getElementById('paymentLoading').style.display = 'none';
       const frame = document.getElementById('paymentFrame');
-      frame.src = orderData.redirect_url;
+      frame.src = data.redirectUrl;
       frame.style.display = 'block';
-      sessionStorage.setItem('pichaplus_order', orderData.order_tracking_id);
+      sessionStorage.setItem('pichaplus_order', data.orderTrackingId);
     } else {
-      throw new Error('No redirect URL');
+      throw new Error(data.error || 'No redirect URL');
     }
   } catch (err) {
     closePayment();
