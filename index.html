@@ -1794,7 +1794,7 @@ function startHeroRotation() {
 async function handleHeroPlay() {
   if (!currentPlayItem) return;
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { scrollToSection('plans-section'); showToast('Subscribe to watch', 'error'); return; }
+  if (!session.isSubscribed()) { closeInfo(); scrollToSection('plans-section'); showToast('Subscribe to watch 👆', 'error'); return; }
   showInfo(currentPlayItem);
 }
 
@@ -1953,7 +1953,7 @@ function toggleMyListFromInfo() {
 // ── PLAY ──────────────────────────────────────────────────────────────────────
 async function handleCardPlay(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { scrollToSection('plans-section'); showToast('Subscribe to watch', 'error'); return; }
+  if (!session.isSubscribed()) { closeInfo(); scrollToSection('plans-section'); showToast('Subscribe to watch 👆', 'error'); return; }
 
   const title = item.title || item.name || '';
   document.getElementById('playerTitle').textContent = title;
