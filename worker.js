@@ -73,9 +73,9 @@ export default {
 
       // Route by source
       if (entry.source === 'jtzmag' && entry.jtzmag_id) {
-        const videoUrl = await getJtzmageUrl(entry.jtzmag_id);
+        const { videoUrl, poster } = await getJtzmageDetails(entry.jtzmag_id);
         if (!videoUrl) return errorResponse('Video unavailable', 404);
-        return jsonResponse({ url: videoUrl });
+        return jsonResponse({ url: videoUrl, poster });
       }
 
       const signedUrl = await signB2Url(entry.fileName, env);
@@ -242,21 +242,43 @@ async function getUser(request, env) {
   } catch { return null; }
 }
 
-async function getJtzmageUrl(jtzId) {
+async function getJtzmageDetails(jtzId) {
   try {
     const res = await fetch('https://lugandatranslatedmovies.com/movie_details.php?id=' + jtzId, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
     const html = await res.text();
+
+    // Get video URL
     const marker = 'jtzmag.com/';
     const idx = html.indexOf(marker);
-    if (idx === -1) return null;
-    const start = html.lastIndexOf('"', idx) + 1;
-    const end = html.indexOf('"', idx);
-    if (start < 1 || end === -1) return null;
-    const url = html.slice(start, end);
-    return url.includes('jtzmag.com') ? url : null;
-  } catch { return null; }
+    let videoUrl = null;
+    if (idx !== -1) {
+      const start = html.lastIndexOf('"', idx) + 1;
+      const end = html.indexOf('"', idx);
+      if (start >= 1 && end !== -1) {
+        const url = html.slice(start, end);
+        if (url.includes('jtzmag.com')) videoUrl = url;
+      }
+    }
+
+    // Get poster URL
+    let poster = null;
+    const imgIdx = html.indexOf('<img');
+    if (imgIdx !== -1) {
+      const srcIdx = html.indexOf('src="', imgIdx) + 5;
+      const srcEnd = html.indexOf('"', srcIdx);
+      const src = html.slice(srcIdx, srcEnd);
+      if (src.startsWith('http')) poster = src;
+    }
+
+    return { videoUrl, poster };
+  } catch { return { videoUrl: null, poster: null }; }
+}
+
+async function getJtzmageUrl(jtzId) {
+  const { videoUrl } = await getJtzmageDetails(jtzId);
+  return videoUrl;
 }
 
 async function signB2Url(fileKey, env) {
