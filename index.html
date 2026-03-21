@@ -1681,6 +1681,7 @@ window.addEventListener('load', async () => {
 
 // ── LOAD CONTENT ──────────────────────────────────────────────────────────────
 async function loadContent() {
+  window._cardItems = []; // Reset card items cache
   try {
     // Fetch your catalog
     const catalogRes = await fetch(`${API}/videos`);
@@ -1902,10 +1903,12 @@ function createCard(item, showProgress = false) {
   const progPct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
   const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-  const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+  const itemIdx = window._cardItems ? window._cardItems.length : 0;
+  if (!window._cardItems) window._cardItems = [];
+  window._cardItems.push(item);
 
   return `
-    <div class="card" onclick="showInfo(${itemJson})">
+    <div class="card" onclick="showInfo(window._cardItems[${itemIdx}])">
       ${poster
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
         : `<div class="card-poster-placeholder">🎬</div>`}
@@ -1919,10 +1922,10 @@ function createCard(item, showProgress = false) {
         </div>
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="card-btn card-btn-play" onclick="handleCardPlay(${itemJson})" title="Play">
+          <button class="card-btn card-btn-play" onclick="handleCardPlay(window._cardItems[${itemIdx}])" title="Play">
             <svg width="10" height="12" viewBox="0 0 12 14" fill="currentColor"><path d="M0 0l12 7-12 7z"/></svg>
           </button>
-          <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(${itemJson}, this)" title="My List">
+          <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(window._cardItems[${itemIdx}], this)" title="My List">
             ${isSaved
               ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6L9 17l-5-5"/></svg>`
               : `<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`}
