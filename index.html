@@ -2073,7 +2073,14 @@ function initPlayer(url, item) {
 }
 
 function closePlayer() {
-  if (plyrInstance) { plyrInstance.pause(); }
+  if (plyrInstance) {
+    plyrInstance.pause();
+    plyrInstance.destroy();
+    plyrInstance = null;
+  }
+  const video = document.getElementById('player');
+  video.src = '';
+  video.load();
   document.getElementById('playerModal').classList.remove('active');
   document.body.style.overflow = '';
 }
