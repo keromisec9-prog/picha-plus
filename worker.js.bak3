@@ -213,24 +213,6 @@ export default {
       return jsonResponse({ completed: user.subscribed, user });
     }
 
-    // ── SERIES EPISODE ───────────────────────────────────────────────────────
-    if (url.pathname === '/episode') {
-      const seriesId = url.searchParams.get('seriesId');
-      const epIndex = url.searchParams.get('ep');
-      if (!seriesId || epIndex === null) return errorResponse('Missing params', 400);
-      const user = await getUser(request, env);
-      if (!user) return errorResponse('Sign in required', 401);
-      if (!user.subscribed) return errorResponse('Subscription required', 402);
-      if (user.subscriptionExpiry && Date.now() > user.subscriptionExpiry) return errorResponse('Subscription expired', 402);
-      const catalog = await env.KV.get('catalog', { type: 'json' });
-      const series = catalog?.series?.[seriesId];
-      if (!series) return errorResponse('Series not found', 404);
-      const episode = series.episodes?.[parseInt(epIndex)];
-      if (!episode) return errorResponse('Episode not found', 404);
-      const signedUrl = await signB2Url(episode.fileName, env);
-      return jsonResponse({ url: signedUrl, episode });
-    }
-
     if (url.pathname === '/auth/logout') {
       const session = request.headers.get('X-Session-Token');
       if (session) await env.KV.delete(`session:${session}`);
