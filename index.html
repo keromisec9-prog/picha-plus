@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Picha+</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css"/>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -776,12 +776,23 @@
       background: #000;
     }
 
-    /* Plyr customization */
-    .plyr--video { border-radius: 0; }
-    .plyr__control--overlaid { background: rgba(229,185,60,0.9); }
-    .plyr__control--overlaid:hover { background: var(--gold); }
-    .plyr--full-ui input[type=range] { color: var(--gold); }
-    .plyr__menu__container .plyr__control[role=menuitemradio][aria-checked=true]::before { background: var(--gold); }
+    /* Shaka Player gold theme */
+    .shaka-video-container { width: 100%; background: #000; }
+    .shaka-video-container video { width: 100%; display: block; }
+    .shaka-controls-container { background: linear-gradient(transparent, rgba(0,0,0,0.7)); }
+    .shaka-seek-bar-container .shaka-current-time { color: var(--gold); }
+    .material-icons-round { font-size: 22px !important; }
+    /* Progress bar gold */
+    .shaka-seek-bar.mdc-slider .mdc-slider__track--active_fill { border-color: var(--gold) !important; }
+    .shaka-seek-bar.mdc-slider .mdc-slider__thumb-knob { background: var(--gold) !important; border-color: var(--gold) !important; }
+    .shaka-seek-bar.mdc-slider .mdc-slider__track--active { background: var(--gold) !important; }
+    /* Volume bar gold */
+    .shaka-volume-bar.mdc-slider .mdc-slider__track--active_fill { border-color: var(--gold) !important; }
+    .shaka-volume-bar.mdc-slider .mdc-slider__thumb-knob { background: var(--gold) !important; border-color: var(--gold) !important; }
+    /* Overflow menu */
+    .shaka-overflow-menu, .shaka-settings-menu { background: rgba(18,18,18,0.97) !important; border: 1px solid rgba(229,185,60,0.2); border-radius: 6px; }
+    .shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }
+    .shaka-current-selection-span { color: var(--gold) !important; }
 
     /* ── SIGN IN MODAL ── */
     .modal-overlay {
@@ -1591,12 +1602,20 @@ function saveProgress(id, pos, dur) {
   </div>
   <div class="player-container">
     <div class="player-wrapper" id="playerWrapper">
-      <video id="player" playsinline controls></video>
+      <div data-shaka-player-container id="shakaContainer" style="width:100%;background:#000;">
+        <video id="player" data-shaka-player playsinline style="width:100%;display:block;"></video>
+      </div>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script>
+// Patch missing console methods before Shaka loads (some mobile browsers omit console.debug)
+if (!console.debug) console.debug = console.log;
+if (!console.info)  console.info  = console.log;
+if (!console.warn)  console.warn  = console.log;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
 <script>
 // ── TMDB ──────────────────────────────────────────────────────────────────────
 const GENRES = {
@@ -1659,7 +1678,8 @@ let heroIndex = 0;
 let heroTimer = null;
 let currentInfoItem = null;
 let currentPlayItem = null;
-let plyrInstance = null;
+let shakaPlayer = null;
+let shakaUI = null;
 let allVideos = { movies: [], series: [] };
 let currentLang = 'all';
 
@@ -1707,10 +1727,12 @@ window.addEventListener('load', async () => {
 
 // ── LOAD CONTENT ──────────────────────────────────────────────────────────────
 async function loadContent() {
+  let cards = [];
+  let catalogData = {};
   try {
     // Fetch your catalog
     const catalogRes = await fetch(`${API}/videos`);
-    const catalogData = await catalogRes.json();
+    catalogData = await catalogRes.json();
     const movies = Object.values(catalogData.movies || {});
     const series = Object.values(catalogData.series || {});
     const allUploads = [...movies, ...series].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
@@ -1732,7 +1754,7 @@ async function loadContent() {
       _episode: v.episode || null,
     });
 
-    const cards = allUploads.map(toCard);
+    cards = allUploads.map(toCard);
 
     // Hero — rotate through your uploads
     if (cards.length) {
@@ -2080,36 +2102,86 @@ async function handleCardPlay(item) {
   showToast('This title is not yet available for streaming', 'error');
 }
 
-function initPlayer(url, item) {
+async function initPlayer(url, item) {
   const video = document.getElementById('player');
-  video.src = url;
 
-  if (plyrInstance) { plyrInstance.destroy(); }
+  // Destroy existing instance
+  if (shakaPlayer) {
+    shakaUI?.destroy();
+    await shakaPlayer.destroy();
+    shakaPlayer = null;
+    shakaUI = null;
+  }
 
-  plyrInstance = new Plyr('#player', {
-    controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen'],
-    settings: ['quality', 'speed'],
-    quality: { default: 720, options: [1080, 720, 480, 360] },
+  // Install polyfills (safe — won't crash if one fails)
+  try { shaka.polyfill.installAll(); } catch(e) { console.warn('Shaka polyfill warning:', e); }
+
+  if (!shaka.Player.isBrowserSupported()) {
+    showToast('Browser not supported for streaming', 'error');
+    closePlayer();
+    return;
+  }
+
+  shakaPlayer = new shaka.Player();
+  await shakaPlayer.attach(video);
+
+  // Gold-themed UI controls
+  const container = document.getElementById('shakaContainer');
+  const uiConfig = {
+    controlPanelElements: [
+      'play_pause', 'time_and_duration', 'spacer',
+      'mute', 'volume', 'overflow_menu', 'fullscreen'
+    ],
+    overflowMenuButtons: ['captions', 'quality', 'playback_rate', 'cast'],
+    seekBarColors: {
+      base: 'rgba(255,255,255,0.2)',
+      buffered: 'rgba(229,185,60,0.4)',
+      played: '#e5b93c',
+    },
+    volumeBarColors: {
+      base: 'rgba(255,255,255,0.2)',
+      level: '#e5b93c',
+    },
+    castReceiverAppId: 'CC1AD845',  // Default Chromecast receiver
+    enableTooltips: true,
+  };
+  shakaUI = new shaka.ui.Overlay(shakaPlayer, container, video);
+  shakaUI.configure(uiConfig);
+
+  // Player config
+  shakaPlayer.configure({
+    streaming: { bufferingGoal: 60, rebufferingGoal: 10 },
+    abr: { enabled: true, defaultBandwidthEstimate: 2500000 },
   });
 
-  plyrInstance.on('timeupdate', () => {
-    if (item?.id && plyrInstance.currentTime > 0) {
-      saveProgress(item.id, plyrInstance.currentTime, plyrInstance.duration);
+  shakaPlayer.addEventListener('error', (e) => {
+    console.error('Shaka error:', e.detail);
+    showToast('Playback error. Please try again.', 'error');
+  });
+
+  // Progress tracking
+  video.addEventListener('timeupdate', () => {
+    if (item?.id && video.currentTime > 0) {
+      saveProgress(item.id, video.currentTime, video.duration);
     }
   });
 
-  plyrInstance.play().catch(() => {});
+  try {
+    await shakaPlayer.load(url);
+    video.play().catch(() => {});
+  } catch (err) {
+    console.error('Load error:', err);
+    showToast('Failed to load video', 'error');
+    closePlayer();
+  }
 }
 
 function closePlayer() {
-  if (plyrInstance) {
-    plyrInstance.pause();
-    plyrInstance.destroy();
-    plyrInstance = null;
-  }
   const video = document.getElementById('player');
+  video.pause();
+  if (shakaUI) { shakaUI.destroy(); shakaUI = null; }
+  if (shakaPlayer) { shakaPlayer.destroy(); shakaPlayer = null; }
   video.src = '';
-  video.load();
   document.getElementById('playerModal').classList.remove('active');
   document.body.style.overflow = '';
 }
