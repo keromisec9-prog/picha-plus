@@ -766,14 +766,36 @@
     .player-container {
       flex: 1;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
     }
 
     .player-wrapper {
       width: 100%;
-      max-width: 100%;
+      height: 100%;
       background: #000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Shaka fills the entire modal */
+    #shakaContainer {
+      width: 100% !important;
+      height: 100% !important;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+    }
+    #shakaContainer video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain;
+    }
+    /* Shaka UI overlay sits on top correctly */
+    #shakaContainer .shaka-video-container {
+      width: 100% !important;
+      height: 100% !important;
     }
 
     /* Shaka Player gold theme */
@@ -1602,8 +1624,8 @@ function saveProgress(id, pos, dur) {
   </div>
   <div class="player-container">
     <div class="player-wrapper" id="playerWrapper">
-      <div data-shaka-player-container id="shakaContainer" style="width:100%;background:#000;">
-        <video id="player" data-shaka-player playsinline style="width:100%;display:block;"></video>
+      <div id="shakaContainer" style="width:100%;height:100%;background:#000;position:relative;">
+        <video id="player" playsinline style="width:100%;height:100%;object-fit:contain;display:block;"></video>
       </div>
     </div>
   </div>
@@ -1755,6 +1777,7 @@ async function loadContent() {
     });
 
     cards = allUploads.map(toCard);
+    window._allCards = cards; // expose for renderContinueWatching
 
     // Hero — rotate through your uploads
     if (cards.length) {
@@ -1822,6 +1845,9 @@ async function loadContent() {
       renderRow('newRow', cards);
     }
 
+    // Continue watching — needs cards, call here
+    renderContinueWatching();
+
   } catch (err) {
     console.error('Failed to load content:', err);
     document.getElementById('genreRows').innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">Failed to load content. Please refresh.</div>';
@@ -1832,9 +1858,6 @@ async function loadContent() {
 
   // Build VJ filter pills
   buildVJFilter(cards);
-
-  // Continue watching
-  renderContinueWatching();
 
   // My List
   renderMyListRow();
@@ -2104,70 +2127,69 @@ async function handleCardPlay(item) {
 
 async function initPlayer(url, item) {
   const video = document.getElementById('player');
+  const container = document.getElementById('shakaContainer');
 
-  // Destroy existing instance
-  if (shakaPlayer) {
-    shakaUI?.destroy();
-    await shakaPlayer.destroy();
-    shakaPlayer = null;
-    shakaUI = null;
-  }
+  // Destroy existing instance cleanly
+  if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
+  if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e){} shakaPlayer = null; }
 
-  // Install polyfills (safe — won't crash if one fails)
-  try { shaka.polyfill.installAll(); } catch(e) { console.warn('Shaka polyfill warning:', e); }
+  // Install polyfills once — safe on all browsers
+  try { shaka.polyfill.installAll(); } catch(e) { console.warn('Shaka polyfill:', e); }
 
   if (!shaka.Player.isBrowserSupported()) {
     showToast('Browser not supported for streaming', 'error');
-    closePlayer();
-    return;
+    closePlayer(); return;
   }
 
   shakaPlayer = new shaka.Player();
   await shakaPlayer.attach(video);
 
-  // Gold-themed UI controls
-  const container = document.getElementById('shakaContainer');
-  const uiConfig = {
-    controlPanelElements: [
-      'play_pause', 'time_and_duration', 'spacer',
-      'mute', 'volume', 'overflow_menu', 'fullscreen'
-    ],
-    overflowMenuButtons: ['captions', 'quality', 'playback_rate', 'cast'],
-    seekBarColors: {
-      base: 'rgba(255,255,255,0.2)',
-      buffered: 'rgba(229,185,60,0.4)',
-      played: '#e5b93c',
-    },
-    volumeBarColors: {
-      base: 'rgba(255,255,255,0.2)',
-      level: '#e5b93c',
-    },
-    castReceiverAppId: 'CC1AD845',  // Default Chromecast receiver
-    enableTooltips: true,
-  };
+  // UI overlay — controls at bottom, gold theme
   shakaUI = new shaka.ui.Overlay(shakaPlayer, container, video);
-  shakaUI.configure(uiConfig);
+  shakaUI.configure({
+    controlPanelElements: ['play_pause','time_and_duration','spacer','mute','volume','overflow_menu','fullscreen'],
+    overflowMenuButtons: ['captions','quality','playback_rate','cast'],
+    seekBarColors:   { base:'rgba(255,255,255,0.2)', buffered:'rgba(229,185,60,0.4)', played:'#e5b93c' },
+    volumeBarColors: { base:'rgba(255,255,255,0.2)', level:'#e5b93c' },
+    castReceiverAppId: 'CC1AD845',
+    enableTooltips: false,
+    fadeDelay: 3,
+  });
 
-  // Player config
+  // Fix Shaka's injected wrapper to fill the container fully
+  requestAnimationFrame(() => {
+    const wrap = container.querySelector('.shaka-video-container');
+    if (wrap) wrap.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+  });
+
   shakaPlayer.configure({
     streaming: { bufferingGoal: 60, rebufferingGoal: 10 },
     abr: { enabled: true, defaultBandwidthEstimate: 2500000 },
   });
 
-  shakaPlayer.addEventListener('error', (e) => {
+  shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
     showToast('Playback error. Please try again.', 'error');
   });
 
-  // Progress tracking
-  video.addEventListener('timeupdate', () => {
+  // Progress tracking — throttled to every 5s, also on pause
+  const savedPos = progress[item?.id]?.position || 0;
+  let lastSave = 0;
+  const trackProgress = () => {
     if (item?.id && video.currentTime > 0) {
-      saveProgress(item.id, video.currentTime, video.duration);
+      const now = Date.now();
+      if (now - lastSave > 5000) { lastSave = now; saveProgress(item.id, video.currentTime, video.duration); }
     }
-  });
+  };
+  video.addEventListener('timeupdate', trackProgress);
+  video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration); });
 
   try {
     await shakaPlayer.load(url);
+    if (savedPos > 30) {
+      video.currentTime = savedPos;
+      showToast(`Resuming from ${formatTime(savedPos)}`);
+    }
     video.play().catch(() => {});
   } catch (err) {
     console.error('Load error:', err);
@@ -2176,14 +2198,20 @@ async function initPlayer(url, item) {
   }
 }
 
+function formatTime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60);
+  return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
+}
+
 function closePlayer() {
   const video = document.getElementById('player');
   video.pause();
-  if (shakaUI) { shakaUI.destroy(); shakaUI = null; }
-  if (shakaPlayer) { shakaPlayer.destroy(); shakaPlayer = null; }
+  if (shakaUI)     { try { shakaUI.destroy();     } catch(e){} shakaUI = null; }
+  if (shakaPlayer) { try { shakaPlayer.destroy();  } catch(e){} shakaPlayer = null; }
   video.src = '';
   document.getElementById('playerModal').classList.remove('active');
   document.body.style.overflow = '';
+  renderContinueWatching(); // refresh continue watching row after closing
 }
 
 // ── MY LIST ───────────────────────────────────────────────────────────────────
@@ -2226,16 +2254,65 @@ function showMyList() {
 function renderContinueWatching() {
   const section = document.getElementById('continueSection');
   const row = document.getElementById('continueRow');
-  const entries = Object.entries(progress).filter(([, v]) => v.position > 30 && v.position < v.duration - 30);
+
+  // Filter progress entries: started (>30s) but not finished (>30s from end)
+  const entries = Object.entries(progress).filter(([, v]) =>
+    v.position > 30 && v.duration > 0 && v.position < v.duration - 30
+  );
+
   if (!entries.length) { section.style.display = 'none'; return; }
+
+  // Match progress entries to catalog cards (cards is populated after loadContent)
+  const matched = entries
+    .map(([id, prog]) => {
+      const card = (window._allCards || []).find(c => String(c.id) === String(id));
+      return card ? { card, prog } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 10);
+
+  if (!matched.length) { section.style.display = 'none'; return; }
+
   section.style.display = 'block';
-  // We'd need to fetch TMDB data for these IDs — for now show placeholder
-  row.innerHTML = entries.slice(0, 10).map(([id]) =>
-    `<div class="card" style="cursor:pointer;" onclick="showToast('Resume feature coming soon')">
-      <div class="card-poster-placeholder">▶</div>
-      <div class="card-progress"><div class="card-progress-fill" style="width:${Math.round((progress[id].position/progress[id].duration)*100)}%"></div></div>
-    </div>`
-  ).join('');
+  row.innerHTML = matched.map(({ card, prog }) => {
+    const pct = Math.round((prog.position / prog.duration) * 100);
+    const poster = card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null;
+    const title = card.title || card.name || '';
+    const itemJson = JSON.stringify(card).replace(/"/g, '&quot;');
+    return `
+      <div class="card" onclick="resumeWatching(${itemJson})" style="cursor:pointer;">
+        ${poster
+          ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
+          : `<div class="card-poster-placeholder">▶</div>`}
+        <div class="card-overlay" style="opacity:1;background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,transparent 60%);">
+          <div class="card-title">${esc(title)}</div>
+          <div style="font-size:0.65rem;color:var(--gold);margin-bottom:0.4rem;">${formatTime(prog.position)} watched</div>
+        </div>
+        <div class="card-progress">
+          <div class="card-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;" class="resume-play-icon">
+          <div style="width:2.5rem;height:2.5rem;background:rgba(229,185,60,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function resumeWatching(item) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  if (!session.isSubscribed()) { scrollToSection('plans-section'); showToast('Subscribe to watch 👆', 'error'); return; }
+  document.getElementById('playerTitle').textContent = item.title || item.name || '';
+  document.getElementById('playerModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  try {
+    const res = await fetch(`${API}/video?id=${item.id}`, { headers: { 'X-Session-Token': session.token } });
+    const data = await res.json();
+    if (data.url) { initPlayer(data.url, item); return; }
+  } catch {}
+  closePlayer();
+  showToast('Video unavailable', 'error');
 }
 
 // ── LIKE ──────────────────────────────────────────────────────────────────────
