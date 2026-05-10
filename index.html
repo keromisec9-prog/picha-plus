@@ -17,7 +17,7 @@
       --red: #e50914;
       --white: #ffffff;
       --gray: #808080;
-      --card-w: 180px;
+      --card-w: 130px;
       --card-ratio: 2/3;
     }
 
@@ -1202,7 +1202,7 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
-      :root { --card-w: 140px; }
+      :root { --card-w: 110px; }
       .nav-links { display: none; }
       .hero-content { max-width: 100%; }
       .hero-desc { display: none; }
@@ -1214,6 +1214,129 @@
     @keyframes fadeUp {
       from { opacity: 0; transform: translateX(-50%) translateY(10px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ── CATEGORY PAGE OVERLAY ── */
+    .category-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 700;
+      overflow-y: auto;
+      animation: fadeIn 0.22s ease;
+    }
+    .category-overlay.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .category-header {
+      position: sticky;
+      top: 0;
+      background: rgba(15,15,15,0.97);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 4vw;
+      z-index: 10;
+    }
+    .category-back-btn {
+      background: none;
+      border: none;
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      padding: 0;
+    }
+    .category-back-btn:hover { opacity: 1; }
+    .category-page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+    .category-count {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--gray);
+    }
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      padding: 1rem 3vw 3rem;
+    }
+    @media (min-width: 500px) {
+      .category-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (min-width: 768px) {
+      .category-grid { grid-template-columns: repeat(5, 1fr); }
+    }
+    .category-card {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      background: #1a1a1a;
+      transition: transform 0.25s;
+    }
+    .category-card:hover { transform: scale(1.04); }
+    .category-card img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      display: block;
+    }
+    .category-card-label {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
+      padding: 1.5rem 0.5rem 0.45rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .category-card-vj {
+      position: absolute;
+      top: 0.35rem; left: 0.35rem;
+      background: rgba(0,0,0,0.75);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      font-size: 0.5rem;
+      font-weight: 700;
+      padding: 0.1rem 0.35rem;
+      border-radius: 2px;
+      letter-spacing: 0.05em;
+    }
+    .category-card-type {
+      position: absolute;
+      top: 0.35rem; right: 0.35rem;
+      background: var(--gold);
+      color: #000;
+      font-size: 0.48rem;
+      font-weight: 700;
+      padding: 0.1rem 0.35rem;
+      border-radius: 2px;
+      letter-spacing: 0.06em;
+    }
+
+    /* row-see-all tweak */
+    .row-see-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
     }
   </style>
 </head>
@@ -1828,16 +1951,21 @@ async function loadContent() {
 
     for (const gid of usedGenres) {
       const name = genreNames[gid] || `Genre ${gid}`;
+      const items = genreMap[gid];
       const section = document.createElement('div');
       section.className = 'content-section';
       section.innerHTML = `
         <div class="row-header">
           <div class="row-title">${name}</div>
+          <button class="row-see-all" onclick="openCategory('${name}', window._genreMap['${gid}'])">All &rsaquo;</button>
         </div>
         <div class="scroll-row" id="row-${gid}"></div>`;
       container.appendChild(section);
-      renderRow(`row-${gid}`, genreMap[gid]);
+      renderRow(`row-${gid}`, items);
     }
+
+    // Store genreMap globally for category page
+    window._genreMap = genreMap;
 
     // If only one video, show it in all sections
     if (cards.length === 1) {
@@ -2675,14 +2803,19 @@ function filterByVJ(vj, btn) {
 
   for (const gid of Object.keys(genreMap)) {
     const name = genreNames[gid] || `Genre ${gid}`;
+    const items = genreMap[gid];
     const section = document.createElement('div');
     section.className = 'content-section';
     section.innerHTML = `
-      <div class="row-header"><div class="row-title">${name}</div></div>
+      <div class="row-header"><div class="row-title">${name}</div>
+      <button class="row-see-all" onclick="openCategory('${name}', window._vjGenreMap['${gid}'])">All &rsaquo;</button></div>
       <div class="scroll-row" id="row-${gid}"></div>`;
     container.appendChild(section);
-    renderRow(`row-${gid}`, genreMap[gid]);
+    renderRow(`row-${gid}`, items);
   }
+
+  // Store for category access
+  window._vjGenreMap = genreMap;
 
   if (filtered.length === 0) {
     container.innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">No movies by this VJ yet.</div>';
@@ -2715,11 +2848,67 @@ function esc(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Close modals on overlay click
-document.getElementById('signinModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeSignin(); });
-document.getElementById('paymentModal').addEventListener('click', e => { if (e.target === e.currentTarget) closePayment(); });
-document.getElementById('infoModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeInfo(); });
-document.getElementById('searchOverlay').addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+// ── CATEGORY PAGE ─────────────────────────────────────────────────────────────
+let _categoryItems = [];
+let _categoryName = '';
+
+function openCategory(name, items) {
+  _categoryName = name;
+  _categoryItems = items || [];
+
+  document.getElementById('categoryTitle').textContent = name;
+  document.getElementById('categoryCount').textContent = `${_categoryItems.length} title${_categoryItems.length !== 1 ? 's' : ''}`;
+
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = _categoryItems.map(item => {
+    const title = item.title || item.name || '';
+    const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
+    const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14*24*60*60*1000);
+    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+    return `
+      <div class="category-card" onclick="showInfo(${itemJson})">
+        ${poster
+          ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
+          : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
+        ${item._vj ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
+        ${isNew ? `<div class="category-card-type">NEW</div>` : ''}
+        <div class="category-card-label">${esc(title)}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('categoryOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCategory() {
+  document.getElementById('categoryOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Close modals on overlay click — use DOMContentLoaded so all elements are ready
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('categoryOverlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('categoryOverlay')) closeCategory();
+  });
+  document.getElementById('signinModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeSignin(); });
+  document.getElementById('paymentModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePayment(); });
+  document.getElementById('infoModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeInfo(); });
+  document.getElementById('searchOverlay')?.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+});
+
 </script>
+<!-- CATEGORY OVERLAY -->
+<div class="category-overlay" id="categoryOverlay">
+  <div class="category-header">
+    <button class="category-back-btn" onclick="closeCategory()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      Back
+    </button>
+    <div class="category-page-title" id="categoryTitle">Category</div>
+    <div class="category-count" id="categoryCount"></div>
+  </div>
+  <div class="category-grid" id="categoryGrid"></div>
+</div>
+
 </body>
 </html>
