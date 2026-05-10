@@ -816,6 +816,32 @@
     .shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }
     .shaka-current-selection-span { color: var(--gold) !important; }
 
+    /* Cast button gold tint + active glow */
+    .shaka-cast-button { color: var(--gold) !important; }
+    .shaka-cast-button[aria-pressed="true"] {
+      color: var(--gold) !important;
+      filter: drop-shadow(0 0 6px rgba(229,185,60,0.8));
+    }
+    /* Casting banner shown inside player when active */
+    .cast-active-banner {
+      display: none;
+      position: absolute;
+      top: 0.6rem; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      z-index: 20;
+      pointer-events: none;
+      white-space: nowrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .cast-active-banner.visible { display: flex; }
+
     /* ── SIGN IN MODAL ── */
     .modal-overlay {
       display: none;
@@ -1694,6 +1720,10 @@ function saveProgress(id, pos, dur) {
   <div class="player-container">
     <div class="player-wrapper" id="playerWrapper">
       <div id="shakaContainer" style="width:100%;height:100%;background:#000;position:relative;">
+        <div class="cast-active-banner" id="castBanner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5v1.63c3.96 1.28 7.09 4.41 8.37 8.37H19V7zM1 10v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3C1.9 3 1 3.9 1 5v3c5.52 0 10 4.48 10 10h3c0-6.52-4.28-12-10.28-12.28V5h17v14h-3.28C18 18.48 18 19 18 19.5V21h5V5c0-1.1-.9-2-2-2z"/></svg>
+          Casting to TV
+        </div>
         <video id="player" playsinline style="width:100%;height:100%;object-fit:contain;display:block;"></video>
       </div>
     </div>
@@ -1706,6 +1736,8 @@ if (!console.debug) console.debug = console.log;
 if (!console.info)  console.info  = console.log;
 if (!console.warn)  console.warn  = console.log;
 </script>
+<!-- Google Cast SDK — must load before Shaka -->
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
 <script>
 // ── TMDB ──────────────────────────────────────────────────────────────────────
@@ -2222,8 +2254,8 @@ async function initPlayer(url, item) {
   // UI overlay — controls at bottom, gold theme
   shakaUI = new shaka.ui.Overlay(shakaPlayer, container, video);
   shakaUI.configure({
-    controlPanelElements: ['play_pause','time_and_duration','spacer','mute','volume','overflow_menu','fullscreen'],
-    overflowMenuButtons: ['captions','quality','playback_rate','cast'],
+    controlPanelElements: ['play_pause','time_and_duration','spacer','mute','volume','cast','overflow_menu','fullscreen'],
+    overflowMenuButtons: ['captions','quality','playback_rate'],
     seekBarColors:   { base:'rgba(255,255,255,0.2)', buffered:'rgba(229,185,60,0.4)', played:'#e5b93c' },
     volumeBarColors: { base:'rgba(255,255,255,0.2)', level:'#e5b93c' },
     castReceiverAppId: 'CC1AD845',
@@ -2245,6 +2277,12 @@ async function initPlayer(url, item) {
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
     showToast('Playback error. Please try again.', 'error');
+  });
+
+  // Cast session events — show/hide banner
+  shakaPlayer.addEventListener('caststatuschanged', e => {
+    const banner = document.getElementById('castBanner');
+    if (banner) banner.classList.toggle('visible', !!e['newStatus']);
   });
 
   // Progress tracking — throttled to every 5s, also on pause
