@@ -2564,6 +2564,9 @@ const PLANS = {
 async function startPayment(plan) {
   if (!session.isLoggedIn()) { openSignin(); showToast('Please sign in first', 'error'); return; }
 
+  // Close the paywall overlay first so it doesn't sit on top of the payment modal
+  closePaywall();
+
   const labels = {
     daily: 'Daily Pass — UGX 2,000',
     monthly: 'Monthly — UGX 15,000',
