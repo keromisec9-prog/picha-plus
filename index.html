@@ -1736,6 +1736,18 @@ if (!console.debug) console.debug = console.log;
 if (!console.info)  console.info  = console.log;
 if (!console.warn)  console.warn  = console.log;
 </script>
+<!-- Cast API must be initialized BEFORE the SDK loads -->
+<script>
+  window['__onGCastApiAvailable'] = function(isAvailable) {
+    if (isAvailable) {
+      cast.framework.CastContext.getInstance().setOptions({
+        receiverApplicationId: 'CC1AD845',
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+        resumeSavedSession: true,
+      });
+    }
+  };
+</script>
 <!-- Google Cast SDK — must load before Shaka -->
 <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
