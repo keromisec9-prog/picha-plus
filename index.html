@@ -1410,7 +1410,7 @@ function saveProgress(id, pos, dur) {
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
           My List
         </div>
-        <div class="nav-dropdown-item" onclick="scrollToSection('plans-section')">
+        <div class="nav-dropdown-item" onclick="showPaywall()">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
           Manage Plan
         </div>
@@ -1456,6 +1456,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="continueSection" style="display:none;">
     <div class="row-header">
       <div class="row-title">Continue Watching</div>
+      <button class="row-see-all" onclick="openCategory('Continue Watching', window._continueItems || [])">All &rsaquo;</button>
     </div>
     <div class="scroll-row" id="continueRow"></div>
   </div>
@@ -1464,6 +1465,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="newSection">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">New</span> This Week</div>
+      <button class="row-see-all" onclick="openCategory('New This Week', window._newItems || [])">All &rsaquo;</button>
     </div>
     <div class="scroll-row" id="newRow">
       <div class="skeleton skeleton-card"></div>
@@ -1478,6 +1480,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="seriesSection" style="display:none;">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">Series</span> on Picha+</div>
+      <button class="row-see-all" onclick="openCategory('Series on Picha+', window._seriesItems || [])">All &rsaquo;</button>
     </div>
     <div class="scroll-row" id="seriesRow"></div>
   </div>
@@ -1529,64 +1532,7 @@ function saveProgress(id, pos, dur) {
   <!-- Dynamic genre rows will be inserted here -->
   <div id="genreRows"></div>
 
-  <!-- Plans -->
-  <div class="plans-section" id="plans-section">
-    <div class="plans-header">
-      <p class="plans-eyebrow">Choose Your Plan</p>
-      <h2 class="plans-title">Unlimited Entertainment</h2>
-      <p class="plans-desc">No ads. No limits. Download for offline viewing. Cancel anytime.</p>
-    </div>
-    <div class="plans-grid">
-      <div class="plan-card" onclick="startPayment('daily')">
-        <div class="plan-name">Daily</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
-        <div class="plan-period">24 hour access</div>
-        <ul class="plan-features">
-          <li>All movies & series</li>
-          <li>HD streaming</li>
-          <li>No ads</li>
-        </ul>
-        <button class="plan-btn">Get Started</button>
-      </div>
-      <div class="plan-card" onclick="startPayment('monthly')">
-        <div class="plan-name">Monthly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 15,000</div>
-        <div class="plan-period">per month</div>
-        <ul class="plan-features">
-          <li>All movies & series</li>
-          <li>HD streaming</li>
-          <li>Downloads</li>
-          <li>Cancel anytime</li>
-        </ul>
-        <button class="plan-btn">Get Started</button>
-      </div>
-      <div class="plan-card featured" onclick="startPayment('quarterly')">
-        <div class="plan-name">Quarterly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 60,000</div>
-        <div class="plan-period">3 months · save 25%</div>
-        <ul class="plan-features">
-          <li>All movies & series</li>
-          <li>Full HD streaming</li>
-          <li>Downloads</li>
-          <li>2 devices</li>
-        </ul>
-        <button class="plan-btn">Get Started</button>
-      </div>
-      <div class="plan-card" onclick="startPayment('yearly')">
-        <div class="plan-name">Yearly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 120,000</div>
-        <div class="plan-period">per year · save 33%</div>
-        <ul class="plan-features">
-          <li>All movies & series</li>
-          <li>Full HD streaming</li>
-          <li>Downloads</li>
-          <li>3 devices</li>
-          <li>Early access</li>
-        </ul>
-        <button class="plan-btn">Get Started</button>
-      </div>
-    </div>
-  </div>
+  <!-- Plans section removed from inline scroll — now shown as paywall overlay via showPaywall() -->
 
   <!-- Footer -->
   <footer class="footer">
@@ -1914,7 +1860,8 @@ async function loadContent() {
     renderRow('latestRow', cards);
 
     // New This Week — most recently added
-    renderRow('newRow', cards.slice(0, 10));
+    window._newItems = cards.slice(0, 10);
+    renderRow('newRow', window._newItems);
 
     // Top 10
     if (cards.length) {
@@ -2059,7 +2006,7 @@ function startHeroRotation() {
 async function handleHeroPlay() {
   if (!currentPlayItem) return;
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { closeInfo(); scrollToSection('plans-section'); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed()) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
   showInfo(currentPlayItem);
 }
 
@@ -2227,7 +2174,7 @@ function toggleMyListFromInfo() {
 // ── PLAY ──────────────────────────────────────────────────────────────────────
 async function handleCardPlay(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { closeInfo(); scrollToSection('plans-section'); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed()) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
 
   const title = item.title || item.name || '';
   document.getElementById('playerTitle').textContent = title;
@@ -2402,6 +2349,7 @@ function renderContinueWatching() {
   if (!matched.length) { section.style.display = 'none'; return; }
 
   section.style.display = 'block';
+  window._continueItems = matched.map(({ card }) => card);
   row.innerHTML = matched.map(({ card, prog }) => {
     const pct = Math.round((prog.position / prog.duration) * 100);
     const poster = card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null;
@@ -2430,7 +2378,7 @@ function renderContinueWatching() {
 
 async function resumeWatching(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { scrollToSection('plans-section'); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed()) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
   document.getElementById('playerTitle').textContent = item.title || item.name || '';
   document.getElementById('playerModal').classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -2532,7 +2480,7 @@ function updateUI() {
 
   document.getElementById('navSubBtn').style.display = loggedIn && subscribed ? 'none' : 'block';
   document.getElementById('navSubBtn').textContent = loggedIn ? 'Subscribe' : 'Sign In';
-  document.getElementById('navSubBtn').onclick = loggedIn ? () => scrollToSection('plans-section') : openSignin;
+  document.getElementById('navSubBtn').onclick = loggedIn ? () => showPaywall() : openSignin;
 
   const navUser = document.getElementById('navUser');
   navUser.classList.toggle('visible', loggedIn);
@@ -2556,7 +2504,7 @@ function updateUI() {
     bar.innerHTML = '';
     if (subscribed && days <= 3) {
       bar.classList.add('expiring');
-      bar.innerHTML = `⚠️ Subscription expires in ${days} day${days !== 1 ? 's' : ''}. <a href="#" onclick="scrollToSection('plans-section')" style="color:inherit;margin-left:0.5rem;font-weight:600;">Renew</a>`;
+      bar.innerHTML = `⚠️ Subscription expires in ${days} day${days !== 1 ? 's' : ''}. <a href="#" onclick="showPaywall()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Renew</a>`;
     } else if (subscribed) {
       bar.classList.add('active');
       bar.innerHTML = `✓ Picha+ ${session.user.subscriptionPlan} · ${days} days remaining`;
@@ -2601,7 +2549,7 @@ document.addEventListener('click', e => {
 
 function handleSubscribeCTA() {
   if (!session.isLoggedIn()) openSignin();
-  else scrollToSection('plans-section');
+  else showPaywall();
 }
 
 // ── PAYMENT ───────────────────────────────────────────────────────────────────
@@ -2669,6 +2617,10 @@ function loadSeries(catalog) {
   const section = document.getElementById('seriesSection');
   const row = document.getElementById('seriesRow');
   section.style.display = 'block';
+  // Store for "All >" category view
+  window._seriesItems = seriesData.map(s => ({
+    id: s.title, title: s.title, poster: s.poster, _vj: s.vj
+  }));
 
   row.innerHTML = seriesData.map((s, idx) => {
     const poster = s.poster || null;
@@ -2725,7 +2677,7 @@ function closeSeries() {
 
 async function playEpisode(epIndex) {
   if (!session.isLoggedIn()) { closeSeries(); openSignin(); return; }
-  if (!session.isSubscribed()) { closeSeries(); scrollToSection('plans-section'); showToast('Subscribe to watch', 'error'); return; }
+  if (!session.isSubscribed()) { closeSeries(); showPaywall(); showToast('Subscribe to watch', 'error'); return; }
 
   const s = currentSeries;
   const ep = s?.episodes?.[epIndex];
@@ -2836,6 +2788,19 @@ function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 }
 
+function showPaywall() {
+  toggleUserMenu(true);
+  const modal = document.getElementById('paywallModal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePaywall() {
+  const modal = document.getElementById('paywallModal');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2866,7 +2831,7 @@ function openCategory(name, items) {
     const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14*24*60*60*1000);
     const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
     return `
-      <div class="category-card" onclick="showInfo(${itemJson})">
+      <div class="category-card" onclick="openInfoFromCategory(${itemJson})">
         ${poster
           ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
           : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
@@ -2885,10 +2850,20 @@ function closeCategory() {
   document.body.style.overflow = '';
 }
 
+function openInfoFromCategory(item) {
+  // Close the category overlay first, then open info modal cleanly
+  document.getElementById('categoryOverlay').classList.remove('active');
+  // Small delay so the overlay transition doesn't fight the modal
+  setTimeout(() => showInfo(item), 80);
+}
+
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('categoryOverlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('categoryOverlay')) closeCategory();
+  });
+  document.getElementById('paywallModal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('paywallModal')) closePaywall();
   });
   document.getElementById('signinModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeSignin(); });
   document.getElementById('paymentModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePayment(); });
@@ -2897,6 +2872,68 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 </script>
+<!-- PAYWALL OVERLAY -->
+<div class="modal-overlay" id="paywallModal" style="display:none;align-items:flex-start;overflow-y:auto;padding:2rem 0;">
+  <div class="plans-section" id="plans-section" style="position:relative;width:100%;max-width:700px;margin:auto;">
+    <button onclick="closePaywall()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.1);border:none;color:#fff;width:2rem;height:2rem;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div class="plans-header">
+      <p class="plans-eyebrow">Choose Your Plan</p>
+      <h2 class="plans-title">Unlimited Entertainment</h2>
+      <p class="plans-desc">No ads. No limits. Download for offline viewing. Cancel anytime.</p>
+    </div>
+    <div class="plans-grid">
+      <div class="plan-card" onclick="startPayment('daily')">
+        <div class="plan-name">Daily</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
+        <div class="plan-period">24 hour access</div>
+        <ul class="plan-features">
+          <li>All movies & series</li>
+          <li>HD streaming</li>
+          <li>No ads</li>
+        </ul>
+        <button class="plan-btn">Get Started</button>
+      </div>
+      <div class="plan-card" onclick="startPayment('monthly')">
+        <div class="plan-name">Monthly</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 15,000</div>
+        <div class="plan-period">per month</div>
+        <ul class="plan-features">
+          <li>All movies & series</li>
+          <li>HD streaming</li>
+          <li>Downloads</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <button class="plan-btn">Get Started</button>
+      </div>
+      <div class="plan-card featured" onclick="startPayment('quarterly')">
+        <div class="plan-name">Quarterly</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 60,000</div>
+        <div class="plan-period">3 months · save 25%</div>
+        <ul class="plan-features">
+          <li>All movies & series</li>
+          <li>Full HD streaming</li>
+          <li>Downloads</li>
+          <li>2 devices</li>
+        </ul>
+        <button class="plan-btn">Get Started</button>
+      </div>
+      <div class="plan-card" onclick="startPayment('yearly')">
+        <div class="plan-name">Yearly</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 120,000</div>
+        <div class="plan-period">per year · save 33%</div>
+        <ul class="plan-features">
+          <li>All movies & series</li>
+          <li>Full HD streaming</li>
+          <li>Downloads</li>
+          <li>3 devices</li>
+          <li>Early access</li>
+        </ul>
+        <button class="plan-btn">Get Started</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- CATEGORY OVERLAY -->
 <div class="category-overlay" id="categoryOverlay">
   <div class="category-header">
