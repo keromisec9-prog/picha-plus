@@ -1863,6 +1863,7 @@ window.addEventListener('load', async () => {
 // ── LOAD CONTENT ──────────────────────────────────────────────────────────────
 async function loadContent() {
   let cards = [];
+  window._itemRegistry = []; // reset on each content load
   let catalogData = {};
   try {
     // Fetch your catalog
@@ -1873,12 +1874,14 @@ async function loadContent() {
     const allUploads = [...movies, ...series].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
 
     // Convert catalog entries to TMDB-style items
+    // Strip any TMDB base URL variant (w300, w500, w780, original, etc.) so only /path.jpg remains
+    const stripTmdb = url => url ? url.replace(/^https:\/\/image\.tmdb\.org\/t\/p\/[^/]+/, '') : null;
     const toCard = v => ({
       id: v.tmdbId,
       title: v.title,
-      poster_path: v.poster?.replace('https://image.tmdb.org/t/p/w300', '') || null,
-      backdrop_path: v.backdrop?.replace('https://image.tmdb.org/t/p/w780', '') || null,
-      overview: v.overview || '',
+      poster_path: stripTmdb(v.poster),
+      backdrop_path: stripTmdb(v.backdrop),
+      overview: (v.overview || '').replace(/`/g, "'"),  // backticks break template literals in onclick
       vote_average: v.rating || 0,
       release_date: v.year ? v.year + '-01-01' : '',
       genre_ids: v.genreIds || [],
@@ -2058,6 +2061,24 @@ function handleHeroInfo() {
   if (currentPlayItem) showInfo(currentPlayItem);
 }
 
+// ── ITEM REGISTRY — avoids JSON-in-onclick bugs (backticks, quotes, etc.) ─────
+window._itemRegistry = [];
+function registerItem(item) {
+  const idx = window._itemRegistry.length;
+  window._itemRegistry.push(item);
+  return idx;
+}
+function getItem(idx) { return window._itemRegistry[idx] || null; }
+
+// ── ITEM REGISTRY — avoids JSON-in-onclick bugs ───────────────────────────────
+window._itemRegistry = [];
+function registerItem(item) {
+  const idx = window._itemRegistry.length;
+  window._itemRegistry.push(item);
+  return idx;
+}
+function getItem(idx) { return window._itemRegistry[idx] || null; }
+
 // ── RENDER ROWS ───────────────────────────────────────────────────────────────
 function renderRow(rowId, items) {
   const row = document.getElementById(rowId);
@@ -2075,7 +2096,7 @@ function renderTop10(rowId, items) {
   row.innerHTML = items.map((item, i) => {
     const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null;
     return `
-      <div class="top10-card" onclick="showInfo(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+      <div class="top10-card" onclick="showInfo(getItem(registerItem(item)))">
         <div class="top10-number">${i + 1}</div>
         ${poster
           ? `<img class="top10-poster" src="${poster}" alt="${esc(item.title || item.name)}" loading="lazy">`
@@ -2095,10 +2116,10 @@ function createCard(item, showProgress = false) {
   const progPct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
   const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-  const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+  const regIdx = registerItem(item);
 
   return `
-    <div class="card" onclick="showInfo(${itemJson})">
+    <div class="card" onclick="showInfo(getItem(${regIdx}))">
       ${poster
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
         : `<div class="card-poster-placeholder">🎬</div>`}
@@ -2112,10 +2133,10 @@ function createCard(item, showProgress = false) {
         </div>
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="card-btn card-btn-play" onclick="handleCardPlay(${itemJson})" title="Play">
+          <button class="card-btn card-btn-play" onclick="handleCardPlay(getItem(${regIdx}))" title="Play">
             <svg width="10" height="12" viewBox="0 0 12 14" fill="currentColor"><path d="M0 0l12 7-12 7z"/></svg>
           </button>
-          <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(${itemJson}, this)" title="My List">
+          <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(getItem(${regIdx}), this)" title="My List">
             ${isSaved
               ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6L9 17l-5-5"/></svg>`
               : `<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`}
@@ -2404,9 +2425,9 @@ function renderContinueWatching() {
     const pct = Math.round((prog.position / prog.duration) * 100);
     const poster = card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null;
     const title = card.title || card.name || '';
-    const itemJson = JSON.stringify(card).replace(/"/g, '&quot;');
+    const regIdx2 = registerItem(card);
     return `
-      <div class="card" onclick="resumeWatching(${itemJson})" style="cursor:pointer;">
+      <div class="card" onclick="resumeWatching(getItem(${regIdx2}))" style="cursor:pointer;">
         ${poster
           ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
           : `<div class="card-poster-placeholder">▶</div>`}
@@ -2684,7 +2705,7 @@ function loadSeries(catalog) {
         ${s.vj ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${s.vj}</div>` : ''}
         <div class="card-overlay">
           <div class="card-title">${esc(s.title)}</div>
-          <div style="font-size:0.65rem;color:var(--gray);">${s.episodes?.length || 0} Episodes</div>
+          <div style="font-size:0.65rem;color:var(--gray);">${(Array.isArray(s.episodes) ? s.episodes.length : Object.keys(s.episodes || {}).length)} Episodes</div>
         </div>
       </div>`;
   }).join('');
@@ -2778,6 +2799,7 @@ function buildVJFilter(cards) {
 }
 
 function filterByVJ(vj, btn) {
+  window._itemRegistry = []; // reset before re-render
   document.querySelectorAll('#vjPills .lang-pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   activeVJ = vj;
@@ -2882,9 +2904,9 @@ function openCategory(name, items) {
     const title = item.title || item.name || '';
     const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
     const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14*24*60*60*1000);
-    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+    const regIdx3 = registerItem(item);
     return `
-      <div class="category-card" onclick="openInfoFromCategory(${itemJson})">
+      <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx3}))">
         ${poster
           ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
           : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
