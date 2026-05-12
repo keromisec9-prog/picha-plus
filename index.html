@@ -1882,7 +1882,7 @@ async function loadContent() {
       poster_path: stripTmdb(v.poster),
       backdrop_path: stripTmdb(v.backdrop),
       overview: (v.overview || '').replace(/`/g, "'"),  // backticks break template literals in onclick
-      vote_average: v.rating || 0,
+      vote_average: parseFloat(v.rating) || 0,
       release_date: v.year ? v.year + '-01-01' : '',
       genre_ids: v.genreIds || [],
       media_type: v.type === 'series' ? 'tv' : 'movie',
@@ -1995,7 +1995,7 @@ function updateHero(index) {
   const title = item.title || item.name || '';
   const desc = item.overview || '';
   const backdropPath = item.backdrop_path;
-  const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
+  const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : '';
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
   const mediaType = item.media_type || 'movie';
 
@@ -2016,7 +2016,7 @@ function updateHero(index) {
 
   const meta = document.getElementById('heroMeta');
   meta.innerHTML = `
-    <span style="color:#46d369;font-weight:600;">${Math.round(item.vote_average * 10)}% Match</span>
+    <span style="color:#46d369;font-weight:600;">${Math.round(Number(item.vote_average) * 10)}% Match</span>
     <span class="hero-meta-dot">·</span>
     <span>${year}</span>
     ${item.adult ? '<span style="border:1px solid #808080;padding:0 4px;font-size:0.7rem;color:#808080;">18+</span>' : '<span style="border:1px solid #808080;padding:0 4px;font-size:0.7rem;color:#808080;">PG</span>'}
@@ -2109,7 +2109,7 @@ function createCard(item, showProgress = false) {
   const title = item.title || item.name || '';
   const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null;
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
-  const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
+  const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : '';
   const isLiked = liked.includes(item.id);
   const isSaved = myList.some(m => m.id === item.id);
   const prog = progress[item.id];
@@ -2174,8 +2174,8 @@ async function showInfo(item) {
 
   // Meta
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
-  const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
-  const match = item.vote_average ? Math.round(item.vote_average * 10) : '';
+  const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : '';
+  const match = item.vote_average ? Math.round(Number(item.vote_average) * 10) : '';
 
   document.getElementById('infoMeta').innerHTML = `
     ${match ? `<span class="info-match">${match}% Match</span>` : ''}
