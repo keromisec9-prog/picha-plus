@@ -1364,6 +1364,87 @@
       align-items: center;
       gap: 0.25rem;
     }
+
+    /* ── BOTTOM NAV ──────────────────────────────────────────────────────── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(10,10,10,0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: stretch;
+      height: 58px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bn-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; cursor: pointer;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.6rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      border: none; background: none; padding: 0;
+    }
+    .bn-tab svg { width: 22px; height: 22px; stroke-width: 1.8; }
+    .bn-tab.active { color: var(--gold); }
+    .bn-tab.active svg { stroke: var(--gold); }
+    body { padding-bottom: 62px; }
+
+    /* ── BROWSE / SAVED PAGES ───────────────────────────────────────────── */
+    .bn-page {
+      position: fixed; inset: 0; z-index: 190;
+      background: var(--bg);
+      overflow-y: auto;
+      padding-bottom: 70px;
+    }
+    .bn-page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.2rem 0.5rem;
+      position: sticky; top: 0; z-index: 2;
+      background: var(--bg);
+    }
+    .bn-page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem; letter-spacing: 0.05em;
+    }
+    .bn-tabs-row {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      padding: 0 1.2rem;
+      position: sticky; top: 52px; z-index: 2;
+      background: var(--bg);
+    }
+    .bn-inner-tab {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.75rem 1.5rem 0.75rem 0;
+      font-size: 0.85rem; font-weight: 600;
+      color: var(--gray); background: none; border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bn-inner-tab.active { color: var(--white); border-bottom-color: var(--gold); }
+    .bn-inner-tab svg { stroke: currentColor; }
+    .bn-list { padding: 0.5rem 0; }
+    .bn-list-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1.2rem;
+      cursor: pointer; transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .bn-list-item:active { background: rgba(255,255,255,0.05); }
+    .bn-list-icon {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(229,185,60,0.12); flex-shrink: 0;
+    }
+    .bn-list-icon svg { stroke: var(--gold); }
+    .bn-list-icon.vj-icon { background: rgba(100,180,255,0.12); }
+    .bn-list-icon.vj-icon svg { stroke: #64b4ff; }
+    .bn-list-name { font-size: 1rem; font-weight: 500; }
+    .bn-list-count { margin-left: auto; font-size: 0.75rem; color: var(--gray); }
   </style>
 </head>
 <body>
@@ -1537,6 +1618,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="latestSection">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">Latest</span> on Picha+</div>
+      <button class="row-see-all" onclick="openCategory('Latest on Picha+', window._latestItems || [])">All &rsaquo;</button>
     </div>
     <div class="scroll-row" id="latestRow">
       <div class="skeleton skeleton-card"></div>
@@ -1561,7 +1643,7 @@ function saveProgress(id, pos, dur) {
   <!-- Plans section removed from inline scroll — now shown as paywall overlay via showPaywall() -->
 
   <!-- Footer -->
-  <footer class="footer">
+  <footer class="footer" style="display:none;" id="mainFooter">
     <div class="footer-top">
       <div>
         <div class="footer-logo">Picha<span class="plus">+</span></div>
@@ -1602,6 +1684,23 @@ function saveProgress(id, pos, dur) {
       <span>Built for East Africa 🌍</span>
     </div>
   </footer>
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+      HOME
+    </button>
+    <button class="bn-tab" id="bn-categories" onclick="bnGo('categories')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      CATEGORIES
+    </button>
+    <button class="bn-tab" id="bn-saved" onclick="bnGo('saved')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      SAVED
+    </button>
+  </nav>
+
+
 </main>
 
 <!-- SERIES DETAIL PAGE -->
@@ -1904,6 +2003,7 @@ async function loadContent() {
     }
 
     // Latest on Picha+
+    window._latestItems = cards;
     renderRow('latestRow', cards);
 
     // New This Week — most recently added
@@ -1927,10 +2027,12 @@ async function loadContent() {
     }
 
     const genreNames = {
-      28:'Action', 35:'Comedy', 18:'Drama', 27:'Horror', 10749:'Romance',
-      878:'Sci-Fi', 53:'Thriller', 16:'Animation', 10765:'Sci-Fi & Fantasy',
-      10759:'Action & Adventure', 80:'Crime', 99:'Documentary', 14:'Fantasy',
-      36:'History', 10402:'Music', 9648:'Mystery', 10752:'War'
+      28:'Action', 12:'Adventure', 16:'Animation', 35:'Comedy', 80:'Crime',
+      99:'Documentary', 18:'Drama', 10751:'Family', 14:'Fantasy', 36:'History',
+      27:'Horror', 10402:'Music', 9648:'Mystery', 10749:'Romance', 878:'Sci-Fi',
+      53:'Thriller', 10752:'War', 37:'Western', 10759:'Action & Adventure',
+      10762:'Kids', 10765:'Sci-Fi & Fantasy', 10766:'Soap', 10768:'War & Politics',
+      10770:'TV Movie'
     };
 
     const container = document.getElementById('genreRows');
@@ -2819,10 +2921,12 @@ function filterByVJ(vj, btn) {
   }
 
   const genreNames = {
-    28:'Action', 35:'Comedy', 18:'Drama', 27:'Horror', 10749:'Romance',
-    878:'Sci-Fi', 53:'Thriller', 16:'Animation', 10765:'Sci-Fi & Fantasy',
-    10759:'Action & Adventure', 80:'Crime', 99:'Documentary', 14:'Fantasy',
-    36:'History', 10402:'Music', 9648:'Mystery', 10752:'War'
+    28:'Action', 12:'Adventure', 16:'Animation', 35:'Comedy', 80:'Crime',
+    99:'Documentary', 18:'Drama', 10751:'Family', 14:'Fantasy', 36:'History',
+    27:'Horror', 10402:'Music', 9648:'Mystery', 10749:'Romance', 878:'Sci-Fi',
+    53:'Thriller', 10752:'War', 37:'Western', 10759:'Action & Adventure',
+    10762:'Kids', 10765:'Sci-Fi & Fantasy', 10766:'Soap', 10768:'War & Politics',
+    10770:'TV Movie'
   };
 
   const container = document.getElementById('genreRows');
@@ -2946,6 +3050,142 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('searchOverlay')?.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
 });
 
+
+// ── BOTTOM NAV ────────────────────────────────────────────────────────────────
+let _bnActive = 'home';
+
+function bnGo(tab) {
+  _bnActive = tab;
+  document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('bn-' + tab)?.classList.add('active');
+
+  // hide all bn pages first
+  document.getElementById('bnCategoriesPage').style.display = 'none';
+  document.getElementById('bnSavedPage').style.display = 'none';
+
+  if (tab === 'home') {
+    // close categoryOverlay if open
+    document.getElementById('categoryOverlay')?.classList.remove('active');
+    document.body.style.overflow = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (tab === 'categories') {
+    bnOpenCategories();
+  } else if (tab === 'saved') {
+    bnOpenSaved();
+  }
+}
+
+function bnOpenCategories() {
+  document.body.style.overflow = 'hidden';
+  document.getElementById('bnCategoriesPage').style.display = 'block';
+  bnBuildGenreList();
+}
+
+function bnOpenSaved() {
+  // inject footer into saved page
+  const orig = document.getElementById('mainFooter');
+  const slot = document.getElementById('savedFooter');
+  if (orig && slot && !slot.innerHTML) slot.innerHTML = orig.outerHTML.replace('style="display:none;"','').replace('id="mainFooter"','id="savedFooterClone"');
+  document.body.style.overflow = 'hidden';
+  const page = document.getElementById('bnSavedPage');
+  page.style.display = 'block';
+  const grid = document.getElementById('bnSavedGrid');
+  const empty = document.getElementById('bnSavedEmpty');
+  if (!myList.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = myList.map(item => {
+      const title = item.title || item.name || '';
+      const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
+      const regIdx = registerItem(item);
+      return `
+        <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx}))">
+          ${poster
+            ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
+            : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
+          ${item._vj ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
+          <div class="category-card-label">${esc(title)}</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+function bnInnerTab(tab) {
+  document.querySelectorAll('.bn-inner-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('bit-' + tab)?.classList.add('active');
+  document.getElementById('bnGenreList').style.display = tab === 'genre' ? 'block' : 'none';
+  document.getElementById('bnVjList').style.display  = tab === 'vj'    ? 'block' : 'none';
+  if (tab === 'vj') bnBuildVJList();
+}
+
+function bnBuildGenreList() {
+  const genreMap = window._genreMap || {};
+  const GENRE_NAMES = {
+    28:'Action', 12:'Adventure', 16:'Animation', 35:'Comedy', 80:'Crime',
+    99:'Documentary', 18:'Drama', 10751:'Family', 14:'Fantasy', 36:'History',
+    27:'Horror', 10402:'Music', 9648:'Mystery', 10749:'Romance', 878:'Sci-Fi',
+    53:'Thriller', 10752:'War', 37:'Western', 10759:'Action & Adventure',
+    10762:'Kids', 10765:'Sci-Fi & Fantasy', 10768:'War & Politics'
+  };
+  const usedGenres = Object.keys(genreMap).filter(g => genreMap[g]?.length > 0);
+  const el = document.getElementById('bnGenreList');
+  if (!usedGenres.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">No genres yet</div>'; return; }
+  el.innerHTML = usedGenres.map(gid => {
+    const name = GENRE_NAMES[gid] || `Genre ${gid}`;
+    const count = genreMap[gid].length;
+    return `<div class="bn-list-item" onclick="bnOpenGenre('${gid}','${name}')">
+      <div class="bn-list-icon">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+      </div>
+      <span class="bn-list-name">${name}</span>
+      <span class="bn-list-count">${count} titles</span>
+    </div>`;
+  }).join('');
+}
+
+function bnBuildVJList() {
+  const cards = window._allCards || [];
+  const vjMap = {};
+  cards.forEach(c => { if (c._vj) { vjMap[c._vj] = (vjMap[c._vj] || 0) + 1; } });
+  const vjs = Object.keys(vjMap).sort();
+  const el = document.getElementById('bnVjList');
+  if (!vjs.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">No VJs yet</div>'; return; }
+  el.innerHTML = vjs.map(vj => `
+    <div class="bn-list-item" onclick="bnOpenVJ('${esc(vj)}')">
+      <div class="bn-list-icon vj-icon">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <span class="bn-list-name">${esc(vj)}</span>
+      <span class="bn-list-count">${vjMap[vj]} titles</span>
+    </div>`).join('');
+}
+
+function bnOpenGenre(gid, name) {
+  const items = (window._genreMap || {})[gid] || [];
+  // close categories page first, then open category overlay
+  document.getElementById('bnCategoriesPage').style.display = 'none';
+  document.body.style.overflow = '';
+  openCategory(name, items);
+}
+
+function bnOpenVJ(vj) {
+  const items = (window._allCards || []).filter(c => c._vj === vj);
+  document.getElementById('bnCategoriesPage').style.display = 'none';
+  document.body.style.overflow = '';
+  openCategory(vj, items);
+}
+
+// When categoryOverlay closes, go back to categories page
+const _origCloseCategory = closeCategory;
+closeCategory = function() {
+  _origCloseCategory();
+  if (_bnActive === 'categories') {
+    bnOpenCategories();
+  }
+};
+
 </script>
 <!-- PAYWALL OVERLAY -->
 <div class="modal-overlay" id="paywallModal" style="display:none;align-items:flex-start;overflow-y:auto;padding:2rem 0;">
@@ -3021,6 +3261,43 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
   <div class="category-grid" id="categoryGrid"></div>
 </div>
+
+<!-- CATEGORIES PAGE -->
+<div class="bn-page" id="bnCategoriesPage" style="display:none;">
+  <div class="bn-page-header">
+    <div class="bn-page-title">Browse</div>
+    <button class="nav-search-btn" onclick="openSearch()" style="background:none;border:none;color:var(--white);cursor:pointer;padding:0.4rem;">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+  </div>
+  <div class="bn-tabs-row">
+    <button class="bn-inner-tab active" id="bit-genre" onclick="bnInnerTab('genre')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+      Genre
+    </button>
+    <button class="bn-inner-tab" id="bit-vj" onclick="bnInnerTab('vj')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Veejays
+    </button>
+  </div>
+  <div id="bnGenreList" class="bn-list"></div>
+  <div id="bnVjList" class="bn-list" style="display:none;"></div>
+</div>
+
+<!-- SAVED PAGE -->
+<div class="bn-page" id="bnSavedPage" style="display:none;">
+  <div class="bn-page-header">
+    <div class="bn-page-title">My List</div>
+  </div>
+  <div id="bnSavedGrid" class="category-grid" style="padding:1rem;"></div>
+  <div id="bnSavedEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
+    <div style="font-size:3rem;margin-bottom:1rem;">🎬</div>
+    <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing saved yet</div>
+    <div style="font-size:0.85rem;">Tap the + on any movie or series to save it here</div>
+  </div>
+  <div id="savedFooter"></div>
+</div>
+
 
 </body>
 </html>
