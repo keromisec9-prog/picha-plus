@@ -599,8 +599,8 @@
       display: none;
       position: fixed;
       inset: 0;
+      z-index: 900;
       background: rgba(0,0,0,0.85);
-      z-index: 600;
       align-items: center;
       justify-content: center;
       padding: 1rem;
@@ -2253,6 +2253,12 @@ function createCard(item, showProgress = false) {
 
 // ── INFO MODAL ────────────────────────────────────────────────────────────────
 async function showInfo(item) {
+  // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
+  if (item._isOwned && item.media_type === 'tv') {
+    // Find matching entry in _seriesList by tmdbId
+    const idx = (window._seriesList || []).findIndex(s => String(s.tmdbId) === String(item.id));
+    if (idx !== -1) { showSeries(idx); return; }
+  }
   currentInfoItem = item;
   const title = item.title || item.name || '';
   const type = item.media_type === 'tv' || item.first_air_date ? 'tv' : 'movie';
@@ -2317,7 +2323,13 @@ async function showInfo(item) {
 
 function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
-  document.body.style.overflow = '';
+  // Only clear scroll lock if nothing is open behind the info modal
+  const catOverlayOpen = document.getElementById('categoryOverlay')?.classList.contains('active');
+  const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
+  const bnSavedOpen = document.getElementById('bnSavedPage')?.style.display !== 'none';
+  if (!catOverlayOpen && !bnCatOpen && !bnSavedOpen) {
+    document.body.style.overflow = '';
+  }
   currentInfoItem = null;
 }
 
@@ -2837,7 +2849,7 @@ function showSeries(idx) {
         <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
       </div>
       <div style="flex:1;">
-        <div style="font-size:0.85rem;font-weight:500;">${ep.ep} — ${ep.title}</div>
+        <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
       </div>
     </div>`).join('');
 
@@ -2847,7 +2859,12 @@ function showSeries(idx) {
 
 function closeSeries() {
   document.getElementById('seriesModal').classList.remove('active');
-  document.body.style.overflow = '';
+  const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
+  const bnSavedOpen = document.getElementById('bnSavedPage')?.style.display !== 'none';
+  const catOverlayOpen = document.getElementById('categoryOverlay')?.classList.contains('active');
+  if (!bnCatOpen && !bnSavedOpen && !catOverlayOpen) {
+    document.body.style.overflow = '';
+  }
   currentSeries = null;
 }
 
@@ -3030,10 +3047,7 @@ function closeCategory() {
 }
 
 function openInfoFromCategory(item) {
-  // Close the category overlay first, then open info modal cleanly
-  document.getElementById('categoryOverlay').classList.remove('active');
-  // Small delay so the overlay transition doesn't fight the modal
-  setTimeout(() => showInfo(item), 80);
+  showInfo(item); // open on top of whatever is currently visible
 }
 
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
@@ -3132,7 +3146,16 @@ function bnBuildGenreList() {
   const usedGenres = Object.keys(genreMap).filter(g => genreMap[g]?.length > 0);
   const el = document.getElementById('bnGenreList');
   if (!usedGenres.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">No genres yet</div>'; return; }
-  el.innerHTML = usedGenres.map(gid => {
+  // Series virtual genre
+  const seriesItems = (window._allCards || []).filter(c => c.media_type === 'tv');
+  const seriesEntry = seriesItems.length ? `<div class="bn-list-item" onclick="bnOpenSeriesGenre()">
+      <div class="bn-list-icon">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
+      </div>
+      <span class="bn-list-name">Series</span>
+      <span class="bn-list-count">${seriesItems.length} titles</span>
+    </div>` : '';
+  el.innerHTML = seriesEntry + usedGenres.map(gid => {
     const name = GENRE_NAMES[gid] || `Genre ${gid}`;
     const count = genreMap[gid].length;
     return `<div class="bn-list-item" onclick="bnOpenGenre('${gid}','${name}')">
@@ -3175,6 +3198,13 @@ function bnOpenVJ(vj) {
   document.getElementById('bnCategoriesPage').style.display = 'none';
   document.body.style.overflow = '';
   openCategory(vj, items);
+}
+
+function bnOpenSeriesGenre() {
+  const items = (window._allCards || []).filter(c => c.media_type === 'tv');
+  document.getElementById('bnCategoriesPage').style.display = 'none';
+  document.body.style.overflow = '';
+  openCategory('Series', items);
 }
 
 // When categoryOverlay closes, go back to categories page
