@@ -2335,6 +2335,14 @@ function closeInfo() {
 
 function playFromInfo() {
   const item = currentInfoItem;
+  // Remember what was open so closePlayer() can restore it
+  _playerReturnState = {
+    tab: _bnActive,
+    categoryOpen: document.getElementById('categoryOverlay')?.classList.contains('active'),
+    categoryName: _categoryName,
+    categoryItems: _categoryItems,
+    item: item,
+  };
   // Close everything behind before playing
   closeInfo();
   document.getElementById('categoryOverlay')?.classList.remove('active');
@@ -2468,6 +2476,8 @@ function formatTime(s) {
   return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
 }
 
+let _playerReturnState = null;
+
 function closePlayer() {
   const video = document.getElementById('player');
   video.pause();
@@ -2477,6 +2487,26 @@ function closePlayer() {
   document.getElementById('playerModal').classList.remove('active');
   document.body.style.overflow = '';
   renderContinueWatching(); // refresh continue watching row after closing
+
+  // Restore the screen the user was on before playing
+  const ret = _playerReturnState;
+  _playerReturnState = null;
+  if (ret) {
+    // Sync bottom nav highlight
+    _bnActive = ret.tab;
+    document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('bn-' + ret.tab)?.classList.add('active');
+
+    if (ret.categoryOpen && ret.categoryName) {
+      // Reopen the movie-grid overlay (e.g. VJ Ice P grid), then reopen info on top
+      openCategory(ret.categoryName, ret.categoryItems);
+      if (ret.item) setTimeout(() => showInfo(ret.item), 50);
+    } else if (ret.tab === 'categories') {
+      bnOpenCategories();
+    } else if (ret.tab === 'saved') {
+      bnOpenSaved();
+    }
+  }
 }
 
 // ── MY LIST ───────────────────────────────────────────────────────────────────
