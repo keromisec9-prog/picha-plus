@@ -728,7 +728,7 @@
       position: fixed;
       inset: 0;
       background: #000;
-      z-index: 700;
+      z-index: 1000;
       flex-direction: column;
     }
     .player-modal.active { display: flex; }
@@ -2335,7 +2335,12 @@ function closeInfo() {
 
 function playFromInfo() {
   const item = currentInfoItem;
+  // Close everything behind before playing
   closeInfo();
+  document.getElementById('categoryOverlay')?.classList.remove('active');
+  document.getElementById('bnCategoriesPage').style.display = 'none';
+  document.getElementById('bnSavedPage').style.display = 'none';
+  document.body.style.overflow = '';
   if (item) handleCardPlay(item);
 }
 
