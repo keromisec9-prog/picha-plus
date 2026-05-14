@@ -3097,6 +3097,9 @@ function bnGo(tab) {
 function bnOpenCategories() {
   document.body.style.overflow = 'hidden';
   document.getElementById('bnCategoriesPage').style.display = 'block';
+  // always keep the tab highlight in sync
+  document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('bn-categories')?.classList.add('active');
   bnBuildGenreList();
 }
 
@@ -3300,8 +3303,7 @@ closeCategory = function() {
 <!-- CATEGORIES PAGE -->
 <div class="bn-page" id="bnCategoriesPage" style="display:none;">
   <div class="bn-page-header">
-    <div class="bn-page-title">Browse</div>
-    <button class="nav-search-btn" onclick="openSearch()" style="background:none;border:none;color:var(--white);cursor:pointer;padding:0.4rem;">
+    <button class="nav-search-btn" onclick="openSearch()" style="background:none;border:none;color:var(--white);cursor:pointer;padding:0.4rem;margin-left:auto;">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     </button>
   </div>
