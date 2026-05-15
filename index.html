@@ -4,6 +4,92 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Picha+</title>
+  <script>
+  (function() {
+    'use strict';
+
+    // ── 1. Block right-click context menu ──
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+    // ── 2. Block common DevTools keyboard shortcuts ──
+    document.addEventListener('keydown', function(e) {
+      // F12
+      if (e.key === 'F12') { e.preventDefault(); return false; }
+      // Ctrl+Shift+I / J / C / K / U
+      if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c','K','k'].includes(e.key)) {
+        e.preventDefault(); return false;
+      }
+      // Ctrl+U (view source)
+      if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+        e.preventDefault(); return false;
+      }
+      // Cmd+Option+I / J / C (macOS)
+      if (e.metaKey && e.altKey && ['I','i','J','j','C','c'].includes(e.key)) {
+        e.preventDefault(); return false;
+      }
+    }, true);
+
+    // ── 3. DevTools open detection (size + debugger combo) ──
+    var _dt = false;
+    var _dtCount = 0;
+
+    function _checkDevTools() {
+      var widthDiff  = window.outerWidth  - window.innerWidth;
+      var heightDiff = window.outerHeight - window.innerHeight;
+      var open = widthDiff > 160 || heightDiff > 160;
+
+      if (open && !_dt) {
+        _dt = true;
+        _onDevToolsOpen();
+      } else if (!open && _dt) {
+        _dt = false;
+      }
+    }
+
+    function _onDevToolsOpen() {
+      // Clear the page body — don't redirect so it's not obvious what triggered it
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f0f0f;color:#808080;font-family:sans-serif;font-size:0.9rem;">Something went wrong. Please refresh the page.</div>';
+      // Kill all intervals/timeouts by flooding the id space
+      var id = setTimeout(function(){}, 0);
+      while (id--) clearTimeout(id);
+    }
+
+    setInterval(_checkDevTools, 800);
+
+    // ── 4. Continuous debugger trap ──
+    // When DevTools is open, setInterval + debugger creates a pause loop.
+    // Users can disable it via "Deactivate breakpoints" but it's friction.
+    var _dbg = setInterval(function() {
+      (function() {
+        try { (function _f(){ _f.toString = function(){ _dbgDetected(); }; debugger; }()); } catch(e){}
+      })();
+    }, 3000);
+
+    var _dbgOpen = false;
+    function _dbgDetected() {
+      if (!_dbgOpen) {
+        _dbgOpen = true;
+        _onDevToolsOpen();
+      }
+    }
+
+    // ── 5. Console method override — kills console use silently ──
+    try {
+      var _c = ['log','warn','error','info','debug','table','dir','dirxml','group','groupEnd','time','timeEnd','assert','profile','profileEnd'];
+      _c.forEach(function(m) {
+        var orig = console[m].bind(console);
+        Object.defineProperty(console, m, {
+          get: function() {
+            // If someone reads console.log, they're probably in DevTools
+            _checkDevTools();
+            return function(){};
+          }
+        });
+      });
+    } catch(e) {}
+
+  })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css"/>
   <style>
