@@ -816,6 +816,23 @@
     .shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }
     .shaka-current-selection-span { color: var(--gold) !important; }
 
+    /* Nav cast button */
+    .nav-cast-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      padding: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-cast-btn:hover { color: var(--white); }
+    .nav-cast-btn.casting { color: var(--gold); }
+    .nav-cast-btn.casting svg { filter: drop-shadow(0 0 4px rgba(229,185,60,0.8)); }
+
     /* Cast button gold tint + active glow */
     .shaka-cast-button { color: var(--gold) !important; }
     .shaka-cast-button[aria-pressed="true"] {
@@ -1499,6 +1516,12 @@ function saveProgress(id, pos, dur) {
   </ul>
 
   <div class="nav-right">
+    <button class="nav-cast-btn" id="navCastBtn" onclick="startCastSession()" title="Cast to TV" style="display:none;">
+      <!-- Cast icon (same as Google Cast standard icon) -->
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5c-1.1 0-2 .9-2 2v3h2v-3h14v10h-5v2h5c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-18 3v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11z"/>
+      </svg>
+    </button>
     <button class="nav-search-btn" onclick="openSearch()">
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -1838,14 +1861,46 @@ if (!console.warn)  console.warn  = console.log;
 <!-- Cast API must be initialized BEFORE the SDK loads -->
 <script>
   window['__onGCastApiAvailable'] = function(isAvailable) {
-    if (isAvailable) {
-      cast.framework.CastContext.getInstance().setOptions({
-        receiverApplicationId: 'CC1AD845',
-        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-        resumeSavedSession: true,
+    if (!isAvailable) return;
+    const ctx = cast.framework.CastContext.getInstance();
+    ctx.setOptions({
+      receiverApplicationId: 'CC1AD845',
+      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+      resumeSavedSession: true,
+    });
+
+    // Show the nav cast button now that Cast is available
+    const castBtn = document.getElementById('navCastBtn');
+    if (castBtn) castBtn.style.display = 'flex';
+
+    // Update button appearance on session state changes
+    ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, function(e) {
+      const castBtn = document.getElementById('navCastBtn');
+      if (!castBtn) return;
+      const active = e.sessionState === cast.framework.SessionState.SESSION_STARTED
+                  || e.sessionState === cast.framework.SessionState.SESSION_RESUMED;
+      castBtn.classList.toggle('casting', active);
+      castBtn.title = active ? 'Casting to TV — tap to stop' : 'Cast to TV';
+    });
+  };
+
+  function startCastSession() {
+    if (typeof cast === 'undefined' || typeof chrome === 'undefined') {
+      alert('Cast not available. Make sure you're on Chrome or a Cast-enabled browser.');
+      return;
+    }
+    const ctx = cast.framework.CastContext.getInstance();
+    const state = ctx.getSessionState();
+    if (state === cast.framework.SessionState.SESSION_STARTED ||
+        state === cast.framework.SessionState.SESSION_RESUMED) {
+      // Already casting — end the session
+      ctx.endCurrentSession(true);
+    } else {
+      ctx.requestSession().catch(err => {
+        if (err !== 'cancel') console.warn('Cast request failed:', err);
       });
     }
-  };
+  }
 </script>
 <!-- Google Cast SDK — must load before Shaka -->
 <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
@@ -2842,8 +2897,8 @@ function loadSeries(catalog) {
   const row = document.getElementById('seriesRow');
   section.style.display = 'block';
   // Store for "All >" category view
-  window._seriesItems = seriesData.map(s => ({
-    id: s.title, title: s.title, poster: s.poster, _vj: s.vj
+  window._seriesItems = seriesData.map((s, idx) => ({
+    id: s.title, title: s.title, poster: s.poster, _vj: s.vj, _seriesIdx: idx
   }));
 
   row.innerHTML = seriesData.map((s, idx) => {
@@ -3091,7 +3146,12 @@ function closeCategory() {
 }
 
 function openInfoFromCategory(item) {
-  showInfo(item); // open on top of whatever is currently visible
+  // If this item is a series (has _seriesIdx), open the series modal directly
+  if (item._seriesIdx !== undefined) {
+    showSeries(item._seriesIdx);
+    return;
+  }
+  showInfo(item);
 }
 
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
@@ -3248,10 +3308,13 @@ function bnOpenVJ(vj) {
 }
 
 function bnOpenSeriesGenre() {
-  const items = (window._allCards || []).filter(c => c.media_type === 'tv');
+  // Use _seriesItems so _seriesIdx is preserved and tapping opens the series modal
+  const items = window._seriesItems && window._seriesItems.length
+    ? window._seriesItems
+    : (window._allCards || []).filter(c => c.media_type === 'tv');
   document.getElementById('bnCategoriesPage').style.display = 'none';
   document.body.style.overflow = '';
-  openCategory('Series', items);
+  openCategory('Series on Picha+', items);
 }
 
 // When categoryOverlay closes, go back to categories page
