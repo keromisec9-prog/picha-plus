@@ -2335,12 +2335,8 @@ function closeInfo() {
 
 function playFromInfo() {
   const item = currentInfoItem;
-  // Close everything behind before playing
+  // Close only the info modal; handleCardPlay will snapshot and preserve the pages behind
   closeInfo();
-  document.getElementById('categoryOverlay')?.classList.remove('active');
-  document.getElementById('bnCategoriesPage').style.display = 'none';
-  document.getElementById('bnSavedPage').style.display = 'none';
-  document.body.style.overflow = '';
   if (item) handleCardPlay(item);
 }
 
@@ -2361,6 +2357,14 @@ async function handleCardPlay(item) {
   if (!session.isSubscribed()) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
 
   const title = item.title || item.name || '';
+
+  // Snapshot current UI state so closePlayer() can restore it
+  _playerReturnState = {
+    catOverlay: document.getElementById('categoryOverlay')?.classList.contains('active') || false,
+    bnCatOpen:  document.getElementById('bnCategoriesPage')?.style.display !== 'none',
+    bnSavedOpen: document.getElementById('bnSavedPage')?.style.display !== 'none',
+  };
+
   document.getElementById('playerTitle').textContent = title;
   document.getElementById('playerModal').classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -2468,6 +2472,9 @@ function formatTime(s) {
   return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
 }
 
+// Track what was open before the player so we can restore it on back
+let _playerReturnState = null;
+
 function closePlayer() {
   const video = document.getElementById('player');
   video.pause();
@@ -2475,7 +2482,29 @@ function closePlayer() {
   if (shakaPlayer) { try { shakaPlayer.destroy();  } catch(e){} shakaPlayer = null; }
   video.src = '';
   document.getElementById('playerModal').classList.remove('active');
-  document.body.style.overflow = '';
+
+  // Restore whatever was open before the player
+  if (_playerReturnState) {
+    const { catOverlay, bnCatOpen, bnSavedOpen } = _playerReturnState;
+    _playerReturnState = null;
+    if (catOverlay) {
+      document.getElementById('categoryOverlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } else if (bnCatOpen) {
+      document.getElementById('bnCategoriesPage').style.display = 'block';
+      document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('bn-categories')?.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } else if (bnSavedOpen) {
+      document.getElementById('bnSavedPage').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  } else {
+    document.body.style.overflow = '';
+  }
+
   renderContinueWatching(); // refresh continue watching row after closing
 }
 
@@ -2745,7 +2774,8 @@ function handleSubscribeCTA() {
 // ── PAYMENT ───────────────────────────────────────────────────────────────────
 const PESAPAL_BASE = 'https://pay.pesapal.com/v3';
 const PLANS = {
-  daily:     { amount: 2000,   currency: 'UGX', days: 1,   label: 'Daily Pass — UGX 2,000' },
+  daily:     { amount: 1000,   currency: 'UGX', days: 1,   label: 'Daily Pass — UGX 1,000' },
+  weekly:    { amount: 5000,   currency: 'UGX', days: 7,   label: 'Weekly — UGX 5,000' },
   monthly:   { amount: 15000,  currency: 'UGX', days: 30,  label: 'Monthly — UGX 15,000' },
   quarterly: { amount: 60000,  currency: 'UGX', days: 90,  label: 'Quarterly — UGX 60,000' },
   yearly:    { amount: 120000, currency: 'UGX', days: 365, label: 'Yearly — UGX 120,000' },
@@ -2758,7 +2788,8 @@ async function startPayment(plan) {
   closePaywall();
 
   const labels = {
-    daily: 'Daily Pass — UGX 2,000',
+    daily: 'Daily Pass — UGX 1,000',
+    weekly: 'Weekly — UGX 5,000',
     monthly: 'Monthly — UGX 15,000',
     quarterly: 'Quarterly — UGX 60,000',
     yearly: 'Yearly — UGX 120,000',
@@ -2882,6 +2913,14 @@ async function playEpisode(epIndex) {
   if (!ep) return;
 
   document.getElementById('playerTitle').textContent = `${s.title} — ${ep.ep}`;
+
+  // Snapshot current UI state so closePlayer() can restore it
+  _playerReturnState = {
+    catOverlay: document.getElementById('categoryOverlay')?.classList.contains('active') || false,
+    bnCatOpen:  document.getElementById('bnCategoriesPage')?.style.display !== 'none',
+    bnSavedOpen: document.getElementById('bnSavedPage')?.style.display !== 'none',
+  };
+
   closeSeries();
   document.getElementById('playerModal').classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -3237,11 +3276,23 @@ closeCategory = function() {
     <div class="plans-grid">
       <div class="plan-card" onclick="startPayment('daily')">
         <div class="plan-name">Daily</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 1,000</div>
         <div class="plan-period">24 hour access</div>
         <ul class="plan-features">
           <li>All movies & series</li>
           <li>HD streaming</li>
+          <li>No ads</li>
+        </ul>
+        <button class="plan-btn">Get Started</button>
+      </div>
+      <div class="plan-card featured" onclick="startPayment('weekly')">
+        <div class="plan-name">Weekly</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 5,000</div>
+        <div class="plan-period">7 days access</div>
+        <ul class="plan-features">
+          <li>All movies & series</li>
+          <li>HD streaming</li>
+          <li>Downloads</li>
           <li>No ads</li>
         </ul>
         <button class="plan-btn">Get Started</button>
@@ -3255,31 +3306,6 @@ closeCategory = function() {
           <li>HD streaming</li>
           <li>Downloads</li>
           <li>Cancel anytime</li>
-        </ul>
-        <button class="plan-btn">Get Started</button>
-      </div>
-      <div class="plan-card featured" onclick="startPayment('quarterly')">
-        <div class="plan-name">Quarterly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 60,000</div>
-        <div class="plan-period">3 months · save 25%</div>
-        <ul class="plan-features">
-          <li>All movies & series</li>
-          <li>Full HD streaming</li>
-          <li>Downloads</li>
-          <li>2 devices</li>
-        </ul>
-        <button class="plan-btn">Get Started</button>
-      </div>
-      <div class="plan-card" onclick="startPayment('yearly')">
-        <div class="plan-name">Yearly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 120,000</div>
-        <div class="plan-period">per year · save 33%</div>
-        <ul class="plan-features">
-          <li>All movies & series</li>
-          <li>Full HD streaming</li>
-          <li>Downloads</li>
-          <li>3 devices</li>
-          <li>Early access</li>
         </ul>
         <button class="plan-btn">Get Started</button>
       </div>
