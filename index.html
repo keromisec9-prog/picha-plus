@@ -2516,60 +2516,125 @@ function toggleMyListFromInfo() {
 }
 
 // ── DOWNLOAD ──────────────────────────────────────────────────────────────────
+// ── DOWNLOADS ────────────────────────────────────────────────────────────────
+const _dlRegistry = JSON.parse(localStorage.getItem('pichaplus_downloads') || '[]');
+function saveDownloads() { localStorage.setItem('pichaplus_downloads', JSON.stringify(_dlRegistry)); }
+
+function _dlGuard() {
+  if (!session.isLoggedIn()) { openSignin(); return false; }
+  if (!session.isSubscribed()) { showToast('Subscribe to download 🔒', 'error'); showPaywall(); return false; }
+  if (!session.canDownload()) {
+    showToast('📥 Downloads need Weekly or higher plan — upgrade and download unlimited!', 'error');
+    setTimeout(() => showPaywall(), 1800);
+    return false;
+  }
+  return true;
+}
+
+async function _doDownload(endpoint, filename, meta) {
+  if (!_dlGuard()) return;
+
+  // Add to registry immediately so it shows in Saved tab
+  const dlId = Date.now();
+  const record = { id: dlId, filename, title: meta.title, poster: meta.poster, progress: 0, done: false, failed: false, ts: dlId };
+  _dlRegistry.unshift(record);
+  saveDownloads();
+  renderSavedDownloads();
+
+  // Show toast with progress bar
+  showToast('Starting download...', '');
+
+  try {
+    const res = await fetch(endpoint, { headers: { 'X-Session-Token': session.token } });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      record.failed = true; saveDownloads(); renderSavedDownloads();
+      showToast(err.error || 'Download failed', 'error'); return;
+    }
+
+    const total = parseInt(res.headers.get('Content-Length') || '0');
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      record.progress = total ? Math.round((received / total) * 100) : -1;
+      saveDownloads();
+      renderSavedDownloads();
+      // Update toast
+      const pct = total ? record.progress + '%' : (Math.round(received / 1048576) + ' MB');
+      showToast('Downloading ' + meta.title + '… ' + pct, '');
+    }
+
+    // Combine chunks and trigger save
+    const blob = new Blob(chunks, { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+    record.progress = 100;
+    record.done = true;
+    saveDownloads();
+    renderSavedDownloads();
+    showToast(meta.title + ' downloaded! ✅', 'gold');
+
+  } catch (e) {
+    record.failed = true; saveDownloads(); renderSavedDownloads();
+    showToast('Download failed. Try again.', 'error');
+  }
+}
+
 async function downloadFromInfo() {
   const item = currentInfoItem;
   if (!item) return;
-  if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { showToast('Subscribe to download 🔒', 'error'); showPaywall(); return; }
-  if (!session.canDownload()) {
-    showToast('📥 Downloads need Weekly or higher plan — upgrade and download unlimited!', 'error');
-    setTimeout(() => showPaywall(), 1800);
-    return;
-  }
-  showToast('Preparing download...', '');
-  try {
-    const res = await fetch(`${API}/download?id=${item.id}`, { headers: { 'X-Session-Token': session.token } });
-    const data = await res.json();
-    if (data.url) {
-      const a = document.createElement('a');
-      a.href = data.url;
-      a.download = (data.title || item.title || item.name || 'video') + '.mp4';
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast('Download started! ✅', 'gold');
-    } else {
-      showToast(data.error || 'Download unavailable', 'error');
-    }
-  } catch { showToast('Download failed. Try again.', 'error'); }
+  const fname = (item.title || item.name || 'video').replace(/[^a-z0-9 ]/gi, '_') + '.mp4';
+  await _doDownload(`${API}/download?id=${item.id}`, fname, { title: item.title || item.name, poster: item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.poster_path : '' });
 }
 
 async function downloadEpisode(seriesId, epIndex) {
-  if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { showToast('Subscribe to download 🔒', 'error'); showPaywall(); return; }
-  if (!session.canDownload()) {
-    showToast('📥 Downloads need Weekly or higher plan — upgrade and download unlimited!', 'error');
-    setTimeout(() => showPaywall(), 1800);
-    return;
-  }
-  showToast('Preparing download...', '');
-  try {
-    const res = await fetch(`${API}/download-episode?seriesId=${seriesId}&ep=${epIndex}`, { headers: { 'X-Session-Token': session.token } });
-    const data = await res.json();
-    if (data.url) {
-      const a = document.createElement('a');
-      a.href = data.url;
-      a.download = 'episode_' + (epIndex + 1) + '.mp4';
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast('Download started! ✅', 'gold');
-    } else {
-      showToast(data.error || 'Episode download unavailable', 'error');
-    }
-  } catch { showToast('Download failed. Try again.', 'error'); }
+  const s = window._seriesList?.find(s => String(s.tmdbId) === String(seriesId));
+  const ep = s?.episodes?.[epIndex];
+  const title = (s?.title || 'Series') + ' E' + (epIndex + 1);
+  const fname = title.replace(/[^a-z0-9 ]/gi, '_') + '.mp4';
+  await _doDownload(`${API}/download-episode?seriesId=${seriesId}&ep=${epIndex}`, fname, { title, poster: s?.poster || '' });
+}
+
+function renderSavedDownloads() {
+  const container = document.getElementById('downloadsSection');
+  if (!container) return;
+  if (!_dlRegistry.length) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  const html = _dlRegistry.map(d => `
+    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0;border-bottom:1px solid #222;">
+      ${d.poster ? `<img src="${d.poster}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;">` : `<div style="width:50px;height:70px;background:#222;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🎬</div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title || d.filename}</div>
+        ${d.done ? `<div style="font-size:0.75rem;color:var(--gold);">✅ Downloaded</div>` :
+          d.failed ? `<div style="font-size:0.75rem;color:#f44;">❌ Failed</div>` :
+          `<div style="margin-top:4px;">
+            <div style="height:4px;background:#333;border-radius:2px;overflow:hidden;">
+              <div style="height:100%;background:var(--gold);border-radius:2px;width:${d.progress < 0 ? 40 : d.progress}%;transition:width 0.3s;"></div>
+            </div>
+            <div style="font-size:0.7rem;color:var(--gray);margin-top:2px;">${d.progress < 0 ? 'Downloading…' : d.progress + '%'}</div>
+          </div>`}
+      </div>
+      <button onclick="removeDownload(${d.id})" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:1.1rem;padding:0.3rem;">✕</button>
+    </div>`).join('');
+  container.querySelector('#downloadsList').innerHTML = html;
+}
+
+function removeDownload(id) {
+  const idx = _dlRegistry.findIndex(d => d.id === id);
+  if (idx !== -1) { _dlRegistry.splice(idx, 1); saveDownloads(); renderSavedDownloads(); }
 }
 
 // ── PLAY ──────────────────────────────────────────────────────────────────────
@@ -3373,6 +3438,7 @@ function bnOpenCategories() {
 }
 
 function bnOpenSaved() {
+  renderSavedDownloads();
   // inject footer into saved page
   const orig = document.getElementById('mainFooter');
   const slot = document.getElementById('savedFooter');
@@ -3583,9 +3649,18 @@ closeCategory = function() {
 <!-- SAVED PAGE -->
 <div class="bn-page" id="bnSavedPage" style="display:none;">
   <div class="bn-page-header">
-    <div class="bn-page-title">My List</div>
+    <div class="bn-page-title">Saved</div>
   </div>
-  <div id="bnSavedGrid" class="category-grid" style="padding:1rem;"></div>
+
+  <!-- Downloads section -->
+  <div id="downloadsSection" style="display:none;padding:0 1rem 1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;padding:1rem 0 0.5rem;">Downloads</div>
+    <div id="downloadsList"></div>
+  </div>
+
+  <!-- My List section -->
+  <div style="font-size:0.75rem;font-weight:700;color:var(--gray);letter-spacing:0.08em;text-transform:uppercase;padding:1rem 1rem 0.5rem;">My List</div>
+  <div id="bnSavedGrid" class="category-grid" style="padding:0 1rem 1rem;"></div>
   <div id="bnSavedEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">🎬</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing saved yet</div>
