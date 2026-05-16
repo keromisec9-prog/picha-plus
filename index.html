@@ -1577,7 +1577,7 @@ const session = {
   },
   canDownload() {
     const plan = this.user?.subscriptionPlan;
-    return this.isSubscribed() && (plan === 'weekly' || plan === 'monthly' || plan === 'quarterly' || plan === 'yearly');
+    return this.isSubscribed() && (plan === 'premium' || plan === 'weekly' || plan === 'monthly' || plan === 'quarterly' || plan === 'yearly');
   },
 };
 
