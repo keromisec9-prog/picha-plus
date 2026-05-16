@@ -1250,7 +1250,7 @@
     /* ── TOAST ── */
     .toast {
       position: fixed;
-      bottom: 1.5rem;
+      bottom: calc(58px + env(safe-area-inset-bottom) + 0.7rem);
       left: 50%;
       transform: translateX(-50%);
       background: #1a1a1a;
@@ -1265,6 +1265,9 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      max-width: calc(100vw - 2rem);
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .toast.gold { border-color: rgba(229,185,60,0.3); }
     .toast.error { border-color: rgba(229,9,20,0.4); }
@@ -2531,21 +2534,34 @@ function _dlGuard() {
   return true;
 }
 
+// Active abort controllers keyed by dlId so pause works
+const _dlAborts = {};
+
 async function _doDownload(endpoint, filename, meta) {
   if (!_dlGuard()) return;
 
-  // Add to registry immediately so it shows in Saved tab
   const dlId = Date.now();
-  const record = { id: dlId, filename, title: meta.title, poster: meta.poster, progress: 0, done: false, failed: false, ts: dlId };
+  // Store endpoint + itemId so retry and play can reuse them
+  const record = {
+    id: dlId, filename, title: meta.title, poster: meta.poster,
+    progress: 0, done: false, failed: false, paused: false, ts: dlId,
+    endpoint, itemId: meta.itemId || null,
+  };
   _dlRegistry.unshift(record);
   saveDownloads();
   renderSavedDownloads();
 
-  // Show toast with progress bar
-  showToast('Starting download...', '');
+  // Show the toast ONCE at start only — user can track progress in Saved tab
+  showToast('Downloading ' + meta.title + '… check Saved for progress', '');
+
+  const abort = new AbortController();
+  _dlAborts[dlId] = abort;
 
   try {
-    const res = await fetch(endpoint, { headers: { 'X-Session-Token': session.token } });
+    const res = await fetch(endpoint, {
+      headers: { 'X-Session-Token': session.token },
+      signal: abort.signal,
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       record.failed = true; saveDownloads(); renderSavedDownloads();
@@ -2564,45 +2580,108 @@ async function _doDownload(endpoint, filename, meta) {
       chunks.push(value);
       received += value.length;
       record.progress = total ? Math.round((received / total) * 100) : -1;
-      // Throttle UI + localStorage updates to every 2 seconds to keep the UI smooth
+      // Throttle DOM + localStorage to every 2s — keeps UI smooth
       const now = Date.now();
       if (now - lastUiUpdate > 2000) {
         lastUiUpdate = now;
         saveDownloads();
         renderSavedDownloads();
-        const pct = total ? record.progress + '%' : (Math.round(received / 1048576) + ' MB');
-        showToast('Downloading ' + meta.title + '… ' + pct, '');
       }
     }
 
-    // Combine chunks and trigger save
+    delete _dlAborts[dlId];
+
+    // Trigger browser save-to-device
     const blob = new Blob(chunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 60000);
 
-    record.progress = 100;
-    record.done = true;
-    saveDownloads();
-    renderSavedDownloads();
-    showToast(meta.title + ' downloaded! ✅', 'gold');
+    record.progress = 100; record.done = true;
+    saveDownloads(); renderSavedDownloads();
+    showToast(meta.title + ' saved to device ✅', 'gold');
 
   } catch (e) {
-    record.failed = true; saveDownloads(); renderSavedDownloads();
-    showToast('Download failed. Try again.', 'error');
+    delete _dlAborts[dlId];
+    if (e.name === 'AbortError') {
+      record.paused = true; record.failed = false;
+    } else {
+      record.failed = true;
+    }
+    saveDownloads(); renderSavedDownloads();
   }
+}
+
+function pauseDownload(dlId) {
+  const ctrl = _dlAborts[dlId];
+  if (ctrl) { ctrl.abort(); }
+  const rec = _dlRegistry.find(d => d.id === dlId);
+  if (rec) { rec.paused = true; saveDownloads(); renderSavedDownloads(); }
+}
+
+async function retryDownload(dlId) {
+  const rec = _dlRegistry.find(d => d.id === dlId);
+  if (!rec || !rec.endpoint) return;
+  // Reset state
+  rec.failed = false; rec.paused = false; rec.progress = 0; rec.done = false;
+  saveDownloads(); renderSavedDownloads();
+  // Re-run the download reusing same record slot
+  const abort = new AbortController();
+  _dlAborts[dlId] = abort;
+  showToast('Retrying ' + rec.title + '…', '');
+  try {
+    const res = await fetch(rec.endpoint, {
+      headers: { 'X-Session-Token': session.token },
+      signal: abort.signal,
+    });
+    if (!res.ok) { rec.failed = true; saveDownloads(); renderSavedDownloads(); showToast('Download failed', 'error'); return; }
+    const total = parseInt(res.headers.get('Content-Length') || '0');
+    const reader = res.body.getReader();
+    const chunks = []; let received = 0; let lastUi = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); received += value.length;
+      rec.progress = total ? Math.round((received / total) * 100) : -1;
+      const now = Date.now();
+      if (now - lastUi > 2000) { lastUi = now; saveDownloads(); renderSavedDownloads(); }
+    }
+    delete _dlAborts[dlId];
+    const blob = new Blob(chunks, { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = rec.filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    rec.progress = 100; rec.done = true;
+    saveDownloads(); renderSavedDownloads();
+    showToast(rec.title + ' saved to device ✅', 'gold');
+  } catch (e) {
+    delete _dlAborts[dlId];
+    rec.failed = true; saveDownloads(); renderSavedDownloads();
+  }
+}
+
+async function playDownloaded(dlId) {
+  const rec = _dlRegistry.find(d => d.id === dlId);
+  if (!rec || !rec.itemId) { showToast('Cannot play — item info missing', 'error'); return; }
+  // Find the catalog item and play it via the normal streaming path
+  const item = (window._allCards || []).find(c => String(c.id) === String(rec.itemId));
+  if (!item) { showToast('Item not found in catalog', 'error'); return; }
+  handleCardPlay(item);
 }
 
 async function downloadFromInfo() {
   const item = currentInfoItem;
   if (!item) return;
   const fname = (item.title || item.name || 'video').replace(/[^a-z0-9 ]/gi, '_') + '.mp4';
-  await _doDownload(`${API}/download?id=${item.id}`, fname, { title: item.title || item.name, poster: item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.poster_path : '' });
+  await _doDownload(`${API}/download?id=${item.id}`, fname, {
+    title: item.title || item.name,
+    poster: item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.poster_path : '',
+    itemId: item.id,
+  });
 }
 
 async function downloadEpisode(seriesId, epIndex) {
@@ -2610,7 +2689,11 @@ async function downloadEpisode(seriesId, epIndex) {
   const ep = s?.episodes?.[epIndex];
   const title = (s?.title || 'Series') + ' E' + (epIndex + 1);
   const fname = title.replace(/[^a-z0-9 ]/gi, '_') + '.mp4';
-  await _doDownload(`${API}/download-episode?seriesId=${seriesId}&ep=${epIndex}`, fname, { title, poster: s?.poster || '' });
+  await _doDownload(`${API}/download-episode?seriesId=${seriesId}&ep=${epIndex}`, fname, {
+    title,
+    poster: s?.poster || '',
+    itemId: seriesId,
+  });
 }
 
 function renderSavedDownloads() {
@@ -2618,22 +2701,65 @@ function renderSavedDownloads() {
   if (!container) return;
   if (!_dlRegistry.length) { container.style.display = 'none'; return; }
   container.style.display = 'block';
-  const html = _dlRegistry.map(d => `
-    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0;border-bottom:1px solid #222;">
-      ${d.poster ? `<img src="${d.poster}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;">` : `<div style="width:50px;height:70px;background:#222;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🎬</div>`}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title || d.filename}</div>
-        ${d.done ? `<div style="font-size:0.75rem;color:var(--gold);">✅ Downloaded</div>` :
-          d.failed ? `<div style="font-size:0.75rem;color:#f44;">❌ Failed</div>` :
-          `<div style="margin-top:4px;">
-            <div style="height:4px;background:#333;border-radius:2px;overflow:hidden;">
-              <div style="height:100%;background:var(--gold);border-radius:2px;width:${d.progress < 0 ? 40 : d.progress}%;transition:width 0.3s;"></div>
-            </div>
-            <div style="font-size:0.7rem;color:var(--gray);margin-top:2px;">${d.progress < 0 ? 'Downloading…' : d.progress + '%'}</div>
-          </div>`}
-      </div>
-      <button onclick="removeDownload(${d.id})" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:1.1rem;padding:0.3rem;">✕</button>
-    </div>`).join('');
+
+  const html = _dlRegistry.map(d => {
+    // Determine action button
+    let actionBtn = '';
+    if (d.done) {
+      actionBtn = `
+        <button onclick="playDownloaded(${d.id})" title="Play"
+          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
+        </button>`;
+    } else if (d.failed || d.paused) {
+      actionBtn = `
+        <button onclick="retryDownload(${d.id})" title="Retry"
+          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(229,185,60,0.15);border:1px solid rgba(229,185,60,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+        </button>`;
+    } else {
+      // In progress — show pause
+      actionBtn = `
+        <button onclick="pauseDownload(${d.id})" title="Pause"
+          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;">
+          <svg width="12" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        </button>`;
+    }
+
+    // Status line
+    let statusLine = '';
+    if (d.done) {
+      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">Saved to device · tap ▶ to stream</div>`;
+    } else if (d.failed) {
+      statusLine = `<div style="font-size:0.72rem;color:#f55;margin-top:2px;">Failed — tap ↺ to retry</div>`;
+    } else if (d.paused) {
+      statusLine = `<div style="font-size:0.72rem;color:var(--gray);margin-top:2px;">Paused — tap ↺ to resume</div>`;
+    } else {
+      const pct = d.progress < 0 ? null : d.progress;
+      statusLine = `
+        <div style="margin-top:5px;">
+          <div style="height:3px;background:#2a2a2a;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;background:var(--gold);border-radius:2px;width:${pct ?? 35}%;transition:width 0.4s;"></div>
+          </div>
+          <div style="font-size:0.7rem;color:var(--gray);margin-top:3px;">${pct !== null ? pct + '%' : 'Downloading…'}</div>
+        </div>`;
+    }
+
+    return `
+      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        ${d.poster
+          ? `<img src="${d.poster}" style="width:46px;height:66px;object-fit:cover;border-radius:4px;flex-shrink:0;">`
+          : `<div style="width:46px;height:66px;background:#1e1e1e;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title || d.filename}</div>
+          ${statusLine}
+        </div>
+        ${actionBtn}
+        <button onclick="removeDownload(${d.id})" title="Remove"
+          style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.25);cursor:pointer;font-size:1rem;padding:0.3rem;line-height:1;">✕</button>
+      </div>`;
+  }).join('');
+
   container.querySelector('#downloadsList').innerHTML = html;
 }
 
