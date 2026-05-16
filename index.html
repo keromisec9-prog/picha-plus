@@ -1557,6 +1557,17 @@ const API = 'https://picha-plus-worker.kerosoftz522.workers.dev';
 const TMDB_KEY = '3ba29e8934b640ae467a31241cd2f0fd';
 const TMDB_IMG = 'https://image.tmdb.org/t/p/';
 
+// ── DEVICE ID (persistent per browser/device) ─────────────────────────────────
+function getDeviceId() {
+  let did = localStorage.getItem('pichaplus_device_id');
+  if (!did) {
+    did = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    localStorage.setItem('pichaplus_device_id', did);
+  }
+  return did;
+}
+const DEVICE_ID = getDeviceId();
+
 const session = {
   token: localStorage.getItem('pichaplus_session'),
   user: JSON.parse(localStorage.getItem('pichaplus_user') || 'null'),
@@ -1575,7 +1586,66 @@ const session = {
     return this.user?.subscribed &&
       (!this.user?.subscriptionExpiry || Date.now() < this.user.subscriptionExpiry);
   },
+  // Weekly+ can download
+  canDownload() {
+    const plan = this.user?.subscriptionPlan;
+    return this.isSubscribed() && (plan === 'weekly' || plan === 'monthly' || plan === 'quarterly' || plan === 'yearly');
+  },
 };
+
+// ── SESSION REVOCATION HANDLER ─────────────────────────────────────────────────
+// Called whenever any API returns 401 session_revoked
+function handleSessionRevoked() {
+  session.clear();
+  updateUI();
+  // Show full-screen takeover so the user knows what happened
+  const overlay = document.createElement('div');
+  overlay.id = 'revokedOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0f0f0f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;';
+  overlay.innerHTML = \`
+    <div style="font-size:3rem;margin-bottom:1.5rem;">📱</div>
+    <h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:1.8rem;letter-spacing:0.05em;color:#fff;margin-bottom:0.8rem;">Signed in elsewhere</h2>
+    <p style="color:#808080;font-size:0.9rem;line-height:1.6;max-width:320px;margin-bottom:2rem;">
+      Your account was signed into on another device. Daily &amp; Weekly plans only allow 1 device at a time.
+      Upgrade to Monthly or higher to use up to 3 devices simultaneously.
+    </p>
+    <button onclick="document.getElementById('revokedOverlay').remove();openSignin();"
+      style="background:var(--gold);color:#000;border:none;padding:0.7rem 2rem;font-family:\'Inter\',sans-serif;font-weight:700;font-size:0.9rem;border-radius:4px;cursor:pointer;margin-bottom:1rem;">
+      Sign In Again
+    </button>
+    <button onclick="document.getElementById('revokedOverlay').remove();showPaywall();"
+      style="background:transparent;color:var(--gold);border:1px solid var(--gold);padding:0.6rem 1.8rem;font-family:\'Inter\',sans-serif;font-weight:600;font-size:0.85rem;border-radius:4px;cursor:pointer;">
+      Upgrade Plan
+    </button>
+  \`;
+  document.body.appendChild(overlay);
+}
+
+// ── AUTHENTICATED FETCH HELPER ─────────────────────────────────────────────────
+// Wraps fetch, injects auth headers, and handles revocation automatically
+async function apiFetch(path, opts = {}) {
+  const headers = { ...(opts.headers || {}) };
+  if (session.token) headers['X-Session-Token'] = session.token;
+  headers['X-Device-Id'] = DEVICE_ID;
+  const res = await fetch(API + path, { ...opts, headers });
+  if (res.status === 401) {
+    const body = await res.clone().json().catch(() => ({}));
+    if (body.error === 'session_revoked') { handleSessionRevoked(); throw new Error('session_revoked'); }
+  }
+  return res;
+}
+
+// ── SESSION HEARTBEAT ─────────────────────────────────────────────────────────
+// Polls /me every 60s so remote revocation is detected quickly
+setInterval(async () => {
+  if (!session.isLoggedIn()) return;
+  try {
+    const res = await apiFetch('/me');
+    if (res.ok) { const u = await res.json(); session.save(session.token, u); updateUI(); }
+  } catch (e) {
+    if (e.message === 'session_revoked') return; // already handled
+  }
+}, 60000);
 
 const myList = JSON.parse(localStorage.getItem('pichaplus_mylist') || '[]');
 const liked = JSON.parse(localStorage.getItem('pichaplus_liked') || '[]');
@@ -1865,6 +1935,10 @@ function saveProgress(id, pos, dur) {
       </div>
       <h2 class="info-title" id="infoTitle"></h2>
       <div class="info-meta" id="infoMeta"></div>
+      <button id="infoDownloadBtn" onclick="downloadFromInfo()" style="display:none;width:100%;margin:0.6rem 0 0;padding:0.75rem;background:#2a2a2a;color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;align-items:center;justify-content:center;gap:0.5rem;transition:background 0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#2a2a2a'">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="M7 12l5 5 5-5"/><line x1="3" y1="21" x2="21" y2="21" stroke-linecap="round"/></svg>
+        Download
+      </button>
       <p class="info-desc" id="infoDesc"></p>
       <p class="info-genres" id="infoGenres"></p>
       <p class="info-narrative" id="infoNarrative" style="font-size:0.75rem;color:var(--gold);margin-top:0.5rem;"></p>
@@ -2069,7 +2143,10 @@ window.addEventListener('load', async () => {
 
   if (sessionToken && userName) {
     try {
-      const res = await fetch(`${API}/me`, { headers: { 'X-Session-Token': sessionToken } });
+      // Use raw fetch here — token is brand new so revocation check doesn't apply
+      const res = await fetch(`${API}/me`, {
+        headers: { 'X-Session-Token': sessionToken, 'X-Device-Id': DEVICE_ID }
+      });
       const user = await res.json();
       session.save(sessionToken, user);
     } catch {
@@ -2107,7 +2184,7 @@ async function loadContent() {
   let catalogData = {};
   try {
     // Fetch your catalog
-    const catalogRes = await fetch(`${API}/videos`);
+    const catalogRes = await apiFetch('/videos');
     catalogData = await catalogRes.json();
     const movies = Object.values(catalogData.movies || {});
     const series = Object.values(catalogData.series || {});
@@ -2460,6 +2537,22 @@ async function showInfo(item) {
     : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`;
   addBtn.style.borderColor = isSaved ? 'var(--gold)' : '';
   addBtn.style.color = isSaved ? 'var(--gold)' : '';
+
+  // Show download button for all owned content
+  const dlBtn = document.getElementById('infoDownloadBtn');
+  if (dlBtn) {
+    if (item._isOwned) {
+      dlBtn.style.display = 'flex';
+      // Hint about plan requirement in button text if user can't download
+      if (session.isLoggedIn() && !session.canDownload()) {
+        dlBtn.innerHTML = \`<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="M7 12l5 5 5-5"/><line x1="3" y1="21" x2="21" y2="21" stroke-linecap="round"/></svg> Download <span style="font-size:0.72rem;opacity:0.6;margin-left:0.3rem;">(Weekly+ only)</span>\`;
+      } else {
+        dlBtn.innerHTML = \`<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="M7 12l5 5 5-5"/><line x1="3" y1="21" x2="21" y2="21" stroke-linecap="round"/></svg> Download\`;
+      }
+    } else {
+      dlBtn.style.display = 'none';
+    }
+  }
 }
 
 function closeInfo() {
@@ -2479,6 +2572,70 @@ function playFromInfo() {
   // Close only the info modal; handleCardPlay will snapshot and preserve the pages behind
   closeInfo();
   if (item) handleCardPlay(item);
+}
+
+// ── DOWNLOAD ──────────────────────────────────────────────────────────────────
+async function downloadFromInfo() {
+  const item = currentInfoItem;
+  if (!item) return;
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  if (!session.isSubscribed()) { showToast('Subscribe to download 🔒', 'error'); showPaywall(); return; }
+  if (!session.canDownload()) {
+    // Cute friendly toast for daily plan users
+    showToast('📥 Downloads need Weekly or higher plan — upgrade and download unlimited!', 'error');
+    setTimeout(() => showPaywall(), 1800);
+    return;
+  }
+
+  showToast('Preparing download...', '');
+  try {
+    const res = await apiFetch(`/download?id=${item.id}`);
+    const data = await res.json();
+    if (data.url) {
+      // Trigger a download via a hidden <a>
+      const a = document.createElement('a');
+      a.href = data.url;
+      a.download = (data.title || item.title || item.name || 'video') + '.mp4';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Download started! ✅', 'gold');
+    } else {
+      showToast(data.error || 'Download unavailable', 'error');
+    }
+  } catch (e) {
+    if (e.message !== 'session_revoked') showToast('Download failed. Try again.', 'error');
+  }
+}
+
+async function downloadEpisode(seriesId, epIndex) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  if (!session.isSubscribed()) { showToast('Subscribe to download 🔒', 'error'); showPaywall(); return; }
+  if (!session.canDownload()) {
+    showToast('📥 Downloads need Weekly or higher plan — upgrade and download unlimited!', 'error');
+    setTimeout(() => showPaywall(), 1800);
+    return;
+  }
+  showToast('Preparing download...', '');
+  try {
+    const res = await apiFetch(`/download-episode?seriesId=${seriesId}&ep=${epIndex}`);
+    const data = await res.json();
+    if (data.url) {
+      const a = document.createElement('a');
+      a.href = data.url;
+      a.download = 'episode_' + (epIndex + 1) + '.mp4';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Download started! ✅', 'gold');
+    } else {
+      showToast(data.error || 'Episode download unavailable', 'error');
+    }
+  } catch (e) {
+    if (e.message !== 'session_revoked') showToast('Download failed. Try again.', 'error');
+  }
 }
 
 function toggleMyListFromInfo() {
@@ -2512,16 +2669,16 @@ async function handleCardPlay(item) {
 
   // Try to get video from backend catalog
   try {
-    const res = await fetch(`${API}/video?id=${item.id}`, {
-      headers: { 'X-Session-Token': session.token }
-    });
+    const res = await apiFetch(`/video?id=${item.id}`);
     const data = await res.json();
 
     if (data.url) {
       initPlayer(data.url, item);
       return;
     }
-  } catch {}
+  } catch (e) {
+    if (e.message === 'session_revoked') return;
+  }
 
   // Fallback: show info that video isn't available yet
   closePlayer();
@@ -2743,10 +2900,12 @@ async function resumeWatching(item) {
   document.getElementById('playerModal').classList.add('active');
   document.body.style.overflow = 'hidden';
   try {
-    const res = await fetch(`${API}/video?id=${item.id}`, { headers: { 'X-Session-Token': session.token } });
+    const res = await apiFetch(`/video?id=${item.id}`);
     const data = await res.json();
     if (data.url) { initPlayer(data.url, item); return; }
-  } catch {}
+  } catch (e) {
+    if (e.message === 'session_revoked') return;
+  }
   closePlayer();
   showToast('Video unavailable', 'error');
 }
@@ -2763,11 +2922,7 @@ function toggleLike(itemId, btn) {
     btn.classList.add('liked');
     btn.querySelector('svg').setAttribute('fill', 'currentColor');
     // Send to server
-    fetch(`${API}/likes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId: itemId }),
-    }).catch(() => {});
+    apiFetch('/likes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId: itemId }) }).catch(() => {});
   }
   saveLiked();
 }
@@ -2875,7 +3030,7 @@ function updateUI() {
 async function refreshUser() {
   if (!session.token) return;
   try {
-    const res = await fetch(`${API}/me`, { headers: { 'X-Session-Token': session.token } });
+    const res = await apiFetch('/me');
     if (res.ok) { session.save(session.token, await res.json()); updateUI(); }
   } catch {}
 }
@@ -2890,7 +3045,7 @@ function closeSignin() {
 }
 
 async function signOut() {
-  if (session.token) fetch(`${API}/auth/logout`, { headers: { 'X-Session-Token': session.token } }).catch(() => {});
+  if (session.token) apiFetch('/auth/logout').catch(() => {});
   session.clear();
   updateUI();
   toggleUserMenu(true);
@@ -2943,11 +3098,7 @@ async function startPayment(plan) {
   document.body.style.overflow = 'hidden';
 
   try {
-    const res = await fetch(`${API}/pay`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
-      body: JSON.stringify({ plan }),
-    });
+    const res = await apiFetch('/pay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
     const data = await res.json();
 
     if (data.redirectUrl) {
@@ -3021,13 +3172,19 @@ function showSeries(idx) {
   // Build episode list
   const epList = document.getElementById('episodeList');
   epList.innerHTML = (s.episodes || []).map((ep, i) => `
-    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;cursor:pointer;" onclick="playEpisode(${i})">
-      <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
+      <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="playEpisode(${i})">
         <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
       </div>
-      <div style="flex:1;">
+      <div style="flex:1;cursor:pointer;" onclick="playEpisode(${i})">
         <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
       </div>
+      <button onclick="downloadEpisode('${s.tmdbId}', ${i})" title="Download episode"
+        style="background:none;border:1px solid rgba(229,185,60,0.4);color:rgba(229,185,60,0.8);border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;"
+        onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+        onmouseout="this.style.borderColor='rgba(229,185,60,0.4)';this.style.color='rgba(229,185,60,0.8)'">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v13M8 12l4 5 4-5"/><line x1="3" y1="21" x2="21" y2="21"/></svg>
+      </button>
     </div>`).join('');
 
   document.getElementById('seriesModal').classList.add('active');
@@ -3067,9 +3224,7 @@ async function playEpisode(epIndex) {
   document.body.style.overflow = 'hidden';
 
   try {
-    const res = await fetch(`${API}/episode?seriesId=${s.tmdbId}&ep=${epIndex}`, {
-      headers: { 'X-Session-Token': session.token }
-    });
+    const res = await apiFetch(`/episode?seriesId=${s.tmdbId}&ep=${epIndex}`);
     const data = await res.json();
     if (data.url) {
       initPlayer(data.url, { id: s.tmdbId, title: `${s.title} ${ep.ep}` });
@@ -3077,9 +3232,11 @@ async function playEpisode(epIndex) {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
     }
-  } catch {
-    closePlayer();
-    showToast('Failed to load episode', 'error');
+  } catch (e) {
+    if (e.message !== 'session_revoked') {
+      closePlayer();
+      showToast('Failed to load episode', 'error');
+    }
   }
 }
 
