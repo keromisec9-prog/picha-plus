@@ -2556,6 +2556,7 @@ async function _doDownload(endpoint, filename, meta) {
     const reader = res.body.getReader();
     const chunks = [];
     let received = 0;
+    let lastUiUpdate = 0;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -2563,11 +2564,15 @@ async function _doDownload(endpoint, filename, meta) {
       chunks.push(value);
       received += value.length;
       record.progress = total ? Math.round((received / total) * 100) : -1;
-      saveDownloads();
-      renderSavedDownloads();
-      // Update toast
-      const pct = total ? record.progress + '%' : (Math.round(received / 1048576) + ' MB');
-      showToast('Downloading ' + meta.title + '… ' + pct, '');
+      // Throttle UI + localStorage updates to every 2 seconds to keep the UI smooth
+      const now = Date.now();
+      if (now - lastUiUpdate > 2000) {
+        lastUiUpdate = now;
+        saveDownloads();
+        renderSavedDownloads();
+        const pct = total ? record.progress + '%' : (Math.round(received / 1048576) + ' MB');
+        showToast('Downloading ' + meta.title + '… ' + pct, '');
+      }
     }
 
     // Combine chunks and trigger save
@@ -2637,6 +2642,48 @@ function removeDownload(id) {
   if (idx !== -1) { _dlRegistry.splice(idx, 1); saveDownloads(); renderSavedDownloads(); }
 }
 
+// ── SESSION CONFLICT ─────────────────────────────────────────────────────────
+function showSessionConflictToast() {
+  // Remove any existing conflict notice
+  const existing = document.getElementById('sessionConflictNotice');
+  if (existing) existing.remove();
+
+  const notice = document.createElement('div');
+  notice.id = 'sessionConflictNotice';
+  notice.style.cssText = `
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    width:calc(100% - 2rem);max-width:420px;
+    background:#1a1a1a;border:1px solid rgba(229,185,60,0.4);
+    border-radius:12px;padding:1.1rem 1.2rem;z-index:9999;
+    box-shadow:0 8px 32px rgba(0,0,0,0.6);
+  `;
+  notice.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:0.8rem;">
+      <div style="font-size:1.4rem;flex-shrink:0;margin-top:0.1rem;">📱</div>
+      <div style="flex:1;">
+        <div style="font-size:0.9rem;font-weight:700;color:#fff;margin-bottom:0.3rem;">Streaming on another device</div>
+        <div style="font-size:0.78rem;color:rgba(255,255,255,0.65);line-height:1.5;margin-bottom:0.8rem;">
+          Your account is already active on another device. Sign in again to start a new session on this device.
+        </div>
+        <div style="display:flex;gap:0.6rem;">
+          <button onclick="document.getElementById('sessionConflictNotice').remove();openSignin();"
+            style="flex:1;background:var(--gold);color:#000;border:none;border-radius:6px;padding:0.55rem 0.8rem;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit;">
+            Sign In Again
+          </button>
+          <button onclick="document.getElementById('sessionConflictNotice').remove();"
+            style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:6px;padding:0.55rem 0.9rem;font-size:0.8rem;cursor:pointer;font-family:inherit;">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(notice);
+
+  // Auto-dismiss after 12 seconds
+  setTimeout(() => { if (notice.parentNode) notice.remove(); }, 12000);
+}
+
 // ── PLAY ──────────────────────────────────────────────────────────────────────
 async function handleCardPlay(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
@@ -2666,12 +2713,20 @@ async function handleCardPlay(item) {
       initPlayer(data.url, item);
       return;
     }
-  } catch {}
 
-  // Fallback: show info that video isn't available yet
-  closePlayer();
-  showInfo(item);
-  showToast('This title is not yet available for streaming', 'error');
+    // Session conflict — another device is already streaming
+    closePlayer();
+    showInfo(item);
+    if (res.status === 403 || (data.error && /session|device|concurrent|another/i.test(data.error))) {
+      showSessionConflictToast();
+    } else {
+      showToast('This title is not yet available for streaming', 'error');
+    }
+  } catch {
+    closePlayer();
+    showInfo(item);
+    showToast('Connection error. Please try again.', 'error');
+  }
 }
 
 async function initPlayer(url, item) {
@@ -2891,9 +2946,16 @@ async function resumeWatching(item) {
     const res = await fetch(`${API}/video?id=${item.id}`, { headers: { 'X-Session-Token': session.token } });
     const data = await res.json();
     if (data.url) { initPlayer(data.url, item); return; }
-  } catch {}
-  closePlayer();
-  showToast('Video unavailable', 'error');
+    closePlayer();
+    if (res.status === 403 || (data.error && /session|device|concurrent|another/i.test(data.error))) {
+      showSessionConflictToast();
+    } else {
+      showToast('Video unavailable', 'error');
+    }
+  } catch {
+    closePlayer();
+    showToast('Connection error. Please try again.', 'error');
+  }
 }
 
 // ── LIKE ──────────────────────────────────────────────────────────────────────
