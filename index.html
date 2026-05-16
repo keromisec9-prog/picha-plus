@@ -1260,14 +1260,15 @@
       border-radius: 6px;
       font-size: 0.85rem;
       z-index: 9000;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-word;
+      text-align: center;
       animation: fadeUp 0.3s ease;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      max-width: calc(100vw - 2rem);
-      overflow: hidden;
-      text-overflow: ellipsis;
+      width: calc(100vw - 2rem);
+      max-width: 420px;
     }
     .toast.gold { border-color: rgba(229,185,60,0.3); }
     .toast.error { border-color: rgba(229,9,20,0.4); }
@@ -2523,6 +2524,9 @@ function toggleMyListFromInfo() {
 const _dlRegistry = JSON.parse(localStorage.getItem('pichaplus_downloads') || '[]');
 function saveDownloads() { localStorage.setItem('pichaplus_downloads', JSON.stringify(_dlRegistry)); }
 
+// In-memory map: dlId → objectURL. Survives the session but not a page reload.
+const _dlBlobUrls = {};
+
 function _dlGuard() {
   if (!session.isLoggedIn()) { openSignin(); return false; }
   if (!session.isSubscribed()) { showToast('Subscribe to download 🔒', 'error'); showPaywall(); return false; }
@@ -2591,13 +2595,17 @@ async function _doDownload(endpoint, filename, meta) {
 
     delete _dlAborts[dlId];
 
-    // Trigger browser save-to-device
+    // Build blob and save to device
     const blob = new Blob(chunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
+
+    // Keep blob URL alive in memory for this session so Play doesn't need to re-stream
+    _dlBlobUrls[dlId] = url;
+
+    // Trigger browser save-to-device
     const a = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
 
     record.progress = 100; record.done = true;
     saveDownloads(); renderSavedDownloads();
@@ -2651,10 +2659,10 @@ async function retryDownload(dlId) {
     delete _dlAborts[dlId];
     const blob = new Blob(chunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
+    _dlBlobUrls[dlId] = url;
     const a = document.createElement('a');
     a.href = url; a.download = rec.filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
     rec.progress = 100; rec.done = true;
     saveDownloads(); renderSavedDownloads();
     showToast(rec.title + ' saved to device ✅', 'gold');
@@ -2666,10 +2674,35 @@ async function retryDownload(dlId) {
 
 async function playDownloaded(dlId) {
   const rec = _dlRegistry.find(d => d.id === dlId);
-  if (!rec || !rec.itemId) { showToast('Cannot play — item info missing', 'error'); return; }
-  // Find the catalog item and play it via the normal streaming path
+  if (!rec) return;
+
+  const blobUrl = _dlBlobUrls[dlId];
+
+  if (blobUrl) {
+    // Play directly from the in-memory blob — no network needed
+    const title = rec.title || rec.filename;
+    document.getElementById('playerTitle').textContent = title;
+    _playerReturnState = {
+      catOverlay: document.getElementById('categoryOverlay')?.classList.contains('active') || false,
+      bnCatOpen:  document.getElementById('bnCategoriesPage')?.style.display !== 'none',
+      bnSavedOpen: document.getElementById('bnSavedPage')?.style.display !== 'none',
+    };
+    document.getElementById('playerModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    // Use a lightweight direct video src — no Shaka needed for a plain mp4 blob
+    const video = document.getElementById('player');
+    if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
+    if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e){} shakaPlayer = null; }
+    video.src = blobUrl;
+    video.play().catch(() => {});
+    return;
+  }
+
+  // Blob URL gone (page was reloaded) — fall back to streaming
+  if (!rec.itemId) { showToast('Reopen the app and re-download to play offline', 'error'); return; }
   const item = (window._allCards || []).find(c => String(c.id) === String(rec.itemId));
-  if (!item) { showToast('Item not found in catalog', 'error'); return; }
+  if (!item) { showToast('Item not found — try streaming from home', 'error'); return; }
+  showToast('Playing via stream — re-download for offline', '');
   handleCardPlay(item);
 }
 
@@ -2729,7 +2762,8 @@ function renderSavedDownloads() {
     // Status line
     let statusLine = '';
     if (d.done) {
-      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">Saved to device · tap ▶ to stream</div>`;
+      const hasBlob = !!_dlBlobUrls[d.id];
+      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap ▶ to play' : 'Saved to device · tap ▶ to stream'}</div>`;
     } else if (d.failed) {
       statusLine = `<div style="font-size:0.72rem;color:#f55;margin-top:2px;">Failed — tap ↺ to retry</div>`;
     } else if (d.paused) {
