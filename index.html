@@ -2108,6 +2108,21 @@ window.addEventListener('load', async () => {
   updateUI();
   loadContent();
 
+  // Pre-warm IndexedDB: for any completed downloads, check if blob is stored
+  // so the status line ("Ready · tap ▶") shows correctly on first render
+  const doneDls = _dlRegistry.filter(d => d.done);
+  if (doneDls.length) {
+    renderSavedDownloads(); // initial render before async check
+    for (const d of doneDls) {
+      _idb.get(d.id).then(blob => {
+        if (blob && !_dlBlobUrls[d.id]) {
+          _dlBlobUrls[d.id] = URL.createObjectURL(blob);
+          renderSavedDownloads(); // re-render to update status text
+        }
+      }).catch(() => {});
+    }
+  }
+
   // Nav scroll effect
   window.addEventListener('scroll', () => {
     document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
@@ -2524,8 +2539,58 @@ function toggleMyListFromInfo() {
 const _dlRegistry = JSON.parse(localStorage.getItem('pichaplus_downloads') || '[]');
 function saveDownloads() { localStorage.setItem('pichaplus_downloads', JSON.stringify(_dlRegistry)); }
 
-// In-memory map: dlId → objectURL. Survives the session but not a page reload.
+// In-memory map: dlId → objectURL. Fast access within session.
 const _dlBlobUrls = {};
+
+// ── OFFLINE VIDEO STORE (IndexedDB) ──────────────────────────────────────────
+// Stores full video blobs persistently so Play works after page reload.
+const _idb = (() => {
+  const DB = 'pichaplus_offline';
+  const STORE = 'videos';
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB, 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function put(key, blob) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(blob, String(key));
+      tx.oncomplete = () => res();
+      tx.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function get(key) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(String(key));
+      req.onsuccess = () => res(req.result || null);
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function remove(key) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(String(key));
+      tx.oncomplete = () => res();
+      tx.onerror = e => rej(e.target.error);
+    });
+  }
+
+  return { put, get, remove };
+})();
 
 function _dlGuard() {
   if (!session.isLoggedIn()) { openSignin(); return false; }
@@ -2595,14 +2660,17 @@ async function _doDownload(endpoint, filename, meta) {
 
     delete _dlAborts[dlId];
 
-    // Build blob and save to device
+    // Build blob
     const blob = new Blob(chunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
 
-    // Keep blob URL alive in memory for this session so Play doesn't need to re-stream
+    // 1. Keep in memory for instant play this session
     _dlBlobUrls[dlId] = url;
 
-    // Trigger browser save-to-device
+    // 2. Persist to IndexedDB for true offline play after reload
+    _idb.put(dlId, blob).catch(() => {});
+
+    // 3. Also trigger browser save-to-device (Downloads folder)
     const a = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -2660,6 +2728,7 @@ async function retryDownload(dlId) {
     const blob = new Blob(chunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     _dlBlobUrls[dlId] = url;
+    _idb.put(dlId, blob).catch(() => {});
     const a = document.createElement('a');
     a.href = url; a.download = rec.filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -2676,10 +2745,8 @@ async function playDownloaded(dlId) {
   const rec = _dlRegistry.find(d => d.id === dlId);
   if (!rec) return;
 
-  const blobUrl = _dlBlobUrls[dlId];
-
-  if (blobUrl) {
-    // Play directly from the in-memory blob — no network needed
+  // Helper: open player with a blob/object URL
+  function _openPlayerWithUrl(url) {
     const title = rec.title || rec.filename;
     document.getElementById('playerTitle').textContent = title;
     _playerReturnState = {
@@ -2689,20 +2756,38 @@ async function playDownloaded(dlId) {
     };
     document.getElementById('playerModal').classList.add('active');
     document.body.style.overflow = 'hidden';
-    // Use a lightweight direct video src — no Shaka needed for a plain mp4 blob
     const video = document.getElementById('player');
     if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
-    if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e){} shakaPlayer = null; }
-    video.src = blobUrl;
+    if (shakaPlayer) { try { shakaPlayer.destroy();      } catch(e){} shakaPlayer = null; }
+    video.src = url;
     video.play().catch(() => {});
+  }
+
+  // 1. In-memory blob URL (same session, fastest)
+  if (_dlBlobUrls[dlId]) {
+    _openPlayerWithUrl(_dlBlobUrls[dlId]);
     return;
   }
 
-  // Blob URL gone (page was reloaded) — fall back to streaming
-  if (!rec.itemId) { showToast('Reopen the app and re-download to play offline', 'error'); return; }
+  // 2. IndexedDB blob (persists across reloads — true offline)
+  try {
+    const blob = await _idb.get(dlId);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      _dlBlobUrls[dlId] = url; // cache in memory for this session
+      _openPlayerWithUrl(url);
+      return;
+    }
+  } catch (e) {}
+
+  // 3. Nothing stored — fall back to streaming
+  if (!rec.itemId) {
+    showToast('File not found — please re-download', 'error');
+    return;
+  }
   const item = (window._allCards || []).find(c => String(c.id) === String(rec.itemId));
-  if (!item) { showToast('Item not found — try streaming from home', 'error'); return; }
-  showToast('Playing via stream — re-download for offline', '');
+  if (!item) { showToast('Item not found — try from home screen', 'error'); return; }
+  showToast('Playing via stream — tap Download again to save offline', '');
   handleCardPlay(item);
 }
 
@@ -2799,7 +2884,18 @@ function renderSavedDownloads() {
 
 function removeDownload(id) {
   const idx = _dlRegistry.findIndex(d => d.id === id);
-  if (idx !== -1) { _dlRegistry.splice(idx, 1); saveDownloads(); renderSavedDownloads(); }
+  if (idx !== -1) {
+    _dlRegistry.splice(idx, 1);
+    saveDownloads();
+    renderSavedDownloads();
+    // Free the in-memory blob URL
+    if (_dlBlobUrls[id]) {
+      URL.revokeObjectURL(_dlBlobUrls[id]);
+      delete _dlBlobUrls[id];
+    }
+    // Delete from IndexedDB
+    _idb.remove(id).catch(() => {});
+  }
 }
 
 // ── SESSION CONFLICT ─────────────────────────────────────────────────────────
