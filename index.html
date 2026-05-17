@@ -2158,6 +2158,7 @@ async function loadContent() {
       media_type: v.type === 'series' ? 'tv' : 'movie',
       _isOwned: true,
       _vj: v.vj || null,
+      _part: v.part || null,
       _narrative: v.narrative || null,
       _episode: v.episode || null,
     });
@@ -2401,6 +2402,7 @@ function createCard(item, showProgress = false) {
         : `<div class="card-poster-placeholder">🎬</div>`}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
       ${item._vj ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
+      ${item._part ? `<div class="card-badge" style="top:auto;bottom:0.5rem;left:0.4rem;background:rgba(229,185,60,0.15);color:var(--gold);border:1px solid var(--gold);font-size:0.6rem;">${item._part}</div>` : ''}
       ${prog && progPct > 0 ? `<div class="card-progress"><div class="card-progress-fill" style="width:${progPct}%"></div></div>` : ''}
       <div class="card-overlay">
         <div class="card-meta-row">
@@ -2480,6 +2482,7 @@ async function showInfo(item) {
   if (narrativeEl) {
     const parts = [];
     if (item._vj) parts.push(`🎙️ ${item._vj}`);
+  if (item._part) parts.push(`📽️ ${item._part}`);
     if (item._narrative) parts.push(`🌍 ${item._narrative}`);
     if (item._episode) parts.push(`📺 ${item._episode}`);
     narrativeEl.textContent = parts.join('  ·  ');
