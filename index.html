@@ -2145,8 +2145,9 @@ async function loadContent() {
     // Convert catalog entries to TMDB-style items
     // Strip any TMDB base URL variant (w300, w500, w780, original, etc.) so only /path.jpg remains
     const stripTmdb = url => url ? url.replace(/^https:\/\/image\.tmdb\.org\/t\/p\/[^/]+/, '') : null;
-    const toCard = v => ({
-      id: v.tmdbId,
+    const toCard = (v, key) => ({
+      id: key || v.tmdbId,
+      tmdbId: v.tmdbId,
       title: v.title,
       poster_path: stripTmdb(v.poster),
       backdrop_path: stripTmdb(v.backdrop),
@@ -2161,7 +2162,10 @@ async function loadContent() {
       _episode: v.episode || null,
     });
 
-    cards = allUploads.map(toCard);
+    const movieEntries = Object.entries(catalogData.movies || {});
+    const seriesEntries = Object.entries(catalogData.series || {});
+    const allEntries = [...movieEntries, ...seriesEntries].sort((a,b) => (b[1].addedAt||0) - (a[1].addedAt||0));
+    cards = allEntries.map(([key, v]) => toCard(v, key));
     window._allCards = cards; // expose for renderContinueWatching
 
     // Hero — rotate through your uploads
@@ -2426,7 +2430,7 @@ async function showInfo(item) {
   // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
   if (item._isOwned && item.media_type === 'tv') {
     // Find matching entry in _seriesList by tmdbId
-    const idx = (window._seriesList || []).findIndex(s => String(s.tmdbId) === String(item.id));
+    const idx = (window._seriesList || []).findIndex(s => String(s.tmdbId) === String(item.tmdbId || item.id));
     if (idx !== -1) { showSeries(idx); return; }
   }
   currentInfoItem = item;
@@ -3447,7 +3451,7 @@ function loadSeries(catalog) {
   section.style.display = 'block';
   // Store for "All >" category view
   window._seriesItems = seriesData.map((s, idx) => ({
-    id: s.title, title: s.title, poster: s.poster, _vj: s.vj, _seriesIdx: idx
+    id: s.tmdbId || s.title, tmdbId: s.tmdbId, title: s.title, poster: s.poster, _vj: s.vj, _seriesIdx: idx
   }));
 
   row.innerHTML = seriesData.map((s, idx) => {
