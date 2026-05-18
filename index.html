@@ -1591,14 +1591,15 @@ const progress = JSON.parse(localStorage.getItem('pichaplus_progress') || '{}');
 
 // ── AUTO-CLEAN old series progress keys (tmdbId only, no episode info) ──
 // These were saved before the series__tmdbId__epIndex format was introduced.
-// We can't play them correctly so remove them on load. Runs once after _seriesList loads.
+// Cleans old-format progress keys (bare tmdbId) that predate the series__kvKey__ep format.
 function _cleanOldSeriesProgress() {
   const seriesList = window._seriesList || [];
   if (!seriesList.length) return;
   let changed = false;
   seriesList.forEach(s => {
-    const key = String(s.tmdbId);
-    if (progress[key]) { delete progress[key]; changed = true; }
+    // Old format used tmdbId directly as key
+    const oldKey = String(s.tmdbId);
+    if (progress[oldKey]) { delete progress[oldKey]; changed = true; }
   });
   if (changed) localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
 }
@@ -1608,6 +1609,10 @@ function saveLiked() { localStorage.setItem('pichaplus_liked', JSON.stringify(li
 function saveProgress(id, pos, dur) {
   progress[id] = { position: pos, duration: dur };
   localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+  // Re-render continue watching immediately, but only when player is closed
+  if (!document.getElementById('playerModal')?.classList.contains('active')) {
+    renderContinueWatching();
+  }
 }
 </script>
 
@@ -1694,7 +1699,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="continueSection" style="display:none;">
     <div class="row-header">
       <div class="row-title">Continue Watching</div>
-      <button class="row-see-all" onclick="openCategory('Continue Watching', window._continueItems || [])">All &rsaquo;</button>
+      <button class="row-see-all" onclick="openContinueWatchingAll()">All &rsaquo;</button>
     </div>
     <div class="scroll-row" id="continueRow"></div>
   </div>
@@ -3155,49 +3160,48 @@ function renderContinueWatching() {
 
   if (!entries.length) { section.style.display = 'none'; return; }
 
-  // Match progress entries to catalog cards or series episodes
-  const matched = entries
-    .map(([id, prog]) => {
-      // Series episode key format: series__tmdbId__epIndex
-      if (id.startsWith('series__')) {
-        const parts = id.split('__');
-        const tmdbId = parts[1];
-        const epIndex = parseInt(parts[2], 10);
-        const s = (window._seriesList || []).find(s => String(s.tmdbId) === String(tmdbId));
-        if (!s) return null;
-        const ep = s.episodes?.[epIndex];
-        const epLabel = ep ? `S${ep.season || 1}·E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
-        return {
-          id,
-          prog,
-          poster: s.poster || null,
-          title: s.title,
-          epLabel,
-          isSeries: true,
-          tmdbId,
-          epIndex,
-        };
+  // Deduplicate series by KV key — keep latest episode per VJ version.
+  // Two VJ versions of the same title have different KV keys → separate cards allowed.
+  const seriesBest = {};
+  const movieEntries = [];
+  entries.forEach(([id, prog]) => {
+    if (id.startsWith('series__')) {
+      const parts = id.split('__');
+      const kvKey = parts[1];
+      const epIndex = parseInt(parts[2], 10);
+      if (!seriesBest[kvKey] || epIndex > seriesBest[kvKey].epIndex) {
+        seriesBest[kvKey] = { id, prog, epIndex };
       }
-      // Regular movie
+    } else {
+      movieEntries.push([id, prog]);
+    }
+  });
+
+  const matched = [
+    ...Object.entries(seriesBest).map(([kvKey, { id, prog, epIndex }]) => {
+      const s = (window._seriesList || []).find(s => s._kvKey === kvKey);
+      if (!s) return null;
+      const ep = s.episodes?.[epIndex];
+      const epLabel = ep ? `S${ep.season || 1}·E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
+      return { id, prog, poster: s.poster || null, title: s.title, epLabel, isSeries: true, kvKey, epIndex };
+    }),
+    ...movieEntries.map(([id, prog]) => {
       const card = (window._allCards || []).find(c => String(c.id) === String(id));
       if (!card) return null;
       return { id, prog, poster: card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null, title: card.title || card.name || '', isSeries: false, card };
-    })
-    .filter(Boolean)
-    .slice(0, 10);
+    }),
+  ].filter(Boolean).slice(0, 10);
 
   if (!matched.length) { section.style.display = 'none'; return; }
 
   section.style.display = 'block';
-  window._continueItems = matched.map(m => m.card || { id: m.id, title: m.title, poster_path: null });
+  window._continueMatched = matched;
+  window._continueItems = matched.map(m => m.card || { id: m.id, title: m.title, poster_path: null, poster: m.poster, isSeries: m.isSeries, kvKey: m.kvKey, epIndex: m.epIndex });
   row.innerHTML = matched.map(m => {
     const pct = Math.round((m.prog.position / m.prog.duration) * 100);
-    const regIdx2 = m.isSeries
-      ? -1  // series handled inline
-      : registerItem(m.card);
-
+    const regIdx2 = m.isSeries ? -1 : registerItem(m.card);
     const clickHandler = m.isSeries
-      ? `resumeWatchingSeries('${m.tmdbId}', ${m.epIndex})`
+      ? `resumeWatchingSeries('${m.kvKey}', ${m.epIndex})`
       : `resumeWatching(getItem(${regIdx2}))`;
 
     return `
@@ -3245,12 +3249,12 @@ async function resumeWatching(item) {
   }
 }
 
-function resumeWatchingSeries(tmdbId, epIndex) {
+function resumeWatchingSeries(kvKey, epIndex) {
   if (!session.isLoggedIn()) { openSignin(); return; }
   if (!session.isSubscribed()) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
 
-  // Find the series in _seriesList
-  const sIdx = (window._seriesList || []).findIndex(s => String(s.tmdbId) === String(tmdbId));
+  // Find the series by its unique KV key (works for same-title different-VJ versions)
+  const sIdx = (window._seriesList || []).findIndex(s => s._kvKey === kvKey);
   if (sIdx === -1) { showToast('Series not found', 'error'); return; }
 
   // Open the series modal
@@ -3264,7 +3268,7 @@ function resumeWatchingSeries(tmdbId, epIndex) {
     const ep = s?.episodes?.[epIndex];
     if (!ep) return;
     const epLabel = `Season ${ep.season || 1} · Episode ${ep.episode || (epIndex + 1)}`;
-    const prog = progress[`series__${tmdbId}__${epIndex}`];
+    const prog = progress[`series__${kvKey}__${epIndex}`];
     const timeStr = prog ? formatTime(prog.position) : '';
 
     const banner = document.createElement('div');
@@ -3282,6 +3286,38 @@ function resumeWatchingSeries(tmdbId, epIndex) {
       </div>`;
     epList.insertBefore(banner, epList.firstChild);
   }, 50);
+}
+
+function openContinueWatchingAll() {
+  const matched = window._continueMatched || [];
+  if (!matched.length) return;
+
+  document.getElementById('categoryTitle').textContent = 'Continue Watching';
+  document.getElementById('categoryCount').textContent = `${matched.length} title${matched.length !== 1 ? 's' : ''}`;
+
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = matched.map(m => {
+    const title = esc(m.title);
+    const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
+    const pct = Math.round((m.prog.position / m.prog.duration) * 100);
+    const subLabel = m.isSeries ? m.epLabel : formatTime(m.prog.position) + ' watched';
+    const clickFn = m.isSeries
+      ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
+      : `openInfoFromCategory(getItem(${registerItem(m.card)}))`;
+    return `
+      <div class="category-card" onclick="${clickFn}" style="position:relative;">
+        ${poster
+          ? `<img src="${poster}" alt="${title}" loading="lazy">`
+          : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
+        <div class="category-card-label">${title}<br><span style="color:var(--gold);font-size:0.6rem;">${subLabel}</span></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.15);">
+          <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('categoryOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 // ── LIKE ──────────────────────────────────────────────────────────────────────
@@ -3509,15 +3545,17 @@ function closePayment() {
 let currentSeries = null;
 
 function loadSeries(catalog) {
-  const seriesData = Object.values(catalog.series || {});
-  if (!seriesData.length) return;
+  const seriesEntries = Object.entries(catalog.series || {});
+  if (!seriesEntries.length) return;
+  // Attach the KV key to each series object so it's unique even for same-tmdbId, different-VJ versions
+  const seriesData = seriesEntries.map(([kvKey, s]) => ({ ...s, _kvKey: kvKey }));
 
   const section = document.getElementById('seriesSection');
   const row = document.getElementById('seriesRow');
   section.style.display = 'block';
   // Store for "All >" category view
   window._seriesItems = seriesData.map((s, idx) => ({
-    id: s.tmdbId || s.title, tmdbId: s.tmdbId, title: s.title, poster: s.poster, _vj: s.vj, _seriesIdx: idx
+    id: s._kvKey, tmdbId: s.tmdbId, title: s.title, poster: s.poster, _vj: s.vj, _seriesIdx: idx
   }));
 
   row.innerHTML = seriesData.map((s, idx) => {
@@ -3611,9 +3649,9 @@ async function playEpisode(epIndex) {
     });
     const data = await res.json();
     if (data.url) {
-      // Use a composite key: seriesId__epIndex so continue watching knows which episode
-      const epKey = `series__${s.tmdbId}__${epIndex}`;
-      initPlayer(data.url, { id: epKey, title: `${s.title} ${ep.ep}`, _seriesTmdbId: s.tmdbId, _epIndex: epIndex });
+      // Use KV key (unique per VJ version) so two VJ versions of same series are independent
+      const epKey = `series__${s._kvKey}__${epIndex}`;
+      initPlayer(data.url, { id: epKey, title: `${s.title} ${ep.ep}`, _seriesKvKey: s._kvKey, _epIndex: epIndex });
     } else {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
