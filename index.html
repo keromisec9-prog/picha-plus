@@ -1709,18 +1709,6 @@ function saveProgress(id, pos, dur) {
     <div class="scroll-row" id="seriesRow"></div>
   </div>
 
-  <!-- Top 10 -->
-  <div class="content-section">
-    <div class="row-header">
-      <div class="row-title"><span class="row-title-accent">Top 10</span> on Picha+</div>
-    </div>
-    <div class="scroll-row" id="top10Row">
-      <div class="skeleton skeleton-card" style="width:220px;aspect-ratio:unset;height:195px;"></div>
-      <div class="skeleton skeleton-card" style="width:220px;aspect-ratio:unset;height:195px;"></div>
-      <div class="skeleton skeleton-card" style="width:220px;aspect-ratio:unset;height:195px;"></div>
-    </div>
-  </div>
-
   <!-- My List -->
   <div class="content-section" id="myListSection" style="display:none;">
     <div class="row-header">
@@ -2184,13 +2172,6 @@ async function loadContent() {
     // New This Week — most recently added
     window._newItems = cards.slice(0, 10);
     renderRow('newRow', window._newItems);
-
-    // Top 10
-    if (cards.length) {
-      renderTop10('top10Row', cards.slice(0, 10));
-    } else {
-      document.getElementById('top10Row').innerHTML = '<div style="color:#666;font-size:0.82rem;padding:1rem;">No content yet</div>';
-    }
 
     // Genre rows — group your uploads by genre
     const genreMap = {};
@@ -3160,11 +3141,33 @@ function renderContinueWatching() {
 
   if (!entries.length) { section.style.display = 'none'; return; }
 
-  // Match progress entries to catalog cards (cards is populated after loadContent)
+  // Match progress entries to catalog cards or series episodes
   const matched = entries
     .map(([id, prog]) => {
+      // Series episode key format: series__tmdbId__epIndex
+      if (id.startsWith('series__')) {
+        const parts = id.split('__');
+        const tmdbId = parts[1];
+        const epIndex = parseInt(parts[2], 10);
+        const s = (window._seriesList || []).find(s => String(s.tmdbId) === String(tmdbId));
+        if (!s) return null;
+        const ep = s.episodes?.[epIndex];
+        const epLabel = ep ? `S${ep.season || 1}·E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
+        return {
+          id,
+          prog,
+          poster: s.poster || null,
+          title: s.title,
+          epLabel,
+          isSeries: true,
+          tmdbId,
+          epIndex,
+        };
+      }
+      // Regular movie
       const card = (window._allCards || []).find(c => String(c.id) === String(id));
-      return card ? { card, prog } : null;
+      if (!card) return null;
+      return { id, prog, poster: card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null, title: card.title || card.name || '', isSeries: false, card };
     })
     .filter(Boolean)
     .slice(0, 10);
@@ -3172,20 +3175,27 @@ function renderContinueWatching() {
   if (!matched.length) { section.style.display = 'none'; return; }
 
   section.style.display = 'block';
-  window._continueItems = matched.map(({ card }) => card);
-  row.innerHTML = matched.map(({ card, prog }) => {
-    const pct = Math.round((prog.position / prog.duration) * 100);
-    const poster = card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null;
-    const title = card.title || card.name || '';
-    const regIdx2 = registerItem(card);
+  window._continueItems = matched.map(m => m.card || { id: m.id, title: m.title, poster_path: null });
+  row.innerHTML = matched.map(m => {
+    const pct = Math.round((m.prog.position / m.prog.duration) * 100);
+    const regIdx2 = m.isSeries
+      ? -1  // series handled inline
+      : registerItem(m.card);
+
+    const clickHandler = m.isSeries
+      ? `resumeWatchingSeries('${m.tmdbId}', ${m.epIndex})`
+      : `resumeWatching(getItem(${regIdx2}))`;
+
     return `
-      <div class="card" onclick="resumeWatching(getItem(${regIdx2}))" style="cursor:pointer;">
-        ${poster
-          ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
+      <div class="card" onclick="${clickHandler}" style="cursor:pointer;">
+        ${m.poster
+          ? `<img class="card-poster" src="${m.poster}" alt="${esc(m.title)}" loading="lazy">`
           : `<div class="card-poster-placeholder">▶</div>`}
         <div class="card-overlay" style="opacity:1;background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,transparent 60%);">
-          <div class="card-title">${esc(title)}</div>
-          <div style="font-size:0.65rem;color:var(--gold);margin-bottom:0.4rem;">${formatTime(prog.position)} watched</div>
+          <div class="card-title">${esc(m.title)}</div>
+          <div style="font-size:0.65rem;color:var(--gold);margin-bottom:0.4rem;">
+            ${m.isSeries ? `${m.epLabel} · ` : ''}${formatTime(m.prog.position)} watched
+          </div>
         </div>
         <div class="card-progress">
           <div class="card-progress-fill" style="width:${pct}%"></div>
@@ -3219,6 +3229,45 @@ async function resumeWatching(item) {
     closePlayer();
     showToast('Connection error. Please try again.', 'error');
   }
+}
+
+function resumeWatchingSeries(tmdbId, epIndex) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  if (!session.isSubscribed()) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
+
+  // Find the series in _seriesList
+  const sIdx = (window._seriesList || []).findIndex(s => String(s.tmdbId) === String(tmdbId));
+  if (sIdx === -1) { showToast('Series not found', 'error'); return; }
+
+  // Open the series modal
+  showSeries(sIdx);
+
+  // After modal opens, inject the "Continue Watching" banner at top of episode list
+  setTimeout(() => {
+    const epList = document.getElementById('episodeList');
+    if (!epList) return;
+    const s = window._seriesList[sIdx];
+    const ep = s?.episodes?.[epIndex];
+    if (!ep) return;
+    const epLabel = `Season ${ep.season || 1} · Episode ${ep.episode || (epIndex + 1)}`;
+    const prog = progress[`series__${tmdbId}__${epIndex}`];
+    const timeStr = prog ? formatTime(prog.position) : '';
+
+    const banner = document.createElement('div');
+    banner.style.cssText = 'margin-bottom:0.75rem;padding:0.85rem 1rem;background:rgba(229,185,60,0.12);border:1px solid rgba(229,185,60,0.35);border-radius:8px;';
+    banner.innerHTML = `
+      <div style="font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Continue Watching</div>
+      <div style="display:flex;align-items:center;gap:0.8rem;">
+        <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="playEpisode(${epIndex})">
+          <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
+        </div>
+        <div style="cursor:pointer;flex:1;" onclick="playEpisode(${epIndex})">
+          <div style="font-size:0.9rem;font-weight:600;color:#fff;">${epLabel}</div>
+          ${timeStr ? `<div style="font-size:0.72rem;color:var(--gold);margin-top:2px;">Resume from ${timeStr}</div>` : ''}
+        </div>
+      </div>`;
+    epList.insertBefore(banner, epList.firstChild);
+  }, 50);
 }
 
 // ── LIKE ──────────────────────────────────────────────────────────────────────
@@ -3546,7 +3595,9 @@ async function playEpisode(epIndex) {
     });
     const data = await res.json();
     if (data.url) {
-      initPlayer(data.url, { id: s.tmdbId, title: `${s.title} ${ep.ep}` });
+      // Use a composite key: seriesId__epIndex so continue watching knows which episode
+      const epKey = `series__${s.tmdbId}__${epIndex}`;
+      initPlayer(data.url, { id: epKey, title: `${s.title} ${ep.ep}`, _seriesTmdbId: s.tmdbId, _epIndex: epIndex });
     } else {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
