@@ -1607,7 +1607,7 @@ function _cleanOldSeriesProgress() {
 function saveMyList() { localStorage.setItem('pichaplus_mylist', JSON.stringify(myList)); }
 function saveLiked() { localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
 function saveProgress(id, pos, dur) {
-  progress[id] = { position: pos, duration: dur };
+  progress[id] = { position: pos, duration: dur, ts: Date.now() };
   localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
   // Re-render continue watching immediately, but only when player is closed
   if (!document.getElementById('playerModal')?.classList.contains('active')) {
@@ -3149,27 +3149,53 @@ function showMyList() {
 }
 
 // ── CONTINUE WATCHING ─────────────────────────────────────────────────────────
+function removeFromContinue(id, event) {
+  if (event) event.stopPropagation();
+  delete progress[id];
+  // Also remove all episode keys for this series if it's a kvKey prefix
+  if (id.startsWith('series__')) {
+    const kvKey = id.split('__')[1];
+    Object.keys(progress).forEach(k => { if (k.startsWith(`series__${kvKey}__`)) delete progress[k]; });
+  }
+  localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+  renderContinueWatching();
+}
+
+function clearAllContinue() {
+  // Remove all progress keys that are currently shown in continue watching
+  (window._continueMatched || []).forEach(m => {
+    if (m.isSeries) {
+      // Remove all episode keys for this series
+      Object.keys(progress).forEach(k => { if (k.startsWith(`series__${m.kvKey}__`)) delete progress[k]; });
+    } else {
+      delete progress[m.id];
+    }
+  });
+  localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+  renderContinueWatching();
+}
+
 function renderContinueWatching() {
   const section = document.getElementById('continueSection');
   const row = document.getElementById('continueRow');
 
-  // Filter progress entries: started (>30s) but not finished (>30s from end)
+  // Filter progress entries: started (>30s) but not finished (>90s from end)
   const entries = Object.entries(progress).filter(([, v]) =>
-    v.position > 30 && v.duration > 0 && v.position < v.duration - 30
+    v.position > 30 && v.duration > 0 && v.position < v.duration - 90
   );
 
   if (!entries.length) { section.style.display = 'none'; return; }
 
-  // Deduplicate series by KV key — keep latest episode per VJ version.
-  // Two VJ versions of the same title have different KV keys → separate cards allowed.
-  const seriesBest = {};
+  // Deduplicate series by KV key — keep MOST RECENTLY WATCHED episode per VJ version
+  const seriesBest = {}; // kvKey -> { id, prog, epIndex }
   const movieEntries = [];
   entries.forEach(([id, prog]) => {
     if (id.startsWith('series__')) {
       const parts = id.split('__');
       const kvKey = parts[1];
       const epIndex = parseInt(parts[2], 10);
-      if (!seriesBest[kvKey] || epIndex > seriesBest[kvKey].epIndex) {
+      const ts = prog.ts || 0;
+      if (!seriesBest[kvKey] || ts > seriesBest[kvKey].prog.ts) {
         seriesBest[kvKey] = { id, prog, epIndex };
       }
     } else {
@@ -3177,38 +3203,47 @@ function renderContinueWatching() {
     }
   });
 
-  const matched = [
-    ...Object.entries(seriesBest).map(([kvKey, { id, prog, epIndex }]) => {
-      const s = (window._seriesList || []).find(s => s._kvKey === kvKey);
-      if (!s) return null;
-      const ep = s.episodes?.[epIndex];
-      const epLabel = ep ? `S${ep.season || 1}·E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
-      return { id, prog, poster: s.poster || null, title: s.title, epLabel, isSeries: true, kvKey, epIndex };
-    }),
-    ...movieEntries.map(([id, prog]) => {
-      const card = (window._allCards || []).find(c => String(c.id) === String(id));
-      if (!card) return null;
-      return { id, prog, poster: card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null, title: card.title || card.name || '', isSeries: false, card };
-    }),
-  ].filter(Boolean).slice(0, 10);
+  const seriesMatched = Object.entries(seriesBest).map(([kvKey, { id, prog, epIndex }]) => {
+    const s = (window._seriesList || []).find(s => s._kvKey === kvKey);
+    if (!s) return null;
+    const ep = s.episodes?.[epIndex];
+    const epLabel = ep ? `S${ep.season || 1}·E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
+    return { id, prog, poster: s.poster || null, title: s.title, epLabel, isSeries: true, kvKey, epIndex };
+  }).filter(Boolean);
+
+  const movieMatched = movieEntries.map(([id, prog]) => {
+    const card = (window._allCards || []).find(c => String(c.id) === String(id));
+    if (!card) return null;
+    return { id, prog, poster: card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null, title: card.title || card.name || '', isSeries: false, card };
+  }).filter(Boolean);
+
+  // Sort all by most recently watched
+  const matched = [...seriesMatched, ...movieMatched]
+    .sort((a, b) => (b.prog.ts || 0) - (a.prog.ts || 0))
+    .slice(0, 10);
 
   if (!matched.length) { section.style.display = 'none'; return; }
 
   section.style.display = 'block';
   window._continueMatched = matched;
   window._continueItems = matched.map(m => m.card || { id: m.id, title: m.title, poster_path: null, poster: m.poster, isSeries: m.isSeries, kvKey: m.kvKey, epIndex: m.epIndex });
+
   row.innerHTML = matched.map(m => {
     const pct = Math.round((m.prog.position / m.prog.duration) * 100);
     const regIdx2 = m.isSeries ? -1 : registerItem(m.card);
     const clickHandler = m.isSeries
       ? `resumeWatchingSeries('${m.kvKey}', ${m.epIndex})`
       : `resumeWatching(getItem(${regIdx2}))`;
+    // Remove key: for series remove all episodes of that kvKey; for movies remove by id
+    const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
 
     return `
-      <div class="card" onclick="${clickHandler}" style="cursor:pointer;">
+      <div class="card" onclick="${clickHandler}" style="cursor:pointer;position:relative;">
         ${m.poster
           ? `<img class="card-poster" src="${m.poster}" alt="${esc(m.title)}" loading="lazy">`
           : `<div class="card-poster-placeholder">▶</div>`}
+        <button onclick="removeFromContinue('${removeKey}',event)"
+          style="position:absolute;top:0.3rem;right:0.3rem;z-index:5;background:rgba(0,0,0,0.7);border:none;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
         <div class="card-overlay" style="opacity:1;background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,transparent 60%);">
           <div class="card-title">${esc(m.title)}</div>
           <div style="font-size:0.65rem;color:var(--gold);margin-bottom:0.4rem;">
@@ -3217,11 +3252,6 @@ function renderContinueWatching() {
         </div>
         <div class="card-progress">
           <div class="card-progress-fill" style="width:${pct}%"></div>
-        </div>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;" class="resume-play-icon">
-          <div style="width:2.5rem;height:2.5rem;background:rgba(229,185,60,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-            <svg width="12" height="14" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
-          </div>
         </div>
       </div>`;
   }).join('');
@@ -3291,9 +3321,26 @@ function resumeWatchingSeries(kvKey, epIndex) {
 function openContinueWatchingAll() {
   const matched = window._continueMatched || [];
   if (!matched.length) return;
+  _buildContinueOverlay(matched);
+  document.getElementById('categoryOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
 
-  document.getElementById('categoryTitle').textContent = 'Continue Watching';
+function _buildContinueOverlay(matched) {
+  document.getElementById('categoryTitle').textContent = 'Watch History';
   document.getElementById('categoryCount').textContent = `${matched.length} title${matched.length !== 1 ? 's' : ''}`;
+
+  // Inject Clear All button into the category header if not already there
+  let clearBtn = document.getElementById('continueWatchingClearAll');
+  if (!clearBtn) {
+    clearBtn = document.createElement('button');
+    clearBtn.id = 'continueWatchingClearAll';
+    clearBtn.style.cssText = 'background:none;border:1px solid rgba(255,100,100,0.5);color:#ff8080;font-size:0.72rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;font-family:inherit;letter-spacing:0.04em;';
+    clearBtn.textContent = 'Clear All';
+    clearBtn.onclick = () => { clearAllContinue(); closeCategory(); };
+    document.querySelector('.category-header')?.appendChild(clearBtn);
+  }
+  clearBtn.style.display = 'inline-block';
 
   const grid = document.getElementById('categoryGrid');
   grid.innerHTML = matched.map(m => {
@@ -3301,6 +3348,7 @@ function openContinueWatchingAll() {
     const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
     const pct = Math.round((m.prog.position / m.prog.duration) * 100);
     const subLabel = m.isSeries ? m.epLabel : formatTime(m.prog.position) + ' watched';
+    const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
     const clickFn = m.isSeries
       ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
       : `openInfoFromCategory(getItem(${registerItem(m.card)}))`;
@@ -3309,16 +3357,18 @@ function openContinueWatchingAll() {
         ${poster
           ? `<img src="${poster}" alt="${title}" loading="lazy">`
           : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
+        <button onclick="removeFromContinue('${removeKey}',event);openContinueWatchingAll();"
+          style="position:absolute;top:0.3rem;right:0.3rem;z-index:5;background:rgba(0,0,0,0.75);border:none;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
         <div class="category-card-label">${title}<br><span style="color:var(--gold);font-size:0.6rem;">${subLabel}</span></div>
         <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.15);">
           <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
         </div>
       </div>`;
   }).join('');
-
-  document.getElementById('categoryOverlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
 }
+
+// Hide Clear All button when category overlay is used for non-continue-watching categories
+// (merged into the existing closeCategory patch at the bottom of the file)
 
 // ── LIKE ──────────────────────────────────────────────────────────────────────
 function toggleLike(itemId, btn) {
@@ -3983,10 +4033,12 @@ function bnOpenSeriesGenre() {
   openCategory('Series on Picha+', items);
 }
 
-// When categoryOverlay closes, go back to categories page
+// When categoryOverlay closes, go back to categories page and hide Clear All if visible
 const _origCloseCategory = closeCategory;
 closeCategory = function() {
   _origCloseCategory();
+  const btn = document.getElementById('continueWatchingClearAll');
+  if (btn) btn.style.display = 'none';
   if (_bnActive === 'categories') {
     bnOpenCategories();
   }
