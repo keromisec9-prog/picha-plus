@@ -1589,6 +1589,20 @@ const myList = JSON.parse(localStorage.getItem('pichaplus_mylist') || '[]');
 const liked = JSON.parse(localStorage.getItem('pichaplus_liked') || '[]');
 const progress = JSON.parse(localStorage.getItem('pichaplus_progress') || '{}');
 
+// ── AUTO-CLEAN old series progress keys (tmdbId only, no episode info) ──
+// These were saved before the series__tmdbId__epIndex format was introduced.
+// We can't play them correctly so remove them on load. Runs once after _seriesList loads.
+function _cleanOldSeriesProgress() {
+  const seriesList = window._seriesList || [];
+  if (!seriesList.length) return;
+  let changed = false;
+  seriesList.forEach(s => {
+    const key = String(s.tmdbId);
+    if (progress[key]) { delete progress[key]; changed = true; }
+  });
+  if (changed) localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+}
+
 function saveMyList() { localStorage.setItem('pichaplus_mylist', JSON.stringify(myList)); }
 function saveLiked() { localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
 function saveProgress(id, pos, dur) {
@@ -3522,6 +3536,8 @@ function loadSeries(catalog) {
 
   // Store series for reference
   window._seriesList = seriesData;
+  _cleanOldSeriesProgress();
+  renderContinueWatching(); // re-render now that stale keys are gone
 }
 
 function showSeries(idx) {
