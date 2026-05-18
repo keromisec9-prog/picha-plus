@@ -2533,11 +2533,15 @@ function playFromInfo() {
 function toggleMyListFromInfo() {
   if (currentInfoItem) {
     const btn = document.getElementById('infoAddBtn');
+    const wasInList = myList.some(m => m.id === currentInfoItem.id);
     toggleMyList(currentInfoItem, btn);
-    // Reopen with updated state
-    const item = currentInfoItem;
-    closeInfo();
-    setTimeout(() => showInfo(item), 100);
+    if (wasInList) {
+      // Removing — just close cleanly, no reopen
+      closeInfo();
+    } else {
+      // Adding — update button state in place (already done by toggleMyList)
+      // no close/reopen needed
+    }
   }
 }
 
@@ -3132,6 +3136,33 @@ function toggleMyList(item, btn) {
   }
   saveMyList();
   renderMyListRow();
+  // If the Saved page is currently open, refresh it immediately so
+  // the card disappears (or appears) without needing a tab switch.
+  const savedPage = document.getElementById('bnSavedPage');
+  if (savedPage && savedPage.style.display !== 'none') {
+    const grid = document.getElementById('bnSavedGrid');
+    const empty = document.getElementById('bnSavedEmpty');
+    if (!myList.length) {
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      const TMDB_IMG = window.TMDB_IMG || 'https://image.tmdb.org/t/p/';
+      grid.innerHTML = myList.map(item => {
+        const title = item.title || item.name || '';
+        const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
+        const regIdx = registerItem(item);
+        return `
+          <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx}))" style="transition:opacity 0.3s,transform 0.3s;">
+            ${poster
+              ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
+              : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
+            ${item._vj ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
+            <div class="category-card-label">${esc(title)}</div>
+          </div>`;
+      }).join('');
+    }
+  }
 }
 
 function renderMyListRow() {
