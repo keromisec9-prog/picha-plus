@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pichaplus.app",
+      "sha256_cert_fingerprints": [
+        "3C:4F:94:70:60:0B:A9:99:37:F8:D2:7D:A9:C8:D6:97:EC:65:97:1C:CB:6E:D8:3F:60:EF:DD:3E:31:C5:37:1A"
+      ]
+    }
+  }
+]
