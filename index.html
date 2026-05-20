@@ -4200,5 +4200,39 @@ closeCategory = function() {
 </div>
 
 
-<script>window.addEventListener("load",function(){var s=document.getElementById("app-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},450);}});</script></body>
+<script>window.addEventListener("load",function(){var s=document.getElementById("app-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},450);}});</script><script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+const firebaseApp = initializeApp({
+  apiKey: "AIzaSyCJMclaAgp-fh-FunUxOvuC8VgKoyiF_7A",
+  authDomain: "picha-entertainment.firebaseapp.com",
+  projectId: "picha-entertainment",
+  storageBucket: "picha-entertainment.firebasestorage.app",
+  messagingSenderId: "37619691033",
+  appId: "1:37619691033:web:25c2443a7286275f44c488"
+});
+const messaging = getMessaging(firebaseApp);
+async function registerPush() {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
+    const token = await getToken(messaging, { vapidKey: "BA8iST3ROPKkAZyyCtoLzUpxwrZw-rXhNqA9TX9vrWt67XwVzgPq7PVS7EMOKLM_T_QY2Wge3FzsBByYlEYOT5w" });
+    if (token) {
+      const session = JSON.parse(localStorage.getItem("picha_session") || "{}");
+      if (session.token) {
+        fetch("https://picha-plus-worker.kerosoftz522.workers.dev/register-push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Session-Token": session.token },
+          body: JSON.stringify({ fcmToken: token })
+        });
+      }
+    }
+  } catch(e) { console.log("Push registration failed", e); }
+}
+onMessage(messaging, (payload) => {
+  const { title, body } = payload.notification || {};
+  if (Notification.permission === "granted") new Notification(title || "Picha+", { body, icon: "/icon-192.png" });
+});
+window.addEventListener("load", () => setTimeout(registerPush, 3000));
+</script></body>
 </html>
