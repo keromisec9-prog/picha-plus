@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Picha+</title>
   <link rel="manifest" href="manifest.json"/>
+  <meta name="google-site-verification" content="NlB1YmKSpprCklkg8pcPhnuZ0ybQaQbxHzfTcGSIzKw" />
   <meta name="theme-color" content="#0f0f0f"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -4218,7 +4219,7 @@ async function registerPush() {
     if (permission !== "granted") return;
     const token = await getToken(messaging, { vapidKey: "BA8iST3ROPKkAZyyCtoLzUpxwrZw-rXhNqA9TX9vrWt67XwVzgPq7PVS7EMOKLM_T_QY2Wge3FzsBByYlEYOT5w" });
     if (token) {
-      const session = JSON.parse(localStorage.getItem("picha_session") || "{}");
+      const session = JSON.parse(localStorage.getItem("pichaplus_session") || "{}");
       if (session.token) {
         fetch("https://picha-plus-worker.kerosoftz522.workers.dev/register-push", {
           method: "POST",
