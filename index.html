@@ -1570,6 +1570,69 @@
     .bn-list-icon.vj-icon svg { stroke: #64b4ff; }
     .bn-list-name { font-size: 1rem; font-weight: 500; }
     .bn-list-count { margin-left: auto; font-size: 0.75rem; color: var(--gray); }
+  
+    /* ── TV & DESKTOP RESPONSIVE ── */
+    @media (min-width: 1024px) {
+      :root { --card-w: 180px; }
+      body { font-size: 18px; }
+      .nav { padding: 0 4vw; height: 70px; }
+      .nav-logo { font-size: 2rem; }
+      .nav-links { display: flex; gap: 2rem; font-size: 1rem; }
+      .hero { min-height: 70vh; }
+      .hero-content { max-width: 50%; }
+      .hero-title { font-size: 4rem; }
+      .hero-desc { display: block; font-size: 1.1rem; }
+      .hero-btn { padding: 1rem 2.5rem; font-size: 1rem; }
+      .row-title { font-size: 1.4rem; padding: 0 4vw; }
+      .cards-row { padding: 0 4vw; gap: 1rem; }
+      .category-grid { grid-template-columns: repeat(7, 1fr); gap: 1rem; padding: 1.5rem 4vw 4rem; }
+      .plans-grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+      .footer-top { padding: 3rem 4vw; }
+    }
+
+    @media (min-width: 1280px) {
+      :root { --card-w: 220px; }
+      body { font-size: 20px; }
+      .hero-title { font-size: 5rem; }
+      .nav { height: 80px; }
+      .category-grid { grid-template-columns: repeat(8, 1fr); }
+    }
+
+    @media (min-width: 1920px) {
+      :root { --card-w: 260px; }
+      body { font-size: 24px; }
+      .hero { min-height: 80vh; }
+      .hero-title { font-size: 6rem; }
+      .nav { height: 90px; padding: 0 6vw; }
+      .row-title { font-size: 1.8rem; padding: 0 6vw; }
+      .cards-row { padding: 0 6vw; gap: 1.5rem; }
+      .category-grid { grid-template-columns: repeat(10, 1fr); padding: 2rem 6vw 5rem; }
+    }
+
+    /* ── FOCUS / D-PAD NAVIGATION ── */
+    :focus {
+      outline: 4px solid var(--gold);
+      border-radius: 8px;
+    }
+    :focus:not(:focus-visible) { outline: none; }
+    :focus-visible { outline: 4px solid var(--gold); border-radius: 8px; }
+    .card:focus, .card:focus-visible {
+      outline: 4px solid var(--gold);
+      transform: scale(1.08);
+      z-index: 10;
+    }
+    .hero-btn:focus, .hero-btn:focus-visible {
+      outline: 4px solid var(--gold);
+      box-shadow: 0 0 0 6px rgba(229,185,60,0.3);
+    }
+
+    /* ── MOUSE HOVER IMPROVEMENTS FOR DESKTOP ── */
+    @media (hover: hover) {
+      .card:hover { transform: scale(1.05); cursor: pointer; }
+      .hero-btn:hover { transform: scale(1.03); }
+      .nav-links a:hover { color: var(--gold); }
+    }
+
   </style>
 </head>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -4235,5 +4298,54 @@ onMessage(messaging, (payload) => {
   if (Notification.permission === "granted") new Notification(title || "Picha+", { body, icon: "/icon-192.png" });
 });
 window.addEventListener("load", () => setTimeout(registerPush, 3000));
+
+  // ── TV REMOTE / KEYBOARD NAVIGATION ──
+  (function() {
+    let focusables = [];
+    let focusIndex = 0;
+
+    function getFocusables() {
+      return Array.from(document.querySelectorAll(
+        '.card, .hero-btn, .nav-links a, button:not([style*="display:none"]), [tabindex="0"]'
+      )).filter(el => el.offsetParent !== null);
+    }
+
+    function moveFocus(dir) {
+      focusables = getFocusables();
+      if (!focusables.length) return;
+      const current = document.activeElement;
+      const idx = focusables.indexOf(current);
+      if (dir === 'next') focusIndex = idx < focusables.length - 1 ? idx + 1 : 0;
+      if (dir === 'prev') focusIndex = idx > 0 ? idx - 1 : focusables.length - 1;
+      focusables[focusIndex].focus();
+      focusables[focusIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    document.addEventListener('keydown', function(e) {
+      switch(e.key) {
+        case 'ArrowRight': moveFocus('next'); e.preventDefault(); break;
+        case 'ArrowLeft':  moveFocus('prev'); e.preventDefault(); break;
+        case 'ArrowDown':  moveFocus('next'); e.preventDefault(); break;
+        case 'ArrowUp':    moveFocus('prev'); e.preventDefault(); break;
+        case 'Enter':
+          if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.click();
+          }
+          break;
+        case 'Backspace':
+        case 'Escape':
+          const overlay = document.querySelector('.category-overlay.active');
+          if (overlay) overlay.classList.remove('active');
+          const modal = document.querySelector('.modal.active, [id*="modal"][style*="flex"]');
+          if (modal) modal.style.display = 'none';
+          break;
+        case ' ':
+          const vid = document.querySelector('video');
+          if (vid) { vid.paused ? vid.play() : vid.pause(); e.preventDefault(); }
+          break;
+      }
+    });
+  })();
+
 </script></body>
 </html>
