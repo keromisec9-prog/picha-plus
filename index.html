@@ -2715,6 +2715,20 @@ async function _doDownload(endpoint, filename, meta) {
   // Show the toast ONCE at start only — user can track progress in Saved tab
   showToast('Downloading ' + meta.title + '… check Saved for progress', '');
 
+  try {
+    // Use direct URL with token param — lets Android download natively
+    // No memory loading, continues in background even if app closes
+    const dlUrl = endpoint + (endpoint.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(session.token);
+    const a = document.createElement('a');
+    a.href = dlUrl; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    record.progress = 100; record.done = true; record.failed = false;
+    saveDownloads(); renderSavedDownloads();
+    showToast('✅ ' + meta.title + ' downloading to your device!', 'gold');
+    return;
+  } catch(e) {}
+
+  // Fallback: fetch into memory
   const abort = new AbortController();
   _dlAborts[dlId] = abort;
 
