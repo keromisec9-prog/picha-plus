@@ -4375,7 +4375,10 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
   // ── TV REMOTE / KEYBOARD NAVIGATION (2D Spatial) ──
   (function() {
     function getFocusables() {
-      return Array.from(document.querySelectorAll(
+      // If a modal is open, only focus elements inside it
+      const modal = document.querySelector('.info-modal.active, .modal-overlay.active');
+      const scope = modal || document;
+      return Array.from(scope.querySelectorAll(
         '.card, .hero-btn, .nav-links a, .tab, button:not([style*="display:none"]), [tabindex="0"]'
       )).filter(el => el.offsetParent !== null);
     }
