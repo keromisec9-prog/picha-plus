@@ -1633,7 +1633,66 @@
       .nav-links a:hover { color: var(--gold); }
     }
 
-  </style>
+  
+    /* ── TV / LARGE SCREEN SCALING ── */
+    @media (min-width: 960px) and (min-height: 540px) {
+      :root {
+        --card-w: 200px;
+      }
+      .nav { padding: 0 6vw; height: 70px; }
+      .nav-logo { font-size: 2.2rem; }
+      .nav-links a { font-size: 1rem; }
+      .hero { height: 90vh; }
+      .hero-title { font-size: 3.5rem; }
+      .hero-meta { font-size: 1rem; }
+      .hero-btn { font-size: 1rem; padding: 0.8rem 2rem; }
+      .row-title { font-size: 1.3rem; }
+      .card-title { font-size: 0.85rem; }
+      .section-title { font-size: 1.8rem; }
+    }
+
+    @media (min-width: 1280px) {
+      :root {
+        --card-w: 240px;
+      }
+      .nav { padding: 0 8vw; height: 80px; }
+      .nav-logo { font-size: 2.8rem; }
+      .nav-links a { font-size: 1.1rem; }
+      .hero-title { font-size: 5rem; }
+      .hero-btn { font-size: 1.1rem; padding: 1rem 2.5rem; gap: 0.6rem; }
+      .row-title { font-size: 1.5rem; }
+      .card-title { font-size: 1rem; }
+      .scroll-row { gap: 1.2rem; padding: 0.5rem 6vw 1rem; }
+      .row-header { padding: 0 6vw; }
+    }
+
+    @media (min-width: 1920px) {
+      :root {
+        --card-w: 300px;
+      }
+      .nav { padding: 0 10vw; height: 90px; }
+      .nav-logo { font-size: 3.5rem; }
+      .hero-title { font-size: 6rem; }
+      .hero-btn { font-size: 1.3rem; padding: 1.2rem 3rem; }
+      .row-title { font-size: 1.8rem; }
+      .scroll-row { gap: 1.5rem; padding: 0.5rem 8vw 1rem; }
+      .row-header { padding: 0 8vw; }
+    }
+
+    /* TV focus ring - bigger and more visible */
+    @media (min-width: 960px) {
+      :focus-visible {
+        outline: 5px solid var(--gold) !important;
+        outline-offset: 4px;
+        border-radius: 8px;
+      }
+      .card:focus-visible {
+        transform: scale(1.08) !important;
+        outline: 5px solid var(--gold) !important;
+      }
+    }
+
+</style>
 </head>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
 
@@ -2477,7 +2536,7 @@ function createCard(item, showProgress = false) {
   const regIdx = registerItem(item);
 
   return `
-    <div class="card" onclick="showInfo(getItem(${regIdx}))">
+    <div class="card" tabindex="0" onclick="showInfo(getItem(${regIdx}))" onkeydown="if(event.key==='Enter')showInfo(getItem(${regIdx}))">
       ${poster
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
         : `<div class="card-poster-placeholder">🎬</div>`}
@@ -4313,50 +4372,95 @@ onMessage(messaging, (payload) => {
 });
 window.addEventListener("load", () => setTimeout(registerPush, 3000));
 
-  // ── TV REMOTE / KEYBOARD NAVIGATION ──
+  // ── TV REMOTE / KEYBOARD NAVIGATION (2D Spatial) ──
   (function() {
-    let focusables = [];
-    let focusIndex = 0;
-
     function getFocusables() {
       return Array.from(document.querySelectorAll(
-        '.card, .hero-btn, .nav-links a, button:not([style*="display:none"]), [tabindex="0"]'
+        '.card, .hero-btn, .nav-links a, .tab, button:not([style*="display:none"]), [tabindex="0"]'
       )).filter(el => el.offsetParent !== null);
     }
 
-    function moveFocus(dir) {
-      focusables = getFocusables();
-      if (!focusables.length) return;
-      const current = document.activeElement;
-      const idx = focusables.indexOf(current);
-      if (dir === 'next') focusIndex = idx < focusables.length - 1 ? idx + 1 : 0;
-      if (dir === 'prev') focusIndex = idx > 0 ? idx - 1 : focusables.length - 1;
-      focusables[focusIndex].focus();
-      focusables[focusIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    function getRect(el) { return el.getBoundingClientRect(); }
+
+    function findBest(current, dir) {
+      const all = getFocusables();
+      const cr = getRect(current);
+      const cx = cr.left + cr.width / 2;
+      const cy = cr.top + cr.height / 2;
+
+      let best = null, bestScore = Infinity;
+
+      for (const el of all) {
+        if (el === current) continue;
+        const r = getRect(el);
+        const ex = r.left + r.width / 2;
+        const ey = r.top + r.height / 2;
+        const dx = ex - cx, dy = ey - cy;
+
+        let valid = false;
+        if (dir === 'right' && dx > 10) valid = true;
+        if (dir === 'left'  && dx < -10) valid = true;
+        if (dir === 'down'  && dy > 10) valid = true;
+        if (dir === 'up'    && dy < -10) valid = true;
+
+        if (!valid) continue;
+
+        // Score: primary axis distance + penalty for off-axis distance
+        let primary, secondary;
+        if (dir === 'right' || dir === 'left') { primary = Math.abs(dx); secondary = Math.abs(dy); }
+        else { primary = Math.abs(dy); secondary = Math.abs(dx); }
+
+        const score = primary + secondary * 2;
+        if (score < bestScore) { bestScore = score; best = el; }
+      }
+      return best;
     }
 
     document.addEventListener('keydown', function(e) {
+      const cur = document.activeElement;
+      let dir = null;
+      if (e.key === 'ArrowRight') dir = 'right';
+      if (e.key === 'ArrowLeft')  dir = 'left';
+      if (e.key === 'ArrowDown')  dir = 'down';
+      if (e.key === 'ArrowUp')    dir = 'up';
+
+      if (dir) {
+        e.preventDefault();
+        if (!cur || cur === document.body) {
+          const first = getFocusables()[0];
+          if (first) { first.focus(); first.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          return;
+        }
+        const next = findBest(cur, dir);
+        if (next) { next.focus(); next.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        return;
+      }
+
       switch(e.key) {
-        case 'ArrowRight': moveFocus('next'); e.preventDefault(); break;
-        case 'ArrowLeft':  moveFocus('prev'); e.preventDefault(); break;
-        case 'ArrowDown':  moveFocus('next'); e.preventDefault(); break;
-        case 'ArrowUp':    moveFocus('prev'); e.preventDefault(); break;
         case 'Enter':
-          if (document.activeElement && document.activeElement !== document.body) {
-            document.activeElement.click();
-          }
+          if (cur && cur !== document.body) cur.click();
           break;
         case 'Backspace':
         case 'Escape':
           const overlay = document.querySelector('.category-overlay.active');
-          if (overlay) overlay.classList.remove('active');
-          const modal = document.querySelector('.modal.active, [id*="modal"][style*="flex"]');
-          if (modal) modal.style.display = 'none';
+          if (overlay) { overlay.classList.remove('active'); break; }
+          const modal = document.querySelector('.modal-overlay.active');
+          if (modal) { modal.classList.remove('active'); break; }
           break;
         case ' ':
           const vid = document.querySelector('video');
           if (vid) { vid.paused ? vid.play() : vid.pause(); e.preventDefault(); }
           break;
+      }
+    });
+
+    // Auto-focus first element on load for TV
+    window.addEventListener('load', () => {
+      if (window.innerWidth >= 960) {
+        setTimeout(() => {
+          const first = getFocusables()[0];
+          if (first) first.focus();
+        }, 1000);
       }
     });
   })();
