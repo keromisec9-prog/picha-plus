@@ -3138,7 +3138,7 @@ async function handleCardPlay(item) {
     // Session conflict — another device is already streaming
     closePlayer();
     showInfo(item);
-    if (res.status === 403 || (data.error && /session|device|concurrent|another/i.test(data.error))) {
+    if (res.status === 401 || res.status === 403 || (data.error && /session|device|concurrent|another|sign in|revoked/i.test(data.error))) {
       showSessionConflictToast();
     } else {
       showToast('This title is not yet available for streaming', 'error');
@@ -3453,7 +3453,7 @@ async function resumeWatching(item) {
     const data = await res.json();
     if (data.url) { initPlayer(data.url, item); return; }
     closePlayer();
-    if (res.status === 403 || (data.error && /session|device|concurrent|another/i.test(data.error))) {
+    if (res.status === 401 || res.status === 403 || (data.error && /session|device|concurrent|another|sign in|revoked/i.test(data.error))) {
       showSessionConflictToast();
     } else {
       showToast('Video unavailable', 'error');
