@@ -2132,7 +2132,12 @@ if (!console.warn)  console.warn  = console.log;
   };
 
   function startCastSession() {
-    if (typeof cast === 'undefined' || typeof chrome === 'undefined') {
+    // In native app, delegate to native Cast dialog
+  if (window.PichaApp && window.PichaApp.startCast) {
+    window.PichaApp.startCast();
+    return;
+  }
+  if (typeof cast === 'undefined' || typeof chrome === 'undefined') {
       alert('Cast not available. Make sure you're on Chrome or a Cast-enabled browser.');
       return;
     }
