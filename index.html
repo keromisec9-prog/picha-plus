@@ -2132,12 +2132,7 @@ if (!console.warn)  console.warn  = console.log;
   };
 
   function startCastSession() {
-    // In native app, delegate to native Cast dialog
-  if (window.PichaApp && window.PichaApp.startCast) {
-    window.PichaApp.startCast();
-    return;
-  }
-  if (typeof cast === 'undefined' || typeof chrome === 'undefined') {
+    if (typeof cast === 'undefined' || typeof chrome === 'undefined') {
       alert('Cast not available. Make sure you're on Chrome or a Cast-enabled browser.');
       return;
     }
@@ -4061,11 +4056,6 @@ function openInfoFromCategory(item) {
 
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
 document.addEventListener('DOMContentLoaded', () => {
-  // Force-show cast button in native app (WebView can't load Cast SDK)
-  if (window.PichaApp) {
-    const castBtn = document.getElementById('navCastBtn');
-    if (castBtn) castBtn.style.display = 'flex';
-  }
   document.getElementById('categoryOverlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('categoryOverlay')) closeCategory();
   });
