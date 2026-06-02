@@ -4056,6 +4056,11 @@ function openInfoFromCategory(item) {
 
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
 document.addEventListener('DOMContentLoaded', () => {
+  // Force-show cast button in native app (WebView can't load Cast SDK)
+  if (window.PichaApp) {
+    const castBtn = document.getElementById('navCastBtn');
+    if (castBtn) castBtn.style.display = 'flex';
+  }
   document.getElementById('categoryOverlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('categoryOverlay')) closeCategory();
   });
