@@ -2920,6 +2920,7 @@ async function playDownloaded(dlId) {
       bnSavedOpen: document.getElementById('bnSavedPage')?.style.display !== 'none',
     };
     document.getElementById('playerModal').classList.add('active');
+    if (window.PichaApp) window.PichaApp.setPlayerOpen(true);
     document.body.style.overflow = 'hidden';
     const video = document.getElementById('player');
     if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
@@ -3238,6 +3239,7 @@ function formatTime(s) {
 let _playerReturnState = null;
 
 function closePlayer() {
+  if (window.PichaApp) window.PichaApp.setPlayerOpen(false);
   const video = document.getElementById('player');
   video.pause();
   if (shakaUI)     { try { shakaUI.destroy();     } catch(e){} shakaUI = null; }
