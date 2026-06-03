@@ -1953,7 +1953,7 @@ function saveProgress(id, pos, dur) {
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav" id="bottomNav">
     <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       HOME
     </button>
     <button class="bn-tab" id="bn-categories" onclick="bnGo('categories')">
@@ -4298,11 +4298,7 @@ closeCategory = function() {
 
 <!-- CATEGORIES PAGE -->
 <div class="bn-page" id="bnCategoriesPage" style="display:none;">
-  <div class="bn-page-header">
-    <button class="nav-search-btn" onclick="openSearch()" style="background:none;border:none;color:var(--white);cursor:pointer;padding:0.4rem;margin-left:auto;">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    </button>
-  </div>
+
   <div class="bn-tabs-row">
     <button class="bn-inner-tab active" id="bit-genre" onclick="bnInnerTab('genre')">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
