@@ -1539,7 +1539,7 @@
     .bn-tabs-row {
       display: flex; gap: 0; border-bottom: 1px solid var(--border);
       padding: 0 1.2rem;
-      position: sticky; top: 60px; z-index: 195; background: var(--bg);
+      position: sticky; top: 60px; z-index: 195; background: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.8);
       background: var(--bg);
     }
     .bn-inner-tab {
@@ -4298,7 +4298,7 @@ closeCategory = function() {
 
 <!-- CATEGORIES PAGE -->
 <div class="bn-page" id="bnCategoriesPage" style="display:none;">
-  <div style="height:60px;background:var(--bg);"></div>
+  <div style="height:105px;background:var(--bg);"></div>
   <div class="bn-tabs-row">
     <button class="bn-inner-tab active" id="bit-genre" onclick="bnInnerTab('genre')">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
