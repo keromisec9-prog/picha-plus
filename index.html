@@ -1369,18 +1369,21 @@
 
     /* ── CATEGORY PAGE OVERLAY ── */
     .category-overlay {
-      display: none;
       position: fixed;
       inset: 0;
       background: var(--bg);
       z-index: 700;
       overflow-y: auto;
-      animation: fadeIn 0.22s ease;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(18px);
+      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0.22s;
     }
-    .category-overlay.active { display: block; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .category-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0s;
     }
     .category-header {
       position: sticky;
