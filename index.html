@@ -280,6 +280,12 @@
       height: clamp(300px, 52vh, 480px);
       overflow: hidden;
     }
+    @media (min-height: 750px) and (max-width: 500px) {
+      .hero { height: 45vh; }
+    }
+    @media (min-height: 850px) and (max-width: 500px) {
+      .hero { height: 42vh; }
+    }
 
     .hero-bg {
       position: absolute;
