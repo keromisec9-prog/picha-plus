@@ -4045,11 +4045,15 @@ function openCategory(name, items) {
 
   document.getElementById('categoryOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
+  // Hide bn-pages to prevent flash
+  document.querySelectorAll('.bn-page').forEach(p => p.style.visibility = 'hidden');
 }
 
 function closeCategory() {
   document.getElementById('categoryOverlay').classList.remove('active');
   document.body.style.overflow = '';
+  // Restore bn-pages
+  document.querySelectorAll('.bn-page').forEach(p => p.style.visibility = '');
 }
 
 function openInfoFromCategory(item) {
