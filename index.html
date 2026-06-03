@@ -1374,16 +1374,21 @@
       background: var(--bg);
       z-index: 700;
       overflow-y: auto;
-      opacity: 0;
       visibility: hidden;
-      transform: translateY(18px);
-      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0.22s;
     }
     .category-overlay.active {
-      opacity: 1;
       visibility: visible;
+    }
+    .category-overlay .category-header,
+    .category-overlay .category-grid {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    .category-overlay.active .category-header,
+    .category-overlay.active .category-grid {
+      opacity: 1;
       transform: translateY(0);
-      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0s;
     }
     .category-header {
       position: sticky;
@@ -4045,15 +4050,11 @@ function openCategory(name, items) {
 
   document.getElementById('categoryOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
-  // Hide bn-pages to prevent flash
-  document.querySelectorAll('.bn-page').forEach(p => p.style.visibility = 'hidden');
 }
 
 function closeCategory() {
   document.getElementById('categoryOverlay').classList.remove('active');
   document.body.style.overflow = '';
-  // Restore bn-pages
-  document.querySelectorAll('.bn-page').forEach(p => p.style.visibility = '');
 }
 
 function openInfoFromCategory(item) {
