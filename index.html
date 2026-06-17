@@ -3622,12 +3622,30 @@ async function handleSearch(query) {
   }
   results.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
   searchTimer = setTimeout(async () => {
+    const q = query.trim().toLowerCase();
+
+    // Search local catalog first
+    const localItems = (window._allCards || []).filter(item =>
+      (item.title || '').toLowerCase().includes(q)
+    );
+
+    if (localItems.length) {
+      // Show local results with a header indicating availability
+      results.innerHTML = 
+        '<div style="color:#f0a500;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">Available on Picha+</div>' +
+        localItems.slice(0, 20).map(item => createCard(item)).join('');
+      return;
+    }
+
+    // No local results — fall back to TMDB
     const items = await tmdbSearch(query);
     if (!items.length) {
       results.innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">No results found</div>';
       return;
     }
-    results.innerHTML = items.slice(0, 20).map(item => createCard(item)).join('');
+    results.innerHTML = 
+      '<div style="color:#666;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">No matches in library — showing general results</div>' +
+      items.slice(0, 20).map(item => createCard(item)).join('');
   }, 400);
 }
 
