@@ -3349,25 +3349,9 @@ async function upnextPlayNow() {
   const cacheKey = `${s._kvKey}__${idx}`;
   const cachedUrl = window._prefetchCache[cacheKey];
 
-  // Always ensure currentSeries is set
+  // Always use the reliable playEpisode path
   currentSeries = s;
-
-  if (cachedUrl) {
-    // Use prefetched URL instantly — no waiting
-    console.log('[UpNext] Using prefetched URL');
-    const ep = s.episodes?.[idx];
-    const epKey = `series__${s._kvKey}__${idx}`;
-    const epTitle = `${s.title} — Episode ${ep?.episode || (idx+1)}${ep?.title && ep.title !== 'undefined' ? ': ' + ep.title : ''}`;
-    document.getElementById('playerTitle').textContent = epTitle;
-    document.getElementById('playerModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-    initPlayer(cachedUrl, { id: epKey, title: epTitle, _seriesKvKey: s._kvKey, _epIndex: idx });
-    delete window._prefetchCache[cacheKey]; // clear after use
-  } else {
-    // Fallback to normal playEpisode if prefetch missed
-    console.log('[UpNext] Prefetch miss, fetching now');
-    playEpisode(idx);
-  }
+  playEpisode(idx);
 }
 
 function upnextCancel() {
