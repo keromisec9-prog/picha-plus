@@ -3298,7 +3298,7 @@ async function initPlayer(url, item) {
 
       // Show Up Next overlay
       document.getElementById('upnextTitle').textContent = s.title;
-      document.getElementById('upnextEp').textContent = nextEp.ep || `Episode ${nextIndex + 1}`;
+      document.getElementById('upnextEp').textContent = `Episode ${nextEp.episode || (nextIndex+1)}${nextEp.title && nextEp.title !== 'undefined' ? ': ' + nextEp.title : ''}`;
       const overlay = document.getElementById('upnextOverlay');
       overlay.classList.add('active');
 
@@ -3308,7 +3308,7 @@ async function initPlayer(url, item) {
       bar.style.transform = 'scaleX(1)';
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          bar.style.transition = 'transform 8s linear';
+          bar.style.transition = 'transform 5s linear';
           bar.style.transform = 'scaleX(0)';
         });
       });
@@ -3320,7 +3320,7 @@ async function initPlayer(url, item) {
       // Auto play after 8 seconds
       window._upnextTimer = setTimeout(() => {
         upnextPlayNow();
-      }, 8000);
+      }, 5000);
     });
 
   } catch (err) {
@@ -4002,7 +4002,7 @@ async function playEpisode(epIndex) {
   const ep = s?.episodes?.[epIndex];
   if (!ep) return;
 
-  document.getElementById('playerTitle').textContent = `${s.title} — ${ep.ep}`;
+  document.getElementById('playerTitle').textContent = `${s.title} — Episode ${ep.episode || (epIndex+1)}${ep.title && ep.title !== 'undefined' ? ': ' + ep.title : ''}`;
 
   // Snapshot current UI state so closePlayer() can restore it
   _playerReturnState = {
@@ -4023,7 +4023,7 @@ async function playEpisode(epIndex) {
     if (data.url) {
       // Use KV key (unique per VJ version) so two VJ versions of same series are independent
       const epKey = `series__${s._kvKey}__${epIndex}`;
-      initPlayer(data.url, { id: epKey, title: `${s.title} ${ep.ep}`, _seriesKvKey: s._kvKey, _epIndex: epIndex });
+      initPlayer(data.url, { id: epKey, title: `${s.title} — Episode ${ep.episode || (epIndex+1)}`, _seriesKvKey: s._kvKey, _epIndex: epIndex });
     } else {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
