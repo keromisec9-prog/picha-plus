@@ -834,6 +834,27 @@
 
     /* ── PLAYER MODAL ── */
     /* ── UP NEXT OVERLAY ── */
+    .upnext-persistent {
+      position: absolute;
+      bottom: 80px;
+      right: 16px;
+      width: 220px;
+      background: rgba(0,0,0,0.82);
+      border: 1px solid rgba(229,185,60,0.35);
+      border-radius: 10px;
+      padding: 10px 12px;
+      z-index: 9998;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+    .upnext-persistent.visible { display: flex; }
+    .upnext-persistent .up-label { font-size: 0.68rem; color: #e5b93c; text-transform: uppercase; letter-spacing: 0.08em; }
+    .upnext-persistent .up-title { font-size: 0.85rem; color: #fff; font-weight: 600; }
+    .upnext-persistent .up-ep { font-size: 0.72rem; color: #aaa; }
+
     .upnext-overlay {
       position: absolute;
       bottom: 80px;
@@ -2139,6 +2160,11 @@ function saveProgress(id, pos, dur) {
     <span class="player-title-text" id="playerTitle"></span>
     <div style="width:60px;"></div>
   </div>
+  <div id="upnextPersistent" class="upnext-persistent">
+    <div class="up-label">Up Next</div>
+    <div class="up-title" id="upnextPersistentTitle"></div>
+    <div class="up-ep" id="upnextPersistentEp"></div>
+  </div>
   <div id="upnextOverlay" class="upnext-overlay">
     <div class="upnext-label">Up Next</div>
     <div class="upnext-title" id="upnextTitle"></div>
@@ -3296,6 +3322,24 @@ async function initPlayer(url, item) {
     }
     video.play().catch(() => {});
 
+    // ── PERSISTENT UP NEXT panel — show/hide with controls on tap ──
+    window._upnextPersistentReady = false;
+    const shakaContainer = document.getElementById('shakaContainer');
+    const persistentPanel = document.getElementById('upnextPersistent');
+
+    // Watch Shaka controls visibility via MutationObserver
+    const controlsObserver = new MutationObserver(() => {
+      const controlsEl = shakaContainer.querySelector('.shaka-controls-container');
+      if (!controlsEl || !window._upnextPersistentReady) return;
+      const isShown = controlsEl.classList.contains('shown') ||
+                      window.getComputedStyle(controlsEl).opacity > 0.1;
+      persistentPanel.classList.toggle('visible', isShown);
+    });
+    controlsObserver.observe(shakaContainer, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+    // Store observer to disconnect on player close
+    window._controlsObserver = controlsObserver;
+
     // ── PREFETCH next episode in background ──
     if (item?._seriesKvKey != null) {
       const _pSeries = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
@@ -3333,6 +3377,11 @@ async function initPlayer(url, item) {
       // Store next ep info for play now button
       window._upnextSeries = s;
       window._upnextEpIndex = nextIndex;
+
+      // Update persistent "Up Next" info panel
+      document.getElementById('upnextPersistentTitle').textContent = s.title;
+      document.getElementById('upnextPersistentEp').textContent = `Episode ${nextEp.episode || (nextIndex+1)}${nextEp.title && nextEp.title !== 'undefined' ? ': ' + nextEp.title : ''}`;
+      window._upnextPersistentReady = true;
 
       // Auto play after 8 seconds
       window._upnextTimer = setTimeout(() => {
@@ -3426,6 +3475,9 @@ let _playerReturnState = null;
 function closePlayer() {
   clearTimeout(window._upnextTimer);
   document.getElementById('upnextOverlay')?.classList.remove('active');
+  document.getElementById('upnextPersistent')?.classList.remove('visible');
+  window._upnextPersistentReady = false;
+  if (window._controlsObserver) { window._controlsObserver.disconnect(); window._controlsObserver = null; }
   if (window.PichaApp) window.PichaApp.showCastButton(true);
   const video = document.getElementById('player');
   video.pause();
