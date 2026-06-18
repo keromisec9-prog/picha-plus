@@ -3215,9 +3215,6 @@ async function handleCardPlay(item) {
 }
 
 async function initPlayer(url, item) {
-  const video = document.getElementById('player');
-  const container = document.getElementById('shakaContainer');
-
   // Destroy existing instance cleanly
   if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
   if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e){} shakaPlayer = null; }
@@ -3229,6 +3226,10 @@ async function initPlayer(url, item) {
       <video id="player" playsinline style="width:100%;height:100%;object-fit:contain;display:block;"></video>
     </div>`;
   await new Promise(r => setTimeout(r, 100));
+
+  // Get fresh references AFTER DOM reset
+  const video = document.getElementById('player');
+  const container = document.getElementById('shakaContainer');
 
   // Install polyfills once — safe on all browsers
   try { shaka.polyfill.installAll(); } catch(e) { console.warn('Shaka polyfill:', e); }
