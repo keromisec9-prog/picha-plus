@@ -3222,12 +3222,13 @@ async function initPlayer(url, item) {
   if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
   if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e){} shakaPlayer = null; }
 
-  // Reset video element to clear any stuck state
-  const videoEl = document.getElementById('player');
-  videoEl.pause();
-  videoEl.removeAttribute('src');
-  videoEl.load();
-  await new Promise(r => setTimeout(r, 300));
+  // Fully reset the player container to clear any stuck Shaka DOM state
+  const playerWrapper = document.getElementById('playerWrapper');
+  playerWrapper.innerHTML = `
+    <div id="shakaContainer" style="position:absolute;inset:0;width:100%;height:100%;">
+      <video id="player" playsinline style="width:100%;height:100%;object-fit:contain;display:block;"></video>
+    </div>`;
+  await new Promise(r => setTimeout(r, 100));
 
   // Install polyfills once — safe on all browsers
   try { shaka.polyfill.installAll(); } catch(e) { console.warn('Shaka polyfill:', e); }
