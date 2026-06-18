@@ -3344,14 +3344,35 @@ async function upnextPlayNow() {
   const s = window._upnextSeries;
   const idx = window._upnextEpIndex;
   if (!s || idx == null) return;
-  currentSeries = s;
 
-  const cacheKey = `${s._kvKey}__${idx}`;
-  const cachedUrl = window._prefetchCache[cacheKey];
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  if (!session.isSubscribed()) { showPaywall(); return; }
 
-  // Always use the reliable playEpisode path
-  currentSeries = s;
-  playEpisode(idx);
+  const ep = s.episodes?.[idx];
+  if (!ep) return;
+
+  const epTitle = `${s.title} — Episode ${ep.episode || (idx+1)}${ep.title && ep.title !== 'undefined' ? ': ' + ep.title : ''}`;
+  document.getElementById('playerTitle').textContent = epTitle;
+  document.getElementById('playerModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const res = await fetch(`${API}/episode?seriesId=${s.tmdbId}&ep=${idx}`, {
+      headers: { 'X-Session-Token': session.token }
+    });
+    const data = await res.json();
+    if (data.url) {
+      const epKey = `series__${s._kvKey}__${idx}`;
+      currentSeries = s;
+      initPlayer(data.url, { id: epKey, title: epTitle, _seriesKvKey: s._kvKey, _epIndex: idx });
+    } else {
+      closePlayer();
+      showToast(data.error || 'Episode unavailable', 'error');
+    }
+  } catch {
+    closePlayer();
+    showToast('Failed to load episode', 'error');
+  }
 }
 
 function upnextCancel() {
