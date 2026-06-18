@@ -3287,6 +3287,14 @@ async function initPlayer(url, item) {
     }
     video.play().catch(() => {});
 
+    // ── PREFETCH next episode in background ──
+    if (item?._seriesKvKey != null) {
+      const _pSeries = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
+      const _pNextIdx = (item._epIndex || 0) + 1;
+      // Start prefetch after 10 seconds of playback (user is committed to watching)
+      setTimeout(() => prefetchNextEpisode(_pSeries, _pNextIdx), 10000);
+    }
+
     // ── UP NEXT for series episodes ──
     video.addEventListener('ended', () => {
       if (item?._seriesKvKey == null) return; // not a series episode
@@ -3330,19 +3338,57 @@ async function initPlayer(url, item) {
   }
 }
 
-function upnextPlayNow() {
+async function upnextPlayNow() {
   clearTimeout(window._upnextTimer);
   document.getElementById('upnextOverlay').classList.remove('active');
   const s = window._upnextSeries;
   const idx = window._upnextEpIndex;
   if (!s || idx == null) return;
   currentSeries = s;
-  playEpisode(idx);
+
+  const cacheKey = `${s._kvKey}__${idx}`;
+  const cachedUrl = window._prefetchCache[cacheKey];
+
+  if (cachedUrl) {
+    // Use prefetched URL instantly — no waiting
+    console.log('[UpNext] Using prefetched URL');
+    const ep = s.episodes?.[idx];
+    const epKey = `series__${s._kvKey}__${idx}`;
+    document.getElementById('playerTitle').textContent =
+      `${s.title} — Episode ${ep?.episode || (idx+1)}${ep?.title && ep.title !== 'undefined' ? ': ' + ep.title : ''}`;
+    initPlayer(cachedUrl, { id: epKey, title: `${s.title} — Episode ${ep?.episode || (idx+1)}`, _seriesKvKey: s._kvKey, _epIndex: idx });
+    delete window._prefetchCache[cacheKey]; // clear after use
+  } else {
+    // Fallback to normal playEpisode if prefetch missed
+    console.log('[UpNext] Prefetch miss, fetching now');
+    playEpisode(idx);
+  }
 }
 
 function upnextCancel() {
   clearTimeout(window._upnextTimer);
   document.getElementById('upnextOverlay').classList.remove('active');
+}
+
+// ── NEXT EPISODE PREFETCH CACHE ──────────────────────────────────────────────
+window._prefetchCache = {};
+
+async function prefetchNextEpisode(s, nextIndex) {
+  if (!s || !s.episodes?.[nextIndex]) return;
+  const cacheKey = `${s._kvKey}__${nextIndex}`;
+  if (window._prefetchCache[cacheKey]) return; // already cached
+  try {
+    const res = await fetch(`${API}/episode?seriesId=${s.tmdbId}&ep=${nextIndex}`, {
+      headers: { 'X-Session-Token': session.token }
+    });
+    const data = await res.json();
+    if (data.url) {
+      window._prefetchCache[cacheKey] = data.url;
+      console.log('[Prefetch] Cached ep', nextIndex, 'for', s.title);
+    }
+  } catch(e) {
+    console.warn('[Prefetch] Failed:', e);
+  }
 }
 
 function formatTime(s) {
