@@ -3357,21 +3357,26 @@ async function upnextPlayNow() {
   document.body.style.overflow = 'hidden';
 
   try {
+    showToast('Loading next episode...', 'info');
+    console.log('[UpNext] Fetching:', s.tmdbId, 'ep:', idx, 'token:', session.token?.slice(0,10));
     const res = await fetch(`${API}/episode?seriesId=${s.tmdbId}&ep=${idx}`, {
       headers: { 'X-Session-Token': session.token }
     });
     const data = await res.json();
+    console.log('[UpNext] Response:', JSON.stringify(data).slice(0, 200));
     if (data.url) {
       const epKey = `series__${s._kvKey}__${idx}`;
       currentSeries = s;
+      showToast('Starting episode ' + (idx+1), 'info');
       initPlayer(data.url, { id: epKey, title: epTitle, _seriesKvKey: s._kvKey, _epIndex: idx });
     } else {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
     }
-  } catch {
+  } catch(e) {
     closePlayer();
-    showToast('Failed to load episode', 'error');
+    console.error('[UpNext] Error:', e);
+    showToast('Error: ' + e.message, 'error');
   }
 }
 
