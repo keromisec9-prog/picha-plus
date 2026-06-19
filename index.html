@@ -3333,8 +3333,32 @@ async function initPlayer(url, item) {
       }
     }
 
-    // ── UP NEXT for series episodes ──
+    // ── UP NEXT for series episodes AND movies ──
     video.addEventListener('ended', () => {
+      // ── MOVIE UP NEXT ──
+      if (item?._seriesKvKey == null && item?.id) {
+        const allMovies = (window._allCards || []).filter(c => c.media_type !== 'tv' && c._isOwned);
+        const currentIdx = allMovies.findIndex(c => String(c.id) === String(item.id));
+        const nextMovie = allMovies[currentIdx + 1];
+        if (nextMovie) {
+          document.getElementById('upnextTitle').textContent = nextMovie.title || nextMovie.name || '';
+          document.getElementById('upnextEp').textContent = nextMovie._vj ? `VJ ${nextMovie._vj}` : '';
+          const overlay = document.getElementById('upnextOverlay');
+          overlay.classList.add('active');
+          window._upnextMovie = nextMovie;
+          window._upnextSeries = null;
+          const bar = document.getElementById('upnextBar');
+          bar.style.transition = 'none';
+          bar.style.transform = 'scaleX(1)';
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            bar.style.transition = 'transform 5s linear';
+            bar.style.transform = 'scaleX(0)';
+          }));
+          window._upnextTimer = setTimeout(() => upnextPlayNow(), 5000);
+        }
+        return;
+      }
+
       if (item?._seriesKvKey == null) return; // not a series episode
       const s = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
       if (!s) return;
@@ -3376,6 +3400,16 @@ async function initPlayer(url, item) {
 async function upnextPlayNow() {
   clearTimeout(window._upnextTimer);
   document.getElementById('upnextOverlay').classList.remove('active');
+
+  // Movie autoplay
+  if (window._upnextMovie && !window._upnextSeries) {
+    const movie = window._upnextMovie;
+    window._upnextMovie = null;
+    document.getElementById('playerTitle').textContent = movie.title || movie.name || '';
+    await handleCardPlay(movie);
+    return;
+  }
+
   const s = window._upnextSeries;
   const idx = window._upnextEpIndex;
   if (!s || idx == null) return;
