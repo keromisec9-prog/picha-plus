@@ -3296,50 +3296,58 @@ async function initPlayer(url, item) {
     }
     video.play().catch(() => {});
 
+    // ── TAP TO TOGGLE CONTROLS + UP NEXT panel ──
+    let _controlsVisible = false;
+    let _hideTimer = null;
+
+    const _shakaCtrl = video.closest('#shakaContainer')?.querySelector('.shaka-controls-container')
+                    || document.querySelector('.shaka-controls-container');
+
+    function showControls() {
+      _controlsVisible = true;
+      if (_shakaCtrl) _shakaCtrl.setAttribute('shown', '');
+      // Show Up Next panel if next ep exists and episode not ended
+      if (window._upnextSeries && !video.ended) {
+        const overlay = document.getElementById('upnextOverlay');
+        const bar = document.getElementById('upnextBar');
+        overlay.classList.add('active');
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(0)';
+      }
+      clearTimeout(_hideTimer);
+    }
+
+    function hideControls() {
+      _controlsVisible = false;
+      if (_shakaCtrl) _shakaCtrl.removeAttribute('shown');
+      if (!video.ended) {
+        document.getElementById('upnextOverlay').classList.remove('active');
+      }
+    }
+
+    video.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (_controlsVisible) {
+        hideControls();
+      } else {
+        showControls();
+      }
+    });
+
     // ── PREFETCH next episode in background ──
     if (item?._seriesKvKey != null) {
       const _pSeries = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
       const _pNextIdx = (item._epIndex || 0) + 1;
       // Start prefetch after 10 seconds of playback (user is committed to watching)
       setTimeout(() => prefetchNextEpisode(_pSeries, _pNextIdx), 10000);
-    }
 
-    // ── SHOW UP NEXT with controls (no countdown) ──
-    if (item?._seriesKvKey != null) {
-      const _uSeries = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
-      const _uNextIdx = (item._epIndex || 0) + 1;
-      const _uNextEp = _uSeries?.episodes?.[_uNextIdx];
-      if (_uSeries && _uNextEp) {
-        // Pre-fill the overlay content
-        document.getElementById('upnextTitle').textContent = _uSeries.title;
-        document.getElementById('upnextEp').textContent = `Episode ${_uNextEp.episode || (_uNextIdx+1)}${_uNextEp.title && _uNextEp.title !== 'undefined' ? ': ' + _uNextEp.title : ''}`;
-        window._upnextSeries = _uSeries;
-        window._upnextEpIndex = _uNextIdx;
-
-        // Hide countdown bar initially
-        const bar = document.getElementById('upnextBar');
-        bar.style.transition = 'none';
-        bar.style.transform = 'scaleX(0)';
-
-        // Watch Shaka controls visibility
-        const _shakaContainer = document.getElementById('shakaContainer');
-        const _observer = new MutationObserver(() => {
-          const ctrl = _shakaContainer.querySelector('.shaka-controls-container');
-          if (!ctrl) return;
-          const shown = ctrl.classList.contains('shown') || ctrl.style.opacity === '1';
-          const overlay = document.getElementById('upnextOverlay');
-          const isEnded = video.ended;
-          if (shown && !isEnded) {
-            // Show without countdown
-            overlay.classList.add('active');
-            bar.style.transition = 'none';
-            bar.style.transform = 'scaleX(0)';
-          } else if (!shown && !isEnded) {
-            overlay.classList.remove('active');
-          }
-        });
-        _observer.observe(_shakaContainer, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
-        window._controlsObserver = _observer;
+      // Pre-fill Up Next panel info
+      const _pNextEp = _pSeries?.episodes?.[_pNextIdx];
+      if (_pNextEp) {
+        document.getElementById('upnextTitle').textContent = _pSeries.title;
+        document.getElementById('upnextEp').textContent = `Episode ${_pNextEp.episode || (_pNextIdx+1)}${_pNextEp.title && _pNextEp.title !== 'undefined' ? ': ' + _pNextEp.title : ''}`;
+        window._upnextSeries = _pSeries;
+        window._upnextEpIndex = _pNextIdx;
       }
     }
 
