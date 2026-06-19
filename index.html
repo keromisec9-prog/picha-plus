@@ -3321,6 +3321,36 @@ async function initPlayer(url, item) {
     }
     video.play().catch(() => {});
 
+    // ── EARLY UP NEXT: show 10 mins before end (movies only) ──
+    let _earlyUpnextShown = false;
+    let _earlyUpnextCancelled = false;
+    video.addEventListener('timeupdate', () => {
+      if (item?._seriesKvKey != null) return; // series only handled on ended
+      if (_earlyUpnextShown || _earlyUpnextCancelled) return;
+      if (!video.duration || video.duration < 600) return; // skip short videos
+      const remaining = video.duration - video.currentTime;
+      if (remaining <= 600) { // 10 minutes before end
+        const allMovies = (window._allCards || []).filter(c => c.media_type !== 'tv' && c._isOwned);
+        const currentIdx = allMovies.findIndex(c => String(c.id) === String(item.id));
+        const nextMovie = allMovies[currentIdx + 1];
+        if (!nextMovie) return;
+        _earlyUpnextShown = true;
+        window._upnextMovie = nextMovie;
+        window._upnextSeries = null;
+        document.getElementById('upnextTitle').textContent = nextMovie.title || nextMovie.name || '';
+        document.getElementById('upnextEp').textContent = nextMovie._vj || '';
+        const _mPoster = document.getElementById('upnextPoster');
+        const _mPosterUrl = nextMovie.poster || (nextMovie.poster_path ? `https://image.tmdb.org/t/p/w200${nextMovie.poster_path}` : '');
+        if (_mPosterUrl) { _mPoster.src = _mPosterUrl; _mPoster.style.display = 'block'; }
+        else { _mPoster.style.display = 'none'; }
+        // Show without countdown bar
+        const bar = document.getElementById('upnextBar');
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(0)';
+        document.getElementById('upnextOverlay').classList.add('active');
+      }
+    });
+
     // ── PREFETCH next episode in background ──
     if (item?._seriesKvKey != null) {
       const _pSeries = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
@@ -3356,6 +3386,19 @@ async function initPlayer(url, item) {
           overlay.classList.add('active');
           window._upnextMovie = nextMovie;
           window._upnextSeries = null;
+          const _p = document.getElementById('upnextPoster');
+          const _pUrl = nextMovie.poster || (nextMovie.poster_path ? `https://image.tmdb.org/t/p/w200${nextMovie.poster_path}` : '');
+          if (_pUrl) { _p.src = _pUrl; _p.style.display = 'block'; } else { _p.style.display = 'none'; }
+
+          // If early upnext was not cancelled, autoplay immediately
+          if (!_earlyUpnextCancelled) {
+            upnextPlayNow();
+            return;
+          }
+
+          // Was cancelled — show again with 5s countdown
+          document.getElementById('upnextTitle').textContent = nextMovie.title || nextMovie.name || '';
+          document.getElementById('upnextEp').textContent = nextMovie._vj || '';
           const bar = document.getElementById('upnextBar');
           bar.style.transition = 'none';
           bar.style.transform = 'scaleX(1)';
@@ -3363,6 +3406,7 @@ async function initPlayer(url, item) {
             bar.style.transition = 'transform 5s linear';
             bar.style.transform = 'scaleX(0)';
           }));
+          document.getElementById('upnextOverlay').classList.add('active');
           window._upnextTimer = setTimeout(() => upnextPlayNow(), 5000);
         }
         return;
@@ -3461,6 +3505,8 @@ async function upnextPlayNow() {
 function upnextCancel() {
   clearTimeout(window._upnextTimer);
   document.getElementById('upnextOverlay').classList.remove('active');
+  // Mark as cancelled so ended handler shows again with countdown
+  _earlyUpnextCancelled = true;
 }
 
 // ── NEXT EPISODE PREFETCH CACHE ──────────────────────────────────────────────
