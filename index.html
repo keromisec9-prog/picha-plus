@@ -2139,8 +2139,6 @@ function saveProgress(id, pos, dur) {
     <span class="player-title-text" id="playerTitle"></span>
     <div style="width:60px;"></div>
   </div>
-  <!-- Tap overlay to control controls + Up Next visibility -->
-  <div id="playerTapOverlay" style="position:absolute;inset:0;z-index:100;"></div>
   <div id="upnextOverlay" class="upnext-overlay">
     <div class="upnext-label">Up Next</div>
     <div class="upnext-title" id="upnextTitle"></div>
@@ -3317,49 +3315,6 @@ async function initPlayer(url, item) {
       showToast(`Resuming from ${formatTime(savedPos)}`);
     }
     video.play().catch(() => {});
-
-    // ── TAP OVERLAY: toggle controls + Up Next together ──
-    if (window._ctrlInterval) clearInterval(window._ctrlInterval);
-    let _ctrlShown = false;
-    let _autoHideTimer = null;
-
-    function _showPlayerControls() {
-      _ctrlShown = true;
-      // Tell Shaka to show controls
-      const ctrl = container.querySelector('.shaka-controls-container');
-      if (ctrl) ctrl.style.opacity = '1';
-      // Show Up Next if next ep ready and not ended
-      if (window._upnextSeries && !video.ended) {
-        const overlay = document.getElementById('upnextOverlay');
-        const bar = document.getElementById('upnextBar');
-        overlay.classList.add('active');
-        bar.style.transition = 'none';
-        bar.style.transform = 'scaleX(0)';
-      }
-      // Auto-hide after 3s
-      clearTimeout(_autoHideTimer);
-      _autoHideTimer = setTimeout(_hidePlayerControls, 3000);
-    }
-
-    function _hidePlayerControls() {
-      _ctrlShown = false;
-      const ctrl = container.querySelector('.shaka-controls-container');
-      if (ctrl) ctrl.style.opacity = '0';
-      if (!video.ended) {
-        document.getElementById('upnextOverlay').classList.remove('active');
-      }
-      clearTimeout(_autoHideTimer);
-    }
-
-    const tapOverlay = document.getElementById('playerTapOverlay');
-    tapOverlay.addEventListener('click', () => {
-      if (_ctrlShown) {
-        _hidePlayerControls();
-      } else {
-        _showPlayerControls();
-      }
-    });
-    window._hidePlayerControls = _hidePlayerControls;
 
     // ── PREFETCH next episode in background ──
     if (item?._seriesKvKey != null) {
