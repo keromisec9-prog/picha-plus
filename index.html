@@ -3304,6 +3304,45 @@ async function initPlayer(url, item) {
       setTimeout(() => prefetchNextEpisode(_pSeries, _pNextIdx), 10000);
     }
 
+    // ── SHOW UP NEXT with controls (no countdown) ──
+    if (item?._seriesKvKey != null) {
+      const _uSeries = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
+      const _uNextIdx = (item._epIndex || 0) + 1;
+      const _uNextEp = _uSeries?.episodes?.[_uNextIdx];
+      if (_uSeries && _uNextEp) {
+        // Pre-fill the overlay content
+        document.getElementById('upnextTitle').textContent = _uSeries.title;
+        document.getElementById('upnextEp').textContent = `Episode ${_uNextEp.episode || (_uNextIdx+1)}${_uNextEp.title && _uNextEp.title !== 'undefined' ? ': ' + _uNextEp.title : ''}`;
+        window._upnextSeries = _uSeries;
+        window._upnextEpIndex = _uNextIdx;
+
+        // Hide countdown bar initially
+        const bar = document.getElementById('upnextBar');
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(0)';
+
+        // Watch Shaka controls visibility
+        const _shakaContainer = document.getElementById('shakaContainer');
+        const _observer = new MutationObserver(() => {
+          const ctrl = _shakaContainer.querySelector('.shaka-controls-container');
+          if (!ctrl) return;
+          const shown = ctrl.classList.contains('shown') || ctrl.style.opacity === '1';
+          const overlay = document.getElementById('upnextOverlay');
+          const isEnded = video.ended;
+          if (shown && !isEnded) {
+            // Show without countdown
+            overlay.classList.add('active');
+            bar.style.transition = 'none';
+            bar.style.transform = 'scaleX(0)';
+          } else if (!shown && !isEnded) {
+            overlay.classList.remove('active');
+          }
+        });
+        _observer.observe(_shakaContainer, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        window._controlsObserver = _observer;
+      }
+    }
+
     // ── UP NEXT for series episodes ──
     video.addEventListener('ended', () => {
       if (item?._seriesKvKey == null) return; // not a series episode
@@ -3313,13 +3352,13 @@ async function initPlayer(url, item) {
       const nextEp = s.episodes?.[nextIndex];
       if (!nextEp) return; // no next episode
 
-      // Show Up Next overlay
-      document.getElementById('upnextTitle').textContent = s.title;
-      document.getElementById('upnextEp').textContent = `Episode ${nextEp.episode || (nextIndex+1)}${nextEp.title && nextEp.title !== 'undefined' ? ': ' + nextEp.title : ''}`;
+      // Overlay already pre-filled — just start countdown
       const overlay = document.getElementById('upnextOverlay');
       overlay.classList.add('active');
+      window._upnextSeries = s;
+      window._upnextEpIndex = nextIndex;
 
-      // Animate countdown bar over 8 seconds
+      // Animate countdown bar over 5 seconds
       const bar = document.getElementById('upnextBar');
       bar.style.transition = 'none';
       bar.style.transform = 'scaleX(1)';
@@ -3329,10 +3368,6 @@ async function initPlayer(url, item) {
           bar.style.transform = 'scaleX(0)';
         });
       });
-
-      // Store next ep info for play now button
-      window._upnextSeries = s;
-      window._upnextEpIndex = nextIndex;
 
 
       // Auto play after 8 seconds
@@ -3427,6 +3462,7 @@ let _playerReturnState = null;
 function closePlayer() {
   clearTimeout(window._upnextTimer);
   document.getElementById('upnextOverlay')?.classList.remove('active');
+  if (window._controlsObserver) { window._controlsObserver.disconnect(); window._controlsObserver = null; }
   if (window.PichaApp) window.PichaApp.showCastButton(true);
   const video = document.getElementById('player');
   video.pause();
