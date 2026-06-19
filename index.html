@@ -3254,6 +3254,26 @@ async function initPlayer(url, item) {
     fadeDelay: 3,
   });
 
+  // ── Sync Up Next panel with Shaka controls visibility ──
+  const _shakaControls = shakaUI.getControls();
+  if (_shakaControls) {
+    _shakaControls.addEventListener('uiupdated', () => {
+      if (video.ended) return;
+      const ctrl = container.querySelector('.shaka-controls-container');
+      if (!ctrl) return;
+      const visible = ctrl.classList.contains('shown');
+      const overlay = document.getElementById('upnextOverlay');
+      if (visible && window._upnextSeries) {
+        overlay.classList.add('active');
+        const bar = document.getElementById('upnextBar');
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(0)';
+      } else if (!visible && !video.ended) {
+        overlay.classList.remove('active');
+      }
+    });
+  }
+
   // Fix Shaka's injected wrapper to fill the container fully
   requestAnimationFrame(() => {
     const wrap = container.querySelector('.shaka-video-container');
@@ -3295,44 +3315,6 @@ async function initPlayer(url, item) {
       showToast(`Resuming from ${formatTime(savedPos)}`);
     }
     video.play().catch(() => {});
-
-    // ── TAP TO TOGGLE CONTROLS + UP NEXT panel ──
-    let _controlsVisible = false;
-    let _hideTimer = null;
-
-    const _shakaCtrl = video.closest('#shakaContainer')?.querySelector('.shaka-controls-container')
-                    || document.querySelector('.shaka-controls-container');
-
-    function showControls() {
-      _controlsVisible = true;
-      if (_shakaCtrl) _shakaCtrl.setAttribute('shown', '');
-      // Show Up Next panel if next ep exists and episode not ended
-      if (window._upnextSeries && !video.ended) {
-        const overlay = document.getElementById('upnextOverlay');
-        const bar = document.getElementById('upnextBar');
-        overlay.classList.add('active');
-        bar.style.transition = 'none';
-        bar.style.transform = 'scaleX(0)';
-      }
-      clearTimeout(_hideTimer);
-    }
-
-    function hideControls() {
-      _controlsVisible = false;
-      if (_shakaCtrl) _shakaCtrl.removeAttribute('shown');
-      if (!video.ended) {
-        document.getElementById('upnextOverlay').classList.remove('active');
-      }
-    }
-
-    video.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (_controlsVisible) {
-        hideControls();
-      } else {
-        showControls();
-      }
-    });
 
     // ── PREFETCH next episode in background ──
     if (item?._seriesKvKey != null) {
