@@ -3390,13 +3390,7 @@ async function initPlayer(url, item) {
           const _pUrl = nextMovie.poster || (nextMovie.poster_path ? `https://image.tmdb.org/t/p/w200${nextMovie.poster_path}` : '');
           if (_pUrl) { _p.src = _pUrl; _p.style.display = 'block'; } else { _p.style.display = 'none'; }
 
-          // If early upnext was not cancelled, autoplay immediately
-          if (!_earlyUpnextCancelled) {
-            upnextPlayNow();
-            return;
-          }
-
-          // Was cancelled — show again with 5s countdown
+          // Always show 5s countdown when movie ends
           document.getElementById('upnextTitle').textContent = nextMovie.title || nextMovie.name || '';
           document.getElementById('upnextEp').textContent = nextMovie._vj || '';
           const bar = document.getElementById('upnextBar');
