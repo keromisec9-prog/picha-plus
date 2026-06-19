@@ -2141,8 +2141,13 @@ function saveProgress(id, pos, dur) {
   </div>
   <div id="upnextOverlay" class="upnext-overlay">
     <div class="upnext-label">Up Next</div>
-    <div class="upnext-title" id="upnextTitle"></div>
-    <div class="upnext-ep" id="upnextEp"></div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <img id="upnextPoster" src="" alt="" style="width:54px;height:76px;object-fit:cover;border-radius:6px;flex-shrink:0;display:none;"/>
+      <div style="flex:1;min-width:0;">
+        <div class="upnext-title" id="upnextTitle"></div>
+        <div class="upnext-ep" id="upnextEp"></div>
+      </div>
+    </div>
     <div class="upnext-bar-wrap"><div class="upnext-bar" id="upnextBar"></div></div>
     <div class="upnext-actions">
       <button class="upnext-play-btn" onclick="upnextPlayNow()">▶ Play Now</button>
@@ -3342,7 +3347,11 @@ async function initPlayer(url, item) {
         const nextMovie = allMovies[currentIdx + 1];
         if (nextMovie) {
           document.getElementById('upnextTitle').textContent = nextMovie.title || nextMovie.name || '';
-          document.getElementById('upnextEp').textContent = nextMovie._vj ? `VJ ${nextMovie._vj}` : '';
+          document.getElementById('upnextEp').textContent = nextMovie._vj || '';
+          const _mPoster = document.getElementById('upnextPoster');
+          const _mPosterUrl = nextMovie.poster || (nextMovie.poster_path ? `https://image.tmdb.org/t/p/w200${nextMovie.poster_path}` : '');
+          if (_mPosterUrl) { _mPoster.src = _mPosterUrl; _mPoster.style.display = 'block'; }
+          else { _mPoster.style.display = 'none'; }
           const overlay = document.getElementById('upnextOverlay');
           overlay.classList.add('active');
           window._upnextMovie = nextMovie;
