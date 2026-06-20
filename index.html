@@ -1342,7 +1342,8 @@
 
     /* ── STATUS BAR ── */
     .status-bar {
-      display: none;
+      display: flex;
+      visibility: hidden;
       padding: 0.5rem 4vw;
       font-size: 0.75rem;
       align-items: center;
@@ -1350,12 +1351,12 @@
       margin-top: 60px;
     }
     .status-bar.active {
-      display: flex;
+      visibility: visible;
       background: linear-gradient(90deg, rgba(70,211,105,0.1), transparent);
       color: #46d369;
     }
     .status-bar.expiring {
-      display: flex;
+      visibility: visible;
       background: linear-gradient(90deg, rgba(229,185,60,0.1), transparent);
       color: var(--gold);
     }
