@@ -2134,6 +2134,21 @@ function saveProgress(id, pos, dur) {
         </svg>
         Continue with Google
       </a>
+
+      <div class="auth-divider">or</div>
+      <div id="authEmailForm">
+        <input type="email" class="auth-input" id="authEmail" placeholder="Email address"/>
+        <input type="password" class="auth-input" id="authPassword" placeholder="Password (min 8 characters)"/>
+        <div id="authNameWrap" style="display:none;">
+          <input type="text" class="auth-input" id="authName" placeholder="Your name"/>
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <button class="auth-submit-btn" id="authSubmitBtn" onclick="handleEmailAuth()">Sign In</button>
+        <div class="auth-toggle">
+          <span id="authToggleText">Don't have an account?</span>
+          <a onclick="toggleAuthMode()"> <span id="authToggleLink">Register</span></a>
+        </div>
+      </div>
       <p class="modal-note">
         By signing in you agree to our
         <a href="https://keromisec9-prog.github.io/Privacy-Policy-/" target="_blank">Privacy Policy</a>.
