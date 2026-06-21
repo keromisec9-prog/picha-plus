@@ -4887,6 +4887,10 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
 
     document.addEventListener('keydown', function(e) {
       const cur = document.activeElement;
+      const isTyping = cur && (cur.tagName === 'INPUT' || cur.tagName === 'TEXTAREA');
+      if (isTyping && (e.key === 'Backspace' || e.key === 'Escape' || e.key.startsWith('Arrow'))) {
+        return; // let the browser handle normal text editing
+      }
       let dir = null;
       if (e.key === 'ArrowRight') dir = 'right';
       if (e.key === 'ArrowLeft')  dir = 'left';
