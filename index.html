@@ -1047,6 +1047,31 @@
     }
     .modal-body { padding: 1.5rem 1.8rem; }
 
+    .auth-divider {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin: 1rem 0; color: #666; font-size: 0.8rem;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: ''; flex: 1; height: 1px; background: #333;
+    }
+    .auth-input {
+      width: 100%; padding: 0.75rem 1rem; border-radius: 8px;
+      border: 1px solid #333; background: #1a1a1a; color: #fff;
+      font-size: 0.9rem; margin-bottom: 0.6rem; box-sizing: border-box;
+    }
+    .auth-input:focus { outline: none; border-color: var(--gold); }
+    .auth-submit-btn {
+      width: 100%; padding: 0.75rem; border-radius: 8px;
+      background: var(--gold); color: #000; font-weight: 700;
+      font-size: 0.95rem; border: none; cursor: pointer; margin-top: 0.2rem;
+    }
+    .auth-submit-btn:hover { opacity: 0.9; }
+    .auth-toggle {
+      text-align: center; font-size: 0.8rem; color: #888; margin-top: 0.75rem;
+    }
+    .auth-toggle a { color: var(--gold); cursor: pointer; text-decoration: none; }
+    .auth-error { color: #ff4444; font-size: 0.8rem; margin-top: 0.25rem; display: none; }
+
     .google-btn {
       display: flex;
       align-items: center;
@@ -4005,6 +4030,63 @@ async function refreshUser() {
     const res = await fetch(`${API}/me`, { headers: { 'X-Session-Token': session.token } });
     if (res.ok) { session.save(session.token, await res.json()); updateUI(); }
   } catch {}
+}
+
+let _authMode = 'login'; // 'login' or 'register'
+
+function toggleAuthMode() {
+  _authMode = _authMode === 'login' ? 'register' : 'login';
+  const isRegister = _authMode === 'register';
+  document.getElementById('authNameWrap').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('authSubmitBtn').textContent = isRegister ? 'Create Account' : 'Sign In';
+  document.getElementById('authToggleText').textContent = isRegister ? 'Already have an account?' : "Don't have an account?";
+  document.getElementById('authToggleLink').textContent = isRegister ? 'Sign In' : 'Register';
+  document.getElementById('authError').style.display = 'none';
+}
+
+async function handleEmailAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const name = document.getElementById('authName')?.value.trim();
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('authSubmitBtn');
+
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+
+  btn.textContent = 'Please wait...';
+  btn.disabled = true;
+
+  try {
+    const endpoint = _authMode === 'register' ? '/auth/register' : '/auth/login';
+    const body = _authMode === 'register' ? { email, password, name } : { email, password };
+    const res = await fetch(API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Something went wrong.';
+      errEl.style.display = 'block';
+      btn.textContent = _authMode === 'register' ? 'Create Account' : 'Sign In';
+      btn.disabled = false;
+      return;
+    }
+
+    // Success — save session same way Google auth does
+    session.save(data.session, data.name, data.picture || '', data.email);
+    closeSignin();
+    updateUI();
+    showToast('Welcome, ' + (data.name || data.email) + '!');
+  } catch(e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = 'block';
+    btn.textContent = _authMode === 'register' ? 'Create Account' : 'Sign In';
+    btn.disabled = false;
+  }
 }
 
 function openSignin() {
