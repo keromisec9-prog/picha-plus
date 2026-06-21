@@ -2120,7 +2120,7 @@ function saveProgress(id, pos, dur) {
 </div>
 
 <!-- SIGN IN MODAL -->
-<div class="modal-overlay" id="signinModal" onclick="closeSignin()">
+<div class="modal-overlay" id="signinModal">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header">
       <h3 class="modal-title">Sign In to Picha<span style="color:var(--gold)">+</span></h3>
@@ -4531,7 +4531,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('paywallModal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('paywallModal')) closePaywall();
   });
-  document.getElementById('signinModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeSignin(); });
+  document.getElementById('signinModal')?.addEventListener('mousedown', e => {
+    if (e.target === e.currentTarget) closeSignin();
+  });
   document.getElementById('paymentModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePayment(); });
   document.getElementById('infoModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeInfo(); });
   document.getElementById('searchOverlay')?.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
