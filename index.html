@@ -4036,7 +4036,10 @@ function updateUI() {
       const _canvas = document.createElement('canvas');
       _canvas.width = 64; _canvas.height = 64;
       const _ctx = _canvas.getContext('2d');
-      _ctx.fillStyle = '#2d4a6b';
+      const _colors = ['#E53935','#D81B60','#8E24AA','#5E35B1','#1E88E5','#00897B','#43A047','#F4511E','#6D4C41','#039BE5'];
+      let _hash = 0;
+      for (const _c of (session.user.name || session.user.email || '')) _hash = (_hash * 31 + _c.charCodeAt(0)) & 0xffffffff;
+      _ctx.fillStyle = _colors[Math.abs(_hash) % _colors.length];
       _ctx.fillRect(0, 0, 64, 64);
       _ctx.fillStyle = '#000';
       _ctx.font = 'bold 32px sans-serif';
