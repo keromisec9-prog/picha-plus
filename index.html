@@ -2379,6 +2379,7 @@ window.addEventListener('load', async () => {
   }
 
   updateUI();
+  if (session.token) refreshUser().then(updateUI);
   loadContent();
 
   // Pre-warm IndexedDB: for any completed downloads, check if blob is stored
