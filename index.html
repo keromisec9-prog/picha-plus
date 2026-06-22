@@ -4036,7 +4036,7 @@ function updateUI() {
       const _canvas = document.createElement('canvas');
       _canvas.width = 64; _canvas.height = 64;
       const _ctx = _canvas.getContext('2d');
-      _ctx.fillStyle = '#e6a817';
+      _ctx.fillStyle = '#2d4a6b';
       _ctx.fillRect(0, 0, 64, 64);
       _ctx.fillStyle = '#000';
       _ctx.font = 'bold 32px sans-serif';
@@ -4141,6 +4141,7 @@ async function handleEmailAuth() {
     session.save(data.session, data.name, data.picture || '', data.email);
     closeSignin();
     updateUI();
+    refreshUser().then(updateUI);
     showToast('Welcome, ' + (data.name || data.email) + '!');
   } catch(e) {
     errEl.textContent = 'Connection error. Please try again.';
