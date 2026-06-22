@@ -4026,7 +4026,25 @@ function updateUI() {
   navUser.classList.toggle('visible', loggedIn);
 
   if (loggedIn && session.user) {
-    document.getElementById('navAvatar').src = session.user.picture || '';
+    const _pic = session.user.picture;
+    const _avatarEl = document.getElementById('navAvatar');
+    if (_pic) {
+      _avatarEl.src = _pic;
+      _avatarEl.style.background = '';
+    } else {
+      const _initials = (session.user.name || session.user.email || '?').trim()[0].toUpperCase();
+      const _canvas = document.createElement('canvas');
+      _canvas.width = 64; _canvas.height = 64;
+      const _ctx = _canvas.getContext('2d');
+      _ctx.fillStyle = '#e6a817';
+      _ctx.fillRect(0, 0, 64, 64);
+      _ctx.fillStyle = '#000';
+      _ctx.font = 'bold 32px sans-serif';
+      _ctx.textAlign = 'center';
+      _ctx.textBaseline = 'middle';
+      _ctx.fillText(_initials, 32, 32);
+      _avatarEl.src = _canvas.toDataURL();
+    }
 
     const days = session.user.subscriptionExpiry
       ? Math.ceil((session.user.subscriptionExpiry - Date.now()) / (1000 * 60 * 60 * 24))
