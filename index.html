@@ -1937,7 +1937,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="continueSection" style="display:none;">
     <div class="row-header">
       <div class="row-title">Continue Watching</div>
-      <button class="row-see-all" onclick="openContinueWatchingAll()">All &rsaquo;</button>
+      <button class="row-see-all" onclick="openContinueWatchingAll()">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
     </div>
     <div class="scroll-row" id="continueRow"></div>
   </div>
@@ -1946,7 +1946,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="newSection">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">New</span> This Week</div>
-      <button class="row-see-all" onclick="openCategory('New This Week', window._newItems || [])">All &rsaquo;</button>
+      <button class="row-see-all" onclick="openCategory('New This Week', window._newItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
     </div>
     <div class="scroll-row" id="newRow">
       <div class="skeleton skeleton-card"></div>
@@ -1961,7 +1961,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="seriesSection" style="display:none;">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">Series</span> on Picha+</div>
-      <button class="row-see-all" onclick="openCategory('Series on Picha+', window._seriesItems || [])">All &rsaquo;</button>
+      <button class="row-see-all" onclick="openCategory('Series on Picha+', window._seriesItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
     </div>
     <div class="scroll-row" id="seriesRow"></div>
   </div>
@@ -1980,7 +1980,7 @@ function saveProgress(id, pos, dur) {
   <div class="content-section" id="latestSection">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">Latest</span> on Picha+</div>
-      <button class="row-see-all" onclick="openCategory('Latest on Picha+', window._latestItems || [])">All &rsaquo;</button>
+      <button class="row-see-all" onclick="openCategory('Latest on Picha+', window._latestItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
     </div>
     <div class="scroll-row" id="latestRow">
       <div class="skeleton skeleton-card"></div>
@@ -2511,7 +2511,7 @@ async function loadContent() {
       section.innerHTML = `
         <div class="row-header">
           <div class="row-title">${name}</div>
-          <button class="row-see-all" onclick="openCategory('${name}', window._genreMap['${gid}'])">All &rsaquo;</button>
+          <button class="row-see-all" onclick="openCategory('${name}', window._genreMap['${gid}'])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
         </div>
         <div class="scroll-row" id="row-${gid}"></div>`;
       container.appendChild(section);
@@ -4466,7 +4466,7 @@ function filterByVJ(vj, btn) {
     section.className = 'content-section';
     section.innerHTML = `
       <div class="row-header"><div class="row-title">${name}</div>
-      <button class="row-see-all" onclick="openCategory('${name}', window._vjGenreMap['${gid}'])">All &rsaquo;</button></div>
+      <button class="row-see-all" onclick="openCategory('${name}', window._vjGenreMap['${gid}'])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button></div>
       <div class="scroll-row" id="row-${gid}"></div>`;
     container.appendChild(section);
     renderRow(`row-${gid}`, items);
