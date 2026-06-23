@@ -1895,7 +1895,7 @@ function saveProgress(id, pos, dur) {
           <span class="material-symbols-rounded" style="font-size:16px;">card_membership</span>
           Manage Plan
         </div>
-        <div class="nav-dropdown-item" onclick="openAccountSettings()">
+        <div class="nav-dropdown-item" id="acctSettingsMenuItem" onclick="openAccountSettings()" style="display:none;">
           <span class="material-symbols-rounded" style="font-size:16px;">settings</span>
           Account Settings
         </div>
@@ -4082,6 +4082,11 @@ function updateUI() {
 
   const navUser = document.getElementById('navUser');
   navUser.classList.toggle('visible', loggedIn);
+  // Show account settings only for email/password users
+  const acctSettingsItem = document.getElementById('acctSettingsMenuItem');
+  if (acctSettingsItem) {
+    acctSettingsItem.style.display = (loggedIn && session.user?.authMethod === 'email') ? 'flex' : 'none';
+  }
 
   if (loggedIn && session.user) {
     const _pic = session.user.picture;
@@ -4145,14 +4150,13 @@ function openAccountSettings() {
   toggleUserMenu();
   const modal = document.getElementById('accountSettingsModal');
   modal.classList.add('active');
-  // Show email
+  // Show email from session.user
   const emailEl = document.getElementById('acctEmail');
-  emailEl.textContent = session.email || session.name || 'Unknown';
-  // Hide password form for Google users
-  const isEmailUser = session.token && session.token.includes('email_');
-  const isGoogleUser = !isEmailUser;
-  document.getElementById('acctPwdGoogleNote').style.display = isGoogleUser ? 'block' : 'none';
-  document.getElementById('acctPwdForm').style.display = isGoogleUser ? 'none' : 'block';
+  emailEl.textContent = session.user?.email || session.user?.name || 'Unknown';
+  // Hide password form for Google users (email users have authMethod === 'email')
+  const isEmailUser = session.user?.authMethod === 'email';
+  document.getElementById('acctPwdGoogleNote').style.display = isEmailUser ? 'none' : 'block';
+  document.getElementById('acctPwdForm').style.display = isEmailUser ? 'block' : 'none';
   // Clear fields
   ['acctCurrentPwd','acctNewPwd','acctConfirmPwd'].forEach(id => {
     const el = document.getElementById(id);
