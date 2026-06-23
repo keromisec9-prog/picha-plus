@@ -1895,6 +1895,10 @@ function saveProgress(id, pos, dur) {
           <span class="material-symbols-rounded" style="font-size:16px;">card_membership</span>
           Manage Plan
         </div>
+        <div class="nav-dropdown-item" onclick="openAccountSettings()">
+          <span class="material-symbols-rounded" style="font-size:16px;">settings</span>
+          Account Settings
+        </div>
         <div class="nav-dropdown-item danger" onclick="signOut()">
           <span class="material-symbols-rounded" style="font-size:16px;">logout</span>
           Sign Out
@@ -2128,6 +2132,44 @@ function saveProgress(id, pos, dur) {
       <p class="info-desc" id="infoDesc"></p>
       <p class="info-genres" id="infoGenres"></p>
       <p class="info-narrative" id="infoNarrative" style="font-size:0.75rem;color:var(--gold);margin-top:0.5rem;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNT SETTINGS MODAL -->
+<div class="modal-overlay" id="accountSettingsModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">Account Settings</h3>
+      <button class="modal-close" onclick="closeAccountSettings()"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div id="acctSettingsContent">
+        <div style="margin-bottom:1.2rem;">
+          <div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">Email</div>
+          <div id="acctEmail" style="font-size:0.95rem;color:#fff;"></div>
+        </div>
+        <div style="border-top:1px solid #222;padding-top:1.2rem;">
+          <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.8rem;">Change Password</div>
+          <div id="acctPwdGoogleNote" style="display:none;font-size:0.8rem;color:#888;padding:0.75rem;background:#1a1a1a;border-radius:8px;">
+            Your account uses Google Sign-In. Password change is not available.
+          </div>
+          <div id="acctPwdForm">
+            <div style="position:relative;">
+              <input type="password" class="auth-input" id="acctCurrentPwd" placeholder="Current password"/>
+            </div>
+            <div style="position:relative;">
+              <input type="password" class="auth-input" id="acctNewPwd" placeholder="New password (min 8 characters)"/>
+            </div>
+            <div style="position:relative;">
+              <input type="password" class="auth-input" id="acctConfirmPwd" placeholder="Confirm new password"/>
+            </div>
+            <div class="auth-error" id="acctPwdError"></div>
+            <div id="acctPwdSuccess" style="color:#46d369;font-size:0.82rem;display:none;margin-bottom:0.5rem;"></div>
+            <button class="auth-submit-btn" onclick="changePassword()">Update Password</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -4098,6 +4140,100 @@ async function refreshUser() {
 }
 
 let _authMode = 'login';
+
+function openAccountSettings() {
+  toggleUserMenu();
+  const modal = document.getElementById('accountSettingsModal');
+  modal.classList.add('active');
+  // Show email
+  const emailEl = document.getElementById('acctEmail');
+  emailEl.textContent = session.email || session.name || 'Unknown';
+  // Hide password form for Google users
+  const isEmailUser = session.token && session.token.includes('email_');
+  const isGoogleUser = !isEmailUser;
+  document.getElementById('acctPwdGoogleNote').style.display = isGoogleUser ? 'block' : 'none';
+  document.getElementById('acctPwdForm').style.display = isGoogleUser ? 'none' : 'block';
+  // Clear fields
+  ['acctCurrentPwd','acctNewPwd','acctConfirmPwd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('acctPwdError').style.display = 'none';
+  document.getElementById('acctPwdSuccess').style.display = 'none';
+}
+
+function closeAccountSettings() {
+  document.getElementById('accountSettingsModal').classList.remove('active');
+}
+
+// Rate limit: max 3 password changes per hour stored in localStorage
+function checkPwdRateLimit() {
+  const key = 'pichaplus_pwd_changes';
+  const now = Date.now();
+  const attempts = JSON.parse(localStorage.getItem(key) || '[]')
+    .filter(t => now - t < 3600000); // keep last hour only
+  if (attempts.length >= 3) return false;
+  attempts.push(now);
+  localStorage.setItem(key, JSON.stringify(attempts));
+  return true;
+}
+
+async function changePassword() {
+  const current = document.getElementById('acctCurrentPwd').value;
+  const newPwd = document.getElementById('acctNewPwd').value;
+  const confirm = document.getElementById('acctConfirmPwd').value;
+  const errEl = document.getElementById('acctPwdError');
+  const successEl = document.getElementById('acctPwdSuccess');
+  const btn = event.target;
+
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (!current || !newPwd || !confirm) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.style.display = 'block'; return;
+  }
+  if (newPwd.length < 8) {
+    errEl.textContent = 'New password must be at least 8 characters.';
+    errEl.style.display = 'block'; return;
+  }
+  if (newPwd !== confirm) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.style.display = 'block'; return;
+  }
+  if (!checkPwdRateLimit()) {
+    errEl.textContent = 'Too many password changes. Please wait an hour before trying again.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.textContent = 'Updating...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(API + '/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify({ currentPassword: current, newPassword: newPwd })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Failed to update password.';
+      errEl.style.display = 'block';
+    } else {
+      successEl.textContent = '✓ Password updated successfully.';
+      successEl.style.display = 'block';
+      ['acctCurrentPwd','acctNewPwd','acctConfirmPwd'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
+  } catch(e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = 'block';
+  }
+
+  btn.textContent = 'Update Password';
+  btn.disabled = false;
+}
 
 function togglePwd(inputId, eyeEl) {
   const input = document.getElementById(inputId);
