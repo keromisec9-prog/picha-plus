@@ -2486,6 +2486,8 @@ async function loadContent() {
       title: v.title,
       poster_path: stripTmdb(v.poster),
       backdrop_path: stripTmdb(v.backdrop),
+      _customPoster: (v.poster && !v.poster.includes('image.tmdb.org')) ? v.poster : null,
+      _customBackdrop: (v.backdrop && !v.backdrop.includes('image.tmdb.org')) ? v.backdrop : null,
       overview: (v.overview || '').replace(/`/g, "'"),  // backticks break template literals in onclick
       vote_average: parseFloat(v.rating) || 0,
       release_date: v.year ? v.year + '-01-01' : '',
@@ -2607,8 +2609,9 @@ function updateHero(index) {
   // Fade out
   bg.classList.add('fade');
   setTimeout(() => {
-    if (backdropPath) {
-      bg.style.backgroundImage = `url(${TMDB_IMG}original${backdropPath})`;
+    const _heroImg = item._customBackdrop || item._customPoster || (backdropPath ? `${TMDB_IMG}original${backdropPath}` : null);
+    if (_heroImg) {
+      bg.style.backgroundImage = `url(${_heroImg})`;
     }
     bg.classList.remove('fade');
     bg.style.transform = 'scale(1.05)';
@@ -2699,7 +2702,7 @@ function renderTop10(rowId, items) {
   const row = document.getElementById(rowId);
   if (!row) return;
   row.innerHTML = items.map((item, i) => {
-    const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null;
+    const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
     return `
       <div class="top10-card" onclick="showInfo(getItem(registerItem(item)))">
         <div class="top10-number">${i + 1}</div>
@@ -2712,7 +2715,7 @@ function renderTop10(rowId, items) {
 
 function createCard(item, showProgress = false) {
   const title = item.title || item.name || '';
-  const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null;
+  const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
   const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : '';
   const isLiked = liked.includes(item.id);
