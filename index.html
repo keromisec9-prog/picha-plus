@@ -4203,10 +4203,11 @@ async function changePassword() {
     errEl.textContent = 'Please fill in all fields.';
     errEl.style.display = 'block'; return;
   }
-  if (newPwd.length < 8) {
-    errEl.textContent = 'New password must be at least 8 characters.';
-    errEl.style.display = 'block'; return;
-  }
+  if (newPwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  if (!/[A-Z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; return; }
+  if (!/[a-z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; return; }
+  if (!/[0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; return; }
+  if (!/[^A-Za-z0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; return; }
   if (newPwd !== confirm) {
     errEl.textContent = 'Passwords do not match.';
     errEl.style.display = 'block'; return;
