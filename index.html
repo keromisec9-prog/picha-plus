@@ -2498,6 +2498,7 @@ async function loadContent() {
       _part: v.part || null,
       _narrative: v.narrative || null,
       _episode: v.episode || null,
+      isUgandan: !!v.isUgandan,
     });
 
     const movieEntries = Object.entries(catalogData.movies || {});
