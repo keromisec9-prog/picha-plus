@@ -2568,6 +2568,22 @@ async function loadContent() {
     // Store genreMap globally for category page
     window._genreMap = genreMap;
 
+    // Ugandan Cinema — manually flagged, separate from TMDB genre map
+    const ugandanItems = cards.filter(c => c.isUgandan);
+    if (ugandanItems.length > 0) {
+      window._ugandanItems = ugandanItems;
+      const ugSection = document.createElement('div');
+      ugSection.className = 'content-section';
+      ugSection.innerHTML = `
+        <div class="row-header">
+          <div class="row-title">🇺🇬 Ugandan Cinema</div>
+          <button class="row-see-all" onclick="openCategory('Ugandan Cinema', window._ugandanItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+        </div>
+        <div class="scroll-row" id="row-ugandan"></div>`;
+      container.appendChild(ugSection);
+      renderRow('row-ugandan', ugandanItems);
+    }
+
     // If only one video, show it in all sections
     if (cards.length === 1) {
       document.getElementById('newRow').innerHTML = '';
