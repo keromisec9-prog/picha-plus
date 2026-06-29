@@ -2509,23 +2509,25 @@ async function loadContent() {
 
     // Hero — rotate through your uploads
     if (cards.length) {
-      heroItems = cards.slice(0, 5);
+      heroItems = cards.filter(c => !c.isUgandan).slice(0, 5);
       updateHero(0);
       buildHeroDots();
       if (heroItems.length > 1) startHeroRotation();
     }
 
     // Latest on Picha+
-    window._latestItems = cards;
-    renderRow('latestRow', cards);
+    const nonUgandanCards = cards.filter(c => !c.isUgandan);
+    window._latestItems = nonUgandanCards;
+    renderRow('latestRow', nonUgandanCards);
 
     // New This Week — most recently added
-    window._newItems = cards.slice(0, 10);
+    window._newItems = nonUgandanCards.slice(0, 10);
     renderRow('newRow', window._newItems);
 
     // Genre rows — group your uploads by genre
     const genreMap = {};
     for (const card of cards) {
+      if (card.isUgandan) continue;
       for (const gid of (card.genre_ids || [])) {
         if (!genreMap[gid]) genreMap[gid] = [];
         genreMap[gid].push(card);
@@ -4458,7 +4460,7 @@ function loadSeries(catalog) {
   const seriesEntries = Object.entries(catalog.series || {});
   if (!seriesEntries.length) return;
   // Attach the KV key to each series object so it's unique even for same-tmdbId, different-VJ versions
-  const seriesData = seriesEntries.map(([kvKey, s]) => ({ ...s, _kvKey: kvKey }));
+  const seriesData = seriesEntries.map(([kvKey, s]) => ({ ...s, _kvKey: kvKey })).filter(s => !s.isUgandan);
 
   const section = document.getElementById('seriesSection');
   const row = document.getElementById('seriesRow');
