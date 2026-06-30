@@ -4842,7 +4842,16 @@ function bnBuildGenreList() {
       <span class="bn-list-count">${seriesItems.length} titles</span>
 
     </div>` : '';
-  el.innerHTML = seriesEntry + usedGenres.map(gid => {
+  const ugandanCards = (window._allCards || []).filter(c => c.isUgandan);
+  const ugandanEntry = ugandanCards.length ? `<div class="bn-list-item" onclick="bnOpenUgandan()">
+      <div class="bn-list-icon">
+        <span style="font-size:18px;">🌍</span>
+      </div>
+      <span class="bn-list-name">African Cinema</span>
+      <span class="bn-list-count">${ugandanCards.length} titles</span>
+
+    </div>` : '';
+  el.innerHTML = seriesEntry + ugandanEntry + usedGenres.map(gid => {
     const name = GENRE_NAMES[gid] || `Genre ${gid}`;
     const count = genreMap[gid].length;
     return `<div class="bn-list-item" onclick="bnOpenGenre('${gid}','${name}')">
@@ -4857,7 +4866,7 @@ function bnBuildGenreList() {
 }
 
 function bnBuildVJList() {
-  const cards = window._allCards || [];
+  const cards = (window._allCards || []).filter(c => !c.isUgandan);
   const vjMap = {};
   cards.forEach(c => { if (c._vj) { vjMap[c._vj] = (vjMap[c._vj] || 0) + 1; } });
   const vjs = Object.keys(vjMap).sort();
@@ -4883,10 +4892,17 @@ function bnOpenGenre(gid, name) {
 }
 
 function bnOpenVJ(vj) {
-  const items = (window._allCards || []).filter(c => c._vj === vj);
+  const items = (window._allCards || []).filter(c => c._vj === vj && !c.isUgandan);
   document.getElementById('bnCategoriesPage').style.display = 'none';
   document.body.style.overflow = '';
   openCategory(vj, items);
+}
+
+function bnOpenUgandan() {
+  const items = window._ugandanItems || (window._allCards || []).filter(c => c.isUgandan);
+  document.getElementById('bnCategoriesPage').style.display = 'none';
+  document.body.style.overflow = '';
+  openCategory('African Cinema', items);
 }
 
 function bnOpenSeriesGenre() {
