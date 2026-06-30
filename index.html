@@ -2797,7 +2797,7 @@ async function showInfo(item) {
   // Backdrop
   const backdropEl = document.getElementById('infoBackdrop');
   const placeholderEl = document.getElementById('infoBackdropPlaceholder');
-  const _backdropUrl = item.backdrop_path ? `${TMDB_IMG}w780${item.backdrop_path}` : item.backdrop ? item.backdrop : item.poster_path ? `${TMDB_IMG}w780${item.poster_path}` : item.poster ? item.poster : null;
+  const _backdropUrl = item._customBackdrop || item._customPoster || (item.backdrop_path ? `${TMDB_IMG}w780${item.backdrop_path}` : item.poster_path ? `${TMDB_IMG}w780${item.poster_path}` : null);
   if (_backdropUrl) {
     backdropEl.src = _backdropUrl;
     backdropEl.style.display = 'block';
@@ -2823,10 +2823,10 @@ async function showInfo(item) {
   document.getElementById('infoDesc').textContent = item.overview || 'No description available.';
 
   // Genres
-  if (item.genre_ids?.length) {
-    const genreNames = item.genre_ids.map(id => GENRES[id]).filter(Boolean).slice(0, 3);
-    document.getElementById('infoGenres').innerHTML = `Genres: <span>${genreNames.join(', ')}</span>`;
-  }
+  const genreNames = (item.genre_ids || []).map(id => GENRES[id]).filter(Boolean).slice(0, 3);
+  document.getElementById('infoGenres').innerHTML = genreNames.length
+    ? `Genres: <span>${genreNames.join(', ')}</span>`
+    : (item.isUgandan ? `<span>🇺🇬 Ugandan Cinema</span>` : '');
 
   // VJ and narrative
   const narrativeEl = document.getElementById('infoNarrative');
