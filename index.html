@@ -2758,7 +2758,7 @@ function createCard(item, showProgress = false) {
       ${poster
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
         : `<div class="card-poster-placeholder">🎬</div>`}
-      ${isLockedAfrican ? `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;text-align:center;pointer-events:none;"><span class="material-symbols-rounded" style="font-size:2rem;color:#fff;">lock</span></div>` : ''}
+      ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
       ${item._vj && !isLockedAfrican ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
       ${item._part ? `<div class="card-badge" style="top:auto;bottom:0.5rem;left:0.4rem;background:rgba(229,185,60,0.15);color:var(--gold);border:1px solid var(--gold);font-size:0.6rem;">${item._part}</div>` : ''}
@@ -3758,11 +3758,12 @@ function toggleMyList(item, btn) {
         const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
         const regIdx = registerItem(item);
         return `
-          <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx}))" style="transition:opacity 0.3s,transform 0.3s;">
+          <div class="category-card" onclick="${item.isUgandan && !session.hasAfricanAccess() ? 'showAfricanUpgradeToast()' : `openInfoFromCategory(getItem(${regIdx}))`}" style="transition:opacity 0.3s,transform 0.3s;position:relative;">
             ${poster
-              ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
+              ? `<img src="${poster}" alt="${esc(title)}" loading="lazy" style="${item.isUgandan && !session.hasAfricanAccess() ? 'filter:brightness(0.4);' : ''}">`
               : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
-            ${item._vj ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
+            ${item.isUgandan && !session.hasAfricanAccess() ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
+            ${item._vj && !(item.isUgandan && !session.hasAfricanAccess()) ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
             <div class="category-card-label">${esc(title)}</div>
           </div>`;
       }).join('');
@@ -4734,12 +4735,14 @@ function openCategory(name, items) {
     const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
     const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14*24*60*60*1000);
     const regIdx3 = registerItem(item);
+    const lockedAfrican = item.isUgandan && !session.hasAfricanAccess();
     return `
-      <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx3}))">
+      <div class="category-card" onclick="${lockedAfrican ? 'showAfricanUpgradeToast()' : `openInfoFromCategory(getItem(${regIdx3}))`}" style="position:relative;">
         ${poster
-          ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
+          ? `<img src="${poster}" alt="${esc(title)}" loading="lazy" style="${lockedAfrican ? 'filter:brightness(0.4);' : ''}">`
           : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
-        ${item._vj ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
+        ${lockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
+        ${item._vj && !lockedAfrican ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
         ${isNew ? `<div class="category-card-type">NEW</div>` : ''}
         <div class="category-card-label">${esc(title)}</div>
       </div>`;
@@ -4980,7 +4983,6 @@ closeCategory = function() {
         <button class="plan-btn">Get Started</button>
       </div>
       <div class="plan-card" onclick="startPayment('dailyplus')" style="border-color:var(--gold);">
-        <div class="plan-badge" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:100px;display:inline-block;margin-bottom:0.4rem;">🌍 AFRICAN CINEMA</div>
         <div class="plan-name">Daily+</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
         <div class="plan-period">24 hour access</div>
@@ -5005,7 +5007,6 @@ closeCategory = function() {
         <button class="plan-btn">Get Started</button>
       </div>
       <div class="plan-card" onclick="startPayment('weeklyplus')" style="border-color:var(--gold);">
-        <div class="plan-badge" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:100px;display:inline-block;margin-bottom:0.4rem;">🌍 AFRICAN CINEMA</div>
         <div class="plan-name">Weekly+</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 8,000</div>
         <div class="plan-period">7 days access</div>
@@ -5031,7 +5032,6 @@ closeCategory = function() {
         <button class="plan-btn">Get Started</button>
       </div>
       <div class="plan-card" onclick="startPayment('monthlyplus')" style="border-color:var(--gold);">
-        <div class="plan-badge" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:100px;display:inline-block;margin-bottom:0.4rem;">🌍 AFRICAN CINEMA</div>
         <div class="plan-name">Monthly+</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 20,000</div>
         <div class="plan-period">per month</div>
