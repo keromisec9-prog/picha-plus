@@ -2579,8 +2579,8 @@ async function loadContent() {
       ugSection.className = 'content-section';
       ugSection.innerHTML = `
         <div class="row-header">
-          <div class="row-title">🇺🇬 Ugandan Cinema</div>
-          <button class="row-see-all" onclick="openCategory('Ugandan Cinema', window._ugandanItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+          <div class="row-title">🌍 African Cinema</div>
+          <button class="row-see-all" onclick="openCategory('African Cinema', window._ugandanItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
         </div>
         <div class="scroll-row" id="row-ugandan"></div>`;
       container.appendChild(ugSection);
@@ -2826,7 +2826,7 @@ async function showInfo(item) {
   const genreNames = (item.genre_ids || []).map(id => GENRES[id]).filter(Boolean).slice(0, 3);
   document.getElementById('infoGenres').innerHTML = genreNames.length
     ? `Genres: <span>${genreNames.join(', ')}</span>`
-    : (item.isUgandan ? `<span>🇺🇬 Ugandan Cinema</span>` : '');
+    : (item.isUgandan ? `<span>🌍 African Cinema</span>` : '');
 
   // VJ and narrative
   const narrativeEl = document.getElementById('infoNarrative');
