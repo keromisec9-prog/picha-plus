@@ -3746,7 +3746,7 @@ function toggleMyList(item, btn) {
       const TMDB_IMG = window.TMDB_IMG || 'https://image.tmdb.org/t/p/';
       grid.innerHTML = myList.map(item => {
         const title = item.title || item.name || '';
-        const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
+        const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
         const regIdx = registerItem(item);
         return `
           <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx}))" style="transition:opacity 0.3s,transform 0.3s;">
@@ -4700,7 +4700,7 @@ function openCategory(name, items) {
   const grid = document.getElementById('categoryGrid');
   grid.innerHTML = _categoryItems.map(item => {
     const title = item.title || item.name || '';
-    const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
+    const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
     const isNew = item.release_date && new Date(item.release_date) > new Date(Date.now() - 14*24*60*60*1000);
     const regIdx3 = registerItem(item);
     return `
@@ -4798,7 +4798,7 @@ function bnOpenSaved() {
     empty.style.display = 'none';
     grid.innerHTML = myList.map(item => {
       const title = item.title || item.name || '';
-      const poster = item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : (item.poster || null);
+      const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
       const regIdx = registerItem(item);
       return `
         <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx}))">
