@@ -1819,7 +1819,11 @@ const session = {
   },
   canDownload() {
     const plan = this.user?.subscriptionPlan;
-    return this.isSubscribed() && (plan === 'premium' || plan === 'weekly' || plan === 'monthly' || plan === 'quarterly' || plan === 'yearly');
+    return this.isSubscribed() && (plan === 'premium' || plan === 'weekly' || plan === 'monthly' || plan === 'quarterly' || plan === 'yearly' || plan === 'weeklyplus' || plan === 'monthlyplus');
+  },
+  hasAfricanAccess() {
+    const plan = this.user?.subscriptionPlan;
+    return this.isSubscribed() && (plan === 'premium' || plan === 'dailyplus' || plan === 'weeklyplus' || plan === 'monthlyplus');
   },
 };
 
@@ -2745,13 +2749,18 @@ function createCard(item, showProgress = false) {
 
   const regIdx = registerItem(item);
 
+  const isLockedAfrican = item.isUgandan && !session.hasAfricanAccess();
+  const cardClick = isLockedAfrican ? `showAfricanUpgradeToast()` : `showInfo(getItem(${regIdx}))`;
+  const cardKeydown = isLockedAfrican ? `if(event.key==='Enter')showAfricanUpgradeToast()` : `if(event.key==='Enter')showInfo(getItem(${regIdx}))`;
+
   return `
-    <div class="card" tabindex="0" onclick="showInfo(getItem(${regIdx}))" onkeydown="if(event.key==='Enter')showInfo(getItem(${regIdx}))">
+    <div class="card" tabindex="0" onclick="${cardClick}" onkeydown="${cardKeydown}">
       ${poster
-        ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy">`
+        ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
         : `<div class="card-poster-placeholder">🎬</div>`}
+      ${isLockedAfrican ? `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;text-align:center;pointer-events:none;"><span class="material-symbols-rounded" style="font-size:2rem;color:#fff;">lock</span></div>` : ''}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
-      ${item._vj ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
+      ${item._vj && !isLockedAfrican ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
       ${item._part ? `<div class="card-badge" style="top:auto;bottom:0.5rem;left:0.4rem;background:rgba(229,185,60,0.15);color:var(--gold);border:1px solid var(--gold);font-size:0.6rem;">${item._part}</div>` : ''}
       ${item.isUgandan && item.media_type === 'tv' ? '<div class="card-badge" style="top:0.4rem;right:0.4rem;background:rgba(0,0,0,0.85);color:#fff;border:1px solid #555;font-size:0.6rem;">SERIES</div>' : ''}
       ${prog && progPct > 0 ? `<div class="card-progress"><div class="card-progress-fill" style="width:${progPct}%"></div></div>` : ''}
@@ -4176,6 +4185,7 @@ function openAccountSettings() {
   toggleUserMenu();
   const modal = document.getElementById('accountSettingsModal');
   modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
   // Show email from session.user
   const emailEl = document.getElementById('acctEmail');
   emailEl.textContent = session.user?.email || session.user?.name || 'Unknown';
@@ -4194,6 +4204,7 @@ function openAccountSettings() {
 
 function closeAccountSettings() {
   document.getElementById('accountSettingsModal').classList.remove('active');
+  document.body.style.overflow = '';
 }
 
 // Rate limit: max 3 password changes per hour stored in localStorage
@@ -4412,8 +4423,11 @@ async function startPayment(plan) {
 
   const labels = {
     daily: 'Daily Pass — UGX 1,000',
+    dailyplus: 'Daily+ (African Cinema) — UGX 2,000',
     weekly: 'Weekly — UGX 5,000',
+    weeklyplus: 'Weekly+ (African Cinema) — UGX 8,000',
     monthly: 'Monthly — UGX 15,000',
+    monthlyplus: 'Monthly+ (African Cinema) — UGX 20,000',
     quarterly: 'Quarterly — UGX 60,000',
     yearly: 'Yearly — UGX 120,000',
   };
@@ -4654,6 +4668,23 @@ function showToast(msg, type = '') {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+function showAfricanUpgradeToast() {
+  document.querySelectorAll('.toast, .african-toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast african-toast';
+  t.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--gold);color:#fff;padding:0.9rem 1.2rem;border-radius:12px;z-index:9999;max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  t.innerHTML = `
+    <div style="font-size:0.85rem;margin-bottom:0.7rem;">🌍 <strong>African Cinema</strong> requires an upgraded plan</div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+      <button onclick="startPayment('dailyplus');this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Daily+ — UGX 2,000</button>
+      <button onclick="startPayment('weeklyplus');this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Weekly+ — UGX 8,000</button>
+      <button onclick="startPayment('monthlyplus');this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Monthly+ — UGX 20,000</button>
+      <button onclick="this.closest('.african-toast').remove();" style="background:transparent;color:#888;border:1px solid #444;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;cursor:pointer;">Dismiss</button>
+    </div>`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 5000);
 }
 
 function scrollToSection(id) {
@@ -4942,35 +4973,76 @@ closeCategory = function() {
         <div class="plan-price"><span class="plan-currency">UGX</span> 1,000</div>
         <div class="plan-period">24 hour access</div>
         <ul class="plan-features">
-          <li>All movies & series</li>
+          <li>All movies &amp; series</li>
           <li>HD streaming</li>
           <li>No ads</li>
         </ul>
         <button class="plan-btn">Get Started</button>
+      </div>
+      <div class="plan-card" onclick="startPayment('dailyplus')" style="border-color:var(--gold);">
+        <div class="plan-badge" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:100px;display:inline-block;margin-bottom:0.4rem;">🌍 AFRICAN CINEMA</div>
+        <div class="plan-name">Daily+</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
+        <div class="plan-period">24 hour access</div>
+        <ul class="plan-features">
+          <li>All movies &amp; series</li>
+          <li>🌍 African Cinema</li>
+          <li>HD streaming</li>
+          <li>No ads</li>
+        </ul>
+        <button class="plan-btn" style="background:var(--gold);color:#000;">Get Started</button>
       </div>
       <div class="plan-card featured" onclick="startPayment('weekly')">
         <div class="plan-name">Weekly</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 5,000</div>
         <div class="plan-period">7 days access</div>
         <ul class="plan-features">
-          <li>All movies & series</li>
+          <li>All movies &amp; series</li>
           <li>HD streaming</li>
           <li>Downloads</li>
           <li>No ads</li>
         </ul>
         <button class="plan-btn">Get Started</button>
       </div>
+      <div class="plan-card" onclick="startPayment('weeklyplus')" style="border-color:var(--gold);">
+        <div class="plan-badge" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:100px;display:inline-block;margin-bottom:0.4rem;">🌍 AFRICAN CINEMA</div>
+        <div class="plan-name">Weekly+</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 8,000</div>
+        <div class="plan-period">7 days access</div>
+        <ul class="plan-features">
+          <li>All movies &amp; series</li>
+          <li>🌍 African Cinema</li>
+          <li>HD streaming</li>
+          <li>Downloads</li>
+          <li>No ads</li>
+        </ul>
+        <button class="plan-btn" style="background:var(--gold);color:#000;">Get Started</button>
+      </div>
       <div class="plan-card" onclick="startPayment('monthly')">
         <div class="plan-name">Monthly</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 15,000</div>
         <div class="plan-period">per month</div>
         <ul class="plan-features">
-          <li>All movies & series</li>
+          <li>All movies &amp; series</li>
           <li>HD streaming</li>
           <li>Downloads</li>
           <li>Cancel anytime</li>
         </ul>
         <button class="plan-btn">Get Started</button>
+      </div>
+      <div class="plan-card" onclick="startPayment('monthlyplus')" style="border-color:var(--gold);">
+        <div class="plan-badge" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:100px;display:inline-block;margin-bottom:0.4rem;">🌍 AFRICAN CINEMA</div>
+        <div class="plan-name">Monthly+</div>
+        <div class="plan-price"><span class="plan-currency">UGX</span> 20,000</div>
+        <div class="plan-period">per month</div>
+        <ul class="plan-features">
+          <li>All movies &amp; series</li>
+          <li>🌍 African Cinema</li>
+          <li>HD streaming</li>
+          <li>Downloads</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <button class="plan-btn" style="background:var(--gold);color:#000;">Get Started</button>
       </div>
     </div>
   </div>
