@@ -2774,7 +2774,7 @@ function createCard(item, showProgress = false) {
         </div>
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="card-btn card-btn-play" onclick="isLockedAfrican ? showAfricanUpgradeToast() : handleCardPlay(getItem(${regIdx}))" title="Play">
+          <button class="card-btn card-btn-play" onclick="${isLockedAfrican ? 'showAfricanUpgradeToast()' : 'handleCardPlay(getItem(' + regIdx + '))'}" title="Play">
             <span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;">play_circle</span>
           </button>
           <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(getItem(${regIdx}), this)" title="My List">
