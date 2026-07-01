@@ -3215,8 +3215,8 @@ function renderSavedDownloads() {
     if (d.done) {
       actionBtn = `
         <button onclick="playDownloaded(${d.id})" title="Play"
-          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-          <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
+          style="flex-shrink:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
+          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;">play_circle</span>
         </button>`;
     } else if (d.failed || d.paused) {
       actionBtn = `
