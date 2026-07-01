@@ -4841,12 +4841,14 @@ function bnOpenSaved() {
       const title = item.title || item.name || '';
       const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
       const regIdx = registerItem(item);
+      const lockedAfrican = item.isUgandan && !session.hasAfricanAccess();
       return `
-        <div class="category-card" onclick="openInfoFromCategory(getItem(${regIdx}))">
+        <div class="category-card" onclick="${lockedAfrican ? 'showAfricanUpgradeToast()' : `openInfoFromCategory(getItem(${regIdx}))`}" style="position:relative;">
           ${poster
-            ? `<img src="${poster}" alt="${esc(title)}" loading="lazy">`
+            ? `<img src="${poster}" alt="${esc(title)}" loading="lazy" style="${lockedAfrican ? 'filter:brightness(0.4);' : ''}">`
             : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
-          ${item._vj ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
+          ${lockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
+          ${item._vj && !lockedAfrican ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
           <div class="category-card-label">${esc(title)}</div>
         </div>`;
     }).join('');
