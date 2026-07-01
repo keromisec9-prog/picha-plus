@@ -2775,7 +2775,7 @@ function createCard(item, showProgress = false) {
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="card-btn card-btn-play" onclick="isLockedAfrican ? showAfricanUpgradeToast() : handleCardPlay(getItem(${regIdx}))" title="Play">
-            <svg width="10" height="12" viewBox="0 0 12 14" fill="currentColor"><path d="M0 0l12 7-12 7z"/></svg>
+            <span class="material-symbols-rounded" style="font-size:1.1rem;line-height:1;">play_circle</span>
           </button>
           <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(getItem(${regIdx}), this)" title="My List">
             ${isSaved
@@ -3947,7 +3947,7 @@ function resumeWatchingSeries(kvKey, epIndex) {
       <div style="font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Continue Watching</div>
       <div style="display:flex;align-items:center;gap:0.8rem;">
         <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="playEpisode(${epIndex})">
-          <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
+          <span class="material-symbols-rounded" style="font-size:1.5rem;line-height:1;color:#000;">play_circle</span>
         </div>
         <div style="cursor:pointer;flex:1;" onclick="playEpisode(${epIndex})">
           <div style="font-size:0.9rem;font-weight:600;color:#fff;">${epLabel}</div>
@@ -4531,14 +4531,14 @@ function showSeries(idx) {
   epList.innerHTML = (s.episodes || []).map((ep, i) => `
     <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
       <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="playEpisode(${i})">
-        <svg width="10" height="12" viewBox="0 0 12 14" fill="#000"><path d="M0 0l12 7-12 7z"/></svg>
+        <span class="material-symbols-rounded" style="font-size:1.5rem;line-height:1;color:#000;">play_circle</span>
       </div>
       <div style="flex:1;cursor:pointer;" onclick="playEpisode(${i})">
         <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
       </div>
       <button onclick="downloadEpisode('${s.tmdbId}', ${i})" title="Download episode"
         style="background:none;border:1px solid rgba(229,185,60,0.4);color:rgba(229,185,60,0.8);border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v10"/><path d="M8 10l4 4 4-4"/><line x1="3" y1="19" x2="21" y2="19"/></svg>
+        <span class="material-symbols-rounded" style="font-size:1.2rem;line-height:1;">download</span>
       </button>
     </div>`).join('');
 
