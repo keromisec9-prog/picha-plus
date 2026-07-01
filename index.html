@@ -2444,8 +2444,11 @@ window.addEventListener('load', async () => {
   }
 
   updateUI();
-  if (session.token) refreshUser(true);
-  loadContent();
+  if (session.token) {
+    await refreshUser(true);
+  } else {
+    loadContent();
+  }
 
   // Pre-warm IndexedDB: for any completed downloads, check if blob is stored
   // so the status line ("Ready · tap ▶") shows correctly on first render
