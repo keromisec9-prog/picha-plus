@@ -574,8 +574,8 @@
       font-size: 0.7rem;
     }
 
-    .card-btn-play { background: var(--white); color: #000; }
-    .card-btn-play:hover { background: rgba(255,255,255,0.8); }
+    .card-btn-play { background: none; color: var(--gold); border: none !important; }
+    .card-btn-play:hover { background: none; opacity: 0.8; }
     .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); backdrop-filter: blur(4px); }
     .card-btn-add:hover { background: rgba(255,255,255,0.25); }
     .card-btn-add.saved { background: rgba(229,185,60,0.2); color: var(--gold); }
@@ -2775,7 +2775,7 @@ function createCard(item, showProgress = false) {
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="card-btn card-btn-play" onclick="isLockedAfrican ? showAfricanUpgradeToast() : handleCardPlay(getItem(${regIdx}))" title="Play">
-            <span class="material-symbols-rounded" style="font-size:1.1rem;line-height:1;">play_circle</span>
+            <span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;">play_circle</span>
           </button>
           <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(getItem(${regIdx}), this)" title="My List">
             ${isSaved
