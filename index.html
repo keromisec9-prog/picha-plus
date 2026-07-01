@@ -3946,8 +3946,8 @@ function resumeWatchingSeries(kvKey, epIndex) {
     banner.innerHTML = `
       <div style="font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Continue Watching</div>
       <div style="display:flex;align-items:center;gap:0.8rem;">
-        <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="playEpisode(${epIndex})">
-          <span class="material-symbols-rounded" style="font-size:1.5rem;line-height:1;color:#000;">play_circle</span>
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${epIndex})">
+          <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
         </div>
         <div style="cursor:pointer;flex:1;" onclick="playEpisode(${epIndex})">
           <div style="font-size:0.9rem;font-weight:600;color:#fff;">${epLabel}</div>
@@ -4530,8 +4530,8 @@ function showSeries(idx) {
   const epList = document.getElementById('episodeList');
   epList.innerHTML = (s.episodes || []).map((ep, i) => `
     <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
-      <div style="width:2.5rem;height:2.5rem;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="playEpisode(${i})">
-        <span class="material-symbols-rounded" style="font-size:1.5rem;line-height:1;color:#000;">play_circle</span>
+      <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${i})">
+        <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
       </div>
       <div style="flex:1;cursor:pointer;" onclick="playEpisode(${i})">
         <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
