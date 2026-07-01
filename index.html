@@ -2444,7 +2444,7 @@ window.addEventListener('load', async () => {
   }
 
   updateUI();
-  if (session.token) refreshUser().then(updateUI);
+  if (session.token) refreshUser(true);
   loadContent();
 
   // Pre-warm IndexedDB: for any completed downloads, check if blob is stored
@@ -4172,11 +4172,15 @@ function updateUI() {
   }
 }
 
-async function refreshUser() {
+async function refreshUser(rerender = false) {
   if (!session.token) return;
   try {
     const res = await fetch(`${API}/me`, { headers: { 'X-Session-Token': session.token } });
-    if (res.ok) { session.save(session.token, await res.json()); updateUI(); }
+    if (res.ok) {
+      session.save(session.token, await res.json());
+      updateUI();
+      if (rerender) loadContent();
+    }
   } catch {}
 }
 
