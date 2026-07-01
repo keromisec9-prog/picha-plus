@@ -3854,7 +3854,7 @@ function renderContinueWatching() {
   const movieMatched = movieEntries.map(([id, prog]) => {
     const card = (window._allCards || []).find(c => String(c.id) === String(id));
     if (!card) return null;
-    return { id, prog, poster: card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null, title: card.title || card.name || '', isSeries: false, card };
+    return { id, prog, poster: card._customPoster || (card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null), title: card.title || card.name || '', isSeries: false, card };
   }).filter(Boolean);
 
   // Sort all by most recently watched
