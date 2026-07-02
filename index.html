@@ -2560,7 +2560,7 @@ async function loadContent() {
     container.innerHTML = '';
 
     // Only show genres that have your content
-    const usedGenres = Object.keys(genreMap).filter(gid => genreMap[gid].length > 0);
+    const usedGenres = Object.keys(genreMap).filter(gid => genreMap[gid].length >= 4);
 
     if (usedGenres.length === 0 && cards.length === 0) {
       container.innerHTML = '<div style="text-align:center;padding:3rem;color:#666;">No content uploaded yet. Upload your first movie!</div>';
