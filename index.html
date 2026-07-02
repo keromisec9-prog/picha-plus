@@ -4590,7 +4590,12 @@ async function playEpisode(epIndex) {
     });
     const data = await res.json();
     if (data.url) {
-      // Use KV key (unique per VJ version) so two VJ versions of same series are independent
+      if (data.totalParts > 1) {
+        // Show part picker
+        closePlayer();
+        showEpisodePartPicker(s, ep, epIndex, data.totalParts);
+        return;
+      }
       const epKey = `series__${s._kvKey}__${epIndex}`;
       initPlayer(data.url, { id: epKey, title: `${s.title} — Episode ${ep.episode || (epIndex+1)}`, _seriesKvKey: s._kvKey, _epIndex: epIndex });
     } else {
@@ -4600,6 +4605,45 @@ async function playEpisode(epIndex) {
   } catch {
     closePlayer();
     showToast('Failed to load episode', 'error');
+  }
+}
+
+function showEpisodePartPicker(s, ep, epIndex, totalParts) {
+  document.querySelectorAll('.african-toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'african-toast';
+  t.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--gold);color:#fff;padding:0.9rem 1.2rem;border-radius:12px;z-index:9999;max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  const parts = Array.from({length: totalParts}, (_, i) => i);
+  t.innerHTML = `
+    <div style="font-size:0.85rem;margin-bottom:0.7rem;">📽️ <strong>Episode ${ep.episode || (epIndex+1)}</strong> — Select Part</div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+      ${parts.map(i => `<button onclick="playEpisodePart(${JSON.stringify(s._kvKey)},${s.tmdbId},${epIndex},${i});this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Part ${i+1}</button>`).join('')}
+      <button onclick="this.closest('.african-toast').remove();" style="background:transparent;color:#888;border:1px solid #444;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;cursor:pointer;">Cancel</button>
+    </div>`;
+  document.body.appendChild(t);
+}
+
+async function playEpisodePart(kvKey, tmdbId, epIndex, partIndex) {
+  const s = currentSeries;
+  const ep = s?.episodes?.[epIndex];
+  document.getElementById('playerTitle').textContent = `${s?.title || ''} — Episode ${ep?.episode || (epIndex+1)} · Part ${partIndex+1}`;
+  document.getElementById('playerModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  try {
+    const res = await fetch(`${API}/episode?seriesId=${tmdbId}&ep=${epIndex}&part=${partIndex}`, {
+      headers: { 'X-Session-Token': session.token }
+    });
+    const data = await res.json();
+    if (data.url) {
+      const epKey = `series__${kvKey}__${epIndex}__p${partIndex}`;
+      initPlayer(data.url, { id: epKey, title: `${s?.title || ''} — E${ep?.episode || (epIndex+1)} Part ${partIndex+1}`, _seriesKvKey: kvKey, _epIndex: epIndex });
+    } else {
+      closePlayer();
+      showToast(data.error || 'Part unavailable', 'error');
+    }
+  } catch {
+    closePlayer();
+    showToast('Failed to load part', 'error');
   }
 }
 
