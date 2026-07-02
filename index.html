@@ -4496,7 +4496,9 @@ function loadSeries(catalog) {
   section.style.display = 'block';
   // Store for "All >" category view
   window._seriesItems = seriesData.map((s, idx) => ({
-    id: s._kvKey, tmdbId: s.tmdbId, title: s.title, poster: s.poster, _vj: s.vj, _seriesIdx: idx
+    id: s._kvKey, tmdbId: s.tmdbId, title: s.title, poster: s.poster,
+    _customPoster: s.poster || null, _vj: s.vj, _seriesIdx: idx,
+    media_type: 'tv', isUgandan: !!s.isUgandan
   }));
 
   row.innerHTML = seriesData.map((s, idx) => {
