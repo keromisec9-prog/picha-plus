@@ -144,6 +144,7 @@
       font-weight: 400;
       overflow-x: hidden;
       min-height: 100vh;
+      min-height: 100dvh;
     }
 
     /* ── SCROLLBAR ── */
@@ -1586,6 +1587,9 @@
       display: flex; align-items: stretch;
       height: 58px;
       padding-bottom: env(safe-area-inset-bottom);
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: transform;
     }
     .bn-tab {
       flex: 1; display: flex; flex-direction: column;
