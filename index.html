@@ -136,6 +136,7 @@
     }
 
     html { scroll-behavior: auto; }
+    body.is-scrolling .skeleton { animation-play-state: paused; }
 
     body {
       background: var(--bg);
@@ -5165,7 +5166,17 @@ closeCategory = function() {
 </div>
 
 
-<script>window.addEventListener("load",function(){var s=document.getElementById("app-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},450);}});</script><script type="module">
+<script>// Pause shimmer animation during scroll for performance
+let _scrollTimer;
+window.addEventListener('scroll', () => {
+  document.body.classList.add('is-scrolling');
+  clearTimeout(_scrollTimer);
+  _scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 150);
+}, { passive: true });
+// Kill shimmer after 3s — content should be loaded by then
+setTimeout(() => { document.querySelectorAll('.skeleton').forEach(el => el.style.animation = 'none'); }, 3000);
+
+window.addEventListener("load",function(){var s=document.getElementById("app-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},450);}});</script><script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 const firebaseApp = initializeApp({
