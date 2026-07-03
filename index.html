@@ -4392,6 +4392,10 @@ function openSignin() {
   if (toggleLink) toggleLink.textContent = 'Register';
   const errEl = document.getElementById('authError');
   if (errEl) errEl.style.display = 'none';
+  const emailEl = document.getElementById('authEmail');
+  const passEl = document.getElementById('authPassword');
+  if (emailEl) emailEl.value = '';
+  if (passEl) passEl.value = '';
   document.getElementById('signinModal').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
