@@ -135,7 +135,7 @@
       --card-ratio: 2/3;
     }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: auto; }
 
     body {
       background: var(--bg);
@@ -269,7 +269,7 @@
       color: rgba(255,255,255,0.7);
       cursor: pointer;
       border-radius: 4px;
-      transition: all 0.15s;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
       display: flex;
       align-items: center;
       gap: 0.6rem;
@@ -434,7 +434,7 @@
       border-radius: 50%;
       background: rgba(255,255,255,0.3);
       cursor: pointer;
-      transition: all 0.3s;
+      transition: background 0.3s, color 0.3s, opacity 0.3s;
     }
     .hero-dot.active { background: var(--gold); width: 20px; border-radius: 3px; }
 
@@ -572,7 +572,7 @@
       border: none;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
       font-size: 0.7rem;
     }
 
@@ -1182,7 +1182,7 @@
       border-radius: 8px;
       padding: 2rem 1.5rem;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
       position: relative;
     }
     .plan-card:hover { border-color: rgba(229,185,60,0.4); transform: translateY(-3px); }
@@ -1266,7 +1266,7 @@
       text-transform: uppercase;
       cursor: pointer;
       border-radius: 4px;
-      transition: all 0.2s;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
     }
     .plan-btn:hover, .plan-card.featured .plan-btn {
       background: var(--gold);
@@ -1420,7 +1420,7 @@
       cursor: pointer;
       background: none;
       font-family: 'Inter', sans-serif;
-      transition: all 0.2s;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
       white-space: nowrap;
     }
     .lang-pill:hover, .lang-pill.active {
