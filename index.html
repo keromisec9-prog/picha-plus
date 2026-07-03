@@ -5,7 +5,7 @@
   <link rel="preconnect" href="https://image.tmdb.org">
   <link rel="dns-prefetch" href="https://image.tmdb.org">
   <link rel="preconnect" href="https://picha-plus-worker.kerosoftz522.workers.dev">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"/>
   <title>Picha+ | Luganda Translated Movies & Series Uganda</title>
   <meta name="description" content="Watch the latest movies and series translated to Luganda by top VJs — VJ Junior, VJ Ice P, VJ Uncle T, VJ Arafa and more. Uganda's #1 Luganda streaming platform. No ads, HD quality."/>
   <meta name="keywords" content="Luganda movies, Luganda translated movies, Uganda movies online, VJ Junior movies, VJ Ice P, Luganda series, watch movies Uganda, Picha Plus, African movies Luganda, Uganda streaming"/>
@@ -145,6 +145,7 @@
       overflow-x: hidden;
       min-height: 100vh;
       min-height: 100dvh;
+      overscroll-behavior-y: none;
     }
 
     /* ── SCROLLBAR ── */
@@ -577,10 +578,10 @@
 
     .card-btn-play { background: none; color: var(--gold); border: none !important; }
     .card-btn-play:hover { background: none; opacity: 0.8; }
-    .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); backdrop-filter: blur(4px); }
+    .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); }
     .card-btn-add:hover { background: rgba(255,255,255,0.25); }
     .card-btn-add.saved { background: rgba(229,185,60,0.2); color: var(--gold); }
-    .card-btn-like { background: rgba(255,255,255,0.15); color: var(--white); backdrop-filter: blur(4px); }
+    .card-btn-like { background: rgba(255,255,255,0.15); color: var(--white); }
     .card-btn-like:hover { background: rgba(255,255,255,0.25); }
     .card-btn-like.liked { background: rgba(229,80,60,0.2); color: #ff6b6b; }
 
@@ -1581,8 +1582,7 @@
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
       background: rgba(10,10,10,0.97);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+
       border-top: 1px solid rgba(255,255,255,0.08);
       display: flex; align-items: stretch;
       height: 58px;
