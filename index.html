@@ -4061,6 +4061,15 @@ async function handleSearch(query) {
   searchTimer = setTimeout(async () => {
     const q = query.trim().toLowerCase();
 
+    // Track search query (fire and forget)
+    if (q.length >= 3) {
+      fetch(`${API}/track`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType: 'search', data: { searchQuery: q, device: /Android/i.test(navigator.userAgent) ? 'android' : /iPhone/i.test(navigator.userAgent) ? 'ios' : 'web' } })
+      }).catch(() => {});
+    }
+
     // Search local catalog first
     const localItems = (window._allCards || []).filter(item =>
       (item.title || '').toLowerCase().includes(q)
