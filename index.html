@@ -2497,14 +2497,8 @@ async function loadContent() {
       title: v.title,
       poster_path: stripTmdb(v.poster),
       backdrop_path: stripTmdb(v.backdrop),
-      _customPoster: (v.poster && !v.poster.includes('image.tmdb.org')) ? (() => {
-        const m = v.poster.match(/\/file\/[^\/]+\/posters\/(.+)/);
-        return m ? `${API}/poster/${m[1]}` : v.poster;
-      })() : null,
-      _customBackdrop: (v.backdrop && !v.backdrop.includes('image.tmdb.org')) ? (() => {
-        const m = v.backdrop.match(/\/file\/[^\/]+\/posters\/(.+)/);
-        return m ? `${API}/poster/${m[1]}` : v.backdrop;
-      })() : null,
+      _customPoster: (v.poster && !v.poster.includes('image.tmdb.org')) ? v.poster : null,
+      _customBackdrop: (v.backdrop && !v.backdrop.includes('image.tmdb.org')) ? v.backdrop : null,
       overview: (v.overview || '').replace(/`/g, "'"),  // backticks break template literals in onclick
       vote_average: parseFloat(v.rating) || 0,
       release_date: v.year ? v.year + '-01-01' : '',
