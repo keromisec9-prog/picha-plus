@@ -4065,11 +4065,7 @@ async function handleSearch(query) {
     if (q.length >= 3) {
       clearTimeout(window._searchTrackTimer);
       window._searchTrackTimer = setTimeout(() => {
-        fetch(`${API}/track`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ eventType: 'search', data: { searchQuery: q, device: /Android/i.test(navigator.userAgent) ? 'android' : /iPhone/i.test(navigator.userAgent) ? 'ios' : 'web' } })
-        }).catch(() => {});
+        queueEvent('search', { searchQuery: q, device: /Android/i.test(navigator.userAgent) ? 'android' : /iPhone/i.test(navigator.userAgent) ? 'ios' : 'web' });
       }, 800);
     }
 
@@ -5176,7 +5172,36 @@ closeCategory = function() {
 </div>
 
 
-<script>// Pause shimmer animation during scroll for performance
+<script>// ── ANALYTICS EVENT QUEUE ────────────────────────────────────────────────────
+const _eventQueue = [];
+let _flushTimer = null;
+
+function queueEvent(eventType, data = {}) {
+  _eventQueue.push({ eventType, data });
+  clearTimeout(_flushTimer);
+  if (_eventQueue.length >= 10) {
+    flushEvents();
+  } else {
+    _flushTimer = setTimeout(flushEvents, 10000);
+  }
+}
+
+function flushEvents() {
+  if (!_eventQueue.length) return;
+  const batch = _eventQueue.splice(0, _eventQueue.length);
+  fetch(`${API}/track-batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ events: batch })
+  }).catch(() => {});
+}
+
+// Flush on page unload
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushEvents();
+});
+
+// Pause shimmer animation during scroll for performance
 let _scrollTimer;
 window.addEventListener('scroll', () => {
   document.body.classList.add('is-scrolling');
