@@ -4061,13 +4061,16 @@ async function handleSearch(query) {
   searchTimer = setTimeout(async () => {
     const q = query.trim().toLowerCase();
 
-    // Track search query (fire and forget)
+    // Track search query — only after user stops typing (final term only)
     if (q.length >= 3) {
-      fetch(`${API}/track`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType: 'search', data: { searchQuery: q, device: /Android/i.test(navigator.userAgent) ? 'android' : /iPhone/i.test(navigator.userAgent) ? 'ios' : 'web' } })
-      }).catch(() => {});
+      clearTimeout(window._searchTrackTimer);
+      window._searchTrackTimer = setTimeout(() => {
+        fetch(`${API}/track`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventType: 'search', data: { searchQuery: q, device: /Android/i.test(navigator.userAgent) ? 'android' : /iPhone/i.test(navigator.userAgent) ? 'ios' : 'web' } })
+        }).catch(() => {});
+      }, 800);
     }
 
     // Search local catalog first
