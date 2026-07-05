@@ -2839,6 +2839,9 @@ async function showInfo(item) {
   document.getElementById('infoModal').classList.add('active');
   document.body.style.overflow = 'hidden';
 
+  const fyBtns = document.getElementById('fyFeedbackBtns');
+  if (fyBtns) fyBtns.style.display = _infoOpenedFromForYou ? 'flex' : 'none';
+
   // Backdrop
   const backdropEl = document.getElementById('infoBackdrop');
   const placeholderEl = document.getElementById('infoBackdropPlaceholder');
@@ -2917,6 +2920,7 @@ function closeInfo() {
     document.body.style.overflow = '';
   }
   currentInfoItem = null;
+  _infoOpenedFromForYou = false;
 }
 
 function playFromInfo() {
@@ -4975,9 +4979,11 @@ function renderForYou() {
 }
 
 let _fyCurrentItem = null;
+let _infoOpenedFromForYou = false;
 
 function showInfoFromForYou(item) {
   _fyCurrentItem = item;
+  _infoOpenedFromForYou = true;
   showInfo(item);
 }
 
