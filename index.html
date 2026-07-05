@@ -2335,9 +2335,11 @@ if (!console.warn)  console.warn  = console.log;
       resumeSavedSession: true,
     });
 
-    // Show the nav cast button now that Cast is available
-    const castBtn = document.getElementById('navCastBtn');
-    if (castBtn) castBtn.style.display = 'flex';
+    // Show the nav cast button now that Cast is available (web only — native app uses its own SDK button)
+    if (!window.PichaApp) {
+      const castBtn = document.getElementById('navCastBtn');
+      if (castBtn) castBtn.style.display = 'flex';
+    }
 
     // Update button appearance on session state changes
     ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, function(e) {
