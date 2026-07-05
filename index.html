@@ -4007,7 +4007,7 @@ function _buildContinueOverlay(matched) {
   if (!clearBtn) {
     clearBtn = document.createElement('button');
     clearBtn.id = 'continueWatchingClearAll';
-    clearBtn.style.cssText = 'background:none;border:1px solid rgba(255,100,100,0.5);color:#ff8080;font-size:0.72rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;font-family:inherit;letter-spacing:0.04em;';
+    clearBtn.style.cssText = 'background:none;border:1px solid rgba(255,100,100,0.5);color:#ff8080;font-size:0.72rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;font-family:inherit;letter-spacing:0.04em;margin-right:2.8rem;';
     clearBtn.textContent = 'Clear All';
     clearBtn.onclick = () => { clearAllContinue(); closeCategory(); };
     document.querySelector('.category-header')?.appendChild(clearBtn);
