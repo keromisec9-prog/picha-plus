@@ -2068,6 +2068,10 @@ function saveProgress(id, pos, dur) {
       <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/></svg>
       CATEGORIES
     </button>
+    <button class="bn-tab" id="bn-foryou" onclick="bnGo('foryou')">
+      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">auto_awesome</span>
+      FOR YOU
+    </button>
     <button class="bn-tab" id="bn-saved" onclick="bnGo('saved')">
       <svg class="icon-outline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
       <svg class="icon-filled" fill="currentColor" viewBox="0 0 24 24" style="display:none"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
@@ -2075,6 +2079,20 @@ function saveProgress(id, pos, dur) {
     </button>
   </nav>
 
+
+<!-- FOR YOU PAGE -->
+<div class="bn-page" id="bnForYouPage" style="display:none;">
+  <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;">
+    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')">🎬 Movies</button>
+    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')">📺 Series</button>
+  </div>
+  <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;padding:0.8rem;"></div>
+  <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
+    <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
+    <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
+    <div style="font-size:0.85rem;">Watch some movies or series and we'll personalize this for you</div>
+  </div>
+</div>
 
 </main>
 
@@ -2128,6 +2146,14 @@ function saveProgress(id, pos, dur) {
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </button>
         <button class="info-close-btn" onclick="closeInfo()"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
+      </div>
+      <div id="fyFeedbackBtns" style="display:none;gap:0.5rem;margin:0.5rem 0;">
+        <button onclick="fyLike(currentInfoItem?.id)" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.8rem;">
+          <span class="material-symbols-rounded" style="font-size:1.1rem;line-height:1;">thumb_up</span> Like
+        </button>
+        <button onclick="fyDislike(currentInfoItem?.id)" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.8rem;">
+          <span class="material-symbols-rounded" style="font-size:1.1rem;line-height:1;">thumb_down</span> Not for me
+        </button>
       </div>
       <h2 class="info-title" id="infoTitle"></h2>
       <div class="info-meta" id="infoMeta"></div>
@@ -4853,6 +4879,140 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── BOTTOM NAV ────────────────────────────────────────────────────────────────
 let _bnActive = 'home';
 
+// ── FOR YOU ──────────────────────────────────────────────────────────────────
+let _fyTab = 'movies';
+let _fyStats = null;
+const _disliked = JSON.parse(localStorage.getItem('pichaplus_disliked') || '[]');
+
+function saveDisliked() { localStorage.setItem('pichaplus_disliked', JSON.stringify(_disliked)); }
+
+async function bnOpenForYou() {
+  document.getElementById('bnForYouPage').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  if (!_fyStats) {
+    try {
+      const res = await fetch(`${API}/stats`);
+      _fyStats = await res.json();
+    } catch { _fyStats = {}; }
+  }
+  renderForYou();
+}
+
+function fyTab(tab) {
+  _fyTab = tab;
+  document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
+  document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
+  renderForYou();
+}
+
+function fyScore(item) {
+  let score = 0;
+  const id = String(item.id);
+  const genreIds = item.genre_ids || [];
+
+  // Play count from Neon (popularity)
+  const statKey = Object.keys(_fyStats || {}).find(k => k.startsWith(String(item.tmdbId)));
+  const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
+  score += Math.min(plays * 2, 20); // cap at 20
+
+  // Liked/hearted
+  if (liked.includes(item.id)) score += 5;
+
+  // Progress/completion
+  const prog = progress[id];
+  if (prog && prog.duration > 0) {
+    const pct = prog.position / prog.duration;
+    if (pct > 0.8) score += 4; // finished
+    else if (pct > 0.3) score += 2; // watched a good chunk
+  }
+
+  // Genre preference — based on genres of liked/completed content
+  const likedCards = (window._allCards || []).filter(c => liked.includes(c.id));
+  const likedGenres = likedCards.flatMap(c => c.genre_ids || []);
+  const genreOverlap = genreIds.filter(g => likedGenres.includes(g)).length;
+  score += genreOverlap * 3;
+
+  // VJ preference — based on VJs of played content
+  const playedVJs = Object.keys(progress).map(pid => {
+    const card = (window._allCards || []).find(c => String(c.id) === pid);
+    return card?._vj;
+  }).filter(Boolean);
+  if (item._vj && playedVJs.includes(item._vj)) score += 2;
+
+  // Dislike penalty
+  if (_disliked.includes(item.id)) score -= 15;
+
+  return score;
+}
+
+function renderForYou() {
+  const grid = document.getElementById('fyGrid');
+  const empty = document.getElementById('fyEmpty');
+  const allCards = window._allCards || [];
+  const isTV = _fyTab === 'series';
+  const pool = allCards.filter(c => isTV ? c.media_type === 'tv' : c.media_type !== 'tv');
+
+  if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const scored = pool.map(item => ({ item, score: fyScore(item) }))
+    .sort((a, b) => b.score - a.score);
+
+  const statValues = Object.values(_fyStats || {});
+  const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
+
+  grid.innerHTML = scored.map(({ item, score }) => {
+    const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
+    const title = item.title || item.name || '';
+    const regIdx = registerItem(item);
+    const statKey = Object.keys(_fyStats || {}).find(k => k.startsWith(String(item.tmdbId)));
+    const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
+    const likeCount = liked.filter(id => id === item.id).length > 0 ? 1 : 0;
+    const isLockedAfrican = item.isUgandan && !session.hasAfricanAccess();
+    return `
+      <div style="position:relative;cursor:pointer;" onclick="${isLockedAfrican ? 'showAfricanUpgradeToast()' : `showInfoFromForYou(getItem(${regIdx}))`}">
+        ${poster
+          ? `<img src="${poster}" style="width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;" loading="lazy" ${isLockedAfrican ? 'style="filter:brightness(0.4);"' : ''}>`
+          : `<div style="width:100%;aspect-ratio:2/3;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
+        ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
+        ${plays >= 50 ? `<div style="position:absolute;top:0.3rem;right:0.3rem;background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;padding:0.15rem 0.3rem;border-radius:4px;">👁 ${plays}</div>` : ''}
+        <div style="font-size:0.65rem;color:#ccc;padding:0.3rem 0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(title)}</div>
+      </div>`;
+  }).join('');
+}
+
+let _fyCurrentItem = null;
+
+function showInfoFromForYou(item) {
+  _fyCurrentItem = item;
+  showInfo(item);
+}
+
+function fyDislike(itemId) {
+  if (!_disliked.includes(itemId)) {
+    _disliked.push(itemId);
+    saveDisliked();
+  }
+  // remove like if exists
+  const likeIdx = liked.indexOf(itemId);
+  if (likeIdx > -1) { liked.splice(likeIdx, 1); localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
+  renderForYou();
+  closeInfo();
+  showToast('Got it — we'll show this less', '');
+}
+
+function fyLike(itemId) {
+  if (!liked.includes(itemId)) {
+    liked.push(itemId);
+    localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
+  }
+  // remove dislike if exists
+  const dislikeIdx = _disliked.indexOf(itemId);
+  if (dislikeIdx > -1) { _disliked.splice(dislikeIdx, 1); saveDisliked(); }
+  renderForYou();
+  showToast('Thanks for the feedback!', '');
+}
+
 function bnGo(tab) {
   _bnActive = tab;
   document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
@@ -4861,14 +5021,16 @@ function bnGo(tab) {
   // hide all bn pages first
   document.getElementById('bnCategoriesPage').style.display = 'none';
   document.getElementById('bnSavedPage').style.display = 'none';
+  document.getElementById('bnForYouPage').style.display = 'none';
 
   if (tab === 'home') {
-    // close categoryOverlay if open
     document.getElementById('categoryOverlay')?.classList.remove('active');
     document.body.style.overflow = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (tab === 'categories') {
     bnOpenCategories();
+  } else if (tab === 'foryou') {
+    bnOpenForYou();
   } else if (tab === 'saved') {
     bnOpenSaved();
   }
