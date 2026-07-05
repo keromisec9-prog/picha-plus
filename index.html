@@ -2354,7 +2354,7 @@ if (!console.warn)  console.warn  = console.log;
 
   function startCastSession() {
     if (typeof cast === 'undefined' || typeof chrome === 'undefined') {
-      alert('Cast not available. Make sure you're on Chrome or a Cast-enabled browser.');
+      alert("Cast not available. Make sure you're on Chrome or a Cast-enabled browser.");
       return;
     }
     const ctx = cast.framework.CastContext.getInstance();
@@ -4997,7 +4997,7 @@ function fyDislike(itemId) {
   if (likeIdx > -1) { liked.splice(likeIdx, 1); localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
   renderForYou();
   closeInfo();
-  showToast('Got it — we'll show this less', '');
+  showToast('Got it — we\'ll show this less', '');
 }
 
 function fyLike(itemId) {
