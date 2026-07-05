@@ -4969,15 +4969,14 @@ function renderForYou() {
     const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
     const likeCount = liked.filter(id => id === item.id).length > 0 ? 1 : 0;
     const isLockedAfrican = item.isUgandan && !session.hasAfricanAccess();
-    return `
-      <div style="position:relative;cursor:pointer;" onclick="${isLockedAfrican ? 'showAfricanUpgradeToast()' : `showInfoFromForYou(getItem(${regIdx}))`}">
-        ${poster
-          ? `<img src="${poster}" style="width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;" loading="lazy" ${isLockedAfrican ? 'style="filter:brightness(0.4);"' : ''}>`
-          : `<div style="width:100%;aspect-ratio:2/3;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
-        ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
-        ${plays >= 50 ? `<div style="position:absolute;top:0.3rem;right:0.3rem;background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;padding:0.15rem 0.3rem;border-radius:4px;">👁 ${plays}</div>` : ''}
-        <div style="font-size:0.65rem;color:#ccc;padding:0.3rem 0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(title)}</div>
-      </div>`;
+    const clickFn = isLockedAfrican ? 'showAfricanUpgradeToast()' : 'showInfoFromForYou(getItem(' + regIdx + '))';
+    const imgStyle = isLockedAfrican ? 'width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;filter:brightness(0.4);' : 'width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;';
+    return '<div style="position:relative;cursor:pointer;" onclick="' + clickFn + '">' +
+      (poster ? '<img src="' + poster + '" style="' + imgStyle + '" loading="lazy">' : '<div style="width:100%;aspect-ratio:2/3;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>') +
+      (isLockedAfrican ? '<div style="position:absolute;top:0.4rem;left:0.4rem;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>' : '') +
+      (plays >= 50 ? '<div style="position:absolute;top:0.3rem;right:0.3rem;background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;padding:0.15rem 0.3rem;border-radius:4px;">👁 ' + plays + '</div>' : '') +
+      '<div style="font-size:0.65rem;color:#ccc;padding:0.3rem 0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(title) + '</div>' +
+      '</div>';
   }).join('');
 }
 
