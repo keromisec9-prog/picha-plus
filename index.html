@@ -2771,7 +2771,7 @@ function renderTop10(rowId, items) {
   }).join('');
 }
 
-function createCard(item, showProgress = false) {
+function createCard(item, showProgress = false, extraBadgeHTML = '') {
   const title = item.title || item.name || '';
   const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
@@ -2794,6 +2794,7 @@ function createCard(item, showProgress = false) {
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
         : `<div class="card-poster-placeholder">🎬</div>`}
       ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
+      ${extraBadgeHTML}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
       ${item._vj && !isLockedAfrican ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
       ${item._part ? `<div class="card-badge" style="top:auto;bottom:0.5rem;left:0.4rem;background:rgba(229,185,60,0.15);color:var(--gold);border:1px solid var(--gold);font-size:0.6rem;">${item._part}</div>` : ''}
@@ -4963,7 +4964,14 @@ function renderForYou() {
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
 
-  grid.innerHTML = scored.map(({ item }) => createCard(item)).join('');
+  grid.innerHTML = scored.map(({ item }) => {
+    const statKey = Object.keys(_fyStats || {}).find(k => k.startsWith(String(item.tmdbId)));
+    const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
+    const playsBadge = plays >= 50
+      ? `<div style="position:absolute;top:0.3rem;right:0.3rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;padding:0.15rem 0.3rem;border-radius:4px;display:flex;align-items:center;gap:0.2rem;"><span class="material-symbols-rounded" style="font-size:0.8rem;line-height:1;">visibility</span>${plays}</div>`
+      : '';
+    return createCard(item, false, playsBadge);
+  }).join('');
 }
 
 let _fyCurrentItem = null;
