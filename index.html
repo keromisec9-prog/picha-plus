@@ -1908,7 +1908,7 @@ function saveProgress(id, pos, dur) {
         </div>
       </div>
     </div>
-    <button class="nav-cast-btn" id="navCastBtn" onclick="startCastSession()" title="Cast to TV" style="display:none;">
+    <button class="nav-cast-btn" id="navCastBtn" onclick="startCastSession()" title="Cast to TV" style="visibility:hidden;">
       <span class="material-symbols-rounded" style="font-size:26px;line-height:1;">cast</span>
     </button>
   </div>
@@ -2335,10 +2335,10 @@ if (!console.warn)  console.warn  = console.log;
       resumeSavedSession: true,
     });
 
-    // Show the nav cast button now that Cast is available (web only — native app uses its own SDK button)
+    // Show the nav cast button now that Cast is available (web only — native app uses its own SDK button, but keeps the space reserved)
     if (!window.PichaApp) {
       const castBtn = document.getElementById('navCastBtn');
-      if (castBtn) castBtn.style.display = 'flex';
+      if (castBtn) castBtn.style.visibility = 'visible';
     }
 
     // Update button appearance on session state changes
