@@ -2083,10 +2083,10 @@ function saveProgress(id, pos, dur) {
 <!-- FOR YOU PAGE -->
 <div class="bn-page" id="bnForYouPage" style="display:none;">
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;">
-    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')">🎬 Movies</button>
-    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')">📺 Series</button>
+    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
+    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
   </div>
-  <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;padding:0.8rem;"></div>
+  <div id="fyGrid" style="display:flex;flex-wrap:wrap;gap:0.6rem;padding:0.8rem 4vw;"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
@@ -4963,23 +4963,7 @@ function renderForYou() {
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
 
-  grid.innerHTML = scored.map(({ item, score }) => {
-    const poster = item._customPoster || (item.poster_path ? `${TMDB_IMG}w300${item.poster_path}` : null);
-    const title = item.title || item.name || '';
-    const regIdx = registerItem(item);
-    const statKey = Object.keys(_fyStats || {}).find(k => k.startsWith(String(item.tmdbId)));
-    const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
-    const likeCount = liked.filter(id => id === item.id).length > 0 ? 1 : 0;
-    const isLockedAfrican = item.isUgandan && !session.hasAfricanAccess();
-    const clickFn = isLockedAfrican ? 'showAfricanUpgradeToast()' : 'showInfoFromForYou(getItem(' + regIdx + '))';
-    const imgStyle = isLockedAfrican ? 'width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;filter:brightness(0.4);' : 'width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;';
-    return '<div style="position:relative;cursor:pointer;" onclick="' + clickFn + '">' +
-      (poster ? '<img src="' + poster + '" style="' + imgStyle + '" loading="lazy">' : '<div style="width:100%;aspect-ratio:2/3;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>') +
-      (isLockedAfrican ? '<div style="position:absolute;top:0.4rem;left:0.4rem;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>' : '') +
-      (plays >= 50 ? '<div style="position:absolute;top:0.3rem;right:0.3rem;background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;padding:0.15rem 0.3rem;border-radius:4px;">👁 ' + plays + '</div>' : '') +
-      '<div style="font-size:0.65rem;color:#ccc;padding:0.3rem 0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(title) + '</div>' +
-      '</div>';
-  }).join('');
+  grid.innerHTML = scored.map(({ item }) => createCard(item)).join('');
 }
 
 let _fyCurrentItem = null;
