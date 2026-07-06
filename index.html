@@ -5006,6 +5006,14 @@ function renderForYou() {
 }
 
 const _previewCache = {};
+let _fySeriesEpCycle = 0;
+
+function _seriesEpisodesArrFor(idOrItem) {
+  const tmdbId = (typeof idOrItem === 'object') ? (idOrItem.tmdbId || idOrItem.id) : idOrItem;
+  const s = (window._seriesList || []).find(s => String(s.tmdbId) === String(tmdbId));
+  if (!s) return [];
+  return Array.isArray(s.episodes) ? s.episodes : Object.values(s.episodes || {});
+}
 let _fySeqRunning = false;
 let _fySeqIndex = 0;
 let _fySeqTimer = null;
@@ -5024,7 +5032,10 @@ function setPreviewSoundPref(soundOn) {
 function _setupPreviewObserver(grid) {
   const isFirstSetup = !_fySeqVideo;
   _stopPreviewSequence(true); // keep index — don't restart from the top
-  const cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
+  let cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
+  if (_fyTab === 'series') {
+    cards = cards.filter(c => _seriesEpisodesArrFor(c.dataset.previewId).length > 0);
+  }
   if (!cards.length) return;
 
   // On a genuinely fresh start (first tab open this session, or a full page refresh),
@@ -5093,16 +5104,21 @@ async function _playSequenceStep(cards) {
   _fySeqAbort = controller;
 
   try {
-    let previewUrl = _previewCache[id];
+    const isSeries = _fyTab === 'series';
+    const cacheKey = isSeries ? (id + '_ep' + _fySeriesEpCycle) : id;
+    let previewUrl = _previewCache[cacheKey];
     if (!previewUrl) {
-      const res = await fetch(`${API}/preview?id=${id}`, {
+      const endpoint = isSeries
+        ? `${API}/episode-preview?seriesId=${id}&ep=${_fySeriesEpCycle}`
+        : `${API}/preview?id=${id}`;
+      const res = await fetch(endpoint, {
         headers: { 'X-Session-Token': session.token },
         signal: controller.signal
       });
       const data = await res.json();
       if (!data.url) throw new Error('no url');
       previewUrl = data.url;
-      _previewCache[id] = previewUrl;
+      _previewCache[cacheKey] = previewUrl;
     }
 
     if (!_fySeqRunning) return;
@@ -5129,6 +5145,10 @@ async function _playSequenceStep(cards) {
       _fySeqMuteBtn.style.opacity = '0';
       _fySeqVideo.pause();
       _fySeqIndex++;
+      if (_fySeqIndex >= cards.length) {
+        _fySeqIndex = 0;
+        if (_fyTab === 'series') _fySeriesEpCycle++;
+      }
       setTimeout(() => _playSequenceStep(cards), 400);
     }, 30000);
   } catch (e) {
