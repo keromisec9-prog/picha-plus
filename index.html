@@ -490,6 +490,8 @@
     }
     .scroll-row::-webkit-scrollbar { display: none; }
 
+    #fyGrid .card { width: 100%; }
+
     /* ── CARDS ── */
     .card {
       flex-shrink: 0;
@@ -2086,7 +2088,7 @@ function saveProgress(id, pos, dur) {
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
   </div>
-  <div id="fyGrid" style="display:flex;flex-wrap:wrap;gap:0.6rem;padding:0.8rem 4vw;"></div>
+  <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;padding:0.8rem 4vw;"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
