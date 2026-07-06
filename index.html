@@ -4189,7 +4189,7 @@ function updateUI() {
   // Show account settings only for email/password users
   const acctSettingsItem = document.getElementById('acctSettingsMenuItem');
   if (acctSettingsItem) {
-    acctSettingsItem.style.display = (loggedIn && session.user?.authMethod === 'email') ? 'flex' : 'none';
+    acctSettingsItem.style.display = loggedIn ? 'flex' : 'none';
   }
 
   if (loggedIn && session.user) {
