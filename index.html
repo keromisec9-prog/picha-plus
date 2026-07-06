@@ -5160,7 +5160,7 @@ function bnGo(tab) {
   document.getElementById('bnCategoriesPage').style.display = 'none';
   document.getElementById('bnSavedPage').style.display = 'none';
   document.getElementById('bnForYouPage').style.display = 'none';
-  if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence();
+  if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
 
   if (tab === 'home') {
     document.getElementById('categoryOverlay')?.classList.remove('active');
