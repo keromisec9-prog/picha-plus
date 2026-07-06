@@ -4992,7 +4992,9 @@ let _fySeqRunning = false;
 let _fySeqIndex = 0;
 let _fySeqTimer = null;
 let _fySeqVideo = null;
+let _fySeqMuteBtn = null;
 let _fySeqAbort = null;
+let _fyPreviewMuted = true;
 
 function _setupPreviewObserver(grid) {
   _stopPreviewSequence();
@@ -5000,10 +5002,20 @@ function _setupPreviewObserver(grid) {
   if (!cards.length) return;
 
   _fySeqVideo = document.createElement('video');
-  _fySeqVideo.muted = true;
+  _fySeqVideo.muted = _fyPreviewMuted;
   _fySeqVideo.playsInline = true;
   _fySeqVideo.preload = 'none';
   _fySeqVideo.style.cssText = 'position:absolute;top:0;left:0;width:100%;aspect-ratio:var(--card-ratio);object-fit:cover;opacity:0;transition:opacity 0.4s;pointer-events:none;border-radius:inherit;';
+
+  _fySeqMuteBtn = document.createElement('button');
+  _fySeqMuteBtn.style.cssText = 'position:absolute;bottom:0.4rem;right:0.4rem;z-index:5;background:rgba(0,0,0,0.6);border:none;border-radius:50%;width:1.8rem;height:1.8rem;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.4s;';
+  _fySeqMuteBtn.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">${_fyPreviewMuted ? 'volume_off' : 'volume_up'}</span>`;
+  _fySeqMuteBtn.onclick = (e) => {
+    e.stopPropagation();
+    _fyPreviewMuted = !_fyPreviewMuted;
+    if (_fySeqVideo) _fySeqVideo.muted = _fyPreviewMuted;
+    _fySeqMuteBtn.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">${_fyPreviewMuted ? 'volume_off' : 'volume_up'}</span>`;
+  };
 
   _fySeqRunning = true;
   _fySeqIndex = 0;
@@ -5021,6 +5033,7 @@ function _stopPreviewSequence() {
     _fySeqVideo.remove();
     _fySeqVideo = null;
   }
+  if (_fySeqMuteBtn) { _fySeqMuteBtn.remove(); _fySeqMuteBtn = null; }
 }
 
 async function _playSequenceStep(cards) {
@@ -5047,15 +5060,19 @@ async function _playSequenceStep(cards) {
 
     if (!_fySeqRunning) return;
     card.appendChild(_fySeqVideo);
+    card.appendChild(_fySeqMuteBtn);
     _fySeqVideo.src = previewUrl;
     _fySeqVideo.currentTime = 15;
+    _fySeqVideo.muted = _fyPreviewMuted;
     await _fySeqVideo.play();
     if (!_fySeqRunning) return;
     _fySeqVideo.style.opacity = '1';
+    _fySeqMuteBtn.style.opacity = '1';
 
     _fySeqTimer = setTimeout(() => {
       if (!_fySeqRunning) return;
       _fySeqVideo.style.opacity = '0';
+      _fySeqMuteBtn.style.opacity = '0';
       _fySeqVideo.pause();
       _fySeqIndex++;
       setTimeout(() => _playSequenceStep(cards), 400);
