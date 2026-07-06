@@ -2795,7 +2795,7 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
       ${poster
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
         : `<div class="card-poster-placeholder">🎬</div>`}
-      ${!isLockedAfrican ? `<video class="card-preview-video" muted playsinline style="position:absolute;top:0;left:0;width:100%;aspect-ratio:var(--card-ratio);object-fit:cover;opacity:0;transition:opacity 0.4s;pointer-events:none;border-radius:inherit;"></video>` : ''}
+      ${!isLockedAfrican ? `<video class="card-preview-video" muted playsinline preload="none" style="position:absolute;top:0;left:0;width:100%;aspect-ratio:var(--card-ratio);object-fit:cover;opacity:0;transition:opacity 0.4s;pointer-events:none;border-radius:inherit;"></video>` : ''}
       ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
       ${extraBadgeHTML}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
@@ -4989,15 +4989,20 @@ function renderForYou() {
 
 const _previewTimers = new WeakMap();
 const _previewCache = {};
+let _activePreviewCard = null;
+let _activePreviewAbort = null;
 
 function _setupPreviewObserver(grid) {
-  if (grid._previewObserver) grid._previewObserver.disconnect();
+  if (grid._previewObserver) {
+    grid._previewObserver.disconnect();
+    // Stop any videos from the previous render before rebuilding
+    _stopActivePreview();
+  }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       const card = entry.target;
       const video = card.querySelector('.card-preview-video');
-      const img = card.querySelector('.card-poster');
       if (!video) return;
 
       if (entry.isIntersecting) {
@@ -5005,8 +5010,7 @@ function _setupPreviewObserver(grid) {
         _previewTimers.set(card, timer);
       } else {
         clearTimeout(_previewTimers.get(card));
-        video.pause();
-        video.style.opacity = '0';
+        if (_activePreviewCard === card) _stopActivePreview();
       }
     });
   }, { threshold: 0.6 });
@@ -5015,26 +5019,45 @@ function _setupPreviewObserver(grid) {
   grid._previewObserver = observer;
 }
 
+function _stopActivePreview() {
+  if (_activePreviewAbort) { _activePreviewAbort.abort(); _activePreviewAbort = null; }
+  if (_activePreviewCard) {
+    const video = _activePreviewCard.querySelector('.card-preview-video');
+    if (video) { video.pause(); video.removeAttribute('src'); video.load(); video.style.opacity = '0'; }
+    _activePreviewCard = null;
+  }
+}
+
 async function _startPreview(card, video) {
   const id = card.dataset.previewId;
   if (!id) return;
+
+  // Only one preview plays at a time — stop whatever was active before starting this one
+  if (_activePreviewCard && _activePreviewCard !== card) _stopActivePreview();
+  _activePreviewCard = card;
+
+  const controller = new AbortController();
+  _activePreviewAbort = controller;
+
   try {
     let previewUrl = _previewCache[id];
     if (!previewUrl) {
       const res = await fetch(`${API}/preview?id=${id}`, {
-        headers: { 'X-Session-Token': session.token }
+        headers: { 'X-Session-Token': session.token },
+        signal: controller.signal
       });
       const data = await res.json();
       if (!data.url) return;
       previewUrl = data.url;
       _previewCache[id] = previewUrl;
     }
+    if (_activePreviewCard !== card) return; // scrolled away while fetching
     video.src = previewUrl;
     video.currentTime = 15;
     await video.play();
-    video.style.opacity = '1';
+    if (_activePreviewCard === card) video.style.opacity = '1';
   } catch (e) {
-    // Silent fail — just keep showing the poster
+    // Silent fail (including aborted fetches) — just keep showing the poster
   }
 }
 
