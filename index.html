@@ -992,6 +992,13 @@
     .nav-cast-btn.casting svg,
     .nav-cast-btn.casting .material-symbols-rounded { filter: drop-shadow(0 0 4px rgba(229,185,60,0.8)); }
 
+    #acctPreviewSoundSlider::before {
+      content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    #acctPreviewSoundToggle:checked + #acctPreviewSoundSlider { background: var(--gold); }
+    #acctPreviewSoundToggle:checked + #acctPreviewSoundSlider::before { transform: translateX(20px); }
+
     /* Cast button gold tint + active glow */
     .shaka-cast-button { color: var(--gold) !important; }
     .shaka-cast-button[aria-pressed="true"] {
@@ -2184,6 +2191,16 @@ function saveProgress(id, pos, dur) {
         <div style="margin-bottom:1.2rem;">
           <div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">Email</div>
           <div id="acctEmail" style="font-size:0.95rem;color:#fff;"></div>
+        </div>
+        <div style="border-top:1px solid #222;padding:1.2rem 0;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:0.9rem;font-weight:600;">For You preview sound</div>
+            <div style="font-size:0.78rem;color:#888;margin-top:0.15rem;">Play video previews with sound</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+            <input type="checkbox" id="acctPreviewSoundToggle" onchange="setPreviewSoundPref(this.checked)" style="opacity:0;width:0;height:0;">
+            <span id="acctPreviewSoundSlider" style="position:absolute;cursor:pointer;inset:0;background:#333;border-radius:24px;transition:0.2s;"></span>
+          </label>
         </div>
         <div style="border-top:1px solid #222;padding-top:1.2rem;">
           <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.8rem;">Change Password</div>
@@ -4256,6 +4273,7 @@ function openAccountSettings() {
   });
   document.getElementById('acctPwdError').style.display = 'none';
   document.getElementById('acctPwdSuccess').style.display = 'none';
+  document.getElementById('acctPreviewSoundToggle').checked = !_fyPreviewMuted;
 }
 
 function closeAccountSettings() {
@@ -4994,10 +5012,18 @@ let _fySeqTimer = null;
 let _fySeqVideo = null;
 let _fySeqMuteBtn = null;
 let _fySeqAbort = null;
-let _fyPreviewMuted = true;
+let _fyPreviewMuted = (localStorage.getItem('pichaplus_preview_muted') ?? '1') !== '0';
+
+function setPreviewSoundPref(soundOn) {
+  _fyPreviewMuted = !soundOn;
+  localStorage.setItem('pichaplus_preview_muted', _fyPreviewMuted ? '1' : '0');
+  if (_fySeqVideo) _fySeqVideo.muted = _fyPreviewMuted;
+  if (_fySeqMuteBtn) _fySeqMuteBtn.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">${_fyPreviewMuted ? 'volume_off' : 'volume_up'}</span>`;
+}
 
 function _setupPreviewObserver(grid) {
-  _stopPreviewSequence();
+  const isFirstSetup = !_fySeqVideo;
+  _stopPreviewSequence(true); // keep index — don't restart from the top
   const cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
   if (!cards.length) return;
 
@@ -5012,17 +5038,15 @@ function _setupPreviewObserver(grid) {
   _fySeqMuteBtn.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">${_fyPreviewMuted ? 'volume_off' : 'volume_up'}</span>`;
   _fySeqMuteBtn.onclick = (e) => {
     e.stopPropagation();
-    _fyPreviewMuted = !_fyPreviewMuted;
-    if (_fySeqVideo) _fySeqVideo.muted = _fyPreviewMuted;
-    _fySeqMuteBtn.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">${_fyPreviewMuted ? 'volume_off' : 'volume_up'}</span>`;
+    setPreviewSoundPref(_fyPreviewMuted); // _fyPreviewMuted true means sound is currently off, so passing it in turns sound ON
   };
 
   _fySeqRunning = true;
-  _fySeqIndex = 0;
+  if (_fySeqIndex >= cards.length) _fySeqIndex = 0;
   _playSequenceStep(cards);
 }
 
-function _stopPreviewSequence() {
+function _stopPreviewSequence(keepIndex = false) {
   _fySeqRunning = false;
   clearTimeout(_fySeqTimer);
   if (_fySeqAbort) { _fySeqAbort.abort(); _fySeqAbort = null; }
@@ -5034,6 +5058,7 @@ function _stopPreviewSequence() {
     _fySeqVideo = null;
   }
   if (_fySeqMuteBtn) { _fySeqMuteBtn.remove(); _fySeqMuteBtn = null; }
+  if (!keepIndex) _fySeqIndex = 0;
 }
 
 async function _playSequenceStep(cards) {
@@ -5062,7 +5087,14 @@ async function _playSequenceStep(cards) {
     card.appendChild(_fySeqVideo);
     card.appendChild(_fySeqMuteBtn);
     _fySeqVideo.src = previewUrl;
-    _fySeqVideo.currentTime = 15;
+    if (_fySeqVideo.duration && !isNaN(_fySeqVideo.duration)) {
+      _fySeqVideo.currentTime = _fySeqVideo.duration * 0.27;
+    } else {
+      // Duration not known yet (metadata not loaded) — wait for it, then seek
+      _fySeqVideo.addEventListener('loadedmetadata', () => {
+        _fySeqVideo.currentTime = _fySeqVideo.duration * 0.27;
+      }, { once: true });
+    }
     _fySeqVideo.muted = _fyPreviewMuted;
     await _fySeqVideo.play();
     if (!_fySeqRunning) return;
