@@ -2143,6 +2143,7 @@ function saveProgress(id, pos, dur) {
     <div style="position:relative;">
       <img class="info-backdrop" id="infoBackdrop" src="" alt="" onerror="this.style.display='none'"/>
       <div class="info-backdrop-placeholder" id="infoBackdropPlaceholder" style="display:none;"></div>
+      <video class="info-backdrop" id="infoBackdropPreview" muted playsinline preload="none" style="opacity:0;transition:opacity 0.5s;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>
       <div style="position:absolute;inset:0;background:linear-gradient(to top, #181818 0%, transparent 60%);"></div>
     </div>
     <div class="info-backdrop-overlay">
@@ -2875,6 +2876,12 @@ async function showInfo(item) {
     placeholderEl.style.display = 'block';
   }
 
+  _stopModalPreview();
+  if (_infoOpenedFromForYou) {
+    pauseGridPreviewForModal();
+    _startModalPreview(item);
+  }
+
   // Meta
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
   const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : '';
@@ -2941,6 +2948,8 @@ function closeInfo() {
   }
   currentInfoItem = null;
   _infoOpenedFromForYou = false;
+  _stopModalPreview();
+  resumeGridPreviewAfterModal();
 }
 
 function playFromInfo() {
@@ -5008,6 +5017,113 @@ function renderForYou() {
 const _previewCache = {};
 let _fySeriesEpCycle = 0;
 let _fySeqGen = 0;
+let _fySeqActiveCards = null;
+let _fySeqActiveGen = null;
+let _fyGridPausedForModal = false;
+
+function _scheduleAdvance(cards, myGen, delayMs) {
+  clearTimeout(_fySeqTimer);
+  _fySeqTimer = setTimeout(() => {
+    if (!_fySeqRunning || myGen !== _fySeqGen) return;
+    if (_fySeqVideo) _fySeqVideo.style.opacity = '0';
+    if (_fySeqMuteBtn) _fySeqMuteBtn.style.opacity = '0';
+    if (_fySeqVideo) _fySeqVideo.pause();
+    _fySeqIndex++;
+    if (_fySeqIndex >= cards.length) {
+      _fySeqIndex = 0;
+      if (_fyTab === 'series') _fySeriesEpCycle++;
+    }
+    setTimeout(() => _playSequenceStep(cards, myGen), 400);
+  }, delayMs);
+}
+
+function pauseGridPreviewForModal() {
+  if (_fySeqVideo && !_fySeqVideo.paused) {
+    _fySeqVideo.pause();
+    clearTimeout(_fySeqTimer);
+    _fyGridPausedForModal = true;
+  }
+}
+
+function resumeGridPreviewAfterModal() {
+  if (!_fyGridPausedForModal) return;
+  _fyGridPausedForModal = false;
+  if (_fySeqVideo && _fySeqRunning && _fySeqActiveCards && _fySeqActiveGen === _fySeqGen) {
+    _fySeqVideo.play().catch(() => {});
+    _scheduleAdvance(_fySeqActiveCards, _fySeqActiveGen, 30000);
+  }
+}
+
+let _modalPreviewGen = 0;
+let _modalPreviewTimer = null;
+let _modalPreviewAbort = null;
+
+function _stopModalPreview() {
+  _modalPreviewGen++;
+  clearTimeout(_modalPreviewTimer);
+  if (_modalPreviewAbort) { _modalPreviewAbort.abort(); _modalPreviewAbort = null; }
+  const v = document.getElementById('infoBackdropPreview');
+  if (v) {
+    v.pause();
+    v.removeAttribute('src');
+    v.load();
+    v.style.opacity = '0';
+  }
+}
+
+async function _startModalPreview(item) {
+  const myGen = ++_modalPreviewGen;
+  const v = document.getElementById('infoBackdropPreview');
+  if (!v) return;
+
+  const isTV = item.media_type === 'tv' || item.first_air_date;
+  let endpoint = null;
+  if (isTV) {
+    const eps = _seriesEpisodesArrFor(item);
+    if (eps.length > 0) endpoint = `${API}/episode-preview?seriesId=${item.tmdbId || item.id}&ep=0`;
+  } else {
+    endpoint = `${API}/preview?id=${item.id}`;
+  }
+  if (!endpoint) return;
+
+  await new Promise(r => setTimeout(r, 1200));
+  if (myGen !== _modalPreviewGen) return;
+
+  const controller = new AbortController();
+  _modalPreviewAbort = controller;
+
+  try {
+    const res = await fetch(endpoint, {
+      headers: { 'X-Session-Token': session.token },
+      signal: controller.signal
+    });
+    if (myGen !== _modalPreviewGen) return;
+    const data = await res.json();
+    if (myGen !== _modalPreviewGen || !data.url) return;
+
+    v.src = data.url;
+    if (v.duration && !isNaN(v.duration)) {
+      v.currentTime = v.duration * 0.27;
+    } else {
+      v.addEventListener('loadedmetadata', () => {
+        if (myGen !== _modalPreviewGen) return;
+        v.currentTime = v.duration * 0.27;
+      }, { once: true });
+    }
+    v.muted = _fyPreviewMuted;
+    await v.play();
+    if (myGen !== _modalPreviewGen) return;
+    v.style.opacity = '1';
+
+    _modalPreviewTimer = setTimeout(() => {
+      if (myGen !== _modalPreviewGen) return;
+      v.style.opacity = '0';
+      v.pause();
+    }, 30000);
+  } catch (e) {
+    // Silent fail — backdrop image stays as-is
+  }
+}
 
 function _seriesEpisodesArrFor(idOrItem) {
   const tmdbId = (typeof idOrItem === 'object') ? (idOrItem.tmdbId || idOrItem.id) : idOrItem;
@@ -5147,18 +5263,9 @@ async function _playSequenceStep(cards, myGen) {
     video.style.opacity = '1';
     muteBtn.style.opacity = '1';
 
-    _fySeqTimer = setTimeout(() => {
-      if (!_fySeqRunning || myGen !== _fySeqGen) return;
-      video.style.opacity = '0';
-      muteBtn.style.opacity = '0';
-      video.pause();
-      _fySeqIndex++;
-      if (_fySeqIndex >= cards.length) {
-        _fySeqIndex = 0;
-        if (_fyTab === 'series') _fySeriesEpCycle++;
-      }
-      setTimeout(() => _playSequenceStep(cards, myGen), 400);
-    }, 30000);
+    _fySeqActiveCards = cards;
+    _fySeqActiveGen = myGen;
+    _scheduleAdvance(cards, myGen, 30000);
   } catch (e) {
     // Preview failed to load (or was aborted by a newer sequence) — skip to next card
     if (!_fySeqRunning || myGen !== _fySeqGen) return;
