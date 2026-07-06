@@ -2791,10 +2791,11 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
   const cardKeydown = isLockedAfrican ? `if(event.key==='Enter')showAfricanUpgradeToast()` : `if(event.key==='Enter')showInfo(getItem(${regIdx}))`;
 
   return `
-    <div class="card" tabindex="0" onclick="${cardClick}" onkeydown="${cardKeydown}">
+    <div class="card" tabindex="0" onclick="${cardClick}" onkeydown="${cardKeydown}" data-preview-id="${item.id}">
       ${poster
         ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
         : `<div class="card-poster-placeholder">🎬</div>`}
+      ${!isLockedAfrican ? `<video class="card-preview-video" muted playsinline style="position:absolute;top:0;left:0;width:100%;aspect-ratio:var(--card-ratio);object-fit:cover;opacity:0;transition:opacity 0.4s;pointer-events:none;border-radius:inherit;"></video>` : ''}
       ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
       ${extraBadgeHTML}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
@@ -4982,6 +4983,59 @@ function renderForYou() {
   // Cards from createCard call showInfo() directly, so we can't hook showInfoFromForYou.
   // Instead, mark the flag on any click within this grid, before showInfo runs.
   grid.addEventListener('click', () => { _infoOpenedFromForYou = true; }, true);
+
+  _setupPreviewObserver(grid);
+}
+
+const _previewTimers = new WeakMap();
+const _previewCache = {};
+
+function _setupPreviewObserver(grid) {
+  if (grid._previewObserver) grid._previewObserver.disconnect();
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const card = entry.target;
+      const video = card.querySelector('.card-preview-video');
+      const img = card.querySelector('.card-poster');
+      if (!video) return;
+
+      if (entry.isIntersecting) {
+        const timer = setTimeout(() => _startPreview(card, video), 1500);
+        _previewTimers.set(card, timer);
+      } else {
+        clearTimeout(_previewTimers.get(card));
+        video.pause();
+        video.style.opacity = '0';
+      }
+    });
+  }, { threshold: 0.6 });
+
+  grid.querySelectorAll('.card[data-preview-id]').forEach(card => observer.observe(card));
+  grid._previewObserver = observer;
+}
+
+async function _startPreview(card, video) {
+  const id = card.dataset.previewId;
+  if (!id) return;
+  try {
+    let previewUrl = _previewCache[id];
+    if (!previewUrl) {
+      const res = await fetch(`${API}/preview?id=${id}`, {
+        headers: { 'X-Session-Token': session.token }
+      });
+      const data = await res.json();
+      if (!data.url) return;
+      previewUrl = data.url;
+      _previewCache[id] = previewUrl;
+    }
+    video.src = previewUrl;
+    video.currentTime = 15;
+    await video.play();
+    video.style.opacity = '1';
+  } catch (e) {
+    // Silent fail — just keep showing the poster
+  }
 }
 
 let _fyCurrentItem = null;
