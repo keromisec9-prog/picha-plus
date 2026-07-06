@@ -5007,6 +5007,7 @@ function renderForYou() {
 
 const _previewCache = {};
 let _fySeriesEpCycle = 0;
+let _fySeqGen = 0;
 
 function _seriesEpisodesArrFor(idOrItem) {
   const tmdbId = (typeof idOrItem === 'object') ? (idOrItem.tmdbId || idOrItem.id) : idOrItem;
@@ -5072,10 +5073,12 @@ function _setupPreviewObserver(grid) {
 
   _fySeqRunning = true;
   if (_fySeqIndex >= cards.length) _fySeqIndex = 0;
-  _playSequenceStep(cards);
+  const myGen = _fySeqGen;
+  _playSequenceStep(cards, myGen);
 }
 
 function _stopPreviewSequence(keepIndex = false) {
+  _fySeqGen++;
   _fySeqRunning = false;
   clearTimeout(_fySeqTimer);
   if (_fySeqAbort) { _fySeqAbort.abort(); _fySeqAbort = null; }
@@ -5090,11 +5093,14 @@ function _stopPreviewSequence(keepIndex = false) {
   if (!keepIndex) _fySeqIndex = 0;
 }
 
-async function _playSequenceStep(cards) {
-  if (!_fySeqRunning) return;
+async function _playSequenceStep(cards, myGen) {
+  if (!_fySeqRunning || myGen !== _fySeqGen) return;
   if (_fySeqIndex >= cards.length) { _fySeqIndex = 0; } // loop back to start
   const card = cards[_fySeqIndex];
   const id = card.dataset.previewId;
+  const video = _fySeqVideo;
+  const muteBtn = _fySeqMuteBtn;
+  if (!video || !muteBtn) return;
 
   // Persist resume point + top-3 snapshot so a refresh can pick up where we left off
   localStorage.setItem('pichaplus_fy_resume_' + _fyTab, id);
@@ -5115,47 +5121,49 @@ async function _playSequenceStep(cards) {
         headers: { 'X-Session-Token': session.token },
         signal: controller.signal
       });
+      if (myGen !== _fySeqGen) return; // stale — a newer sequence has started since this fetch began
       const data = await res.json();
+      if (myGen !== _fySeqGen) return;
       if (!data.url) throw new Error('no url');
       previewUrl = data.url;
       _previewCache[cacheKey] = previewUrl;
     }
 
-    if (!_fySeqRunning) return;
-    card.appendChild(_fySeqVideo);
-    card.appendChild(_fySeqMuteBtn);
-    _fySeqVideo.src = previewUrl;
-    if (_fySeqVideo.duration && !isNaN(_fySeqVideo.duration)) {
-      _fySeqVideo.currentTime = _fySeqVideo.duration * 0.27;
+    if (!_fySeqRunning || myGen !== _fySeqGen) return;
+    card.appendChild(video);
+    card.appendChild(muteBtn);
+    video.src = previewUrl;
+    if (video.duration && !isNaN(video.duration)) {
+      video.currentTime = video.duration * 0.27;
     } else {
-      // Duration not known yet (metadata not loaded) — wait for it, then seek
-      _fySeqVideo.addEventListener('loadedmetadata', () => {
-        _fySeqVideo.currentTime = _fySeqVideo.duration * 0.27;
+      video.addEventListener('loadedmetadata', () => {
+        if (myGen !== _fySeqGen) return;
+        video.currentTime = video.duration * 0.27;
       }, { once: true });
     }
-    _fySeqVideo.muted = _fyPreviewMuted;
-    await _fySeqVideo.play();
-    if (!_fySeqRunning) return;
-    _fySeqVideo.style.opacity = '1';
-    _fySeqMuteBtn.style.opacity = '1';
+    video.muted = _fyPreviewMuted;
+    await video.play();
+    if (!_fySeqRunning || myGen !== _fySeqGen) return;
+    video.style.opacity = '1';
+    muteBtn.style.opacity = '1';
 
     _fySeqTimer = setTimeout(() => {
-      if (!_fySeqRunning) return;
-      _fySeqVideo.style.opacity = '0';
-      _fySeqMuteBtn.style.opacity = '0';
-      _fySeqVideo.pause();
+      if (!_fySeqRunning || myGen !== _fySeqGen) return;
+      video.style.opacity = '0';
+      muteBtn.style.opacity = '0';
+      video.pause();
       _fySeqIndex++;
       if (_fySeqIndex >= cards.length) {
         _fySeqIndex = 0;
         if (_fyTab === 'series') _fySeriesEpCycle++;
       }
-      setTimeout(() => _playSequenceStep(cards), 400);
+      setTimeout(() => _playSequenceStep(cards, myGen), 400);
     }, 30000);
   } catch (e) {
-    // Preview failed to load — skip to next card after a short delay
-    if (!_fySeqRunning) return;
+    // Preview failed to load (or was aborted by a newer sequence) — skip to next card
+    if (!_fySeqRunning || myGen !== _fySeqGen) return;
     _fySeqIndex++;
-    _fySeqTimer = setTimeout(() => _playSequenceStep(cards), 1000);
+    _fySeqTimer = setTimeout(() => _playSequenceStep(cards, myGen), 1000);
   }
 }
 
