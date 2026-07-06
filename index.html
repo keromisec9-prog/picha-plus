@@ -5027,6 +5027,24 @@ function _setupPreviewObserver(grid) {
   const cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
   if (!cards.length) return;
 
+  // On a genuinely fresh start (first tab open this session, or a full page refresh),
+  // try to resume from localStorage — unless 3+ new cards have appeared at the top.
+  if (isFirstSetup) {
+    const idKey = 'pichaplus_fy_resume_' + _fyTab;
+    const topKey = 'pichaplus_fy_top3_' + _fyTab;
+    const currentTop3 = cards.slice(0, 3).map(c => c.dataset.previewId);
+    const storedTop3 = JSON.parse(localStorage.getItem(topKey) || '[]');
+    const newCount = currentTop3.filter(id => !storedTop3.includes(id)).length;
+
+    if (newCount >= 3) {
+      _fySeqIndex = 0;
+    } else {
+      const storedId = localStorage.getItem(idKey);
+      const idx = cards.findIndex(c => c.dataset.previewId === storedId);
+      _fySeqIndex = idx !== -1 ? idx : 0;
+    }
+  }
+
   _fySeqVideo = document.createElement('video');
   _fySeqVideo.muted = _fyPreviewMuted;
   _fySeqVideo.playsInline = true;
@@ -5066,6 +5084,10 @@ async function _playSequenceStep(cards) {
   if (_fySeqIndex >= cards.length) { _fySeqIndex = 0; } // loop back to start
   const card = cards[_fySeqIndex];
   const id = card.dataset.previewId;
+
+  // Persist resume point + top-3 snapshot so a refresh can pick up where we left off
+  localStorage.setItem('pichaplus_fy_resume_' + _fyTab, id);
+  localStorage.setItem('pichaplus_fy_top3_' + _fyTab, JSON.stringify(cards.slice(0, 3).map(c => c.dataset.previewId)));
 
   const controller = new AbortController();
   _fySeqAbort = controller;
