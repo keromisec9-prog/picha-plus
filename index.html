@@ -4110,16 +4110,24 @@ function toggleLike(itemId, btn) {
 }
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
+let _searchGen = 0;
+
 function openSearch() {
+  const myGen = ++_searchGen;
   document.getElementById('searchOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
-  setTimeout(() => document.getElementById('searchInput').focus(), 100);
+  setTimeout(() => {
+    if (myGen !== _searchGen) return; // a newer open/close call has since superseded this one
+    document.getElementById('searchInput').focus();
+  }, 100);
 }
 
 function closeSearch() {
+  const myGen = ++_searchGen;
   const input = document.getElementById('searchInput');
   input.blur(); // force the keyboard to start closing first, before we touch layout/overflow
   setTimeout(() => {
+    if (myGen !== _searchGen) return; // a newer open/close call has since superseded this one
     document.getElementById('searchOverlay').classList.remove('active');
     document.body.style.overflow = '';
     input.value = '';
