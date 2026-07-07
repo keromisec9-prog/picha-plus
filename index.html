@@ -4117,10 +4117,14 @@ function openSearch() {
 }
 
 function closeSearch() {
-  document.getElementById('searchOverlay').classList.remove('active');
-  document.body.style.overflow = '';
-  document.getElementById('searchInput').value = '';
-  document.getElementById('searchResults').innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">Start typing to search...</div>';
+  const input = document.getElementById('searchInput');
+  input.blur(); // force the keyboard to start closing first, before we touch layout/overflow
+  setTimeout(() => {
+    document.getElementById('searchOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+    input.value = '';
+    document.getElementById('searchResults').innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">Start typing to search...</div>';
+  }, 150);
 }
 
 let searchTimer;
