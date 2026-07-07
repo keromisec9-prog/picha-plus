@@ -61,7 +61,22 @@
     var _dt = false;
     var _dtCount = 0;
 
+    var _lastInputBlurAt = 0;
+    document.addEventListener('focusout', function(e) {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        _lastInputBlurAt = Date.now();
+      }
+    }, true);
+
     function _checkDevTools() {
+      // Skip while a text input/textarea has focus, or shortly after one loses focus —
+      // the on-screen keyboard shrinks window.innerHeight the same way DevTools would,
+      // and dimensions take a moment to settle after it closes, causing false positives.
+      var active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+        return;
+      }
+      if (Date.now() - _lastInputBlurAt < 1000) return;
       var widthDiff  = window.outerWidth  - window.innerWidth;
       var heightDiff = window.outerHeight - window.innerHeight;
       var open = widthDiff > 160 || heightDiff > 160;
