@@ -99,6 +99,20 @@
 
     setInterval(_checkDevTools, 800);
 
+    // ── WebView keyboard-resize repaint fix ──
+    // Some Android WebViews leave stale layout after the on-screen keyboard closes.
+    // Nudging the scroll position by 1px forces the compositor to recheck fixed-position
+    // elements and repaint correctly. This is a no-op visually (scrolls back immediately).
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', function() {
+        setTimeout(function() {
+          var y = window.scrollY;
+          window.scrollTo(window.scrollX, y + 1);
+          window.scrollTo(window.scrollX, y);
+        }, 60);
+      });
+    }
+
     // ── 4. Continuous debugger trap ──
     // When DevTools is open, setInterval + debugger creates a pause loop.
     // Users can disable it via "Deactivate breakpoints" but it's friction.
