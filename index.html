@@ -4113,6 +4113,7 @@ function toggleLike(itemId, btn) {
 let _searchGen = 0;
 
 function openSearch() {
+  if (_navLocked()) return;
   const myGen = ++_searchGen;
   document.getElementById('searchOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -5332,7 +5333,16 @@ function fyLike(itemId) {
   showToast('Thanks for the feedback!', '');
 }
 
+let _navLockUntil = 0;
+function _navLocked() {
+  const now = Date.now();
+  if (now < _navLockUntil) return true;
+  _navLockUntil = now + 300;
+  return false;
+}
+
 function bnGo(tab) {
+  if (_navLocked()) return;
   _bnActive = tab;
   document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('bn-' + tab)?.classList.add('active');
