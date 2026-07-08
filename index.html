@@ -5202,12 +5202,19 @@ async function _startModalPreview(item) {
         v.currentTime = v.duration * 0.27;
       }, { once: true });
     }
+    // TEMP DEBUG — report which event fires when playback stalls/breaks
+    ['stalled','waiting','error','suspend','abort','pause'].forEach(evt => {
+      v.addEventListener(evt, () => {
+        if (myGen !== _modalPreviewGen) return;
+        showToast('DEBUG video event: ' + evt + (v.error ? ' err=' + v.error.code : ''), '');
+      }, { once: true });
+    });
+
     v.muted = _fyPreviewMuted;
     try {
       await v.play();
     } catch (playErr) {
-      // Autoplay with sound can be blocked without a direct user gesture on this element —
-      // fall back to muted playback so the preview still shows rather than failing silently.
+      showToast('DEBUG play() rejected: ' + playErr.message, '');
       v.muted = true;
       await v.play();
     }
