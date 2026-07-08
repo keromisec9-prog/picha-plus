@@ -2103,9 +2103,14 @@ function saveProgress(id, pos, dur) {
 
 <!-- FOR YOU PAGE -->
 <div class="bn-page" id="bnForYouPage" style="display:none;">
-  <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;">
-    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
-    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
+  <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
+      <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
+    </div>
+    <button onclick="refreshForYou()" title="Refresh" style="background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
+      <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
+    </button>
   </div>
   <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;padding:0.8rem 4vw;"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
@@ -4955,6 +4960,19 @@ let _bnActive = 'home';
 
 // ── FOR YOU ──────────────────────────────────────────────────────────────────
 let _fyTab = 'movies';
+let _fyForceJitter = false;
+
+async function refreshForYou() {
+  const icon = document.getElementById('fyRefreshIcon');
+  if (icon) icon.style.transform = 'rotate(360deg)';
+  _fyForceJitter = true;
+  try {
+    const res = await fetch(`${API}/stats`);
+    _fyStats = await res.json();
+  } catch (e) {}
+  renderForYou();
+  setTimeout(() => { if (icon) icon.style.transform = 'rotate(0deg)'; }, 500);
+}
 let _fyStats = null;
 const _disliked = JSON.parse(localStorage.getItem('pichaplus_disliked') || '[]');
 
@@ -5023,7 +5041,7 @@ function fyScore(item) {
   }).filter(Boolean);
   if (item._vj) {
     const vjCount = playedVJs.filter(v => v === item._vj).length;
-    score += Math.min(vjCount * 2, 10);
+    score += Math.min(vjCount * 4, 20); // weighted above genre so VJ preference dominates first
   }
 
   // New-content boost — keeps freshly uploaded titles from sinking to the bottom
@@ -5050,8 +5068,21 @@ function renderForYou() {
   if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const scored = pool.map(item => ({ item, score: fyScore(item) }))
-    .sort((a, b) => b.score - a.score);
+  const _useJitter = _fyForceJitter;
+  _fyForceJitter = false; // single-shot: only apply randomness for the render right after a manual refresh
+
+  const scored = pool.map(item => ({ item, score: fyScore(item) + (_useJitter ? (Math.random() * 6 - 3) : 0) }))
+    .sort((a, b) => {
+      // Liked items always sort above everything else; disliked items always sort
+      // below everything else. The weighted score only breaks ties within each tier.
+      const aLiked = liked.includes(a.item.id) ? 1 : 0;
+      const bLiked = liked.includes(b.item.id) ? 1 : 0;
+      if (aLiked !== bLiked) return bLiked - aLiked;
+      const aDisliked = _disliked.includes(a.item.id) ? 1 : 0;
+      const bDisliked = _disliked.includes(b.item.id) ? 1 : 0;
+      if (aDisliked !== bDisliked) return aDisliked - bDisliked;
+      return b.score - a.score;
+    });
 
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
