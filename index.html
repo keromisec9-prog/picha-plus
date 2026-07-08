@@ -5181,9 +5181,6 @@ async function _startModalPreview(item) {
   }
   if (!endpoint) return;
 
-  await new Promise(r => setTimeout(r, 1200));
-  if (myGen !== _modalPreviewGen) return;
-
   const controller = new AbortController();
   _modalPreviewAbort = controller;
 
