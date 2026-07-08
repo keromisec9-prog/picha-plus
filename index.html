@@ -5202,22 +5202,8 @@ async function _startModalPreview(item) {
         v.currentTime = v.duration * 0.27;
       }, { once: true });
     }
-    // TEMP DEBUG — report which event fires when playback stalls/breaks
-    ['stalled','waiting','error','suspend','abort','pause'].forEach(evt => {
-      v.addEventListener(evt, () => {
-        if (myGen !== _modalPreviewGen) return;
-        showToast('DEBUG video event: ' + evt + (v.error ? ' err=' + v.error.code : ''), '');
-      }, { once: true });
-    });
-
     v.muted = _fyPreviewMuted;
-    try {
-      await v.play();
-    } catch (playErr) {
-      showToast('DEBUG play() rejected: ' + playErr.message, '');
-      v.muted = true;
-      await v.play();
-    }
+    await v.play();
     if (myGen !== _modalPreviewGen) return;
     v.style.opacity = '1';
 
