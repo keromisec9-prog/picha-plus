@@ -5187,6 +5187,7 @@ async function _startModalPreview(item) {
     });
     if (myGen !== _modalPreviewGen) return;
     const data = await res.json();
+    showToast('DEBUG: endpoint=' + endpoint.split('?')[0] + ' url=' + (data.url ? 'YES' : 'NO ' + JSON.stringify(data)), '');
     if (myGen !== _modalPreviewGen || !data.url) return;
 
     v.src = data.url;
