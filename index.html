@@ -2896,6 +2896,14 @@ async function showInfo(item) {
   _stopModalPreview();
   if (_infoOpenedFromForYou) {
     pauseGridPreviewForModal();
+    // "Unlock" the modal preview video for autoplay-with-sound by playing it silently
+    // right away, synchronously tied to this click — browsers are far more permissive
+    // about a later unmuted play() on an element once it's already played once from a gesture.
+    const _unlockV = document.getElementById('infoBackdropPreview');
+    if (_unlockV) {
+      _unlockV.muted = true;
+      _unlockV.play().then(() => _unlockV.pause()).catch(() => {});
+    }
     _startModalPreview(item);
   }
 
