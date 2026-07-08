@@ -2894,7 +2894,6 @@ async function showInfo(item) {
   }
 
   _stopModalPreview();
-  showToast('DEBUG: openedFromFY = ' + _infoOpenedFromForYou, '');
   if (_infoOpenedFromForYou) {
     pauseGridPreviewForModal();
     _startModalPreview(item);
@@ -5187,7 +5186,6 @@ async function _startModalPreview(item) {
     });
     if (myGen !== _modalPreviewGen) return;
     const data = await res.json();
-    showToast('DEBUG: endpoint=' + endpoint.split('?')[0] + ' url=' + (data.url ? 'YES' : 'NO ' + JSON.stringify(data)), '');
     if (myGen !== _modalPreviewGen || !data.url) return;
 
     v.src = data.url;
@@ -5200,7 +5198,14 @@ async function _startModalPreview(item) {
       }, { once: true });
     }
     v.muted = _fyPreviewMuted;
-    await v.play();
+    try {
+      await v.play();
+    } catch (playErr) {
+      // Autoplay with sound can be blocked without a direct user gesture on this element —
+      // fall back to muted playback so the preview still shows rather than failing silently.
+      v.muted = true;
+      await v.play();
+    }
     if (myGen !== _modalPreviewGen) return;
     v.style.opacity = '1';
 
