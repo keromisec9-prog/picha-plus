@@ -2170,10 +2170,10 @@ function saveProgress(id, pos, dur) {
         <button class="info-close-btn" onclick="closeInfo()"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
       </div>
       <div id="fyFeedbackBtns" style="display:none;gap:0.5rem;margin:0.5rem 0;">
-        <button onclick="fyLike(currentInfoItem?.id)" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.8rem;">
+        <button id="fyLikeBtn" onclick="fyLike(currentInfoItem?.id)" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.8rem;transition:background 0.15s,border-color 0.15s;">
           <span class="material-symbols-rounded" style="font-size:1.1rem;line-height:1;">thumb_up</span> Like
         </button>
-        <button onclick="fyDislike(currentInfoItem?.id)" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.8rem;">
+        <button id="fyDislikeBtn" onclick="fyDislike(currentInfoItem?.id)" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.8rem;transition:background 0.15s,border-color 0.15s;">
           <span class="material-symbols-rounded" style="font-size:1.1rem;line-height:1;">thumb_down</span> Not for me
         </button>
       </div>
@@ -2570,6 +2570,7 @@ async function loadContent() {
       _narrative: v.narrative || null,
       _episode: v.episode || null,
       isUgandan: !!v.isUgandan,
+      _addedAt: v.addedAt || 0,
     });
 
     const movieEntries = Object.entries(catalogData.movies || {});
@@ -2874,6 +2875,7 @@ async function showInfo(item) {
 
   const fyBtns = document.getElementById('fyFeedbackBtns');
   if (fyBtns) fyBtns.style.display = 'flex';
+  _syncFyFeedbackButtons(item.id);
 
   // Backdrop
   const backdropEl = document.getElementById('infoBackdrop');
@@ -3603,6 +3605,16 @@ async function initPlayer(url, item) {
 
     // ── UP NEXT for series episodes AND movies ──
     video.addEventListener('ended', () => {
+      // Track completion for recommendation scoring (once per full playback)
+      try {
+        if (item?._seriesKvKey == null && item?.id) {
+          queueEvent('completion', { movieId: String(item.id) });
+        } else if (item?._seriesKvKey != null) {
+          const _sForCompletion = currentSeries || (window._seriesList || []).find(s => s._kvKey === item._seriesKvKey);
+          if (_sForCompletion?.tmdbId) queueEvent('completion', { movieId: String(_sForCompletion.tmdbId) });
+        }
+      } catch(e) {}
+
       // ── MOVIE UP NEXT ──
       if (item?._seriesKvKey == null && item?.id) {
         const allMovies = (window._allCards || []).filter(c => c.media_type !== 'tv' && c._isOwned);
@@ -4972,37 +4984,58 @@ function fyScore(item) {
   const id = String(item.id);
   const genreIds = item.genre_ids || [];
 
-  // Play count from Neon (popularity)
+  // Popularity + completion rate from Neon stats — completion rate is a stronger
+  // signal of quality than raw plays (a title people actually finish beats one
+  // with lots of views but everyone bails early)
   const statKey = Object.keys(_fyStats || {}).find(k => k.startsWith(String(item.tmdbId)));
-  const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
-  score += Math.min(plays * 2, 20); // cap at 20
+  const stat = statKey ? _fyStats[statKey] : null;
+  const plays = stat?.plays || 0;
+  const completionRate = stat?.completionRate || 0; // 0-100
+  score += Math.min(plays * 1, 10); // popularity, capped low
+  score += completionRate * 0.25; // up to +25 for a 100% completion rate
 
-  // Liked/hearted
-  if (liked.includes(item.id)) score += 5;
+  // Liked — strong explicit signal, should reliably float items to the top
+  if (liked.includes(item.id)) score += 10;
 
-  // Progress/completion
+  // Personal progress/completion on this specific title
   const prog = progress[id];
   if (prog && prog.duration > 0) {
     const pct = prog.position / prog.duration;
-    if (pct > 0.8) score += 4; // finished
-    else if (pct > 0.3) score += 2; // watched a good chunk
+    if (pct > 0.8) score += 4;
+    else if (pct > 0.3) score += 2;
   }
 
-  // Genre preference — based on genres of liked/completed content
-  const likedCards = (window._allCards || []).filter(c => liked.includes(c.id));
-  const likedGenres = likedCards.flatMap(c => c.genre_ids || []);
-  const genreOverlap = genreIds.filter(g => likedGenres.includes(g)).length;
-  score += genreOverlap * 3;
+  // Genre preference — scales with how many liked/watched titles share each genre,
+  // so watching more of a genre keeps pushing similar titles higher (not just a flat bonus)
+  const engagedCards = (window._allCards || []).filter(c => liked.includes(c.id) || progress[c.id]);
+  const engagedGenres = engagedCards.flatMap(c => c.genre_ids || []);
+  let genreScore = 0;
+  genreIds.forEach(g => {
+    const count = engagedGenres.filter(x => x === g).length;
+    genreScore += Math.min(count * 1.5, 9); // capped per genre so one genre can't dominate everything
+  });
+  score += genreScore;
 
-  // VJ preference — based on VJs of played content
+  // VJ preference — scales with how many titles by that VJ have been watched
   const playedVJs = Object.keys(progress).map(pid => {
     const card = (window._allCards || []).find(c => String(c.id) === pid);
     return card?._vj;
   }).filter(Boolean);
-  if (item._vj && playedVJs.includes(item._vj)) score += 2;
+  if (item._vj) {
+    const vjCount = playedVJs.filter(v => v === item._vj).length;
+    score += Math.min(vjCount * 2, 10);
+  }
 
-  // Dislike penalty
-  if (_disliked.includes(item.id)) score -= 15;
+  // New-content boost — keeps freshly uploaded titles from sinking to the bottom
+  // alongside old, ignored/demoted content before they've had a chance to be seen
+  if (item._addedAt) {
+    const daysSinceAdded = (Date.now() - item._addedAt) / (1000 * 60 * 60 * 24);
+    if (daysSinceAdded <= 14) score += 6;
+  }
+
+  // Dislike penalty — strong enough that disliked content reliably sinks below
+  // both new and neutral content
+  if (_disliked.includes(item.id)) score -= 20;
 
   return score;
 }
@@ -5308,29 +5341,54 @@ function showInfoFromForYou(item) {
   showInfo(item);
 }
 
+function _syncFyFeedbackButtons(itemId) {
+  const likeBtn = document.getElementById('fyLikeBtn');
+  const dislikeBtn = document.getElementById('fyDislikeBtn');
+  if (!likeBtn || !dislikeBtn) return;
+  const isLiked = liked.includes(itemId);
+  const isDisliked = _disliked.includes(itemId);
+  likeBtn.style.background = isLiked ? 'rgba(70,211,105,0.18)' : '#1a1a1a';
+  likeBtn.style.borderColor = isLiked ? '#46d369' : '#333';
+  likeBtn.style.color = isLiked ? '#46d369' : '#fff';
+  dislikeBtn.style.background = isDisliked ? 'rgba(255,90,90,0.18)' : '#1a1a1a';
+  dislikeBtn.style.borderColor = isDisliked ? '#ff5a5a' : '#333';
+  dislikeBtn.style.color = isDisliked ? '#ff5a5a' : '#fff';
+}
+
 function fyDislike(itemId) {
-  if (!_disliked.includes(itemId)) {
+  if (_disliked.includes(itemId)) {
+    // toggle off
+    _disliked.splice(_disliked.indexOf(itemId), 1);
+    saveDisliked();
+    showToast('Removed', '');
+  } else {
     _disliked.push(itemId);
     saveDisliked();
+    // remove like if exists
+    const likeIdx = liked.indexOf(itemId);
+    if (likeIdx > -1) { liked.splice(likeIdx, 1); localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
+    showToast('Got it — we\'ll show this less', '');
   }
-  // remove like if exists
-  const likeIdx = liked.indexOf(itemId);
-  if (likeIdx > -1) { liked.splice(likeIdx, 1); localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
   renderForYou();
-  closeInfo();
-  showToast('Got it — we\'ll show this less', '');
+  _syncFyFeedbackButtons(itemId);
 }
 
 function fyLike(itemId) {
-  if (!liked.includes(itemId)) {
+  if (liked.includes(itemId)) {
+    // toggle off
+    liked.splice(liked.indexOf(itemId), 1);
+    localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
+    showToast('Removed', '');
+  } else {
     liked.push(itemId);
     localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
+    // remove dislike if exists
+    const dislikeIdx = _disliked.indexOf(itemId);
+    if (dislikeIdx > -1) { _disliked.splice(dislikeIdx, 1); saveDisliked(); }
+    showToast('Thanks for the feedback!', '');
   }
-  // remove dislike if exists
-  const dislikeIdx = _disliked.indexOf(itemId);
-  if (dislikeIdx > -1) { _disliked.splice(dislikeIdx, 1); saveDisliked(); }
   renderForYou();
-  showToast('Thanks for the feedback!', '');
+  _syncFyFeedbackButtons(itemId);
 }
 
 let _navLockUntil = 0;
