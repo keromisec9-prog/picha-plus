@@ -4326,8 +4326,10 @@ function openAccountSettings() {
 }
 
 function closeAccountSettings() {
-  document.getElementById('accountSettingsModal').classList.remove('active');
-  document.body.style.overflow = '';
+  _blurThenRun(() => {
+    document.getElementById('accountSettingsModal').classList.remove('active');
+    document.body.style.overflow = '';
+  });
 }
 
 // Rate limit: max 3 password changes per hour stored in localStorage
@@ -4505,8 +4507,10 @@ function openSignin() {
   document.body.style.overflow = 'hidden';
 }
 function closeSignin() {
-  document.getElementById('signinModal').classList.remove('active');
-  document.body.style.overflow = '';
+  _blurThenRun(() => {
+    document.getElementById('signinModal').classList.remove('active');
+    document.body.style.overflow = '';
+  });
 }
 
 async function signOut() {
@@ -5422,6 +5426,16 @@ function fyLike(itemId) {
   }
   renderForYou();
   _syncFyFeedbackButtons(itemId);
+}
+
+function _blurThenRun(fn, delay = 150) {
+  const active = document.activeElement;
+  if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+    active.blur();
+    setTimeout(fn, delay);
+  } else {
+    fn();
+  }
 }
 
 let _navLockUntil = 0;
