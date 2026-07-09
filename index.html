@@ -5065,7 +5065,17 @@ function renderForYou() {
   empty.style.display = 'none';
 
   const scored = pool.map(item => ({ item, score: fyScore(item) }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      // Liked items always sort above everything else; disliked items always sort
+      // below everything else. The weighted score only breaks ties within each tier.
+      const aLiked = liked.includes(a.item.id) ? 1 : 0;
+      const bLiked = liked.includes(b.item.id) ? 1 : 0;
+      if (aLiked !== bLiked) return bLiked - aLiked;
+      const aDisliked = _disliked.includes(a.item.id) ? 1 : 0;
+      const bDisliked = _disliked.includes(b.item.id) ? 1 : 0;
+      if (aDisliked !== bDisliked) return aDisliked - bDisliked;
+      return b.score - a.score;
+    });
 
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
