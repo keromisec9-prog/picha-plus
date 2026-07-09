@@ -4958,6 +4958,17 @@ let _bnActive = 'home';
 
 // ── FOR YOU ──────────────────────────────────────────────────────────────────
 let _fyTab = 'movies';
+
+async function refreshForYou() {
+  const icon = document.getElementById('fyRefreshIcon');
+  if (icon) icon.style.transform = 'rotate(360deg)';
+  try {
+    const res = await fetch(`${API}/stats`);
+    _fyStats = await res.json();
+  } catch (e) {}
+  renderForYou();
+  setTimeout(() => { if (icon) icon.style.transform = 'rotate(0deg)'; }, 500);
+}
 let _fyStats = null;
 const _disliked = JSON.parse(localStorage.getItem('pichaplus_disliked') || '[]');
 
