@@ -4959,9 +4959,12 @@ let _bnActive = 'home';
 // ── FOR YOU ──────────────────────────────────────────────────────────────────
 let _fyTab = 'movies';
 
+let _fyForceJitter = false;
+
 async function refreshForYou() {
   const icon = document.getElementById('fyRefreshIcon');
   if (icon) icon.style.transform = 'rotate(360deg)';
+  _fyForceJitter = true;
   try {
     const res = await fetch(`${API}/stats`);
     _fyStats = await res.json();
@@ -5064,7 +5067,10 @@ function renderForYou() {
   if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const scored = pool.map(item => ({ item, score: fyScore(item) }))
+  const _useJitter = _fyForceJitter;
+  _fyForceJitter = false; // single-shot: only apply randomness for the render right after a manual refresh
+
+  const scored = pool.map(item => ({ item, score: fyScore(item) + (_useJitter ? (Math.random() * 6 - 3) : 0) }))
     .sort((a, b) => {
       // Liked items always sort above everything else; disliked items always sort
       // below everything else. The weighted score only breaks ties within each tier.
@@ -5076,9 +5082,6 @@ function renderForYou() {
       if (aDisliked !== bDisliked) return aDisliked - bDisliked;
       return b.score - a.score;
     });
-
-  const _top3Debug = scored.slice(0, 3).map(s => JSON.stringify(s.item.id) + '(' + typeof s.item.id + ')=' + (liked.includes(s.item.id) ? 'LIKED' : 'no')).join(' | ');
-  showToast('DEBUG top3: ' + _top3Debug, '');
 
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
@@ -5415,7 +5418,7 @@ function fyLike(itemId) {
     // remove dislike if exists
     const dislikeIdx = _disliked.indexOf(itemId);
     if (dislikeIdx > -1) { _disliked.splice(dislikeIdx, 1); saveDisliked(); }
-    showToast('DEBUG liked id=' + JSON.stringify(itemId) + ' type=' + typeof itemId, '');
+    showToast('Thanks for the feedback!', '');
   }
   renderForYou();
   _syncFyFeedbackButtons(itemId);
