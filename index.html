@@ -2106,7 +2106,7 @@ function saveProgress(id, pos, dur) {
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <button onclick="refreshForYou()" title="Refresh" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
+    <button onclick="showToast('DEBUG tap registered',''); refreshForYou();" title="Refresh" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
       <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
     </button>
   </div>
