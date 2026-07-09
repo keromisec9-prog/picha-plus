@@ -5067,7 +5067,10 @@ function renderForYou() {
 
   // Cards from createCard call showInfo() directly, so we can't hook showInfoFromForYou.
   // Instead, mark the flag on any click within this grid, before showInfo runs.
-  grid.addEventListener('click', () => { _infoOpenedFromForYou = true; }, true);
+  if (!grid._fyClickFlagAttached) {
+    grid.addEventListener('click', () => { _infoOpenedFromForYou = true; }, true);
+    grid._fyClickFlagAttached = true;
+  }
 
   _setupPreviewObserver(grid);
 }
