@@ -4413,14 +4413,16 @@ function togglePwd(inputId, eyeEl) {
 } // 'login' or 'register'
 
 function toggleAuthMode() {
-  _authMode = _authMode === 'login' ? 'register' : 'login';
-  const isRegister = _authMode === 'register';
-  document.getElementById('authNameWrap').style.display = isRegister ? 'block' : 'none';
-  document.getElementById('authConfirmWrap').style.display = isRegister ? 'block' : 'none';
-  document.getElementById('authSubmitBtn').textContent = isRegister ? 'Create Account' : 'Sign In';
-  document.getElementById('authToggleText').textContent = isRegister ? 'Already have an account?' : "Don't have an account?";
-  document.getElementById('authToggleLink').textContent = isRegister ? 'Sign In' : 'Register';
-  document.getElementById('authError').style.display = 'none';
+  _blurThenRun(() => {
+    _authMode = _authMode === 'login' ? 'register' : 'login';
+    const isRegister = _authMode === 'register';
+    document.getElementById('authNameWrap').style.display = isRegister ? 'block' : 'none';
+    document.getElementById('authConfirmWrap').style.display = isRegister ? 'block' : 'none';
+    document.getElementById('authSubmitBtn').textContent = isRegister ? 'Create Account' : 'Sign In';
+    document.getElementById('authToggleText').textContent = isRegister ? 'Already have an account?' : "Don't have an account?";
+    document.getElementById('authToggleLink').textContent = isRegister ? 'Sign In' : 'Register';
+    document.getElementById('authError').style.display = 'none';
+  });
 }
 
 async function handleEmailAuth() {
