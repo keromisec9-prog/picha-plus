@@ -5077,6 +5077,9 @@ function renderForYou() {
       return b.score - a.score;
     });
 
+  const _top3Debug = scored.slice(0, 3).map(s => JSON.stringify(s.item.id) + '(' + typeof s.item.id + ')=' + (liked.includes(s.item.id) ? 'LIKED' : 'no')).join(' | ');
+  showToast('DEBUG top3: ' + _top3Debug, '');
+
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
 
@@ -5412,7 +5415,7 @@ function fyLike(itemId) {
     // remove dislike if exists
     const dislikeIdx = _disliked.indexOf(itemId);
     if (dislikeIdx > -1) { _disliked.splice(dislikeIdx, 1); saveDisliked(); }
-    showToast('Thanks for the feedback!', '');
+    showToast('DEBUG liked id=' + JSON.stringify(itemId) + ' type=' + typeof itemId, '');
   }
   renderForYou();
   _syncFyFeedbackButtons(itemId);
