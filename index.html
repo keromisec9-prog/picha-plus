@@ -5040,7 +5040,7 @@ function fyScore(item) {
   }).filter(Boolean);
   if (item._vj) {
     const vjCount = playedVJs.filter(v => v === item._vj).length;
-    score += Math.min(vjCount * 2, 10);
+    score += Math.min(vjCount * 4, 20); // weighted above genre so VJ preference dominates first
   }
 
   // New-content boost — keeps freshly uploaded titles from sinking to the bottom
