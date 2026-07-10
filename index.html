@@ -2548,8 +2548,17 @@ async function loadContent() {
   let catalogData = {};
   try {
     // Fetch your catalog
-    const catalogRes = await fetch(`${API}/videos`);
+    const [catalogRes, settingsRes] = await Promise.all([
+      fetch(`${API}/videos`),
+      fetch(`${API}/settings`).catch(() => null)
+    ]);
     catalogData = await catalogRes.json();
+    try {
+      const settings = settingsRes ? await settingsRes.json() : {};
+      window._africanCinemaEnabled = settings.africanCinemaEnabled !== false;
+    } catch (e) {
+      window._africanCinemaEnabled = true; // default to enabled if the settings fetch fails
+    }
     const movies = Object.values(catalogData.movies || {});
     const series = Object.values(catalogData.series || {});
     const allUploads = [...movies, ...series].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
@@ -2583,6 +2592,7 @@ async function loadContent() {
     const seriesEntries = Object.entries(catalogData.series || {});
     const allEntries = [...movieEntries, ...seriesEntries].sort((a,b) => (b[1].addedAt||0) - (a[1].addedAt||0));
     cards = allEntries.map(([key, v]) => toCard(v, key));
+    if (!window._africanCinemaEnabled) cards = cards.filter(c => !c.isUgandan);
     window._allCards = cards; // expose for renderContinueWatching
 
     // Hero — rotate through your uploads
@@ -4915,6 +4925,12 @@ function showPaywall() {
   const modal = document.getElementById('paywallModal');
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  const africanEnabled = window._africanCinemaEnabled !== false;
+  ['planDailyPlus', 'planWeeklyPlus', 'planMonthlyPlus'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = africanEnabled ? '' : 'none';
+  });
 }
 
 function closePaywall() {
@@ -5691,7 +5707,7 @@ closeCategory = function() {
         </ul>
         <button class="plan-btn">Get Started</button>
       </div>
-      <div class="plan-card" onclick="startPayment('dailyplus')" style="border-color:var(--gold);">
+      <div class="plan-card" id="planDailyPlus" onclick="startPayment('dailyplus')" style="border-color:var(--gold);">
         <div class="plan-name">Daily+</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
         <div class="plan-period">24 hour access</div>
@@ -5715,7 +5731,7 @@ closeCategory = function() {
         </ul>
         <button class="plan-btn">Get Started</button>
       </div>
-      <div class="plan-card" onclick="startPayment('weeklyplus')" style="border-color:var(--gold);">
+      <div class="plan-card" id="planWeeklyPlus" onclick="startPayment('weeklyplus')" style="border-color:var(--gold);">
         <div class="plan-name">Weekly+</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 8,000</div>
         <div class="plan-period">7 days access</div>
@@ -5740,7 +5756,7 @@ closeCategory = function() {
         </ul>
         <button class="plan-btn">Get Started</button>
       </div>
-      <div class="plan-card" onclick="startPayment('monthlyplus')" style="border-color:var(--gold);">
+      <div class="plan-card" id="planMonthlyPlus" onclick="startPayment('monthlyplus')" style="border-color:var(--gold);">
         <div class="plan-name">Monthly+</div>
         <div class="plan-price"><span class="plan-currency">UGX</span> 20,000</div>
         <div class="plan-period">per month</div>
