@@ -4255,7 +4255,7 @@ function updateUI() {
   const loggedIn = session.isLoggedIn();
   const subscribed = session.isSubscribed();
 
-  document.getElementById('navSubBtn').style.display = loggedIn && subscribed ? 'none' : 'flex';
+  document.getElementById('navSubBtn').style.display = 'none';
   document.getElementById('navSubBtn').innerHTML = loggedIn
     ? '<span class="material-symbols-rounded">card_membership</span>'
     : `<svg class="google-g-icon" viewBox="0 0 48 48">
