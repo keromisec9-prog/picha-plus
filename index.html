@@ -1639,6 +1639,29 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
     body:has(.modal-overlay.active) .bottom-nav { display: none; }
+
+    /* ── APK download banner ── */
+    .apk-banner {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 250;
+      background: linear-gradient(135deg, #1a1a1a, #252525);
+      border-top: 1px solid var(--gold);
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 0.7rem 1rem;
+      padding-bottom: calc(0.7rem + env(safe-area-inset-bottom));
+    }
+    .apk-banner-icon { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; }
+    .apk-banner-text { flex: 1; font-size: 0.8rem; color: var(--white); line-height: 1.3; }
+    .apk-banner-text strong { display: block; font-size: 0.85rem; margin-bottom: 2px; }
+    .apk-banner-btn {
+      background: var(--gold); color: #000; border: none; border-radius: 4px;
+      padding: 0.5rem 0.9rem; font-size: 0.8rem; font-weight: 600;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+    }
+    .apk-banner-close {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      font-size: 1.3rem; line-height: 1; padding: 0.2rem 0.4rem; cursor: pointer;
+      flex-shrink: 0;
+    }
     .bn-tab {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
@@ -2107,6 +2130,20 @@ function saveProgress(id, pos, dur) {
     </div>
   </footer>
   <!-- BOTTOM NAV -->
+  <div class="apk-banner" id="apkBanner" style="display:none;">
+    <img src="icon-192.png" class="apk-banner-icon" alt=""/>
+    <div class="apk-banner-text"><strong>Get the Picha+ app</strong>Faster, offline downloads & more</div>
+    <a href="https://apkpure.com/pichaplus-lite/com.pichaplus.app" target="_blank" class="apk-banner-btn" onclick="localStorage.setItem('apk_banner_dismissed','1')">Get App</a>
+    <button class="apk-banner-close" onclick="document.getElementById('apkBanner').style.display='none'; localStorage.setItem('apk_banner_dismissed','1');">&times;</button>
+  </div>
+  <script>
+    // Only show on web/PWA — never inside the native app itself, and never if
+    // previously dismissed.
+    if (!window.PichaApp && !localStorage.getItem('apk_banner_dismissed')) {
+      document.getElementById('apkBanner').style.display = 'flex';
+    }
+  </script>
+
   <nav class="bottom-nav" id="bottomNav">
     <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
       <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
