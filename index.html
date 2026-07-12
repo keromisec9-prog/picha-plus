@@ -70,6 +70,11 @@
     }, true);
 
     function _checkDevTools() {
+      // Skip entirely inside the native Android app — devtools can never be opened
+      // there, and fullscreen video (via onShowCustomView) causes legitimate
+      // outerWidth/outerHeight vs innerWidth/innerHeight mismatches that would
+      // otherwise false-positive as devtools being open.
+      if (window.PichaApp) return;
       // Skip while a text input/textarea has focus, or shortly after one loses focus —
       // the on-screen keyboard shrinks window.innerHeight the same way DevTools would,
       // and dimensions take a moment to settle after it closes, causing false positives.
