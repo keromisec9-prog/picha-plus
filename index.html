@@ -204,8 +204,12 @@
       color: var(--white);
       text-decoration: none;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
     }
     .logo .plus { color: var(--gold); }
+    .logo-icon { width: 32px; height: 32px; border-radius: 6px; }
 
     .nav-links {
       display: flex;
@@ -1907,7 +1911,7 @@ function saveProgress(id, pos, dur) {
 <!-- NAV -->
 <div class="nav-gradient"></div>
 <nav class="nav" id="nav">
-  <a href="#" class="logo" onclick="scrollToTop()">Picha<span class="plus">+</span></a>
+  <a href="#" class="logo" onclick="scrollToTop()"><img src="icon-192.png" class="logo-icon" alt=""/>Picha<span class="plus">+</span></a>
 
   <ul class="nav-links">
     <li><a href="#" onclick="scrollToTop()">Home</a></li>
