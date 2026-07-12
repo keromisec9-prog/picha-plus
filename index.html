@@ -198,18 +198,12 @@
     }
 
     .logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2rem;
-      letter-spacing: 0.05em;
-      color: var(--white);
-      text-decoration: none;
-      line-height: 1;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      text-decoration: none;
+      line-height: 1;
     }
-    .logo .plus { color: var(--gold); }
-    .logo-icon { width: 32px; height: 32px; border-radius: 6px; }
+    .logo-wordmark { height: 36px; width: auto; display: block; }
 
     .nav-links {
       display: flex;
@@ -1911,7 +1905,7 @@ function saveProgress(id, pos, dur) {
 <!-- NAV -->
 <div class="nav-gradient"></div>
 <nav class="nav" id="nav">
-  <a href="#" class="logo" onclick="scrollToTop()"><img src="icon-192.png" class="logo-icon" alt=""/>Picha<span class="plus">+</span></a>
+  <a href="#" class="logo" onclick="scrollToTop()"><img src="nav-logo.png" class="logo-wordmark" alt="Picha+"/></a>
 
   <ul class="nav-links">
     <li><a href="#" onclick="scrollToTop()">Home</a></li>
