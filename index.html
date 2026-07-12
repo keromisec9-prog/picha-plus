@@ -37,6 +37,12 @@
   (function() {
     'use strict';
 
+    // Skip all devtools/console protection entirely inside the native Android app —
+    // none of it applies on mobile (no right-click, no keyboard shortcuts, no devtools),
+    // and running the periodic checks (setInterval x2 + console override) costs
+    // resources for zero benefit there.
+    if (window.PichaApp) return;
+
     // ── 1. Block right-click context menu ──
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
@@ -4260,7 +4266,9 @@ function updateUI() {
   const loggedIn = session.isLoggedIn();
   const subscribed = session.isSubscribed();
 
-  document.getElementById('navSubBtn').style.display = 'none';
+  // Keep the Google G (sign-in) visible when logged out; only hide the
+  // subscribe/card icon once the user is logged in.
+  document.getElementById('navSubBtn').style.display = loggedIn ? 'none' : 'flex';
   document.getElementById('navSubBtn').innerHTML = loggedIn
     ? '<span class="material-symbols-rounded">card_membership</span>'
     : `<svg class="google-g-icon" viewBox="0 0 48 48">
