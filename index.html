@@ -2610,7 +2610,7 @@ async function loadContent() {
   try {
     // Fetch your catalog
     const [catalogRes, settingsRes] = await Promise.all([
-      fetch(`${API}/videos`),
+      fetch(`${API}/videos/list`),
       fetch(`${API}/settings`).catch(() => null)
     ]);
     catalogData = await catalogRes.json();
