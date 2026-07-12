@@ -1469,6 +1469,14 @@
       .footer-links { gap: 1.5rem; }
     }
 
+    /* Fills the gap between the small-phone (640px) and desktop (1024px) breakpoints.
+       Without this, wider phones fell back to the desktop --card-w (130px), which
+       was too large to fit 3 full cards per row. */
+    @media (min-width: 641px) and (max-width: 1023px) {
+      :root { --card-w: 105px; }
+      .scroll-row { gap: 0.4rem; padding: 0.5rem 3vw 1rem; }
+    }
+
     @keyframes fadeUp {
       from { opacity: 0; transform: translateX(-50%) translateY(10px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
