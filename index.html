@@ -1903,6 +1903,7 @@ const session = {
   },
 };
 
+let _sessionConflict = false;
 const myList = JSON.parse(localStorage.getItem('pichaplus_mylist') || '[]');
 const liked = JSON.parse(localStorage.getItem('pichaplus_liked') || '[]');
 const progress = JSON.parse(localStorage.getItem('pichaplus_progress') || '{}');
@@ -4371,6 +4372,10 @@ function updateUI() {
       bar.classList.add('active');
       bar.innerHTML = `✓ Picha+ ${session.user.subscriptionPlan} · ${days} days remaining`;
     }
+  } else if (_sessionConflict) {
+    const bar = document.getElementById('statusBar');
+    bar.className = 'status-bar expiring';
+    bar.innerHTML = `📱 Signed out — your account is active on another device. <a href="#" onclick="openSignin()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Sign In Again</a>`;
   }
 }
 
@@ -4387,6 +4392,8 @@ async function refreshUser(rerender = false) {
       if (rerender && changed) loadContent();
     } else if (res.status === 401) {
       session.clear();
+      _sessionConflict = true;
+      showSessionConflictToast();
       updateUI();
       if (rerender) loadContent();
     }
@@ -4560,6 +4567,7 @@ async function handleEmailAuth() {
 
     // Success — save session same way Google auth does
     session.save(data.session, data.name, data.picture || '', data.email);
+    _sessionConflict = false;
     closeSignin();
     updateUI();
     refreshUser().then(updateUI);
@@ -4596,6 +4604,7 @@ async function handleOneTap(response) {
     const data = await res.json();
     if (data.session && data.user) {
       session.save(data.session, data.user);
+      _sessionConflict = false;
       updateUI();
       closeSignin();
       await refreshUser(true);
