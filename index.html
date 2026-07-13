@@ -1903,7 +1903,7 @@ const session = {
   },
 };
 
-let _sessionConflict = false;
+let _sessionConflict = localStorage.getItem('pichaplus_session_conflict') === '1';
 const myList = JSON.parse(localStorage.getItem('pichaplus_mylist') || '[]');
 const liked = JSON.parse(localStorage.getItem('pichaplus_liked') || '[]');
 const progress = JSON.parse(localStorage.getItem('pichaplus_progress') || '{}');
@@ -4393,6 +4393,7 @@ async function refreshUser(rerender = false) {
     } else if (res.status === 401) {
       session.clear();
       _sessionConflict = true;
+      localStorage.setItem('pichaplus_session_conflict', '1');
       showSessionConflictToast();
       updateUI();
       if (rerender) loadContent();
@@ -4568,6 +4569,7 @@ async function handleEmailAuth() {
     // Success — save session same way Google auth does
     session.save(data.session, data.name, data.picture || '', data.email);
     _sessionConflict = false;
+    localStorage.removeItem('pichaplus_session_conflict');
     closeSignin();
     updateUI();
     refreshUser().then(updateUI);
@@ -4605,6 +4607,7 @@ async function handleOneTap(response) {
     if (data.session && data.user) {
       session.save(data.session, data.user);
       _sessionConflict = false;
+      localStorage.removeItem('pichaplus_session_conflict');
       updateUI();
       closeSignin();
       await refreshUser(true);
