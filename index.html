@@ -2573,10 +2573,9 @@ window.addEventListener('load', async () => {
   }
 
   updateUI();
+  loadContent();
   if (session.token) {
-    await refreshUser(true);
-  } else {
-    loadContent();
+    refreshUser(true);
   }
 
   // Pre-warm IndexedDB: for any completed downloads, check if blob is stored
@@ -4380,10 +4379,18 @@ async function refreshUser(rerender = false) {
   try {
     const res = await fetch(`${API}/me`, { headers: { 'X-Session-Token': session.token } });
     if (res.ok) {
+      const prevSubscribed = session.isSubscribed();
+      const prevAfrican = session.hasAfricanAccess();
       session.save(session.token, await res.json());
+      updateUI();
+      const changed = prevSubscribed !== session.isSubscribed() || prevAfrican !== session.hasAfricanAccess();
+      if (rerender && changed) loadContent();
+    } else if (res.status === 401) {
+      session.clear();
       updateUI();
       if (rerender) loadContent();
     }
+    // Any other failure (network blip, 5xx, etc.): stay silent, keep last-known session state, no disruption.
   } catch {}
 }
 
