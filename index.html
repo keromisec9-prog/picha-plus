@@ -2426,6 +2426,41 @@ if (!console.warn)  console.warn  = console.log;
 </script>
 <!-- Cast API must be initialized BEFORE the SDK loads -->
 <script>
+  let _castSDKLoaded = false;
+  let _castSDKPromise = null;
+  function loadCastSDK() {
+    if (_castSDKPromise) return _castSDKPromise;
+    _castSDKPromise = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+      s.onload = () => { _castSDKLoaded = true; resolve(); };
+      s.onerror = () => resolve(); // fail silently — cast button just won't appear
+      document.head.appendChild(s);
+    });
+    return _castSDKPromise;
+  }
+
+  let _shakaLoaded = false;
+  let _shakaPromise = null;
+  function loadShaka() {
+    if (_shakaPromise) return _shakaPromise;
+    _shakaPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js';
+      s.onload = () => { _shakaLoaded = true; resolve(); };
+      s.onerror = () => reject(new Error('Failed to load Shaka Player'));
+      document.head.appendChild(s);
+    });
+    return _shakaPromise;
+  }
+
+  // Load Cast SDK during idle time — off the critical initial-paint path, but ready soon after load
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => loadCastSDK());
+  } else {
+    setTimeout(() => loadCastSDK(), 2000);
+  }
+
   window['__onGCastApiAvailable'] = function(isAvailable) {
     if (!isAvailable) return;
     const ctx = cast.framework.CastContext.getInstance();
@@ -2471,8 +2506,7 @@ if (!console.warn)  console.warn  = console.log;
   }
 </script>
 <!-- Google Cast SDK — must load before Shaka -->
-<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js" defer></script>
+<!-- Cast SDK and Shaka Player now loaded dynamically — see loadCastSDK()/loadShaka() -->
 <script>
 // ── TMDB ──────────────────────────────────────────────────────────────────────
 const GENRES = {
@@ -3530,6 +3564,14 @@ async function handleCardPlay(item) {
 }
 
 async function initPlayer(url, item) {
+  try {
+    await loadShaka();
+  } catch (e) {
+    showToast('Failed to load video player. Check your connection.', 'error');
+    closePlayer();
+    return;
+  }
+
   // Destroy existing instance cleanly
   if (shakaUI)     { try { shakaUI.destroy();          } catch(e){} shakaUI = null; }
   if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e){} shakaPlayer = null; }
