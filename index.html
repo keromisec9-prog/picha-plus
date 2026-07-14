@@ -2471,8 +2471,8 @@ if (!console.warn)  console.warn  = console.log;
   }
 </script>
 <!-- Google Cast SDK — must load before Shaka -->
-<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js" defer></script>
 <script>
 // ── TMDB ──────────────────────────────────────────────────────────────────────
 const GENRES = {
