@@ -3392,7 +3392,7 @@ function renderSavedDownloads() {
     let statusLine = '';
     if (d.done) {
       const hasBlob = !!_dlBlobUrls[d.id];
-      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap ▶ to play' : 'Saved to device · tap ▶ to stream'}</div>`;
+      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;">play_arrow</span> to play' : 'Saved to device · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;">play_arrow</span> to stream'}</div>`;
     } else if (d.failed) {
       statusLine = `<div style="font-size:0.72rem;color:#f55;margin-top:2px;">Failed — tap ↺ to retry</div>`;
     } else if (d.paused) {
@@ -3459,7 +3459,7 @@ function showSessionConflictToast() {
   `;
   notice.innerHTML = `
     <div style="display:flex;align-items:flex-start;gap:0.8rem;">
-      <div style="font-size:1.4rem;flex-shrink:0;margin-top:0.1rem;">📱</div>
+      <div style="flex-shrink:0;margin-top:0.1rem;"><span class="material-symbols-rounded" style="font-size:1.4rem;line-height:1;">cloud_alert</span></div>
       <div style="flex:1;">
         <div style="font-size:0.9rem;font-weight:700;color:#fff;margin-bottom:0.3rem;">Streaming on another device</div>
         <div style="font-size:0.78rem;color:rgba(255,255,255,0.65);line-height:1.5;margin-bottom:0.8rem;">
@@ -4375,7 +4375,7 @@ function updateUI() {
   } else if (_sessionConflict) {
     const bar = document.getElementById('statusBar');
     bar.className = 'status-bar expiring';
-    bar.innerHTML = `📱 Signed out — your account is active on another device. <a href="#" onclick="openSignin()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Sign In Again</a>`;
+    bar.innerHTML = `<span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;line-height:1;">cloud_alert</span> Signed out — your account is active on another device. <a href="#" onclick="openSignin()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Sign In Again</a>`;
   }
 }
 
