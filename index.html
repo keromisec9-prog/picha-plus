@@ -2812,7 +2812,7 @@ function updateHero(index) {
   // Fade out
   bg.classList.add('fade');
   setTimeout(() => {
-    const _heroImg = item._customBackdrop || item._customPoster || (backdropPath ? `${TMDB_IMG}original${backdropPath}` : null);
+    const _heroImg = item._customBackdrop || item._customPoster || (backdropPath ? `${TMDB_IMG}w1280${backdropPath}` : null);
     if (_heroImg) {
       bg.style.backgroundImage = `url(${_heroImg})`;
     }
