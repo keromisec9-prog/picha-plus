@@ -4838,7 +4838,7 @@ function showSeries(idx) {
 
   // Build episode list
   const epList = document.getElementById('episodeList');
-  epList.innerHTML = (s.episodes || []).map((ep, i) => ({ ep, i })).sort((a,b) => (a.ep.season||1)-(b.ep.season||1) || (a.ep.episode||0)-(b.ep.episode||0)).map(({ ep, i }) => `
+  epList.innerHTML = (s.episodes || []).map((ep, i) => `
     <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
       <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${i})">
         <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
