@@ -2169,7 +2169,7 @@ function saveProgress(id, pos, dur) {
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <button onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
+    <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
       <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
     </button>
     <button onclick="refreshForYou()" title="Refresh" style="background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
@@ -5349,6 +5349,7 @@ function _scheduleAdvance(cards, myGen, delayMs) {
     if (!_fySeqRunning || myGen !== _fySeqGen) return;
     if (_fySeqVideo) _fySeqVideo.style.opacity = '0';
     if (_fySeqMuteBtn) _fySeqMuteBtn.style.opacity = '0';
+    { const _lb = document.getElementById('fyLocateBtn'); if (_lb) _lb.style.display = 'none'; }
     if (_fySeqVideo) _fySeqVideo.pause();
     _fySeqIndex++;
     if (_fySeqIndex >= cards.length) {
@@ -5542,6 +5543,8 @@ function _stopPreviewSequence(keepIndex = false) {
     _fySeqVideo = null;
   }
   if (_fySeqMuteBtn) { _fySeqMuteBtn.remove(); _fySeqMuteBtn = null; }
+  _fySeqCurrentCardEl = null;
+  { const _lb = document.getElementById('fyLocateBtn'); if (_lb) _lb.style.display = 'none'; }
   if (!keepIndex) _fySeqIndex = 0;
 }
 
@@ -5599,6 +5602,8 @@ async function _playSequenceStep(cards, myGen) {
     if (!_fySeqRunning || myGen !== _fySeqGen) return;
     video.style.opacity = '1';
     muteBtn.style.opacity = '1';
+    const _locateBtn = document.getElementById('fyLocateBtn');
+    if (_locateBtn) _locateBtn.style.display = 'flex';
 
     _fySeqActiveCards = cards;
     _fySeqActiveGen = myGen;
