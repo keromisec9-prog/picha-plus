@@ -1865,7 +1865,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=auto_awesome,card_membership,cast,close,cloud_alert,download,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,subscriptions,thumb_down,thumb_up,visibility,volume_off,volume_up" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=auto_awesome,card_membership,cast,close,cloud_alert,download,frame_inspect,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,subscriptions,thumb_down,thumb_up,visibility,volume_off,volume_up" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -2169,7 +2169,10 @@ function saveProgress(id, pos, dur) {
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <button onclick="refreshForYou()" title="Refresh" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
+    <button onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
+      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
+    </button>
+    <button onclick="refreshForYou()" title="Refresh" style="background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
       <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
     </button>
   </div>
@@ -5456,6 +5459,20 @@ let _fySeqTimer = null;
 let _fySeqVideo = null;
 let _fySeqMuteBtn = null;
 let _fySeqAbort = null;
+let _fySeqCurrentCardEl = null;
+
+function locateCurrentPreviewCard() {
+  if (!_fySeqCurrentCardEl || !document.body.contains(_fySeqCurrentCardEl)) {
+    toast('No preview is currently playing', 'error');
+    return;
+  }
+  _fySeqCurrentCardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  _fySeqCurrentCardEl.style.transition = 'box-shadow 0.3s';
+  _fySeqCurrentCardEl.style.boxShadow = '0 0 0 3px var(--gold)';
+  setTimeout(() => {
+    if (_fySeqCurrentCardEl) _fySeqCurrentCardEl.style.boxShadow = '';
+  }, 1500);
+}
 let _fyPreviewMuted = (localStorage.getItem('pichaplus_preview_muted') ?? '1') !== '0';
 
 function setPreviewSoundPref(soundOn) {
@@ -5532,6 +5549,7 @@ async function _playSequenceStep(cards, myGen) {
   if (!_fySeqRunning || myGen !== _fySeqGen) return;
   if (_fySeqIndex >= cards.length) { _fySeqIndex = 0; } // loop back to start
   const card = cards[_fySeqIndex];
+  _fySeqCurrentCardEl = card;
   const id = card.dataset.previewId;
   const video = _fySeqVideo;
   const muteBtn = _fySeqMuteBtn;
