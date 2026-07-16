@@ -5288,6 +5288,41 @@ function fyScore(item) {
   return score;
 }
 
+// ── FOR YOU: BATCHED RENDERING ─────────────────────────────────────────────
+// Renders cards in small batches instead of building all 300+ at once,
+// loading more only as the user actually scrolls near the bottom.
+const FY_BATCH_SIZE = 20;
+const FY_SCROLL_THRESHOLD = 600; // px from bottom that triggers loading the next batch
+let _fyRenderState = null;
+let _fyScrollListenerAttached = false;
+
+function _fyRenderNextBatch() {
+  if (!_fyRenderState) return;
+  const { scored, rendered, cardHTML } = _fyRenderState;
+  if (rendered >= scored.length) return;
+  const next = scored.slice(rendered, rendered + FY_BATCH_SIZE);
+  const grid = document.getElementById('fyGrid');
+  if (!grid) return;
+  grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
+  _fyRenderState.rendered += next.length;
+}
+
+function _fyOnScroll() {
+  const page = document.getElementById('bnForYouPage');
+  if (!page || page.style.display === 'none') return;
+  if (page.scrollHeight - page.scrollTop - page.clientHeight < FY_SCROLL_THRESHOLD) {
+    _fyRenderNextBatch();
+  }
+}
+
+function _fySetupScrollListener() {
+  if (_fyScrollListenerAttached) return;
+  const page = document.getElementById('bnForYouPage');
+  if (!page) return;
+  page.addEventListener('scroll', _fyOnScroll, { passive: true });
+  _fyScrollListenerAttached = true;
+}
+
 function renderForYou() {
   const grid = document.getElementById('fyGrid');
   const empty = document.getElementById('fyEmpty');
@@ -5317,14 +5352,19 @@ function renderForYou() {
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
 
-  grid.innerHTML = scored.map(({ item }) => {
+  const _fyCardHTML = ({ item }) => {
     const statKey = Object.keys(_fyStats || {}).find(k => k.startsWith(String(item.tmdbId)));
     const plays = statKey ? (_fyStats[statKey]?.plays || 0) : 0;
     const playsBadge = plays >= 50
       ? `<div style="position:absolute;top:0.3rem;right:0.3rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;padding:0.15rem 0.3rem;border-radius:4px;display:flex;align-items:center;gap:0.2rem;"><span class="material-symbols-rounded" style="font-size:0.8rem;line-height:1;">visibility</span>${plays}</div>`
       : '';
     return createCard(item, false, playsBadge);
-  }).join('');
+  };
+
+  grid.innerHTML = '';
+  _fyRenderState = { scored, rendered: 0, cardHTML: _fyCardHTML };
+  _fyRenderNextBatch();
+  _fySetupScrollListener();
 
   // Cards from createCard call showInfo() directly, so we can't hook showInfoFromForYou.
   // Instead, mark the flag on any click within this grid, before showInfo runs.
