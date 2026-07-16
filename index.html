@@ -2888,14 +2888,47 @@ function registerItem(item) {
 function getItem(idx) { return window._itemRegistry[idx] || null; }
 
 // ── RENDER ROWS ───────────────────────────────────────────────────────────────
+function _appendRowBatch(row, batchSize, sentinel) {
+  const next = row._allItems.slice(row._renderedCount, row._renderedCount + batchSize);
+  const html = next.map(item => createCard(item)).join('');
+  if (sentinel) {
+    sentinel.insertAdjacentHTML('beforebegin', html);
+  } else {
+    row.insertAdjacentHTML('beforeend', html);
+  }
+  row._renderedCount += next.length;
+}
+
 function renderRow(rowId, items) {
   const row = document.getElementById(rowId);
   if (!row) return;
+  if (row._io) { try { row._io.disconnect(); } catch(e){} row._io = null; }
   if (!items.length) {
     row.innerHTML = '<div style="color:#666;font-size:0.82rem;padding:1rem;">No content available</div>';
     return;
   }
-  row.innerHTML = items.map(item => createCard(item)).join('');
+  const BATCH_SIZE = 20;
+  row.innerHTML = '';
+  row._allItems = items;
+  row._renderedCount = 0;
+
+  _appendRowBatch(row, BATCH_SIZE);
+
+  if (items.length > BATCH_SIZE) {
+    const sentinel = document.createElement('div');
+    sentinel.style.cssText = 'flex-shrink:0;width:1px;';
+    row.appendChild(sentinel);
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && row._renderedCount < row._allItems.length) {
+          _appendRowBatch(row, BATCH_SIZE, sentinel);
+        }
+      });
+    }, { root: row, rootMargin: '0px 400px 0px 0px', threshold: 0 });
+    io.observe(sentinel);
+    row._io = io;
+  }
 }
 
 function renderTop10(rowId, items) {
