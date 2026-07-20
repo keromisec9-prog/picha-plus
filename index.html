@@ -2666,9 +2666,9 @@ window.addEventListener('load', async () => {
 
 // ── DEEP LINKS (/title/<id>-<slug>) ────────────────────────────────────────────
 function handleDeepLinkTitle() {
-  const m = window.location.pathname.match(/^\/title\/(\d+)-/);
+  const m = window.location.pathname.match(/\/title\/([^/]+)/);
   if (!m) return;
-  const targetId = m[1];
+  const targetId = decodeURIComponent(m[1]);
 
   // Try movies/TV first
   const item = (window._itemRegistry || []).find(it => String(it.id) === targetId);
@@ -2683,7 +2683,7 @@ function handleDeepLinkTitle() {
 }
 
 window.addEventListener('popstate', () => {
-  if (!window.location.pathname.startsWith('/title/')) {
+  if (!window.location.pathname.includes('/title/')) {
     // Back button navigated away from a title — close whichever modal is open
     const infoOpen = document.getElementById('infoModal')?.classList.contains('active');
     const seriesOpen = document.getElementById('seriesModal')?.classList.contains('active');
@@ -3078,9 +3078,10 @@ async function showInfo(item) {
   const type = item.media_type === 'tv' || item.first_air_date ? 'tv' : 'movie';
 
   // Update URL for shareable/indexable link without navigating away
-  const infoSlug = `${item.id || item.tmdbId}-${slugify(title)}`;
-  if (window.location.pathname !== `/title/${infoSlug}`) {
-    history.pushState({ type: 'title', slug: infoSlug }, '', `/title/${infoSlug}`);
+  const infoId = encodeURIComponent(String(item.id || item.tmdbId));
+  const infoUrlPath = `/picha-plus/title/${infoId}/${slugify(title)}`;
+  if (window.location.pathname !== infoUrlPath) {
+    history.pushState({ type: 'title', id: item.id }, '', infoUrlPath);
   }
 
   document.getElementById('infoTitle').textContent = title;
@@ -3167,8 +3168,8 @@ async function showInfo(item) {
 
 function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
-  if (window.location.pathname.startsWith('/title/')) {
-    history.pushState({}, '', '/');
+  if (window.location.pathname.includes('/title/')) {
+    history.pushState({}, '', '/picha-plus/');
   }
   // Only clear scroll lock if nothing is open behind the info modal
   const catOverlayOpen = document.getElementById('categoryOverlay')?.classList.contains('active');
@@ -4953,9 +4954,11 @@ function showSeries(idx) {
   if (!s) return;
   currentSeries = s;
 
-  const seriesSlug = `${s.tmdbId}-${slugify(s.title)}${s.vj ? '-' + slugify(s.vj) : ''}`;
-  if (window.location.pathname !== `/title/${seriesSlug}`) {
-    history.pushState({ type: 'series', slug: seriesSlug, idx }, '', `/title/${seriesSlug}`);
+  const seriesId = encodeURIComponent(String(s.tmdbId));
+  const seriesReadable = slugify(s.title) + (s.vj ? '-' + slugify(s.vj) : '');
+  const seriesUrlPath = `/picha-plus/title/${seriesId}/${seriesReadable}`;
+  if (window.location.pathname !== seriesUrlPath) {
+    history.pushState({ type: 'series', idx }, '', seriesUrlPath);
   }
 
   document.getElementById('seriesBackdrop').src = s.backdrop || s.poster || '';
@@ -4988,8 +4991,8 @@ function showSeries(idx) {
 
 function closeSeries() {
   document.getElementById('seriesModal').classList.remove('active');
-  if (window.location.pathname.startsWith('/title/')) {
-    history.pushState({}, '', '/');
+  if (window.location.pathname.includes('/title/')) {
+    history.pushState({}, '', '/picha-plus/');
   }
   const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
   const bnSavedOpen = document.getElementById('bnSavedPage')?.style.display !== 'none';
