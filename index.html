@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+      // Single Page Apps for GitHub Pages — decode the redirect from 404.html
+      // back into a real pathname via history.replaceState, before anything else runs.
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location));
+    </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2756463436863642" crossorigin="anonymous"></script>
   <meta charset="UTF-8"/>
   <link rel="preconnect" href="https://image.tmdb.org">
@@ -1866,7 +1880,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=auto_awesome,card_membership,cast,close,cloud_alert,download,frame_inspect,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,subscriptions,thumb_down,thumb_up,visibility,volume_off,volume_up" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=auto_awesome,card_membership,cast,close,cloud_alert,download,frame_inspect,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,share,subscriptions,thumb_down,thumb_up,visibility,volume_off,volume_up" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -2245,6 +2259,9 @@ function saveProgress(id, pos, dur) {
         <button class="info-add-btn" id="infoAddBtn" onclick="toggleMyListFromInfo()" title="Add to My List">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </button>
+        <button class="info-add-btn" onclick="shareCurrentTitle()" title="Share">
+          <span class="material-symbols-rounded" style="font-size:16px;line-height:1;">share</span>
+        </button>
         <button class="info-close-btn" onclick="closeInfo()"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
       </div>
       <div id="fyFeedbackBtns" style="display:none;gap:0.5rem;margin:0.5rem 0;">
@@ -2620,7 +2637,8 @@ window.addEventListener('load', async () => {
   }
 
   updateUI();
-  loadContent();
+  await loadContent();
+  handleDeepLinkTitle();
   if (session.token) {
     refreshUser(true);
   }
@@ -2644,6 +2662,36 @@ window.addEventListener('load', async () => {
   window.addEventListener('scroll', () => {
     document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
   });
+});
+
+// ── DEEP LINKS (/title/<id>-<slug>) ────────────────────────────────────────────
+function handleDeepLinkTitle() {
+  const m = window.location.pathname.match(/^\/title\/(\d+)-/);
+  if (!m) return;
+  const targetId = m[1];
+
+  // Try movies/TV first
+  const item = (window._itemRegistry || []).find(it => String(it.id) === targetId);
+  if (item) { showInfo(item); return; }
+
+  // Try owned series list (keyed by tmdbId)
+  const idx = (window._seriesList || []).findIndex(s => String(s.tmdbId) === targetId);
+  if (idx !== -1) { showSeries(idx); return; }
+
+  // Not found (bad/stale link) — just clear the URL, stay on homepage
+  history.replaceState({}, '', '/');
+}
+
+window.addEventListener('popstate', () => {
+  if (!window.location.pathname.startsWith('/title/')) {
+    // Back button navigated away from a title — close whichever modal is open
+    const infoOpen = document.getElementById('infoModal')?.classList.contains('active');
+    const seriesOpen = document.getElementById('seriesModal')?.classList.contains('active');
+    if (infoOpen) { document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow = ''; currentInfoItem = null; }
+    if (seriesOpen) { document.getElementById('seriesModal').classList.remove('active'); document.body.style.overflow = ''; currentSeries = null; }
+  } else {
+    handleDeepLinkTitle();
+  }
 });
 
 // ── LOAD CONTENT ──────────────────────────────────────────────────────────────
@@ -3012,6 +3060,12 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
 }
 
 // ── INFO MODAL ────────────────────────────────────────────────────────────────
+function slugify(str) {
+  return String(str || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function showInfo(item) {
   // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
   if (item._isOwned && item.media_type === 'tv') {
@@ -3022,6 +3076,12 @@ async function showInfo(item) {
   currentInfoItem = item;
   const title = item.title || item.name || '';
   const type = item.media_type === 'tv' || item.first_air_date ? 'tv' : 'movie';
+
+  // Update URL for shareable/indexable link without navigating away
+  const infoSlug = `${item.id || item.tmdbId}-${slugify(title)}`;
+  if (window.location.pathname !== `/title/${infoSlug}`) {
+    history.pushState({ type: 'title', slug: infoSlug }, '', `/title/${infoSlug}`);
+  }
 
   document.getElementById('infoTitle').textContent = title;
   document.getElementById('infoModal').classList.add('active');
@@ -3107,6 +3167,9 @@ async function showInfo(item) {
 
 function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
+  if (window.location.pathname.startsWith('/title/')) {
+    history.pushState({}, '', '/');
+  }
   // Only clear scroll lock if nothing is open behind the info modal
   const catOverlayOpen = document.getElementById('categoryOverlay')?.classList.contains('active');
   const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
@@ -3118,6 +3181,23 @@ function closeInfo() {
   _infoOpenedFromForYou = false;
   _stopModalPreview();
   resumeGridPreviewAfterModal();
+}
+
+async function shareCurrentTitle() {
+  const item = currentInfoItem;
+  const s = currentSeries;
+  const title = item ? (item.title || item.name) : (s ? s.title : 'Picha+');
+  const url = window.location.href;
+  const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
+  if (navigator.share) {
+    try { await navigator.share(shareData); return; } catch (e) { /* user cancelled or unsupported, fall through */ }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link copied ✓', 'gold');
+  } catch (e) {
+    showToast('Could not copy link', 'error');
+  }
 }
 
 function playFromInfo() {
@@ -4873,6 +4953,11 @@ function showSeries(idx) {
   if (!s) return;
   currentSeries = s;
 
+  const seriesSlug = `${s.tmdbId}-${slugify(s.title)}${s.vj ? '-' + slugify(s.vj) : ''}`;
+  if (window.location.pathname !== `/title/${seriesSlug}`) {
+    history.pushState({ type: 'series', slug: seriesSlug, idx }, '', `/title/${seriesSlug}`);
+  }
+
   document.getElementById('seriesBackdrop').src = s.backdrop || s.poster || '';
   document.getElementById('seriesTitle').textContent = s.title;
   document.getElementById('seriesMeta').innerHTML = `
@@ -4903,6 +4988,9 @@ function showSeries(idx) {
 
 function closeSeries() {
   document.getElementById('seriesModal').classList.remove('active');
+  if (window.location.pathname.startsWith('/title/')) {
+    history.pushState({}, '', '/');
+  }
   const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
   const bnSavedOpen = document.getElementById('bnSavedPage')?.style.display !== 'none';
   const catOverlayOpen = document.getElementById('categoryOverlay')?.classList.contains('active');

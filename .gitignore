@@ -1,0 +1,12 @@
+*.bak
+*.bak[0-9]*
+*.bak_*
+*.save
+*.zip
+patch_*.py
+catalog_update.py
+upgrade_user.py
+worker*.js
+worker*.js.bak*
+*.bak.*
+*.py
