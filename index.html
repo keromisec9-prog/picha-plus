@@ -2634,7 +2634,7 @@ window.addEventListener('load', async () => {
   if (params.get('payment') === 'success') {
     window.history.replaceState({}, '', window.location.pathname);
     await refreshUser();
-    showToast('🎉 Subscribed! Enjoy unlimited Picha+', 'gold');
+    showToast('🎉 Subscribed! Enjoy unlimited Picha+. Manage or cancel anytime via the email PesaPal sends you.', 'gold');
   }
 
   updateUI();
@@ -4576,7 +4576,8 @@ function updateUI() {
 
     const subText = document.getElementById('subStatusText');
     if (subscribed) {
-      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left`;
+      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left
+        <div style="font-size:0.7rem;color:var(--gray);margin-top:0.3rem;font-weight:400;">Billing renews automatically. To cancel, use the link PesaPal emails you after each payment.</div>`;
     } else {
       subText.textContent = 'Not subscribed';
     }
