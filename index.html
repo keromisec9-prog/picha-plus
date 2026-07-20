@@ -21,13 +21,14 @@
   <link rel="dns-prefetch" href="https://image.tmdb.org">
   <link rel="preconnect" href="https://picha-plus-worker.kerosoftz522.workers.dev">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual"/>
-  <title>Picha+ | Luganda Translated Movies & Series Uganda</title>
-  <meta name="description" content="Watch the latest movies and series translated to Luganda by top VJs — VJ Junior, VJ Ice P, VJ Uncle T, VJ Arafa and more. Uganda's #1 Luganda streaming platform. No ads, HD quality."/>
+  <title id="pageTitle">Picha+ | Luganda Translated Movies & Series Uganda</title>
+  <meta id="metaDescription" name="description" content="Watch the latest movies and series translated to Luganda by top VJs — VJ Junior, VJ Ice P, VJ Uncle T, VJ Arafa and more. Uganda's #1 Luganda streaming platform. No ads, HD quality."/>
   <meta name="keywords" content="Luganda movies, Luganda translated movies, Uganda movies online, VJ Junior movies, VJ Ice P, Luganda series, watch movies Uganda, Picha Plus, African movies Luganda, Uganda streaming"/>
-  <meta property="og:title" content="Picha+ | Luganda Translated Movies & Series"/>
-  <meta property="og:description" content="Uganda's #1 Luganda movie streaming platform. Watch movies & series translated by VJ Junior, VJ Ice P, VJ Uncle T and more. No ads, HD quality."/>
-  <meta property="og:type" content="website"/>
-  <meta property="og:url" content="https://keromisec9-prog.github.io/picha-plus/"/>
+  <meta id="ogTitle" property="og:title" content="Picha+ | Luganda Translated Movies & Series"/>
+  <meta id="ogDescription" property="og:description" content="Uganda's #1 Luganda movie streaming platform. Watch movies & series translated by VJ Junior, VJ Ice P, VJ Uncle T and more. No ads, HD quality."/>
+  <meta id="ogType" property="og:type" content="website"/>
+  <meta id="ogUrl" property="og:url" content="https://keromisec9-prog.github.io/picha-plus/"/>
+  <meta id="ogImage" property="og:image" content="https://keromisec9-prog.github.io/picha-plus/icon-512.png"/>
   <meta name="robots" content="index, follow"/>
   <link rel="manifest" href="manifest.json"/>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -3066,6 +3067,52 @@ function slugify(str) {
     .replace(/^-+|-+$/g, '');
 }
 
+const DEFAULT_PAGE_TITLE = "Picha+ | Luganda Translated Movies & Series Uganda";
+const DEFAULT_PAGE_DESC = "Watch the latest movies and series translated to Luganda by top VJs — VJ Junior, VJ Ice P, VJ Uncle T, VJ Arafa and more. Uganda's #1 Luganda streaming platform. No ads, HD quality.";
+const DEFAULT_OG_TITLE = "Picha+ | Luganda Translated Movies & Series";
+const DEFAULT_OG_DESC = "Uganda's #1 Luganda movie streaming platform. Watch movies & series translated by VJ Junior, VJ Ice P, VJ Uncle T and more. No ads, HD quality.";
+const DEFAULT_OG_IMAGE = "https://keromisec9-prog.github.io/picha-plus/icon-512.png";
+const DEFAULT_OG_URL = "https://keromisec9-prog.github.io/picha-plus/";
+
+function updatePageMeta({ title, description, image, path, type, releaseYear }) {
+  const fullTitle = `${title} | Picha+`;
+  document.title = fullTitle;
+  document.getElementById('metaDescription').setAttribute('content', description || DEFAULT_PAGE_DESC);
+  document.getElementById('ogTitle').setAttribute('content', fullTitle);
+  document.getElementById('ogDescription').setAttribute('content', description || DEFAULT_OG_DESC);
+  document.getElementById('ogImage').setAttribute('content', image || DEFAULT_OG_IMAGE);
+  document.getElementById('ogUrl').setAttribute('content', `https://keromisec9-prog.github.io${path || ''}`);
+  document.getElementById('ogType').setAttribute('content', type === 'tv' ? 'video.tv_show' : 'video.movie');
+
+  let ld = document.getElementById('jsonLd');
+  if (!ld) {
+    ld = document.createElement('script');
+    ld.type = 'application/ld+json';
+    ld.id = 'jsonLd';
+    document.head.appendChild(ld);
+  }
+  ld.textContent = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": type === 'tv' ? "TVSeries" : "Movie",
+    "name": title,
+    "description": description || DEFAULT_PAGE_DESC,
+    "image": image || DEFAULT_OG_IMAGE,
+    ...(releaseYear ? { "datePublished": String(releaseYear) } : {})
+  });
+}
+
+function resetPageMeta() {
+  document.title = DEFAULT_PAGE_TITLE;
+  document.getElementById('metaDescription').setAttribute('content', DEFAULT_PAGE_DESC);
+  document.getElementById('ogTitle').setAttribute('content', DEFAULT_OG_TITLE);
+  document.getElementById('ogDescription').setAttribute('content', DEFAULT_OG_DESC);
+  document.getElementById('ogImage').setAttribute('content', DEFAULT_OG_IMAGE);
+  document.getElementById('ogUrl').setAttribute('content', DEFAULT_OG_URL);
+  document.getElementById('ogType').setAttribute('content', 'website');
+  const ld = document.getElementById('jsonLd');
+  if (ld) ld.remove();
+}
+
 async function showInfo(item) {
   // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
   if (item._isOwned && item.media_type === 'tv') {
@@ -3083,6 +3130,9 @@ async function showInfo(item) {
   if (window.location.pathname !== infoUrlPath) {
     history.pushState({ type: 'title', id: item.id }, '', infoUrlPath);
   }
+  const _infoImage = item._customBackdrop || item._customPoster || (item.backdrop_path ? `${TMDB_IMG}w780${item.backdrop_path}` : item.poster_path ? `${TMDB_IMG}w780${item.poster_path}` : null);
+  const _infoYear = (item.release_date || item.first_air_date || '').slice(0, 4);
+  updatePageMeta({ title, description: item.overview, image: _infoImage, path: infoUrlPath, type, releaseYear: _infoYear });
 
   document.getElementById('infoTitle').textContent = title;
   document.getElementById('infoModal').classList.add('active');
@@ -3170,6 +3220,7 @@ function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
   if (window.location.pathname.includes('/title/')) {
     history.pushState({}, '', '/picha-plus/');
+    resetPageMeta();
   }
   // Only clear scroll lock if nothing is open behind the info modal
   const catOverlayOpen = document.getElementById('categoryOverlay')?.classList.contains('active');
@@ -4960,6 +5011,7 @@ function showSeries(idx) {
   if (window.location.pathname !== seriesUrlPath) {
     history.pushState({ type: 'series', idx }, '', seriesUrlPath);
   }
+  updatePageMeta({ title: s.title, description: s.overview, image: s.backdrop || s.poster, path: seriesUrlPath, type: 'tv', releaseYear: s.year });
 
   document.getElementById('seriesBackdrop').src = s.backdrop || s.poster || '';
   document.getElementById('seriesTitle').textContent = s.title;
@@ -4993,6 +5045,7 @@ function closeSeries() {
   document.getElementById('seriesModal').classList.remove('active');
   if (window.location.pathname.includes('/title/')) {
     history.pushState({}, '', '/picha-plus/');
+    resetPageMeta();
   }
   const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
   const bnSavedOpen = document.getElementById('bnSavedPage')?.style.display !== 'none';
