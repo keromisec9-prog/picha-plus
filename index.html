@@ -2634,7 +2634,7 @@ window.addEventListener('load', async () => {
   if (params.get('payment') === 'success') {
     window.history.replaceState({}, '', window.location.pathname);
     await refreshUser();
-    showToast('🎉 Subscribed! Enjoy unlimited Picha+. Manage or cancel anytime via the email PesaPal sends you.', 'gold');
+    showToast('🎉 Subscribed! Enjoy unlimited Picha+', 'gold');
   }
 
   updateUI();
@@ -4576,8 +4576,7 @@ function updateUI() {
 
     const subText = document.getElementById('subStatusText');
     if (subscribed) {
-      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left
-        <div style="font-size:0.7rem;color:var(--gray);margin-top:0.3rem;font-weight:400;">Billing renews automatically. To cancel, use the link PesaPal emails you after each payment.</div>`;
+      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left`;
     } else {
       subText.textContent = 'Not subscribed';
     }
@@ -5249,6 +5248,19 @@ function showPaywall() {
   const modal = document.getElementById('paywallModal');
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  const showManage = session.isSubscribed() && session.user?.hasRecurringSubscription;
+  modal.querySelector('.plans-header').style.display = showManage ? 'none' : '';
+  modal.querySelector('.plans-grid').style.display = showManage ? 'none' : '';
+  document.getElementById('manageSubscriptionView').style.display = showManage ? 'block' : 'none';
+
+  if (showManage) {
+    const days = session.user.subscriptionExpiry
+      ? Math.ceil((session.user.subscriptionExpiry - Date.now()) / (1000 * 60 * 60 * 24))
+      : 0;
+    document.getElementById('manageSubPlanText').textContent = `Picha+ ${session.user.subscriptionPlan}`;
+    document.getElementById('manageSubDaysText').textContent = `${days} day${days !== 1 ? 's' : ''} remaining · renews automatically`;
+  }
 
   const africanEnabled = window._africanCinemaEnabled !== false;
   ['planDailyPlus', 'planWeeklyPlus', 'planMonthlyPlus'].forEach(id => {
@@ -6078,6 +6090,26 @@ closeCategory = function() {
       <p class="plans-eyebrow">Choose Your Plan</p>
       <h2 class="plans-title">Unlimited Entertainment</h2>
       <p class="plans-desc">No ads. No limits. Download for offline viewing. Cancel anytime.</p>
+    </div>
+    <div id="manageSubscriptionView" style="display:none;padding:1.5rem 1.5rem 2rem;">
+      <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="font-size:1.2rem;font-weight:700;" id="manageSubPlanText"></div>
+        <div style="font-size:0.85rem;color:var(--gray);margin-top:0.3rem;" id="manageSubDaysText"></div>
+      </div>
+      <details style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.8rem;">
+        <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;">How do I cancel my subscription?</summary>
+        <div style="font-size:0.85rem;color:var(--gray);margin-top:0.6rem;line-height:1.5;">
+          Your subscription renews automatically through Pesapal. After each successful payment, Pesapal emails you a link to manage or cancel it, sent to whichever address you used for card billing.
+          <br><br>
+          To cancel: open that email, tap the management link, verify with the one-time code (OTP) Pesapal sends you, then you'll land on a dashboard where you can pause or cancel. You can do this anytime, even right after subscribing.
+        </div>
+      </details>
+      <details style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:0.8rem 1rem;">
+        <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;">Access billing support</summary>
+        <div style="font-size:0.85rem;color:var(--gray);margin-top:0.6rem;line-height:1.5;">
+          Have a billing question, or can't find the Pesapal email? Head to the <b>Saved</b> tab at the bottom of the app and tap <b>Contact</b> in the footer — we're happy to help.
+        </div>
+      </details>
     </div>
     <div class="plans-grid">
       <div class="plan-card" onclick="startPayment('daily')">
