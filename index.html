@@ -531,7 +531,7 @@
     }
     .scroll-row::-webkit-scrollbar { display: none; }
 
-    #fyGrid .card { width: 100%; }
+    /* fyGrid cards now use the same fixed --card-w as other rows */
 
     /* ── CARDS ── */
     .card {
@@ -2199,7 +2199,7 @@ function saveProgress(id, pos, dur) {
       <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
     </button>
   </div>
-  <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;padding:0.8rem 4vw;"></div>
+  <div id="fyGrid" style="display:flex;flex-wrap:wrap;gap:0.6rem;padding:0.8rem 4vw;"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
