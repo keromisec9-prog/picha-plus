@@ -1040,6 +1040,13 @@
     #acctPreviewSoundToggle:checked + #acctPreviewSoundSlider { background: var(--gold); }
     #acctPreviewSoundToggle:checked + #acctPreviewSoundSlider::before { transform: translateX(20px); }
 
+    #acctPCSlider::before {
+      content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    #acctPCToggle:checked + #acctPCSlider { background: var(--gold); }
+    #acctPCToggle:checked + #acctPCSlider::before { transform: translateX(20px); }
+
     /* Cast button gold tint + active glow */
     .shaka-cast-button { color: var(--gold) !important; }
     .shaka-cast-button[aria-pressed="true"] {
@@ -2347,14 +2354,23 @@ function saveProgress(id, pos, dur) {
           <div style="font-size:0.78rem;color:#888;margin-bottom:0.8rem;">Hide 18+ movies and episodes on this account. Requires a separate password to enable, disable, or change.</div>
 
           <div id="pcSetupForm" style="display:none;">
-            <input type="password" class="auth-input" id="pcSetupPwd" placeholder="Create Parental Control password" style="margin-bottom:0.5rem;"/>
-            <input type="password" class="auth-input" id="pcSetupConfirmPwd" placeholder="Confirm password"/>
+<div style="position:relative;margin-bottom:0.5rem;">
+              <input type="password" class="auth-input" id="pcSetupPwd" placeholder="Create Parental Control password" style="padding-right:2.8rem;"/>
+              <span onclick="togglePwd('pcSetupPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+            </div>
+            <div style="position:relative;">
+              <input type="password" class="auth-input" id="pcSetupConfirmPwd" placeholder="Confirm password" style="padding-right:2.8rem;"/>
+              <span onclick="togglePwd('pcSetupConfirmPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+            </div>
             <div class="auth-error" id="pcSetupError"></div>
             <button class="auth-submit-btn" onclick="submitPCSetup()" style="margin-top:0.5rem;">Set Password &amp; Enable</button>
           </div>
 
           <div id="pcVerifyForm" style="display:none;">
-            <input type="password" class="auth-input" id="pcVerifyPwd" placeholder="Enter Parental Control password"/>
+<div style="position:relative;">
+              <input type="password" class="auth-input" id="pcVerifyPwd" placeholder="Enter Parental Control password" style="padding-right:2.8rem;"/>
+              <span onclick="togglePwd('pcVerifyPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+            </div>
             <div class="auth-error" id="pcVerifyError"></div>
             <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
               <button class="auth-submit-btn" style="flex:1;" onclick="submitPCVerify()">Confirm</button>
@@ -2365,9 +2381,18 @@ function saveProgress(id, pos, dur) {
           <div id="pcChangeSection" style="display:none;margin-top:0.4rem;">
             <div style="font-size:0.82rem;color:var(--gold);cursor:pointer;" onclick="togglePCChangeForm()">Change Parental Control Password</div>
             <div id="pcChangeForm" style="display:none;margin-top:0.6rem;">
-              <input type="password" class="auth-input" id="pcChangeCurrentPwd" placeholder="Current password" style="margin-bottom:0.5rem;"/>
-              <input type="password" class="auth-input" id="pcChangeNewPwd" placeholder="New password" style="margin-bottom:0.5rem;"/>
-              <input type="password" class="auth-input" id="pcChangeConfirmPwd" placeholder="Confirm new password"/>
+              <div style="position:relative;margin-bottom:0.5rem;">
+              <input type="password" class="auth-input" id="pcChangeCurrentPwd" placeholder="Current password" style="padding-right:2.8rem;"/>
+              <span onclick="togglePwd('pcChangeCurrentPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+            </div>
+              <div style="position:relative;margin-bottom:0.5rem;">
+              <input type="password" class="auth-input" id="pcChangeNewPwd" placeholder="New password" style="padding-right:2.8rem;"/>
+              <span onclick="togglePwd('pcChangeNewPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+            </div>
+              <div style="position:relative;">
+              <input type="password" class="auth-input" id="pcChangeConfirmPwd" placeholder="Confirm new password" style="padding-right:2.8rem;"/>
+              <span onclick="togglePwd('pcChangeConfirmPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+            </div>
               <div class="auth-error" id="pcChangeError"></div>
               <div id="pcChangeSuccess" style="color:#46d369;font-size:0.82rem;display:none;margin-bottom:0.5rem;"></div>
               <button class="auth-submit-btn" onclick="submitPCChangePassword()" style="margin-top:0.5rem;">Update Parental Control Password</button>
