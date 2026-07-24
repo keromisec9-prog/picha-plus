@@ -3796,10 +3796,11 @@ async function handleCardPlay(item) {
       return;
     }
 
-    // Session conflict — another device is already streaming
     closePlayer();
     showInfo(item);
-    if (res.status === 401 || res.status === 403 || (data.error && /session|device|concurrent|another|sign in|revoked/i.test(data.error))) {
+    if (data.error && /parental control/i.test(data.error)) {
+      showToast('🔒 This title is restricted by Parental Controls', 'error');
+    } else if (res.status === 401 || res.status === 403 || (data.error && /session|device|concurrent|another|sign in|revoked/i.test(data.error))) {
       showSessionConflictToast();
     } else {
       showToast('This title is not yet available for streaming', 'error');
@@ -4232,9 +4233,12 @@ function toggleMyList(item, btn) {
 function renderMyListRow() {
   const section = document.getElementById('myListSection');
   const row = document.getElementById('myListRow');
-  if (!myList.length) { section.style.display = 'none'; return; }
+  const visibleList = session.user?.parentalControlsEnabled
+    ? myList.filter(item => !item.is18Plus)
+    : myList;
+  if (!visibleList.length) { section.style.display = 'none'; return; }
   section.style.display = 'block';
-  row.innerHTML = myList.map(item => createCard(item)).join('');
+  row.innerHTML = visibleList.map(item => createCard(item)).join('');
 }
 
 function showMyList() {
@@ -4302,6 +4306,7 @@ function renderContinueWatching() {
     const s = (window._seriesList || []).find(s => s._kvKey === kvKey);
     if (!s) return null;
     const ep = s.episodes?.[epIndex];
+    if (ep?.is18Plus && session.user?.parentalControlsEnabled) return null;
     const epLabel = ep ? `S${ep.season || 1}·E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
     return { id, prog, poster: s.poster || null, title: s.title, epLabel, isSeries: true, kvKey, epIndex };
   }).filter(Boolean);
@@ -4789,6 +4794,9 @@ async function submitPCSetup() {
     document.getElementById('pcSetupForm').style.display = 'none';
     document.getElementById('pcChangeSection').style.display = 'block';
     if (session.user) session.user.parentalControlsEnabled = true;
+    loadContent();
+    renderMyListRow();
+    renderContinueWatching();
     toast('Parental Controls enabled', 'gold');
   } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
@@ -4810,6 +4818,9 @@ async function submitPCVerify() {
     document.getElementById('acctPCToggle').checked = enabling;
     document.getElementById('pcVerifyForm').style.display = 'none';
     if (session.user) session.user.parentalControlsEnabled = enabling;
+    loadContent();
+    renderMyListRow();
+    renderContinueWatching();
     toast(enabling ? 'Parental Controls enabled' : 'Parental Controls disabled', 'gold');
   } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
