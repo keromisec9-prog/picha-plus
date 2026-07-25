@@ -3433,7 +3433,7 @@ async function _doDownload(endpoint, filename, meta) {
   try {
     // Use direct URL with token param — lets Android download natively
     // No memory loading, continues in background even if app closes
-    const dlUrl = endpoint + (endpoint.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(session.token);
+    const dlUrl = endpoint + (endpoint.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(session.token) + '&device_id=' + encodeURIComponent(getDeviceId());
     const a = document.createElement('a');
     a.href = dlUrl; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -3616,6 +3616,10 @@ async function playDownloaded(dlId) {
 async function downloadFromInfo() {
   const item = currentInfoItem;
   if (!item) return;
+  if (item.is18Plus && session.user?.parentalControlsEnabled) {
+    showToast('🔒 This title is restricted by Parental Controls', 'error');
+    return;
+  }
   const fname = (item.title || item.name || 'video').replace(/[^a-z0-9 ]/gi, '_') + '.mp4';
   await _doDownload(`${API}/download?id=${item.id}`, fname, {
     title: item.title || item.name,
