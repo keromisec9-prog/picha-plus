@@ -189,6 +189,16 @@
       min-height: 100vh;
       min-height: 100dvh;
       overscroll-behavior-y: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    /* Re-enable text selection for actual form fields so login, search,
+       password entry etc. still work normally */
+    input, textarea {
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
     }
 
     /* ── SCROLLBAR ── */
