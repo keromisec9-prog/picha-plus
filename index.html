@@ -5269,6 +5269,11 @@ async function startPayment(plan) {
   document.getElementById('paymentLoading').style.display = 'flex';
   document.getElementById('paymentFrame').style.display = 'none';
   document.getElementById('paymentModal').classList.add('active');
+  window._paymentScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${window._paymentScrollY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
   document.body.style.overflow = 'hidden';
 
   try {
@@ -5297,7 +5302,12 @@ async function startPayment(plan) {
 function closePayment() {
   document.getElementById('paymentModal').classList.remove('active');
   document.getElementById('paymentFrame').src = '';
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
   document.body.style.overflow = '';
+  window.scrollTo(0, window._paymentScrollY || 0);
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
