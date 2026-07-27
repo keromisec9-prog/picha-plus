@@ -1249,39 +1249,38 @@
     }
 
     .plan-card {
-      background: #1a1a1a;
+      background: #161616;
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px;
-      padding: 2rem 1.5rem;
+      border-radius: 14px;
+      padding: 1.7rem 1.4rem;
       cursor: pointer;
-      transition: background 0.2s, color 0.2s, opacity 0.2s;
+      transition: background 0.2s, color 0.2s, opacity 0.2s, border-color 0.2s;
       position: relative;
     }
-    .plan-card:hover { border-color: rgba(229,185,60,0.4); transform: translateY(-3px); }
+    .plan-card:hover { border-color: rgba(242,201,76,0.4); transform: translateY(-3px); }
     .plan-card.featured {
       border-color: var(--gold);
-      background: linear-gradient(135deg, #1a1508, #1a1a1a);
+      background: rgba(242,201,76,0.08);
     }
     .plan-card.featured::before {
       content: 'BEST VALUE';
       position: absolute;
-      top: -1px; left: 50%;
-      transform: translateX(-50%);
-      background: var(--gold);
-      color: #000;
-      font-size: 0.58rem;
+      top: 0.9rem; right: 0.9rem;
+      background: transparent;
+      color: var(--gold);
+      font-size: 0.6rem;
       font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 0.2rem 0.8rem;
-      border-radius: 0 0 4px 4px;
+      letter-spacing: 0.06em;
+      padding: 0.15rem 0.5rem;
+      border: 1px solid var(--gold);
+      border-radius: 5px;
     }
 
     .plan-name {
-      font-size: 0.7rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--gray);
-      margin-bottom: 0.8rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.9rem;
     }
 
     .plan-price {
@@ -1290,6 +1289,7 @@
       line-height: 1;
       letter-spacing: 0.02em;
       margin-bottom: 0.3rem;
+      color: #fff;
     }
 
     .plan-currency {
@@ -1311,33 +1311,33 @@
     }
     .plan-features li {
       font-size: 0.8rem;
-      color: rgba(255,255,255,0.6);
-      padding: 0.35rem 0;
+      color: rgba(255,255,255,0.65);
+      padding: 0.4rem 0;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     .plan-features li::before {
-      content: '✓';
+      font-family: 'Material Symbols Rounded';
+      content: 'check_circle';
       color: var(--gold);
-      font-size: 0.7rem;
+      font-size: 15px;
       flex-shrink: 0;
     }
 
     .plan-btn {
       width: 100%;
-      padding: 0.7rem;
+      padding: 0.75rem;
       border: 1px solid var(--gold);
       background: transparent;
       color: var(--gold);
       font-family: 'Inter', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 9px;
       transition: background 0.2s, color 0.2s, opacity 0.2s;
     }
     .plan-btn:hover, .plan-card.featured .plan-btn {
@@ -1900,7 +1900,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=all_inclusive,auto_awesome,calendar_month,card_membership,cast,check_circle,close,cloud_alert,download,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=all_inclusive,auto_awesome,calendar_month,card_membership,cast,check_circle,close,cloud_alert,download,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,public,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -5506,6 +5506,13 @@ function showAfricanUpgradeToast() {
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+
+  const restoreScroll = () => { document.body.style.overflow = ''; };
+  overlay.addEventListener('remove', restoreScroll); // not a real DOM event, handled via MutationObserver below
+  new MutationObserver((mutations, obs) => {
+    if (!document.body.contains(overlay)) { restoreScroll(); obs.disconnect(); }
+  }).observe(document.body, { childList: true });
 
   let selectedPlan = 'monthlyplus';
   modal.querySelectorAll('.african-plan-row').forEach(row => {
@@ -6309,7 +6316,7 @@ function bnBuildGenreList() {
   const ugandanCards = (window._allCards || []).filter(c => c.isUgandan);
   const ugandanEntry = ugandanCards.length ? `<div class="bn-list-item" onclick="bnOpenUgandan()">
       <div class="bn-list-icon">
-        <span style="font-size:18px;">🌍</span>
+        <span class="material-symbols-rounded" style="font-size:18px;">public</span>
       </div>
       <span class="bn-list-name">African Cinema</span>
       <span class="bn-list-count">${ugandanCards.length >= 30 ? ugandanCards.length + ' titles' : ''}</span>
@@ -6438,7 +6445,7 @@ closeCategory = function() {
         <div class="plan-period">24 hour access</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
-          <li>🌍 African Cinema</li>
+          <li>African Cinema</li>
           <li>HD streaming</li>
           <li>No ads</li>
         </ul>
@@ -6462,7 +6469,7 @@ closeCategory = function() {
         <div class="plan-period">7 days access</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
-          <li>🌍 African Cinema</li>
+          <li>African Cinema</li>
           <li>HD streaming</li>
           <li>Downloads</li>
           <li>No ads</li>
@@ -6487,7 +6494,7 @@ closeCategory = function() {
         <div class="plan-period">per month</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
-          <li>🌍 African Cinema</li>
+          <li>African Cinema</li>
           <li>HD streaming</li>
           <li>Downloads</li>
           <li>Cancel anytime</li>
