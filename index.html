@@ -1473,6 +1473,32 @@
       background: linear-gradient(90deg, rgba(229,185,60,0.1), transparent);
       color: var(--gold);
     }
+    .status-bar.broadcast-active {
+      visibility: visible;
+      background: linear-gradient(90deg, rgba(77,184,255,0.12), transparent);
+      color: #4db8ff;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .sb-marquee-wrap {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      max-width: 78vw;
+      vertical-align: middle;
+    }
+    .sb-marquee-track {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .sb-marquee-track.sb-scrolling {
+      padding-left: 100%;
+      animation: sbMarqueeScroll 11s linear infinite;
+    }
+    @keyframes sbMarqueeScroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); }
+    }
 
     /* ── LANGUAGE FILTER ── */
     .lang-filter {
@@ -1903,7 +1929,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=all_inclusive,auto_awesome,calendar_month,card_membership,cast,check_circle,close,cloud_alert,download,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,public,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=all_inclusive,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,download,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,public,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -4677,22 +4703,89 @@ function updateUI() {
       subText.textContent = 'Not subscribed';
     }
 
-    const bar = document.getElementById('statusBar');
-    bar.className = 'status-bar';
-    bar.innerHTML = '';
+    let _subBarClass = 'status-bar';
+    let _subBarHTML = '';
     if (subscribed && days <= 3) {
-      bar.classList.add('expiring');
-      bar.innerHTML = `⚠️ Subscription expires in ${days} day${days !== 1 ? 's' : ''}. <a href="#" onclick="showPaywall()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Renew</a>`;
+      _subBarClass = 'status-bar expiring';
+      _subBarHTML = `⚠️ Subscription expires in ${days} day${days !== 1 ? 's' : ''}. <a href="#" onclick="showPaywall()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Renew</a>`;
     } else if (subscribed) {
-      bar.classList.add('active');
-      bar.innerHTML = `✓ Picha+ ${session.user.subscriptionPlan} · ${days} days remaining`;
+      _subBarClass = 'status-bar active';
+      _subBarHTML = `✓ Picha+ ${session.user.subscriptionPlan} · ${days} days remaining`;
     }
+    applyStatusBarCycle(_subBarClass, _subBarHTML);
   } else if (_sessionConflict) {
-    const bar = document.getElementById('statusBar');
-    bar.className = 'status-bar expiring';
-    bar.innerHTML = `<span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;line-height:1;">cloud_alert</span> Signed out. Your account is active on another device. <a href="#" onclick="openSignin()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Sign In Again</a>`;
+    applyStatusBarCycle(
+      'status-bar expiring',
+      `<span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;line-height:1;">cloud_alert</span> Signed out. Your account is active on another device. <a href="#" onclick="openSignin()" style="color:inherit;margin-left:0.5rem;font-weight:600;">Sign In Again</a>`
+    );
+  } else {
+    applyStatusBarCycle('status-bar', '');
   }
 }
+
+// ── BROADCAST MESSAGE CYCLE ──────────────────────────────────────────────────
+let _broadcastMsg = null;
+let _statusCycleInterval = null;
+
+async function pollBroadcastMessage() {
+  try {
+    const res = await fetch(`${API}/broadcast-message`);
+    const data = await res.json();
+    _broadcastMsg = (data && data.active && data.text) ? data.text : null;
+  } catch (e) {
+    _broadcastMsg = null;
+  }
+  updateUI();
+}
+
+function applyStatusBarCycle(subClass, subHTML) {
+  const bar = document.getElementById('statusBar');
+  clearInterval(_statusCycleInterval);
+  bar.style.transition = 'opacity 0.5s ease';
+  bar.style.opacity = '1';
+
+  function renderSub() {
+    bar.className = subClass;
+    bar.innerHTML = subHTML;
+  }
+  function renderBroadcast() {
+    bar.className = 'status-bar broadcast-active';
+    bar.innerHTML = `<span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;line-height:1;margin-right:0.4rem;">campaign</span><span class="sb-marquee-wrap" id="sbMarqueeWrap"><span class="sb-marquee-track" id="sbMarqueeTrack">${esc(_broadcastMsg)}</span></span>`;
+    requestAnimationFrame(() => {
+      const wrap = document.getElementById('sbMarqueeWrap');
+      const track = document.getElementById('sbMarqueeTrack');
+      if (wrap && track && track.scrollWidth > wrap.clientWidth) {
+        track.classList.add('sb-scrolling');
+      }
+    });
+  }
+
+  if (!_broadcastMsg) {
+    renderSub();
+    return;
+  }
+
+  const hasSubContent = !!(subHTML && subHTML.trim());
+  if (!hasSubContent) {
+    renderBroadcast();
+    return;
+  }
+
+  let showingBroadcast = false;
+  renderSub();
+
+  _statusCycleInterval = setInterval(() => {
+    bar.style.opacity = '0';
+    setTimeout(() => {
+      showingBroadcast = !showingBroadcast;
+      if (showingBroadcast) renderBroadcast(); else renderSub();
+      bar.style.opacity = '1';
+    }, 500);
+  }, 6000);
+}
+
+setInterval(pollBroadcastMessage, 60000);
+pollBroadcastMessage();
 
 async function refreshUser(rerender = false) {
   if (!session.token) return;
