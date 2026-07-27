@@ -1492,6 +1492,15 @@
       max-width: 78vw;
       vertical-align: middle;
     }
+    .sb-swipe-wrap {
+      display: block;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .sb-swipe-wrap::-webkit-scrollbar { display: none; }
     .sb-marquee-track {
       display: inline-block;
       white-space: nowrap;
@@ -4743,6 +4752,23 @@ async function pollBroadcastMessage() {
   updateUI();
 }
 
+function renderBarLine(bar, cls, innerHTML, hasLink) {
+  bar.className = cls;
+  if (hasLink) {
+    // Swipeable, not auto-animated — avoids a moving target for the link inside
+    bar.innerHTML = `<span class="sb-swipe-wrap" id="sbLineWrap">${innerHTML}</span>`;
+  } else {
+    bar.innerHTML = `<span class="sb-marquee-wrap" id="sbLineWrap"><span class="sb-marquee-track" id="sbLineTrack">${innerHTML}</span></span>`;
+    requestAnimationFrame(() => {
+      const wrap = document.getElementById('sbLineWrap');
+      const track = document.getElementById('sbLineTrack');
+      if (wrap && track && track.scrollWidth > wrap.clientWidth) {
+        track.classList.add('sb-scrolling');
+      }
+    });
+  }
+}
+
 function applyStatusBarCycle(subClass, subHTML) {
   const bar = document.getElementById('statusBar');
   clearInterval(_statusCycleInterval);
@@ -4750,19 +4776,12 @@ function applyStatusBarCycle(subClass, subHTML) {
   bar.style.opacity = '1';
 
   function renderSub() {
-    bar.className = subClass;
-    bar.innerHTML = subHTML;
+    renderBarLine(bar, subClass, subHTML, subHTML.includes('<a '));
   }
   function renderBroadcast() {
-    bar.className = 'status-bar broadcast-active';
-    bar.innerHTML = `<span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;line-height:1;margin-right:0.4rem;">campaign</span><span class="sb-marquee-wrap" id="sbMarqueeWrap"><span class="sb-marquee-track" id="sbMarqueeTrack">${esc(_broadcastMsg)}</span></span>`;
-    requestAnimationFrame(() => {
-      const wrap = document.getElementById('sbMarqueeWrap');
-      const track = document.getElementById('sbMarqueeTrack');
-      if (wrap && track && track.scrollWidth > wrap.clientWidth) {
-        track.classList.add('sb-scrolling');
-      }
-    });
+    renderBarLine(bar, 'status-bar broadcast-active',
+      `<span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;line-height:1;margin-right:0.4rem;">campaign</span>${esc(_broadcastMsg)}`
+    );
   }
 
   if (!_broadcastMsg) {
