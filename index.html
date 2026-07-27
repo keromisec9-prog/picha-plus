@@ -5629,9 +5629,21 @@ function showAfricanUpgradeToast() {
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+  const _africanScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${_africanScrollY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
   document.body.style.overflow = 'hidden';
 
-  const restoreScroll = () => { document.body.style.overflow = ''; };
+  const restoreScroll = () => {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    window.scrollTo(0, _africanScrollY);
+  };
   overlay.addEventListener('remove', restoreScroll); // not a real DOM event, handled via MutationObserver below
   new MutationObserver((mutations, obs) => {
     if (!document.body.contains(overlay)) { restoreScroll(); obs.disconnect(); }
