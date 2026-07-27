@@ -5708,6 +5708,13 @@ function closePaywall() {
   document.body.style.overflow = '';
 }
 
+function showPlansFromManage() {
+  const modal = document.getElementById('paywallModal');
+  modal.querySelector('.plans-header').style.display = '';
+  modal.querySelector('.plans-grid').style.display = '';
+  document.getElementById('manageSubscriptionView').style.display = 'none';
+}
+
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -6546,6 +6553,7 @@ closeCategory = function() {
           Have a billing question, or can't find the Pesapal email? Head to the <b>Saved</b> tab at the bottom of the app and tap <b>Contact</b> in the footer — we're happy to help.
         </div>
       </details>
+      <button class="plan-btn" style="margin-top:0.8rem;width:100%;" onclick="showPlansFromManage()">Change Plan</button>
     </div>
     <div class="plans-grid">
       <div class="plan-card" onclick="startPayment('daily')">
