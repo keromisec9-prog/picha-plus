@@ -4712,7 +4712,10 @@ function updateUI() {
 
     const subText = document.getElementById('subStatusText');
     if (subscribed) {
-      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left`;
+      const _pendingHTML = session.user.pendingPlan
+        ? ` · then ${session.user.pendingPlan} (${Math.ceil(session.user.pendingDurationMs/(1000*60*60*24))}d)`
+        : '';
+      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left${_pendingHTML}`;
     } else {
       subText.textContent = 'Not subscribed';
     }
