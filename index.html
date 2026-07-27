@@ -1900,7 +1900,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=auto_awesome,card_membership,cast,close,cloud_alert,download,frame_inspect,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,share,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=auto_awesome,calendar_month,card_membership,cast,check_circle,close,cloud_alert,download,frame_inspect,hd,all_inclusive,keyboard_arrow_right,live_tv,lock,logout,movie,play_arrow,play_circle,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -5458,32 +5458,90 @@ function showToast(msg, type = '') {
 }
 
 function showAfricanUpgradeToast() {
-  document.querySelectorAll('.toast, .african-toast').forEach(t => t.remove());
-  const t = document.createElement('div');
-  t.className = 'toast african-toast';
-  t.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#1c1c1c,#141414);border:1px solid rgba(242,201,76,0.35);color:#fff;padding:1.1rem 1.3rem 0.9rem;border-radius:14px;z-index:9999;width:300px;max-width:90vw;box-shadow:0 8px 28px rgba(0,0,0,0.55);';
-  t.innerHTML = `
-    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.15rem;">
-      <span style="font-size:1rem;">🔒</span>
-      <strong style="font-size:0.95rem;">African Cinema</strong>
+  document.querySelectorAll('.toast, .african-toast, .african-modal-overlay').forEach(t => t.remove());
+
+  const overlay = document.createElement('div');
+  overlay.className = 'african-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.2rem;';
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:#161616;border:1px solid rgba(242,201,76,0.3);border-radius:18px;padding:1.6rem 1.3rem 1.3rem;max-width:400px;width:100%;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.6);';
+
+  modal.innerHTML = `
+    <span class="material-symbols-rounded" onclick="this.closest('.african-modal-overlay').remove();" style="position:absolute;top:0.8rem;right:0.8rem;background:#2a2a2a;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#ccc;cursor:pointer;">close</span>
+
+    <div style="text-align:center;margin-bottom:0.3rem;margin-top:0.3rem;">
+      <div style="font-size:1.3rem;font-weight:700;color:#fff;">African Cinema</div>
+      <div style="font-size:0.82rem;color:#9a9a9a;margin-top:0.4rem;line-height:1.4;">Enjoy exclusive African movies and series.<br/>Subscribe to unlock this catalog.</div>
     </div>
-    <div style="font-size:0.78rem;color:#9a9a9a;margin-bottom:0.9rem;">Unlock this catalog with any plan below</div>
-    <div style="display:flex;flex-direction:column;gap:0.5rem;">
-      <button onclick="startPayment('dailyplus');this.closest('.african-toast').remove();" style="display:flex;justify-content:space-between;align-items:center;background:#232323;color:#fff;border:1px solid #333;border-radius:9px;padding:0.55rem 0.8rem;font-size:0.8rem;cursor:pointer;width:100%;">
-        <span>Daily+</span><span style="color:var(--gold);font-weight:700;">UGX 2,000</span>
-      </button>
-      <button onclick="startPayment('weeklyplus');this.closest('.african-toast').remove();" style="display:flex;justify-content:space-between;align-items:center;background:#232323;color:#fff;border:1px solid #333;border-radius:9px;padding:0.55rem 0.8rem;font-size:0.8rem;cursor:pointer;width:100%;">
-        <span>Weekly+</span><span style="color:var(--gold);font-weight:700;">UGX 8,000</span>
-      </button>
-      <button onclick="startPayment('monthlyplus');this.closest('.african-toast').remove();" style="display:flex;justify-content:space-between;align-items:center;background:var(--gold);color:#000;border:none;border-radius:9px;padding:0.55rem 0.8rem;font-size:0.8rem;font-weight:700;cursor:pointer;width:100%;">
-        <span>Monthly+</span><span>UGX 20,000</span>
-      </button>
+
+    <div style="display:flex;justify-content:center;gap:1.1rem;margin:1.2rem 0 1.3rem;">
+      <div style="text-align:center;">
+        <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">hd</span>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">HD Quality</div>
+      </div>
+      <div style="width:1px;background:#333;"></div>
+      <div style="text-align:center;">
+        <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">all_inclusive</span>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Unlimited Streaming</div>
+      </div>
+      <div style="width:1px;background:#333;"></div>
+      <div style="text-align:center;">
+        <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">check_circle</span>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Cancel Anytime</div>
+      </div>
     </div>
-    <div style="text-align:center;margin-top:0.8rem;">
-      <span onclick="this.closest('.african-toast').remove();" style="color:#777;font-size:0.75rem;cursor:pointer;">Dismiss</span>
+
+    <div id="africanPlanRows" style="display:flex;flex-direction:column;gap:0.7rem;">
+      ${africanPlanRow('dailyplus','Daily','24 hours access','UGX 2,000',false,'calendar_month')}
+      ${africanPlanRow('weeklyplus','Weekly','7 days access','UGX 8,000',false,'calendar_month')}
+      ${africanPlanRow('monthlyplus','Monthly','30 days access','UGX 20,000',true,'star')}
+    </div>
+
+    <button id="africanContinueBtn" style="width:100%;background:var(--gold);color:#000;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:1.2rem;">Continue</button>
+    <div style="text-align:center;margin-top:0.7rem;">
+      <span onclick="this.closest('.african-modal-overlay').remove();" style="color:#888;font-size:0.82rem;cursor:pointer;">Maybe Later</span>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  let selectedPlan = 'monthlyplus';
+  modal.querySelectorAll('.african-plan-row').forEach(row => {
+    row.addEventListener('click', () => {
+      selectedPlan = row.dataset.plan;
+      modal.querySelectorAll('.african-plan-row').forEach(r => {
+        r.style.borderColor = r === row ? 'var(--gold)' : '#333';
+        r.style.background = r === row ? 'rgba(242,201,76,0.08)' : 'transparent';
+        r.querySelector('.plan-radio-dot').style.opacity = r === row ? '1' : '0';
+      });
+    });
+  });
+
+  document.getElementById('africanContinueBtn').onclick = () => {
+    startPayment(selectedPlan);
+    overlay.remove();
+  };
+}
+
+function africanPlanRow(planId, name, subtitle, price, isBest, icon) {
+  const selected = isBest;
+  return `
+    <div class="african-plan-row" data-plan="${planId}" style="display:flex;align-items:center;gap:0.8rem;border:1px solid ${selected ? 'var(--gold)' : '#333'};background:${selected ? 'rgba(242,201,76,0.08)' : 'transparent'};border-radius:12px;padding:0.7rem 0.8rem;cursor:pointer;">
+      <div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div class="plan-radio-dot" style="width:9px;height:9px;border-radius:50%;background:var(--gold);opacity:${selected ? '1' : '0'};"></div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:9px;background:#232323;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span class="material-symbols-rounded" style="font-size:19px;color:var(--gold);">${icon}</span>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:0.9rem;font-weight:600;color:#fff;">${name}</div>
+        <div style="font-size:0.72rem;color:#999;">${subtitle}</div>
+        ${isBest ? `<span style="display:inline-block;margin-top:0.25rem;font-size:0.62rem;font-weight:700;color:var(--gold);border:1px solid var(--gold);border-radius:5px;padding:0.1rem 0.4rem;">BEST VALUE</span>` : ''}
+      </div>
+      <div style="font-size:0.85rem;font-weight:700;color:${isBest ? 'var(--gold)' : '#fff'};white-space:nowrap;">${price}</div>
     </div>`;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 7000);
 }
 
 function scrollToSection(id) {
