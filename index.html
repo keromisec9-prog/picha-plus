@@ -2901,7 +2901,7 @@ async function loadContent() {
       ugSection.className = 'content-section';
       ugSection.innerHTML = `
         <div class="row-header">
-          <div class="row-title">🌍 African Cinema</div>
+          <div class="row-title">African Cinema</div>
           <button class="row-see-all" onclick="openCategory('African Cinema', window._ugandanItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
         </div>
         <div class="scroll-row" id="row-ugandan"></div>`;
@@ -5461,17 +5461,29 @@ function showAfricanUpgradeToast() {
   document.querySelectorAll('.toast, .african-toast').forEach(t => t.remove());
   const t = document.createElement('div');
   t.className = 'toast african-toast';
-  t.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--gold);color:#fff;padding:0.9rem 1.2rem;border-radius:12px;z-index:9999;max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  t.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#1c1c1c,#141414);border:1px solid rgba(242,201,76,0.35);color:#fff;padding:1.1rem 1.3rem 0.9rem;border-radius:14px;z-index:9999;width:300px;max-width:90vw;box-shadow:0 8px 28px rgba(0,0,0,0.55);';
   t.innerHTML = `
-    <div style="font-size:0.85rem;margin-bottom:0.7rem;">🌍 <strong>African Cinema</strong> requires an upgraded plan</div>
-    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-      <button onclick="startPayment('dailyplus');this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Daily+ — UGX 2,000</button>
-      <button onclick="startPayment('weeklyplus');this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Weekly+ — UGX 8,000</button>
-      <button onclick="startPayment('monthlyplus');this.closest('.african-toast').remove();" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;font-weight:700;cursor:pointer;">Monthly+ — UGX 20,000</button>
-      <button onclick="this.closest('.african-toast').remove();" style="background:transparent;color:#888;border:1px solid #444;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.75rem;cursor:pointer;">Dismiss</button>
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.15rem;">
+      <span style="font-size:1rem;">🔒</span>
+      <strong style="font-size:0.95rem;">African Cinema</strong>
+    </div>
+    <div style="font-size:0.78rem;color:#9a9a9a;margin-bottom:0.9rem;">Unlock this catalog with any plan below</div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      <button onclick="startPayment('dailyplus');this.closest('.african-toast').remove();" style="display:flex;justify-content:space-between;align-items:center;background:#232323;color:#fff;border:1px solid #333;border-radius:9px;padding:0.55rem 0.8rem;font-size:0.8rem;cursor:pointer;width:100%;">
+        <span>Daily+</span><span style="color:var(--gold);font-weight:700;">UGX 2,000</span>
+      </button>
+      <button onclick="startPayment('weeklyplus');this.closest('.african-toast').remove();" style="display:flex;justify-content:space-between;align-items:center;background:#232323;color:#fff;border:1px solid #333;border-radius:9px;padding:0.55rem 0.8rem;font-size:0.8rem;cursor:pointer;width:100%;">
+        <span>Weekly+</span><span style="color:var(--gold);font-weight:700;">UGX 8,000</span>
+      </button>
+      <button onclick="startPayment('monthlyplus');this.closest('.african-toast').remove();" style="display:flex;justify-content:space-between;align-items:center;background:var(--gold);color:#000;border:none;border-radius:9px;padding:0.55rem 0.8rem;font-size:0.8rem;font-weight:700;cursor:pointer;width:100%;">
+        <span>Monthly+</span><span>UGX 20,000</span>
+      </button>
+    </div>
+    <div style="text-align:center;margin-top:0.8rem;">
+      <span onclick="this.closest('.african-toast').remove();" style="color:#777;font-size:0.75rem;cursor:pointer;">Dismiss</span>
     </div>`;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 5000);
+  setTimeout(() => t.remove(), 7000);
 }
 
 function scrollToSection(id) {
