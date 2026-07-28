@@ -2032,9 +2032,24 @@ function _cleanOldSeriesProgress() {
 
 function saveMyList() { localStorage.setItem('pichaplus_mylist', JSON.stringify(myList)); }
 function saveLiked() { localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
-function saveProgress(id, pos, dur) {
+const _lastServerSync = {};
+function _syncProgressToServer(id, pos, dur, force) {
+  const now = Date.now();
+  if (!force && _lastServerSync[id] && (now - _lastServerSync[id]) < 15000) return;
+  _lastServerSync[id] = now;
+  const token = localStorage.getItem('pichaplus_session_token');
+  if (!token) return;
+  fetch(API + '/watch-progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Session-Token': token },
+    body: JSON.stringify({ movieId: String(id), progressSeconds: Math.floor(pos), durationSeconds: Math.floor(dur) })
+  }).catch(() => {});
+}
+
+function saveProgress(id, pos, dur, forceSync) {
   progress[id] = { position: pos, duration: dur, ts: Date.now() };
   localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+  _syncProgressToServer(id, pos, dur, forceSync);
   // Re-render continue watching immediately, but only when player is closed
   if (!document.getElementById('playerModal')?.classList.contains('active')) {
     renderContinueWatching();
@@ -3993,7 +4008,7 @@ async function initPlayer(url, item) {
     }
   };
   video.addEventListener('timeupdate', trackProgress);
-  video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration); });
+  video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration, true); });
 
   try {
     await shakaPlayer.load(url);
