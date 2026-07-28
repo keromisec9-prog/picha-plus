@@ -364,6 +364,14 @@
       height: clamp(300px, 52vh, 480px);
       overflow: hidden;
     }
+    .hero-fade-mask {
+      height: 36px;
+      margin-top: -36px;
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(to bottom, rgba(15,15,15,1) 0%, rgba(15,15,15,0) 100%);
+      pointer-events: none;
+    }
     @media (min-height: 750px) and (max-width: 500px) {
       .hero { height: 45vh; }
     }
@@ -2116,6 +2124,7 @@ function saveProgress(id, pos, dur) {
   </div>
   <div class="hero-dots" id="heroDots"></div>
 </section>
+<div class="hero-fade-mask"></div>
 
 <!-- MAIN CONTENT -->
 <main id="main">
@@ -2281,7 +2290,7 @@ function saveProgress(id, pos, dur) {
       <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
     </button>
   </div>
-  <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;padding:0.8rem 4vw;"></div>
+  <div id="fyGrid" class="category-grid"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
