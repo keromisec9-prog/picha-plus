@@ -10,3 +10,5 @@ worker*.js
 worker*.js.bak*
 *.bak.*
 *.py
+*.bak
+*.bak[0-9]*
