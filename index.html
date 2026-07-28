@@ -573,6 +573,8 @@
       scroll-snap-align: start;
       transition: transform 0.3s, z-index 0s 0.3s;
       background: #1a1a1a;
+      content-visibility: auto;
+      contain-intrinsic-size: 130px 195px;
     }
 
     .card:hover {
@@ -3169,7 +3171,7 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
   return `
     <div class="card" tabindex="0" onclick="${cardClick}" onkeydown="${cardKeydown}" data-preview-id="${item.id}">
       ${poster
-        ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
+        ? `<img class="card-poster" src="${poster}" alt="${esc(title)}" decoding="async" loading="lazy" style="${isLockedAfrican ? 'filter:brightness(0.4);' : ''}">`
         : `<div class="card-poster-placeholder">🎬</div>`}
 
       ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
@@ -4298,7 +4300,7 @@ function toggleMyList(item, btn) {
         return `
           <div class="category-card" onclick="${item.isUgandan && !session.hasAfricanAccess() ? 'showAfricanUpgradeToast()' : `openInfoFromCategory(getItem(${regIdx}))`}" style="transition:opacity 0.3s,transform 0.3s;position:relative;">
             ${poster
-              ? `<img src="${poster}" alt="${esc(title)}" loading="lazy" style="${item.isUgandan && !session.hasAfricanAccess() ? 'filter:brightness(0.4);' : ''}">`
+              ? `<img src="${poster}" alt="${esc(title)}" decoding="async" loading="lazy" style="${item.isUgandan && !session.hasAfricanAccess() ? 'filter:brightness(0.4);' : ''}">`
               : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
             ${item.isUgandan && !session.hasAfricanAccess() ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
             ${item._vj && !(item.isUgandan && !session.hasAfricanAccess()) ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
@@ -5801,7 +5803,7 @@ function openCategory(name, items) {
     return `
       <div class="category-card" onclick="${lockedAfrican ? 'showAfricanUpgradeToast()' : `openInfoFromCategory(getItem(${regIdx3}))`}" style="position:relative;">
         ${poster
-          ? `<img src="${poster}" alt="${esc(title)}" loading="lazy" style="${lockedAfrican ? 'filter:brightness(0.4);' : ''}">`
+          ? `<img src="${poster}" alt="${esc(title)}" decoding="async" loading="lazy" style="${lockedAfrican ? 'filter:brightness(0.4);' : ''}">`
           : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
         ${lockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
         ${item._vj && !lockedAfrican ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
@@ -6453,7 +6455,7 @@ function bnOpenSaved() {
       return `
         <div class="category-card" onclick="${lockedAfrican ? 'showAfricanUpgradeToast()' : `openInfoFromCategory(getItem(${regIdx}))`}" style="position:relative;">
           ${poster
-            ? `<img src="${poster}" alt="${esc(title)}" loading="lazy" style="${lockedAfrican ? 'filter:brightness(0.4);' : ''}">`
+            ? `<img src="${poster}" alt="${esc(title)}" decoding="async" loading="lazy" style="${lockedAfrican ? 'filter:brightness(0.4);' : ''}">`
             : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
           ${lockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
           ${item._vj && !lockedAfrican ? `<div class="category-card-vj">${esc(item._vj)}</div>` : ''}
