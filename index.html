@@ -5627,6 +5627,11 @@ function showAfricanUpgradeToast() {
       </div>
     </div>
 
+    ${session.isSubscribed() ? `<div style="background:rgba(242,201,76,0.08);border:1px solid rgba(242,201,76,0.25);border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:1rem;font-size:0.76rem;color:#e0c060;line-height:1.4;text-align:center;">
+      <span class="material-symbols-rounded" style="font-size:14px;vertical-align:middle;margin-right:0.2rem;">verified</span>
+      Your current ${session.user.subscriptionPlan} plan won't be lost — it resumes automatically once this one ends.
+    </div>` : ''}
+
     <div id="africanPlanRows" style="display:flex;flex-direction:column;gap:0.7rem;">
       ${africanPlanRow('dailyplus','Daily','24 hours access','UGX 2,000',false,'calendar_month')}
       ${africanPlanRow('weeklyplus','Weekly','7 days access','UGX 8,000',false,'calendar_month')}
