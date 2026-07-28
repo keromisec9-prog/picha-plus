@@ -5676,8 +5676,8 @@ function showAfricanUpgradeToast() {
   });
 
   document.getElementById('africanContinueBtn').onclick = () => {
-    startPayment(selectedPlan);
     overlay.remove();
+    startPayment(selectedPlan);
   };
 }
 
