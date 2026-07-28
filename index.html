@@ -5270,6 +5270,7 @@ async function startPayment(plan) {
   document.getElementById('paymentFrame').style.display = 'none';
   document.getElementById('paymentModal').classList.add('active');
   window._paymentScrollY = window.scrollY || window.pageYOffset || 0;
+  document.documentElement.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
   document.body.style.top = `-${window._paymentScrollY}px`;
   document.body.style.left = '0';
@@ -5302,6 +5303,7 @@ async function startPayment(plan) {
 function closePayment() {
   document.getElementById('paymentModal').classList.remove('active');
   document.getElementById('paymentFrame').src = '';
+  document.documentElement.style.overflow = '';
   document.body.style.position = '';
   document.body.style.top = '';
   document.body.style.left = '';
@@ -5640,6 +5642,7 @@ function showAfricanUpgradeToast() {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
   const _africanScrollY = window.scrollY || window.pageYOffset || 0;
+  document.documentElement.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
   document.body.style.top = `-${_africanScrollY}px`;
   document.body.style.left = '0';
@@ -5647,6 +5650,7 @@ function showAfricanUpgradeToast() {
   document.body.style.overflow = 'hidden';
 
   const restoreScroll = () => {
+    document.documentElement.style.overflow = '';
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
