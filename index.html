@@ -364,14 +364,6 @@
       height: clamp(300px, 52vh, 480px);
       overflow: hidden;
     }
-    .hero-fade-mask {
-      height: 36px;
-      margin-top: -36px;
-      position: relative;
-      z-index: 1;
-      background: linear-gradient(to bottom, rgba(15,15,15,1) 0%, rgba(15,15,15,0) 100%);
-      pointer-events: none;
-    }
     @media (min-height: 750px) and (max-width: 500px) {
       .hero { height: 45vh; }
     }
@@ -2124,7 +2116,6 @@ function saveProgress(id, pos, dur) {
   </div>
   <div class="hero-dots" id="heroDots"></div>
 </section>
-<div class="hero-fade-mask"></div>
 
 <!-- MAIN CONTENT -->
 <main id="main">
