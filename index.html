@@ -5813,7 +5813,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === document.getElementById('paywallModal')) closePaywall();
   });
 
-  document.getElementById('paymentModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePayment(); });
+  // Payment modal deliberately has no backdrop-tap-to-dismiss — accidentally
+  // closing it mid-transaction would kill the iframe without cancelling the
+  // actual PesaPal order. Users must use the explicit X button.
+
   document.getElementById('infoModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeInfo(); });
   document.getElementById('searchOverlay')?.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
 });
