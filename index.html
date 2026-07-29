@@ -4617,7 +4617,9 @@ function _renderHistoryRow(m) {
       <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
         <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
         <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
-        <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later</button>
+        <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${m.card && myList.some(x => x.id === m.card.id)
+          ? '<span class="material-symbols-rounded" style="font-size:16px;">check_circle</span>Remove from Watch Later'
+          : '<span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later'}</button>
         <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
       </div>
     </div>`;
@@ -4741,9 +4743,21 @@ function toggleHistoryMenu(key, btn) {
     if (m.dataset.key !== key) m.style.display = 'none';
   });
   const menu = btn.nextElementSibling;
-  if (menu && menu.classList.contains('history-menu')) {
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  if (!menu || !menu.classList.contains('history-menu')) return;
+  const opening = menu.style.display !== 'block';
+  if (!opening) { menu.style.display = 'none'; return; }
+  menu.style.display = 'block';
+  menu.style.visibility = 'hidden';
+  const rect = menu.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.top;
+  if (spaceBelow < rect.height + 10) {
+    menu.style.top = 'auto';
+    menu.style.bottom = '2.4rem';
+  } else {
+    menu.style.top = '2.6rem';
+    menu.style.bottom = 'auto';
   }
+  menu.style.visibility = 'visible';
 }
 
 document.addEventListener('click', () => {
@@ -4753,9 +4767,14 @@ document.addEventListener('click', () => {
 function saveHistoryItemToList(regIdx, btn) {
   const item = getItem(regIdx);
   if (!item) return;
-  toggleMyList(item, btn);
+  toggleMyList(item, null);
+  const isSaved = myList.some(x => x.id === item.id);
+  if (btn) {
+    btn.innerHTML = isSaved
+      ? '<span class="material-symbols-rounded" style="font-size:16px;">check_circle</span>Remove from Watch Later'
+      : '<span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later';
+  }
   document.querySelectorAll('.history-menu').forEach(m => { m.style.display = 'none'; });
-  showToast('Saved \u2713', 'gold');
 }
 
 async function shareHistoryItem(title) {
