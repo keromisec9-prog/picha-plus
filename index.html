@@ -4512,6 +4512,75 @@ function openContinueWatchingAll() {
   _buildContinueOverlay(matched);
   document.getElementById('categoryOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
+  const searchWrap = document.getElementById('historySearchWrap');
+  const searchInput = document.getElementById('historySearchInput');
+  if (searchWrap) searchWrap.style.display = 'block';
+  if (searchInput) searchInput.value = '';
+}
+
+function filterHistoryList(query) {
+  const q = query.trim().toLowerCase();
+  const all = window._continueMatched || [];
+  const filtered = q ? all.filter(m => m.title.toLowerCase().includes(q)) : all;
+  _buildContinueOverlay(filtered, true);
+  renderRecentSearches(q);
+}
+
+function _getRecentSearches() {
+  try { return JSON.parse(localStorage.getItem('pichaplus_recent_searches') || '[]'); } catch (e) { return []; }
+}
+
+function _saveRecentSearches(list) {
+  localStorage.setItem('pichaplus_recent_searches', JSON.stringify(list.slice(0, 8)));
+}
+
+function saveRecentSearchFromInput() {
+  const input = document.getElementById('historySearchInput');
+  const term = input ? input.value.trim() : '';
+  if (!term) return;
+  let list = _getRecentSearches().filter(t => t.toLowerCase() !== term.toLowerCase());
+  list.unshift(term);
+  _saveRecentSearches(list);
+}
+
+function removeRecentSearch(term, event) {
+  event.stopPropagation();
+  const list = _getRecentSearches().filter(t => t !== term);
+  _saveRecentSearches(list);
+  renderRecentSearches();
+}
+
+function useRecentSearch(term) {
+  const input = document.getElementById('historySearchInput');
+  if (input) input.value = term;
+  filterHistoryList(term);
+  hideRecentSearches();
+}
+
+function renderRecentSearches(query) {
+  const box = document.getElementById('historyRecentSearches');
+  if (!box) return;
+  const q = (query || '').trim().toLowerCase();
+  const list = q ? _getRecentSearches().filter(t => t.toLowerCase().includes(q)) : _getRecentSearches();
+  if (!list.length) { box.style.display = 'none'; return; }
+  box.innerHTML = list.map(term => `
+    <div onmousedown="useRecentSearch('${esc(term)}')" style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.9rem;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <span style="font-size:0.82rem;color:#ddd;">${esc(term)}</span>
+      <span onmousedown="removeRecentSearch('${esc(term)}', event)" style="color:rgba(255,255,255,0.4);padding:0.2rem 0.4rem;">
+        <span class="material-symbols-rounded" style="font-size:16px;line-height:1;">close</span>
+      </span>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+function showRecentSearches() {
+  const input = document.getElementById('historySearchInput');
+  renderRecentSearches(input ? input.value : '');
+}
+
+function hideRecentSearches() {
+  const box = document.getElementById('historyRecentSearches');
+  if (box) box.style.display = 'none';
 }
 
 function _buildContinueOverlay(matched) {
@@ -6753,6 +6822,14 @@ closeCategory = function() {
     </button>
     <div class="category-page-title" id="categoryTitle">Category</div>
     <div class="category-count" id="categoryCount"></div>
+  </div>
+  <div id="historySearchWrap" style="display:none;padding:0.6rem 4vw;position:relative;">
+    <input type="text" id="historySearchInput" placeholder="Search watch history"
+      oninput="filterHistoryList(this.value)"
+      onfocus="showRecentSearches()"
+      onblur="setTimeout(hideRecentSearches, 150); saveRecentSearchFromInput();"
+      style="width:100%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.6rem 0.9rem;color:#fff;font-size:0.85rem;font-family:inherit;">
+    <div id="historyRecentSearches" style="display:none;position:absolute;top:calc(100% + 2px);left:4vw;right:4vw;background:#1e1e1e;border:1px solid rgba(255,255,255,0.12);border-radius:6px;z-index:10;max-height:14rem;overflow-y:auto;"></div>
   </div>
   <div class="category-grid" id="categoryGrid"></div>
 </div>
