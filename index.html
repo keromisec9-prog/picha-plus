@@ -6936,10 +6936,14 @@ closeCategory = function() {
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
       </svg>
       <input type="text" id="historySearchInput" placeholder="Search watch history"
-        oninput="filterHistoryList(this.value)"
+        oninput="filterHistoryList(this.value);document.getElementById('historySearchClear').style.display=this.value?'flex':'none';"
         onfocus="showRecentSearches()"
         onblur="setTimeout(hideRecentSearches, 150); saveRecentSearchFromInput();"
-        style="width:100%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.6rem 0.9rem 0.6rem 2.5rem;color:#fff;font-size:0.85rem;font-family:inherit;">
+        style="width:100%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.6rem 2.4rem 0.6rem 2.5rem;color:#fff;font-size:0.85rem;font-family:inherit;">
+      <button id="historySearchClear" onmousedown="event.preventDefault();const i=document.getElementById('historySearchInput');i.value='';filterHistoryList('');document.getElementById('historySearchClear').style.display='none';i.focus();"
+        style="display:none;position:absolute;right:0.6rem;background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;padding:0.3rem;align-items:center;justify-content:center;">
+        <span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span>
+      </button>
     </div>
     <div id="historyRecentSearches" style="display:none;position:absolute;top:calc(100% + 2px);left:4vw;right:4vw;background:#1e1e1e;border:1px solid rgba(255,255,255,0.12);border-radius:6px;z-index:10;max-height:14rem;overflow-y:auto;"></div>
   </div>
