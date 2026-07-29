@@ -1662,6 +1662,12 @@
       gap: 0.5rem;
       padding: 1rem 3vw 3rem;
     }
+    .category-grid.list-mode {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 0.5rem 4vw 3rem;
+    }
     @media (min-width: 500px) {
       .category-grid { grid-template-columns: repeat(4, 1fr); }
     }
@@ -4539,6 +4545,7 @@ function _buildContinueOverlay(matched) {
   clearBtn.style.display = 'inline-block';
 
   const grid = document.getElementById('categoryGrid');
+  grid.classList.add('list-mode');
   grid.innerHTML = matched.map(m => {
     const title = esc(m.title);
     const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
@@ -4549,20 +4556,27 @@ function _buildContinueOverlay(matched) {
       ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
       : `openInfoFromCategory(getItem(${registerItem(m.card)}))`;
     return `
-      <div class="category-card" onclick="${clickFn}" style="position:relative;">
-        ${poster
-          ? `<img src="${poster}" alt="${title}" loading="lazy">`
-          : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
-        <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)"
-          style="position:absolute;top:0.3rem;right:0.3rem;z-index:5;background:rgba(0,0,0,0.75);border:none;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">more_vert</span></button>
-        <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.1rem;right:0.3rem;z-index:6;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:9rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
-          <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem 0.8rem;background:none;border:none;color:#fff;font-size:0.78rem;text-align:left;cursor:pointer;font-family:inherit;"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
-          <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem 0.8rem;background:none;border:none;color:#fff;font-size:0.78rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later</button>
-          <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem 0.8rem;background:none;border:none;color:#fff;font-size:0.78rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
+      <div onclick="${clickFn}" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;position:relative;">
+        <div style="position:relative;flex-shrink:0;">
+          ${poster
+            ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:46px;height:66px;object-fit:cover;border-radius:4px;">`
+            : `<div style="width:46px;height:66px;background:#1e1e1e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
+          <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.25);border-radius:0 0 4px 4px;overflow:hidden;">
+            <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
+          </div>
         </div>
-        <div class="category-card-label">${title}<br><span style="color:var(--gold);font-size:0.6rem;">${subLabel}</span></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.15);">
-          <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+          <div style="font-size:0.72rem;color:var(--gold);margin-top:2px;">${subLabel}</div>
+        </div>
+        <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
+          style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
+          <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
+        </button>
+        <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
+          <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
+          <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later</button>
+          <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
         </div>
       </div>`;
   }).join('');
