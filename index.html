@@ -4597,7 +4597,7 @@ function _renderHistoryRow(m) {
     ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
     : `handleCardPlay(getItem(${registerItem(m.card)}))`;
   return `
-    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;position:relative;">
+    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
       <div style="position:relative;flex-shrink:0;">
         ${poster
           ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:46px;height:66px;object-fit:cover;border-radius:4px;">`
@@ -4655,8 +4655,7 @@ function _buildContinueOverlay(matched) {
   matched.forEach(m => {
     const key = _historyDateKey(m.prog.ts);
     if (key !== lastKey) {
-      const borderStyle = lastKey === null ? '' : 'border-top:1px solid rgba(255,255,255,0.08);';
-      html += `<div style="font-size:0.95rem;font-weight:700;color:#fff;padding:1rem 0 0.4rem;margin-top:${lastKey === null ? '0' : '0.5rem'};${borderStyle}">${_historyDateLabel(m.prog.ts)}</div>`;
+      html += `<div style="font-size:0.95rem;font-weight:700;color:#fff;padding:1rem 0 0.4rem;">${_historyDateLabel(m.prog.ts)}</div>`;
       lastKey = key;
     }
     html += _renderHistoryRow(m);
