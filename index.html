@@ -4623,13 +4623,36 @@ function _renderHistoryRow(m) {
     </div>`;
 }
 
+function _historyDateKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function _historyDateLabel(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const opts = { month: 'long', day: 'numeric' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('en-US', opts);
+}
+
 function _buildContinueOverlay(matched) {
   document.getElementById('categoryTitle').textContent = 'Watch History';
   document.getElementById('categoryCount').textContent = `${matched.length} title${matched.length !== 1 ? 's' : ''}`;
 
   const grid = document.getElementById('categoryGrid');
   grid.classList.add('list-mode');
-  grid.innerHTML = matched.map(_renderHistoryRow).join('');
+  let html = '';
+  let lastKey = null;
+  matched.forEach(m => {
+    const key = _historyDateKey(m.prog.ts);
+    if (key !== lastKey) {
+      html += `<div style="font-size:0.95rem;font-weight:700;color:#fff;padding:1rem 0 0.4rem;">${_historyDateLabel(m.prog.ts)}</div>`;
+      lastKey = key;
+    }
+    html += _renderHistoryRow(m);
+  });
+  grid.innerHTML = html;
 }
 
 function appendHistoryRows(newMatched) {
@@ -4686,8 +4709,9 @@ async function loadMoreHistoryFromServer() {
     _historyCursor = items[items.length - 1].updated_at;
     const resolved = items.map(resolveServerHistoryRow).filter(Boolean);
     if (resolved.length) {
-      window._continueMatched = [...(window._continueMatched || []), ...resolved];
-      appendHistoryRows(resolved);
+      window._continueMatched = [...(window._continueMatched || []), ...resolved]
+        .sort((a, b) => (b.prog.ts || 0) - (a.prog.ts || 0));
+      _buildContinueOverlay(window._continueMatched);
     }
     if (items.length < 5) _historyNoMore = true;
   } catch (e) {
