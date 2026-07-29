@@ -4362,20 +4362,6 @@ function removeFromContinue(id, event) {
   renderContinueWatching();
 }
 
-function clearAllContinue() {
-  // Remove all progress keys that are currently shown in continue watching
-  (window._continueMatched || []).forEach(m => {
-    if (m.isSeries) {
-      // Remove all episode keys for this series
-      Object.keys(progress).forEach(k => { if (k.startsWith(`series__${m.kvKey}__`)) delete progress[k]; });
-    } else {
-      delete progress[m.id];
-    }
-  });
-  localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
-  renderContinueWatching();
-}
-
 function renderContinueWatching() {
   const section = document.getElementById('continueSection');
   const row = document.getElementById('continueRow');
@@ -4532,18 +4518,6 @@ function _buildContinueOverlay(matched) {
   document.getElementById('categoryTitle').textContent = 'Watch History';
   document.getElementById('categoryCount').textContent = `${matched.length} title${matched.length !== 1 ? 's' : ''}`;
 
-  // Inject Clear All button into the category header if not already there
-  let clearBtn = document.getElementById('continueWatchingClearAll');
-  if (!clearBtn) {
-    clearBtn = document.createElement('button');
-    clearBtn.id = 'continueWatchingClearAll';
-    clearBtn.style.cssText = 'background:none;border:1px solid rgba(255,100,100,0.5);color:#ff8080;font-size:0.72rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;font-family:inherit;letter-spacing:0.04em;margin-right:2.8rem;';
-    clearBtn.textContent = 'Clear All';
-    clearBtn.onclick = () => { clearAllContinue(); closeCategory(); };
-    document.querySelector('.category-header')?.appendChild(clearBtn);
-  }
-  clearBtn.style.display = 'inline-block';
-
   const grid = document.getElementById('categoryGrid');
   grid.classList.add('list-mode');
   grid.innerHTML = matched.map(m => {
@@ -4591,10 +4565,6 @@ function toggleHistoryMenu(key, btn) {
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   }
 }
-
-document.addEventListener('click', () => {
-  document.querySelectorAll('.history-menu').forEach(m => { m.style.display = 'none'; });
-});
 
 function saveHistoryItemToList(regIdx, btn) {
   const item = getItem(regIdx);
@@ -5904,7 +5874,10 @@ function openInfoFromCategory(item) {
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('categoryOverlay')?.addEventListener('click', e => {
-    if (e.target === document.getElementById('categoryOverlay')) closeCategory();
+    if (e.target === document.getElementById('categoryOverlay')) {
+      if (document.getElementById('categoryGrid')?.classList.contains('list-mode')) return;
+      closeCategory();
+    }
   });
   document.getElementById('paywallModal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('paywallModal')) closePaywall();
@@ -6642,12 +6615,10 @@ function bnOpenSeriesGenre() {
   openCategory('Series on Picha+', items);
 }
 
-// When categoryOverlay closes, go back to categories page and hide Clear All if visible
+// When categoryOverlay closes, go back to categories page
 const _origCloseCategory = closeCategory;
 closeCategory = function() {
   _origCloseCategory();
-  const btn = document.getElementById('continueWatchingClearAll');
-  if (btn) btn.style.display = 'none';
   if (_bnActive === 'categories') {
     bnOpenCategories();
   }
