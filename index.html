@@ -2039,7 +2039,7 @@ function _cleanOldSeriesProgress() {
 function saveMyList() { localStorage.setItem('pichaplus_mylist', JSON.stringify(myList)); }
 function saveLiked() { localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
 const _lastServerSync = {};
-function _syncProgressToServer(id, pos, dur, force) {
+function _syncProgressToServer(id, pos, dur, force, title) {
   const now = Date.now();
   if (!force && _lastServerSync[id] && (now - _lastServerSync[id]) < 15000) return;
   _lastServerSync[id] = now;
@@ -2048,14 +2048,14 @@ function _syncProgressToServer(id, pos, dur, force) {
   fetch(API + '/watch-progress', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Session-Token': token, 'X-Device-Id': getDeviceId() },
-    body: JSON.stringify({ movieId: String(id), progressSeconds: Math.floor(pos), durationSeconds: Math.floor(dur) })
+    body: JSON.stringify({ movieId: String(id), progressSeconds: Math.floor(pos), durationSeconds: Math.floor(dur), title: title || null })
   }).catch(() => {});
 }
 
-function saveProgress(id, pos, dur, forceSync) {
+function saveProgress(id, pos, dur, forceSync, title) {
   progress[id] = { position: pos, duration: dur, ts: Date.now() };
   localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
-  _syncProgressToServer(id, pos, dur, forceSync);
+  _syncProgressToServer(id, pos, dur, forceSync, title);
   // Re-render continue watching immediately, but only when player is closed
   if (!document.getElementById('playerModal')?.classList.contains('active')) {
     renderContinueWatching();
@@ -4010,11 +4010,11 @@ async function initPlayer(url, item) {
   const trackProgress = () => {
     if (item?.id && video.currentTime > 0) {
       const now = Date.now();
-      if (now - lastSave > 5000) { lastSave = now; saveProgress(item.id, video.currentTime, video.duration); }
+      if (now - lastSave > 5000) { lastSave = now; saveProgress(item.id, video.currentTime, video.duration, false, item.title || item.name); }
     }
   };
   video.addEventListener('timeupdate', trackProgress);
-  video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration, true); });
+  video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration, true, item.title || item.name); });
 
   try {
     await shakaPlayer.load(url);
