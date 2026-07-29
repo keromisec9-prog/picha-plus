@@ -4516,6 +4516,10 @@ function openContinueWatchingAll() {
   const searchInput = document.getElementById('historySearchInput');
   if (searchWrap) searchWrap.style.display = 'block';
   if (searchInput) searchInput.value = '';
+  _historyCursor = null;
+  _historyNoMore = false;
+  _historyLoading = false;
+  _setupHistoryScrollObserver();
 }
 
 function filterHistoryList(query) {
@@ -4583,50 +4587,129 @@ function hideRecentSearches() {
   if (box) box.style.display = 'none';
 }
 
+function _renderHistoryRow(m) {
+  const title = esc(m.title);
+  const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
+  const pct = Math.round((m.prog.position / m.prog.duration) * 100);
+  const subLabel = m.isSeries ? m.epLabel : formatTime(m.prog.position) + ' watched';
+  const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
+  const playFn = m.isSeries
+    ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
+    : `handleCardPlay(getItem(${registerItem(m.card)}))`;
+  return `
+    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
+      <div style="position:relative;flex-shrink:0;">
+        ${poster
+          ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:46px;height:66px;object-fit:cover;border-radius:4px;">`
+          : `<div style="width:46px;height:66px;background:#1e1e1e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.25);border-radius:0 0 4px 4px;overflow:hidden;">
+          <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+        <div style="font-size:0.72rem;color:var(--gold);margin-top:2px;">${subLabel}</div>
+      </div>
+      <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
+        style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
+        <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
+      </button>
+      <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
+        <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
+        <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
+        <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later</button>
+        <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
+      </div>
+    </div>`;
+}
+
 function _buildContinueOverlay(matched) {
   document.getElementById('categoryTitle').textContent = 'Watch History';
   document.getElementById('categoryCount').textContent = `${matched.length} title${matched.length !== 1 ? 's' : ''}`;
 
   const grid = document.getElementById('categoryGrid');
   grid.classList.add('list-mode');
-  grid.innerHTML = matched.map(m => {
-    const title = esc(m.title);
-    const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
-    const pct = Math.round((m.prog.position / m.prog.duration) * 100);
-    const subLabel = m.isSeries ? m.epLabel : formatTime(m.prog.position) + ' watched';
-    const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
-    const clickFn = m.isSeries
-      ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
-      : `openInfoFromCategory(getItem(${registerItem(m.card)}))`;
-    const playFn = m.isSeries
-      ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
-      : `handleCardPlay(getItem(${registerItem(m.card)}))`;
-    return `
-      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
-        <div style="position:relative;flex-shrink:0;">
-          ${poster
-            ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:46px;height:66px;object-fit:cover;border-radius:4px;">`
-            : `<div style="width:46px;height:66px;background:#1e1e1e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
-          <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.25);border-radius:0 0 4px 4px;overflow:hidden;">
-            <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
-          </div>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
-          <div style="font-size:0.72rem;color:var(--gold);margin-top:2px;">${subLabel}</div>
-        </div>
-        <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
-          style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
-          <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
-        </button>
-        <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
-          <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
-          <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
-          <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later</button>
-          <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
-        </div>
-      </div>`;
-  }).join('');
+  grid.innerHTML = matched.map(_renderHistoryRow).join('');
+}
+
+function appendHistoryRows(newMatched) {
+  if (!newMatched.length) return;
+  const grid = document.getElementById('categoryGrid');
+  grid.insertAdjacentHTML('beforeend', newMatched.map(_renderHistoryRow).join(''));
+  const countEl = document.getElementById('categoryCount');
+  const current = (window._continueMatched || []).length;
+  countEl.textContent = `${current} title${current !== 1 ? 's' : ''}`;
+}
+
+function resolveServerHistoryRow(row) {
+  const prog = { position: row.progress_seconds, duration: row.duration_seconds, ts: new Date(row.updated_at).getTime() };
+  if (row.movie_id.startsWith('series__')) {
+    const parts = row.movie_id.split('__');
+    const kvKey = parts[1];
+    const epIndex = parseInt(parts[2], 10) || 0;
+    const s = (window._seriesList || []).find(s => s._kvKey === kvKey);
+    if (!s) return null;
+    const ep = s.episodes?.[epIndex];
+    const epLabel = ep ? `S${ep.season || 1}\u00b7E${ep.episode || (epIndex + 1)}` : `E${epIndex + 1}`;
+    return { id: row.movie_id, prog, poster: s.poster || null, title: s.title || row.title, epLabel, isSeries: true, kvKey, epIndex };
+  }
+  const card = (window._allCards || []).find(c => String(c.id) === String(row.movie_id));
+  if (!card) return null;
+  return { id: row.movie_id, prog, poster: card._customPoster || (card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null), title: card.title || card.name || row.title, isSeries: false, card };
+}
+
+let _historyCursor = null;
+let _historyNoMore = false;
+let _historyLoading = false;
+let _historyObserver = null;
+
+function _historyShownIds() {
+  return new Set((window._continueMatched || []).map(m => m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : String(m.id)));
+}
+
+async function loadMoreHistoryFromServer() {
+  if (_historyLoading || _historyNoMore) return;
+  const token = session.token;
+  if (!token) return;
+  _historyLoading = true;
+  try {
+    const excludeIds = Array.from(_historyShownIds());
+    const params = new URLSearchParams();
+    if (_historyCursor) params.set('before', _historyCursor);
+    if (excludeIds.length) params.set('exclude', excludeIds.join(','));
+    const res = await fetch(`${API}/watch-history?${params.toString()}`, {
+      headers: { 'X-Session-Token': token, 'X-Device-Id': getDeviceId() }
+    });
+    const data = await res.json();
+    const items = data.items || [];
+    if (!items.length) { _historyNoMore = true; return; }
+    _historyCursor = items[items.length - 1].updated_at;
+    const resolved = items.map(resolveServerHistoryRow).filter(Boolean);
+    if (resolved.length) {
+      window._continueMatched = [...(window._continueMatched || []), ...resolved];
+      appendHistoryRows(resolved);
+    }
+    if (items.length < 5) _historyNoMore = true;
+  } catch (e) {
+    // fail silently, next scroll attempt will retry
+  } finally {
+    _historyLoading = false;
+  }
+}
+
+function _setupHistoryScrollObserver() {
+  if (_historyObserver) _historyObserver.disconnect();
+  let sentinel = document.getElementById('historyScrollSentinel');
+  if (!sentinel) {
+    sentinel = document.createElement('div');
+    sentinel.id = 'historyScrollSentinel';
+    sentinel.style.cssText = 'height:1px;';
+    document.getElementById('categoryGrid').insertAdjacentElement('afterend', sentinel);
+  }
+  _historyObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) loadMoreHistoryFromServer();
+  }, { root: null, rootMargin: '200px' });
+  _historyObserver.observe(sentinel);
 }
 
 function toggleHistoryMenu(key, btn) {
