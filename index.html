@@ -4591,24 +4591,26 @@ function _renderHistoryRow(m) {
   const title = esc(m.title);
   const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
   const pct = Math.round((m.prog.position / m.prog.duration) * 100);
-  const subLabel = m.isSeries ? m.epLabel : formatTime(m.prog.position) + ' watched';
+  const subLabel = m.isSeries
+    ? `${m.epLabel} \u2022 ${formatTime(m.prog.position)} watched`
+    : `Continue at ${formatTime(m.prog.position)}`;
   const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
   const playFn = m.isSeries
     ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
     : `handleCardPlay(getItem(${registerItem(m.card)}))`;
   return `
-    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
+    <div style="display:flex;align-items:center;gap:0.9rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
       <div style="position:relative;flex-shrink:0;">
         ${poster
-          ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:46px;height:66px;object-fit:cover;border-radius:4px;">`
-          : `<div style="width:46px;height:66px;background:#1e1e1e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
-        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.25);border-radius:0 0 4px 4px;overflow:hidden;">
-          <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
+          ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:54px;height:78px;object-fit:cover;border-radius:5px;">`
+          : `<div style="width:54px;height:78px;background:#1e1e1e;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">\ud83c\udfac</div>`}
+        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.2);border-radius:0 0 5px 5px;overflow:hidden;">
+          <div style="height:100%;border-radius:2px;background:linear-gradient(90deg, var(--gold), #f5d97a);width:${pct}%;"></div>
         </div>
       </div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
-        <div style="font-size:0.72rem;color:var(--gold);margin-top:2px;">${subLabel}</div>
+        <div style="font-size:0.92rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+        <div style="font-size:0.74rem;color:var(--gold);margin-top:3px;">${subLabel}</div>
       </div>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
@@ -4650,12 +4652,23 @@ function _buildContinueOverlay(matched) {
 
   const grid = document.getElementById('categoryGrid');
   grid.classList.add('list-mode');
+
+  if (!matched.length) {
+    grid.innerHTML = `
+      <div style="text-align:center;padding:3rem 1rem;">
+        <div style="font-size:1rem;font-weight:600;color:#fff;margin-bottom:0.4rem;">Nothing watched yet</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-bottom:1.2rem;">Movies and shows you start watching will appear here.</div>
+        <button onclick="closeCategory()" style="background:var(--gold);color:#000;border:none;border-radius:6px;padding:0.6rem 1.4rem;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;">Browse Movies</button>
+      </div>`;
+    return;
+  }
+
   let html = '';
   let lastKey = null;
   matched.forEach(m => {
     const key = _historyDateKey(m.prog.ts);
     if (key !== lastKey) {
-      html += `<div style="font-size:0.95rem;font-weight:700;color:#fff;padding:1rem 0 0.4rem;">${_historyDateLabel(m.prog.ts)}</div>`;
+      html += `<div style="font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.08em;text-transform:uppercase;padding:1.1rem 0 0.5rem;">${_historyDateLabel(m.prog.ts)}</div>`;
       lastKey = key;
     }
     html += _renderHistoryRow(m);
