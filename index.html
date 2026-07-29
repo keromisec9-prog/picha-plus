@@ -1964,7 +1964,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=all_inclusive,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,more_vert,movie,play_arrow,play_circle,public,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,all_inclusive,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,more_vert,movie,play_arrow,play_circle,public,refresh,settings,share,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -4553,14 +4553,56 @@ function _buildContinueOverlay(matched) {
         ${poster
           ? `<img src="${poster}" alt="${title}" loading="lazy">`
           : `<div style="width:100%;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎬</div>`}
-        <button onclick="removeFromContinue('${removeKey}',event);openContinueWatchingAll();"
-          style="position:absolute;top:0.3rem;right:0.3rem;z-index:5;background:rgba(0,0,0,0.75);border:none;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
+        <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)"
+          style="position:absolute;top:0.3rem;right:0.3rem;z-index:5;background:rgba(0,0,0,0.75);border:none;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">more_vert</span></button>
+        <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.1rem;right:0.3rem;z-index:6;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:9rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
+          <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem 0.8rem;background:none;border:none;color:#fff;font-size:0.78rem;text-align:left;cursor:pointer;font-family:inherit;"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
+          <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem 0.8rem;background:none;border:none;color:#fff;font-size:0.78rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later</button>
+          <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem 0.8rem;background:none;border:none;color:#fff;font-size:0.78rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
+        </div>
         <div class="category-card-label">${title}<br><span style="color:var(--gold);font-size:0.6rem;">${subLabel}</span></div>
         <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.15);">
           <div style="height:100%;background:var(--gold);width:${pct}%;"></div>
         </div>
       </div>`;
   }).join('');
+}
+
+function toggleHistoryMenu(key, btn) {
+  document.querySelectorAll('.history-menu').forEach(m => {
+    if (m.dataset.key !== key) m.style.display = 'none';
+  });
+  const menu = btn.nextElementSibling;
+  if (menu && menu.classList.contains('history-menu')) {
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.history-menu').forEach(m => { m.style.display = 'none'; });
+});
+
+function saveHistoryItemToList(regIdx, btn) {
+  const item = getItem(regIdx);
+  if (!item) return;
+  toggleMyList(item, btn);
+  document.querySelectorAll('.history-menu').forEach(m => { m.style.display = 'none'; });
+  showToast('Saved \u2713', 'gold');
+}
+
+async function shareHistoryItem(title) {
+  const url = window.location.href;
+  const shareData = { title: `${title} \u2014 Picha+`, text: `Watch ${title} on Picha+`, url };
+  if (navigator.share) {
+    try { await navigator.share(shareData); return; } catch (e) { /* fall through */ }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link copied \u2713', 'gold');
+  } catch (e) {
+    showToast('Could not copy link', 'error');
+  }
+  document.querySelectorAll('.history-menu').forEach(m => { m.style.display = 'none'; });
 }
 
 // Hide Clear All button when category overlay is used for non-continue-watching categories
