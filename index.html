@@ -4530,7 +4530,7 @@ function _buildContinueOverlay(matched) {
       ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
       : `openInfoFromCategory(getItem(${registerItem(m.card)}))`;
     return `
-      <div onclick="${clickFn}" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;position:relative;">
+      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
         <div style="position:relative;flex-shrink:0;">
           ${poster
             ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:46px;height:66px;object-fit:cover;border-radius:4px;">`
@@ -4565,6 +4565,10 @@ function toggleHistoryMenu(key, btn) {
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   }
 }
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.history-menu').forEach(m => { m.style.display = 'none'; });
+});
 
 function saveHistoryItemToList(regIdx, btn) {
   const item = getItem(regIdx);
