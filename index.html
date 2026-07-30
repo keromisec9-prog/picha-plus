@@ -4381,12 +4381,7 @@ async function removeHistoryItem(removeKey, event) {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json', 'X-Session-Token': token, 'X-Device-Id': getDeviceId() },
       body: JSON.stringify({ movieId: removeKey })
-    }).then(async r => {
-      const body = await r.text();
-      showToast(`DELETE ${r.status}: ${body}`, r.ok ? 'gold' : 'error');
-    }).catch(e => showToast('DELETE fetch threw: ' + e.message, 'error'));
-  } else {
-    showToast('No session token — DELETE not sent', 'error');
+    }).catch(() => {});
   }
 
   // Remove from the overlay's own full list and re-render just the overlay
