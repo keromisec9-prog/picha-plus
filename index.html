@@ -4362,6 +4362,36 @@ function showMyList() {
 }
 
 // ── CONTINUE WATCHING ─────────────────────────────────────────────────────────
+async function removeHistoryItem(removeKey, event) {
+  if (event) event.stopPropagation();
+
+  // Local device: remove from localStorage progress if present
+  delete progress[removeKey];
+  if (removeKey.startsWith('series__')) {
+    const kvKey = removeKey.split('__')[1];
+    Object.keys(progress).forEach(k => { if (k.startsWith(`series__${kvKey}__`)) delete progress[k]; });
+  }
+  localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+  renderContinueWatching(); // safe: only touches window._continueMatched (home page row)
+
+  // Server: remove there too so it's gone across every device, not just this one
+  const token = session.token;
+  if (token) {
+    fetch(`${API}/watch-progress`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': token, 'X-Device-Id': getDeviceId() },
+      body: JSON.stringify({ movieId: removeKey })
+    }).catch(() => {});
+  }
+
+  // Remove from the overlay's own full list and re-render just the overlay
+  window._historyFullList = (window._historyFullList || []).filter(m => {
+    const key = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
+    return key !== removeKey;
+  });
+  _buildContinueOverlay(window._historyFullList);
+}
+
 function removeFromContinue(id, event) {
   if (event) event.stopPropagation();
   delete progress[id];
@@ -4521,7 +4551,8 @@ function resumeWatchingSeries(kvKey, epIndex) {
 function openContinueWatchingAll() {
   const matched = window._continueMatched || [];
   if (!matched.length) return;
-  _buildContinueOverlay(matched);
+  window._historyFullList = matched.slice();
+  _buildContinueOverlay(window._historyFullList);
   document.getElementById('categoryOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
   const searchWrap = document.getElementById('historySearchWrap');
@@ -4536,7 +4567,7 @@ function openContinueWatchingAll() {
 
 function filterHistoryList(query) {
   const q = query.trim().toLowerCase();
-  const all = window._continueMatched || [];
+  const all = window._historyFullList || [];
   const filtered = q ? all.filter(m => m.title.toLowerCase().includes(q)) : all;
   _buildContinueOverlay(filtered, true);
   renderRecentSearches(q);
@@ -4630,7 +4661,7 @@ function _renderHistoryRow(m) {
       </button>
       <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
         <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
-        <button onclick="event.stopPropagation();removeFromContinue('${removeKey}',event);openContinueWatchingAll();" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
+        <button onclick="removeHistoryItem('${removeKey}',event)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
         <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${m.card && myList.some(x => x.id === m.card.id)
           ? '<span class="material-symbols-rounded" style="font-size:16px;">check_circle</span>Remove from Watch Later'
           : '<span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later'}</button>
@@ -4720,7 +4751,7 @@ let _historyLoading = false;
 let _historyObserver = null;
 
 function _historyShownIds() {
-  return new Set((window._continueMatched || []).map(m => m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : String(m.id)));
+  return new Set((window._historyFullList || []).map(m => m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : String(m.id)));
 }
 
 async function loadMoreHistoryFromServer() {
@@ -4742,9 +4773,9 @@ async function loadMoreHistoryFromServer() {
     _historyCursor = items[items.length - 1].updated_at;
     const resolved = items.map(resolveServerHistoryRow).filter(Boolean);
     if (resolved.length) {
-      window._continueMatched = [...(window._continueMatched || []), ...resolved]
+      window._historyFullList = [...(window._historyFullList || []), ...resolved]
         .sort((a, b) => (b.prog.ts || 0) - (a.prog.ts || 0));
-      _buildContinueOverlay(window._continueMatched);
+      _buildContinueOverlay(window._historyFullList);
     }
     if (items.length < 5) _historyNoMore = true;
   } catch (e) {
