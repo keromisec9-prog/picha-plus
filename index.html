@@ -1669,10 +1669,10 @@
       gap: 0;
       padding: 0.5rem 4vw 3rem;
     }
-    .history-row {
-      content-visibility: auto;
-      contain-intrinsic-size: auto 111px;
-    }
+    /* content-visibility removed: its implicit containment clips the
+       absolutely-positioned dropdown menu to the row's own bounds. A personal
+       watch history list is small enough that this perf trick isn't worth
+       trading away a working menu for. */
     @media (min-width: 500px) {
       .category-grid { grid-template-columns: repeat(4, 1fr); }
     }
@@ -4642,7 +4642,7 @@ function _renderHistoryRow(m) {
     ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
     : `handleCardPlay(getItem(${registerItem(m.card)}))`;
   return `
-    <div class="history-row" style="display:flex;align-items:center;gap:0.9rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
+    <div style="display:flex;align-items:center;gap:0.9rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
       <div style="position:relative;flex-shrink:0;">
         ${poster
           ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:54px;height:78px;object-fit:cover;border-radius:5px;">`
