@@ -6139,6 +6139,37 @@ const _disliked = JSON.parse(localStorage.getItem('pichaplus_disliked') || '[]')
 
 function saveDisliked() { localStorage.setItem('pichaplus_disliked', JSON.stringify(_disliked)); }
 
+let _crossDeviceMatched = null;
+
+async function fetchCrossDeviceProgress() {
+  if (_crossDeviceMatched !== null) return; // already fetched this session
+  const token = session.token;
+  if (!token) { _crossDeviceMatched = []; return; }
+  const localIds = new Set(Object.keys(progress));
+  const results = [];
+  let before = null;
+  try {
+    for (let page = 0; page < 10; page++) { // cap at 10 pages (~50 items) — plenty for a personal history
+      const params = new URLSearchParams();
+      if (before) params.set('before', before);
+      const res = await fetch(`${API}/watch-history?${params.toString()}`, {
+        headers: { 'X-Session-Token': token, 'X-Device-Id': getDeviceId() }
+      });
+      const data = await res.json();
+      const items = data.items || [];
+      if (!items.length) break;
+      before = items[items.length - 1].updated_at;
+      items.forEach(row => {
+        if (localIds.has(row.movie_id)) return; // already have local signal for this one
+        const resolved = resolveServerHistoryRow(row);
+        if (resolved) results.push(resolved);
+      });
+      if (items.length < 5) break;
+    }
+  } catch (e) {}
+  _crossDeviceMatched = results;
+}
+
 async function bnOpenForYou() {
   document.getElementById('bnForYouPage').style.display = 'block';
   document.body.style.overflow = 'hidden';
@@ -6148,6 +6179,7 @@ async function bnOpenForYou() {
       _fyStats = await res.json();
     } catch { _fyStats = {}; }
   }
+  await fetchCrossDeviceProgress();
   renderForYou();
 }
 
@@ -6176,8 +6208,9 @@ function fyScore(item) {
   // Liked — strong explicit signal, should reliably float items to the top
   if (liked.includes(item.id)) score += 10;
 
-  // Personal progress/completion on this specific title
-  const prog = progress[id];
+  // Personal progress/completion on this specific title (local device or any other device)
+  const crossMatch = (_crossDeviceMatched || []).find(m => !m.isSeries && m.card && String(m.card.id) === id);
+  const prog = progress[id] || crossMatch?.prog;
   if (prog && prog.duration > 0) {
     const pct = prog.position / prog.duration;
     if (pct > 0.8) score += 4;
@@ -6186,7 +6219,9 @@ function fyScore(item) {
 
   // Genre preference — scales with how many liked/watched titles share each genre,
   // so watching more of a genre keeps pushing similar titles higher (not just a flat bonus)
-  const engagedCards = (window._allCards || []).filter(c => liked.includes(c.id) || progress[c.id]);
+  const crossDeviceCards = (_crossDeviceMatched || []).filter(m => !m.isSeries && m.card).map(m => m.card);
+  const engagedCards = (window._allCards || []).filter(c => liked.includes(c.id) || progress[c.id])
+    .concat(crossDeviceCards);
   const engagedGenres = engagedCards.flatMap(c => c.genre_ids || []);
   let genreScore = 0;
   genreIds.forEach(g => {
@@ -6196,10 +6231,12 @@ function fyScore(item) {
   score += genreScore;
 
   // VJ preference — scales with how many titles by that VJ have been watched
-  const playedVJs = Object.keys(progress).map(pid => {
+  const localVJs = Object.keys(progress).map(pid => {
     const card = (window._allCards || []).find(c => String(c.id) === pid);
     return card?._vj;
   }).filter(Boolean);
+  const crossDeviceVJs = (_crossDeviceMatched || []).filter(m => !m.isSeries && m.card).map(m => m.card._vj).filter(Boolean);
+  const playedVJs = localVJs.concat(crossDeviceVJs);
   if (item._vj) {
     const vjCount = playedVJs.filter(v => v === item._vj).length;
     score += Math.min(vjCount * 4, 20); // weighted above genre so VJ preference dominates first
