@@ -5851,7 +5851,9 @@ function filterByVJ(vj, btn) {
   const container = document.getElementById('genreRows');
   container.innerHTML = '';
 
-  for (const gid of Object.keys(genreMap)) {
+  const usedGenres = Object.keys(genreMap).filter(gid => genreMap[gid].length >= 4);
+
+  for (const gid of usedGenres) {
     const name = genreNames[gid] || `Genre ${gid}`;
     const items = genreMap[gid];
     const section = document.createElement('div');
