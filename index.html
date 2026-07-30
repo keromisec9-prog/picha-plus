@@ -6192,6 +6192,7 @@ async function bnOpenForYou() {
       _fyStats = await res.json();
     } catch { _fyStats = {}; }
   }
+  if (document.getElementById('bnForYouPage').style.display === 'none') return; // navigated away while awaiting
   renderForYou();
   if (_crossDeviceMatched === null) {
     fetchCrossDeviceProgress().then(() => {
