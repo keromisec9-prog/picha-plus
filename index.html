@@ -6098,6 +6098,12 @@ function openCategory(name, items) {
   _categoryName = name;
   _categoryItems = items || [];
 
+  // reset any state left over from Watch History / Continue Watching
+  const searchWrap = document.getElementById('historySearchWrap');
+  const searchInput = document.getElementById('historySearchInput');
+  if (searchWrap) searchWrap.style.display = 'none';
+  if (searchInput) searchInput.value = '';
+
   document.getElementById('categoryTitle').textContent = name;
   document.getElementById('categoryCount').textContent = `${_categoryItems.length} title${_categoryItems.length !== 1 ? 's' : ''}`;
 
