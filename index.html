@@ -4634,6 +4634,7 @@ function _renderHistoryRow(m) {
   const title = esc(m.title);
   const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
   const pct = Math.round((m.prog.position / m.prog.duration) * 100);
+  const isFinished = pct >= 95;
   const progressLabel = `${formatTime(m.prog.position)} / ${formatTime(m.prog.duration)}`;
   const dateLabel = _historyDateLabel(m.prog.ts);
   const timeLabel = new Date(m.prog.ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -4656,15 +4657,15 @@ function _renderHistoryRow(m) {
         <div style="font-size:0.92rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
         <div style="margin-top:4px;">
           ${m.isSeries
-            ? `<span style="color:var(--gold);font-size:0.74rem;font-weight:600;white-space:nowrap;">${statusLabel}</span>`
-            : `<span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:12px;line-height:1;">play_arrow</span>${statusLabel}</span>`}
+            ? `<span style="color:rgba(229,185,60,0.75);font-size:0.74rem;font-weight:600;white-space:nowrap;">${statusLabel}</span>`
+            : `<span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid rgba(229,185,60,0.45);color:rgba(229,185,60,0.75);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:12px;line-height:1;">play_arrow</span>${statusLabel}</span>`}
         </div>
         <div style="font-size:0.74rem;color:rgba(255,255,255,0.7);margin-top:4px;">${progressLabel}</div>
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:2px;">${dateLabel} ${timeLabel}</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.32);margin-top:2px;">${dateLabel} ${timeLabel}</div>
       </div>
-      <button onclick="event.stopPropagation();${playFn}" title="Play"
-        style="flex-shrink:0;background:none;border:none;color:var(--gold);cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
-        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;">play_circle</span>
+      <button onclick="event.stopPropagation();${playFn}" title="${isFinished ? 'Replay' : 'Play'}"
+        style="flex-shrink:0;background:none;border:none;color:${isFinished ? 'rgba(255,255,255,0.55)' : 'var(--gold2)'};cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
+        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
       </button>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
