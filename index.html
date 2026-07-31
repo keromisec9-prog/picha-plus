@@ -6103,6 +6103,8 @@ function openCategory(name, items) {
   const searchInput = document.getElementById('historySearchInput');
   if (searchWrap) searchWrap.style.display = 'none';
   if (searchInput) searchInput.value = '';
+  const gridReset = document.getElementById('categoryGrid');
+  if (gridReset) gridReset.classList.remove('list-mode');
 
   document.getElementById('categoryTitle').textContent = name;
   document.getElementById('categoryCount').textContent = `${_categoryItems.length} title${_categoryItems.length !== 1 ? 's' : ''}`;
