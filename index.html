@@ -4634,9 +4634,10 @@ function _renderHistoryRow(m) {
   const title = esc(m.title);
   const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
   const pct = Math.round((m.prog.position / m.prog.duration) * 100);
-  const subLabel = m.isSeries
-    ? `${m.epLabel} \u2022 ${formatTime(m.prog.position)} watched`
-    : `Continue at ${formatTime(m.prog.position)}`;
+  const progressLabel = `${formatTime(m.prog.position)} / ${formatTime(m.prog.duration)}`;
+  const dateLabel = _historyDateLabel(m.prog.ts);
+  const timeLabel = new Date(m.prog.ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const statusLabel = m.isSeries ? `${m.epLabel} \u2022 Watching` : 'Watching';
   const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
   const playFn = m.isSeries
     ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
@@ -4653,8 +4654,18 @@ function _renderHistoryRow(m) {
       </div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.92rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
-        <div style="font-size:0.74rem;color:var(--gold);margin-top:3px;">${subLabel}</div>
+        <div style="margin-top:4px;">
+          <span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;">
+            <span class="material-symbols-rounded" style="font-size:12px;line-height:1;">play_arrow</span>${statusLabel}
+          </span>
+        </div>
+        <div style="font-size:0.74rem;color:rgba(255,255,255,0.7);margin-top:4px;">${progressLabel}</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:2px;">${dateLabel} ${timeLabel}</div>
       </div>
+      <button onclick="event.stopPropagation();${playFn}" title="Play"
+        style="flex-shrink:0;background:none;border:none;color:var(--gold);cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
+        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;">play_circle</span>
+      </button>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
         <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
