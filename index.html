@@ -4664,7 +4664,7 @@ function _renderHistoryRow(m) {
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.32);margin-top:2px;">${dateLabel} ${timeLabel}</div>
       </div>
       <button onclick="event.stopPropagation();${playFn}" title="${isFinished ? 'Replay' : 'Play'}"
-        style="flex-shrink:0;background:none;border:none;color:${isFinished ? 'rgba(255,255,255,0.55)' : 'var(--gold2)'};cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
+        style="flex-shrink:0;background:none;border:none;color:${isFinished ? 'rgba(255,255,255,0.55)' : 'var(--gold)'};cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
         <span class="material-symbols-rounded" style="font-size:28px;line-height:1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
       </button>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
