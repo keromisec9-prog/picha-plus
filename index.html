@@ -1323,6 +1323,34 @@
       vertical-align: super;
     }
 
+    .plan-price-original {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.4);
+      text-decoration: line-through;
+      margin-right: 0.4rem;
+    }
+
+    .plan-offer-badge {
+      background: var(--gold);
+      color: #000;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      display: inline-block;
+      margin-bottom: 0.4rem;
+    }
+
+    .plan-offer-ends {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.68rem;
+      color: var(--gold);
+      margin-top: -0.1rem;
+      margin-bottom: 0.5rem;
+    }
+
     .plan-period {
       font-size: 0.72rem;
       color: var(--gray);
@@ -5594,18 +5622,27 @@ async function startPayment(plan) {
   // Close the paywall overlay first so it doesn't sit on top of the payment modal
   closePaywall();
 
-  const labels = {
-    daily: 'Daily Pass — UGX 1,000',
-    dailyplus: 'Daily+ (African Cinema) — UGX 2,000',
-    weekly: 'Weekly — UGX 5,000',
-    weeklyplus: 'Weekly+ (African Cinema) — UGX 8,000',
-    monthly: 'Monthly — UGX 15,000',
-    monthlyplus: 'Monthly+ (African Cinema) — UGX 20,000',
-    quarterly: 'Quarterly — UGX 60,000',
-    yearly: 'Yearly — UGX 120,000',
+  const baseLabels = {
+    daily: ['Daily Pass', 1000],
+    dailyplus: ['Daily+ (African Cinema)', 2000],
+    weekly: ['Weekly', 5000],
+    weeklyplus: ['Weekly+ (African Cinema)', 8000],
+    monthly: ['Monthly', 15000],
+    monthlyplus: ['Monthly+ (African Cinema)', 20000],
+    quarterly: ['Quarterly', 60000],
+    yearly: ['Yearly', 120000],
   };
+  const promo = window._activePromo;
+  let paymentTitleText = 'Subscribe';
+  if (baseLabels[plan]) {
+    const [name, base] = baseLabels[plan];
+    const amount = (promo && promo.active && promo.plans.includes(plan))
+      ? Math.round(base * (1 - promo.percentOff / 100))
+      : base;
+    paymentTitleText = `${name} — UGX ${amount.toLocaleString()}`;
+  }
 
-  document.getElementById('paymentTitle').textContent = labels[plan] || 'Subscribe';
+  document.getElementById('paymentTitle').textContent = paymentTitleText;
   document.getElementById('paymentLoading').style.display = 'flex';
   document.getElementById('paymentFrame').style.display = 'none';
   document.getElementById('paymentModal').classList.add('active');
@@ -6159,8 +6196,55 @@ function openInfoFromCategory(item) {
   showInfo(item);
 }
 
+// ── PROMOTIONAL PRICING ─────────────────────────────────────────────────────
+// Cached so startPayment() can reuse it for the payment-modal title without a
+// second network call.
+window._activePromo = null;
+
+function applyPromoPricing(promo) {
+  document.querySelectorAll('.plan-price[data-plan]').forEach(el => {
+    const planId = el.dataset.plan;
+    const base = Number(el.dataset.base);
+    const card = el.closest('.plan-card');
+    if (!card) return;
+    // Clean up any previous badge/ends line before re-applying (handles the
+    // rare case this runs twice, e.g. a manual refresh call).
+    card.querySelector('.plan-offer-badge')?.remove();
+    card.querySelector('.plan-offer-ends')?.remove();
+
+    if (promo && promo.active && promo.plans.includes(planId)) {
+      const discounted = Math.round(base * (1 - promo.percentOff / 100));
+      el.innerHTML = `<span class="plan-price-original">UGX ${base.toLocaleString()}</span><span class="plan-currency">UGX</span> ${discounted.toLocaleString()}`;
+
+      const badge = document.createElement('div');
+      badge.className = 'plan-offer-badge';
+      badge.textContent = `${promo.percentOff}% OFF`;
+      card.insertBefore(badge, el);
+
+      const ends = document.createElement('div');
+      ends.className = 'plan-offer-ends';
+      ends.textContent = `Offer ends ${new Date(promo.endTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      el.insertAdjacentElement('afterend', ends);
+    } else {
+      // No active promo for this plan — make sure it shows the normal price
+      // (covers the case a promo just expired without a full page reload).
+      el.innerHTML = `<span class="plan-currency">UGX</span> ${base.toLocaleString()}`;
+    }
+  });
+}
+
+async function loadPromoPricing() {
+  try {
+    const res = await fetch(`${API}/promo`);
+    const promo = await res.json();
+    window._activePromo = promo;
+    applyPromoPricing(promo);
+  } catch (e) { /* silently keep normal pricing on any failure */ }
+}
+
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
 document.addEventListener('DOMContentLoaded', () => {
+  loadPromoPricing();
   document.getElementById('categoryOverlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('categoryOverlay')) {
       if (document.getElementById('categoryGrid')?.classList.contains('list-mode')) return;
@@ -6992,7 +7076,7 @@ closeCategory = function() {
     <div class="plans-grid">
       <div class="plan-card" onclick="startPayment('daily')">
         <div class="plan-name">Daily</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 1,000</div>
+        <div class="plan-price" data-plan="daily" data-base="1000"><span class="plan-currency">UGX</span> 1,000</div>
         <div class="plan-period">24 hour access</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
@@ -7003,7 +7087,7 @@ closeCategory = function() {
       </div>
       <div class="plan-card" id="planDailyPlus" onclick="startPayment('dailyplus')" style="border-color:var(--gold);">
         <div class="plan-name">Daily+</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 2,000</div>
+        <div class="plan-price" data-plan="dailyplus" data-base="2000"><span class="plan-currency">UGX</span> 2,000</div>
         <div class="plan-period">24 hour access</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
@@ -7015,7 +7099,7 @@ closeCategory = function() {
       </div>
       <div class="plan-card featured" onclick="startPayment('weekly')">
         <div class="plan-name">Weekly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 5,000</div>
+        <div class="plan-price" data-plan="weekly" data-base="5000"><span class="plan-currency">UGX</span> 5,000</div>
         <div class="plan-period">7 days access</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
@@ -7027,7 +7111,7 @@ closeCategory = function() {
       </div>
       <div class="plan-card" id="planWeeklyPlus" onclick="startPayment('weeklyplus')" style="border-color:var(--gold);">
         <div class="plan-name">Weekly+</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 8,000</div>
+        <div class="plan-price" data-plan="weeklyplus" data-base="8000"><span class="plan-currency">UGX</span> 8,000</div>
         <div class="plan-period">7 days access</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
@@ -7041,7 +7125,7 @@ closeCategory = function() {
       </div>
       <div class="plan-card" onclick="startPayment('monthly')">
         <div class="plan-name">Monthly</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 15,000</div>
+        <div class="plan-price" data-plan="monthly" data-base="15000"><span class="plan-currency">UGX</span> 15,000</div>
         <div class="plan-period">per month</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
@@ -7054,7 +7138,7 @@ closeCategory = function() {
       </div>
       <div class="plan-card" id="planMonthlyPlus" onclick="startPayment('monthlyplus')" style="border-color:var(--gold);">
         <div class="plan-name">Monthly+</div>
-        <div class="plan-price"><span class="plan-currency">UGX</span> 20,000</div>
+        <div class="plan-price" data-plan="monthlyplus" data-base="20000"><span class="plan-currency">UGX</span> 20,000</div>
         <div class="plan-period">per month</div>
         <ul class="plan-features">
           <li>All movies &amp; series</li>
