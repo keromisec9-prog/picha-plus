@@ -2265,13 +2265,14 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="apk-banner" id="apkBanner" style="display:none;">
     <img src="icon-192.png" class="apk-banner-icon" alt=""/>
     <div class="apk-banner-text"><strong>Get the PichaPlus app</strong>Faster, offline downloads & more</div>
-    <a href="https://apkpure.com/pichaplus-lite/com.pichaplus.app" target="_blank" class="apk-banner-btn" onclick="localStorage.setItem('apk_banner_dismissed','1')">Get App</a>
-    <button class="apk-banner-close" onclick="document.getElementById('apkBanner').style.display='none'; localStorage.setItem('apk_banner_dismissed','1');">&times;</button>
+    <a href="https://apkpure.com/pichaplus-lite/com.pichaplus.app" target="_blank" class="apk-banner-btn">Get App</a>
+    <button class="apk-banner-close" onclick="document.getElementById('apkBanner').style.display='none';">&times;</button>
   </div>
   <script>
-    // Only show on web/PWA — never inside the native app itself, and never if
-    // previously dismissed.
-    if (!window.PichaApp && !localStorage.getItem('apk_banner_dismissed')) {
+    // Only show on web/PWA — never inside the native app itself. Dismissal is
+    // intentionally NOT persisted (no localStorage/sessionStorage) — the banner
+    // should reappear every time the page (re)loads until the app is installed.
+    if (!window.PichaApp) {
       document.getElementById('apkBanner').style.display = 'flex';
     }
   </script>
