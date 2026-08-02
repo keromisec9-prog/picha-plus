@@ -2549,7 +2549,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
         <button class="auth-submit-btn" id="authSubmitBtn" onclick="handleEmailAuth()">Sign In</button>
         <div class="auth-toggle" style="margin-top:0.75rem;margin-bottom:1rem;">
           <span id="authToggleText">Don't have an account?</span>
-          <a onclick="toggleAuthMode()"> <span id="authToggleLink">Register</span></a>
+          <a href="#" onclick="toggleAuthMode();return false;"> <span id="authToggleLink">Register</span></a>
         </div>
       </div>
       <p class="modal-note">
