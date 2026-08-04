@@ -6220,11 +6220,11 @@ function applyPromoPricing(promo) {
     if (promo && promo.active && promo.plans.includes(planId)) {
       const discounted = Math.round(base * (1 - promo.percentOff / 100));
       // Badge sits inline in the flex price row instead of its own line —
-      // keeps the card compact.
+      // keeps the card compact. The countdown text itself is filled in by
+      // _tickPromoCountdown() right after this runs, and every second after.
       el.innerHTML = `<span class="plan-price-original">${base.toLocaleString()}</span><span><span class="plan-currency">UGX</span> ${discounted.toLocaleString()}</span><span class="plan-offer-badge">${promo.percentOff}% OFF</span>`;
       if (periodEl) {
-        const endsStr = new Date(promo.endTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        periodEl.innerHTML = `${periodEl.dataset.origPeriod} \u2022 <span class="plan-offer-ends">Ends ${endsStr}</span>`;
+        periodEl.innerHTML = `${periodEl.dataset.origPeriod} \u2022 <span class="plan-offer-ends"></span>`;
       }
     } else {
       // No active promo for this plan — restore normal price and period text
@@ -6235,12 +6235,56 @@ function applyPromoPricing(promo) {
   });
 }
 
+function _formatPromoCountdown(ms) {
+  if (ms <= 0) return 'Ends now';
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = n => String(n).padStart(2, '0');
+  if (days > 0) return `Ends in ${days}d ${pad(hours)}h ${pad(minutes)}m`;
+  return `Ends in ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+}
+
+window._promoCountdownTimer = null;
+
+function _tickPromoCountdown() {
+  const promo = window._activePromo;
+  if (!promo || !promo.active || !promo.endTime) {
+    clearInterval(window._promoCountdownTimer);
+    window._promoCountdownTimer = null;
+    return;
+  }
+  const remaining = promo.endTime - Date.now();
+  if (remaining <= 0) {
+    clearInterval(window._promoCountdownTimer);
+    window._promoCountdownTimer = null;
+    // Re-fetch rather than assume — picks up a brand-new promo too if one was
+    // set to start right as this one ends, and reverts pricing immediately
+    // with no page reload needed either way.
+    loadPromoPricing();
+    return;
+  }
+  document.querySelectorAll('.plan-offer-ends').forEach(el => {
+    el.textContent = _formatPromoCountdown(remaining);
+  });
+}
+
 async function loadPromoPricing() {
   try {
     const res = await fetch(`${API}/promo`);
     const promo = await res.json();
     window._activePromo = promo;
     applyPromoPricing(promo);
+    if (window._promoCountdownTimer) {
+      clearInterval(window._promoCountdownTimer);
+      window._promoCountdownTimer = null;
+    }
+    if (promo.active) {
+      _tickPromoCountdown();
+      window._promoCountdownTimer = setInterval(_tickPromoCountdown, 1000);
+    }
   } catch (e) { /* silently keep normal pricing on any failure */ }
 }
 
