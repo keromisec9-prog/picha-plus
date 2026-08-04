@@ -1273,7 +1273,7 @@
       background: #161616;
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
-      padding: 1.7rem 1.4rem;
+      padding: 1.1rem 1rem;
       cursor: pointer;
       transition: background 0.2s, color 0.2s, opacity 0.2s, border-color 0.2s;
       position: relative;
@@ -1284,7 +1284,7 @@
       background: rgba(242,201,76,0.08);
     }
     .plan-card.featured {
-      padding-top: 2.6rem;
+      padding-top: 1.8rem;
     }
     .plan-card.featured::before {
       content: 'BEST VALUE';
@@ -1301,91 +1301,93 @@
     }
 
     .plan-name {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 600;
       color: #fff;
-      margin-bottom: 0.9rem;
+      margin-bottom: 0.35rem;
     }
 
     .plan-price {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.5rem;
+      font-size: 1.9rem;
       line-height: 1;
       letter-spacing: 0.02em;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.15rem;
       color: #fff;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.35rem;
     }
 
     .plan-currency {
       font-family: 'Inter', sans-serif;
-      font-size: 1rem;
+      font-size: 0.85rem;
       font-weight: 400;
       vertical-align: super;
     }
 
     .plan-price-original {
       font-family: 'Inter', sans-serif;
-      font-size: 0.95rem;
+      font-size: 0.8rem;
       font-weight: 400;
       color: rgba(255,255,255,0.4);
       text-decoration: line-through;
-      margin-right: 0.4rem;
     }
 
     .plan-offer-badge {
       background: var(--gold);
       color: #000;
-      font-size: 0.68rem;
+      font-size: 0.6rem;
       font-weight: 700;
-      padding: 0.15rem 0.5rem;
+      padding: 0.1rem 0.4rem;
       border-radius: 999px;
       display: inline-block;
-      margin-bottom: 0.4rem;
+      vertical-align: middle;
     }
 
     .plan-offer-ends {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.68rem;
       color: var(--gold);
-      margin-top: -0.1rem;
-      margin-bottom: 0.5rem;
     }
 
     .plan-period {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: var(--gray);
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.6rem;
     }
 
     .plan-features {
       list-style: none;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.7rem;
     }
     .plan-features li {
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       color: rgba(255,255,255,0.65);
-      padding: 0.4rem 0;
+      padding: 0.24rem 0;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.35rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .plan-features li::before {
       font-family: 'Material Symbols Rounded';
       content: 'check_circle';
       color: var(--gold);
-      font-size: 15px;
+      font-size: 12px;
       flex-shrink: 0;
     }
 
     .plan-btn {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.55rem;
       border: 1px solid var(--gold);
       background: transparent;
       color: var(--gold);
       font-family: 'Inter', sans-serif;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       cursor: pointer;
@@ -6207,28 +6209,28 @@ function applyPromoPricing(promo) {
     const base = Number(el.dataset.base);
     const card = el.closest('.plan-card');
     if (!card) return;
-    // Clean up any previous badge/ends line before re-applying (handles the
-    // rare case this runs twice, e.g. a manual refresh call).
-    card.querySelector('.plan-offer-badge')?.remove();
-    card.querySelector('.plan-offer-ends')?.remove();
+
+    // Cache the original period text (e.g. "7 days access") once, so we can
+    // append/restore the "Ends ..." bit without losing it.
+    const periodEl = card.querySelector('.plan-period');
+    if (periodEl && periodEl.dataset.origPeriod === undefined) {
+      periodEl.dataset.origPeriod = periodEl.textContent;
+    }
 
     if (promo && promo.active && promo.plans.includes(planId)) {
       const discounted = Math.round(base * (1 - promo.percentOff / 100));
-      el.innerHTML = `<span class="plan-price-original">UGX ${base.toLocaleString()}</span><span class="plan-currency">UGX</span> ${discounted.toLocaleString()}`;
-
-      const badge = document.createElement('div');
-      badge.className = 'plan-offer-badge';
-      badge.textContent = `${promo.percentOff}% OFF`;
-      card.insertBefore(badge, el);
-
-      const ends = document.createElement('div');
-      ends.className = 'plan-offer-ends';
-      ends.textContent = `Offer ends ${new Date(promo.endTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-      el.insertAdjacentElement('afterend', ends);
+      // Badge sits inline in the flex price row instead of its own line —
+      // keeps the card compact.
+      el.innerHTML = `<span class="plan-price-original">${base.toLocaleString()}</span><span><span class="plan-currency">UGX</span> ${discounted.toLocaleString()}</span><span class="plan-offer-badge">${promo.percentOff}% OFF</span>`;
+      if (periodEl) {
+        const endsStr = new Date(promo.endTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        periodEl.innerHTML = `${periodEl.dataset.origPeriod} \u2022 <span class="plan-offer-ends">Ends ${endsStr}</span>`;
+      }
     } else {
-      // No active promo for this plan — make sure it shows the normal price
+      // No active promo for this plan — restore normal price and period text
       // (covers the case a promo just expired without a full page reload).
       el.innerHTML = `<span class="plan-currency">UGX</span> ${base.toLocaleString()}`;
+      if (periodEl) periodEl.textContent = periodEl.dataset.origPeriod || periodEl.textContent;
     }
   });
 }
