@@ -6412,6 +6412,43 @@ async function bnOpenForYou() {
   }
 }
 
+async function openShortsPager() {
+  document.getElementById('shortsPagerOverlay').style.display = 'block';
+  const listEl = document.getElementById('shortsPagerList');
+  listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
+  try {
+    const res = await fetch(`${API}/shorts-feed`, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    if (res.status === 401 || res.status === 403) {
+      listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Please sign in to watch Shorts.</div>';
+      return;
+    }
+    const data = await res.json();
+    const shorts = data.shorts || [];
+    if (!shorts.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">No short dramas yet.</div>';
+      return;
+    }
+    listEl.innerHTML = shorts.map(s => `
+      <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #222;">
+        ${s.poster ? `<img src="${s.poster}" style="width:56px;height:80px;object-fit:cover;border-radius:6px;flex-shrink:0;"/>` : `<div style="width:56px;height:80px;border-radius:6px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🎬</div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:0.95rem;">${s.title || ''}</div>
+          <div style="font-size:0.78rem;color:#999;margin-top:2px;">${s.contentType === 'series' ? `📺 ${s.episodeCount || 0} episodes` : '🎬 Feature'}</div>
+          <div style="font-size:0.78rem;color:#999;">${s.vj || ''}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#f87171;">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+function closeShortsPager() {
+  document.getElementById('shortsPagerOverlay').style.display = 'none';
+}
+
 function fyTab(tab) {
   _fyTab = tab;
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
@@ -7479,5 +7516,9 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
     });
   })();
 
-</script></body>
+</script><div id="shortsPagerOverlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;overflow-y:auto;">
+  <button onclick="closeShortsPager()" style="position:fixed;top:16px;right:16px;z-index:10000;background:rgba(0,0,0,0.5);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;">✕</button>
+  <div id="shortsPagerList" style="padding:60px 16px 16px;color:#fff;"></div>
+</div>
+</body>
 </html>
