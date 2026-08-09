@@ -6601,9 +6601,9 @@ async function _playShort(short, epKey) {
         </div>
       </div>
       <div style="position:absolute;right:14px;bottom:140px;display:flex;flex-direction:column;align-items:center;gap:22px;color:#fff;text-align:center;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
-          <span class="material-symbols-rounded" style="font-size:30px;">favorite</span>
-          <span style="font-size:0.72rem;font-weight:600;">Like</span>
+        <div id="shortLikeBtn" onclick="likeCurrentShort()" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+          <span id="shortLikeIcon" class="material-symbols-rounded" style="font-size:30px;">favorite</span>
+          <span id="shortLikeCount" style="font-size:0.72rem;font-weight:600;">Like</span>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" onclick="shareCurrentTitle && shareCurrentTitle()">
           <span class="material-symbols-rounded" style="font-size:28px;">share</span>
@@ -6675,6 +6675,7 @@ async function _playShort(short, epKey) {
       if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
     });
     window._currentShortPlayback = { shortKey, epKey, isPreview: !!data.isPreview, short };
+    _refreshShortLikeUI(shortKey);
     video.addEventListener('error', () => {
       showShortPaywallPrompt(short);
     });
@@ -6788,6 +6789,47 @@ function saveShortProgress(shortKey, epKey, pos, dur) {
     headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
     body: JSON.stringify({ movieId: shortKey, episodeId: epKey, progressSeconds: pos, durationSeconds: dur })
   }).catch(() => {});
+}
+
+const _likedShorts = JSON.parse(localStorage.getItem('pichaplus_liked_shorts') || '[]');
+
+function _formatLikeCount(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+async function _refreshShortLikeUI(shortKey) {
+  const icon = document.getElementById('shortLikeIcon');
+  const countEl = document.getElementById('shortLikeCount');
+  const isLiked = _likedShorts.includes(shortKey);
+  if (icon) { icon.style.color = isLiked ? '#ff3b5c' : '#fff'; icon.style.fontVariationSettings = isLiked ? "'FILL' 1" : "'FILL' 0"; }
+  try {
+    const res = await fetch(`${API}/likes?videoId=${encodeURIComponent(shortKey)}`);
+    const data = await res.json();
+    if (countEl) countEl.textContent = data.likes > 0 ? _formatLikeCount(data.likes) : 'Like';
+  } catch (e) {}
+}
+
+async function likeCurrentShort() {
+  const ctx = window._currentShortPlayback;
+  if (!ctx) return;
+  const shortKey = ctx.shortKey;
+  if (_likedShorts.includes(shortKey)) return; // already liked, no unlike support server-side
+  _likedShorts.push(shortKey);
+  localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  const icon = document.getElementById('shortLikeIcon');
+  if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; }
+  try {
+    const res = await fetch(`${API}/likes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoId: shortKey })
+    });
+    const data = await res.json();
+    const countEl = document.getElementById('shortLikeCount');
+    if (countEl && data.likes) countEl.textContent = _formatLikeCount(data.likes);
+  } catch (e) {}
 }
 
 let _shortPausedAt = 0;
