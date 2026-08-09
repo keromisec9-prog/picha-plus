@@ -2342,6 +2342,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
     </button>
   </div>
   <div id="fyGrid" class="category-grid"></div>
+  <div id="shortsList" style="display:none;padding:0 1rem;"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
@@ -6412,9 +6413,8 @@ async function bnOpenForYou() {
   }
 }
 
-async function openShortsPager() {
-  document.getElementById('shortsPagerOverlay').style.display = 'block';
-  const listEl = document.getElementById('shortsPagerList');
+async function loadShortsFeed() {
+  const listEl = document.getElementById('shortsList');
   listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
   try {
     const res = await fetch(`${API}/shorts-feed`, {
@@ -6446,65 +6446,15 @@ async function openShortsPager() {
   }
 }
 
-function showShortInfo(short) {
-  document.getElementById('infoTitle').textContent = short.title || '';
-  document.getElementById('infoModal').classList.add('active');
-  document.body.style.overflow = 'hidden';
-
-  const fyBtns = document.getElementById('fyFeedbackBtns');
-  if (fyBtns) fyBtns.style.display = 'none';
-
-  const backdropEl = document.getElementById('infoBackdrop');
-  const placeholderEl = document.getElementById('infoBackdropPlaceholder');
-  if (short.poster) {
-    backdropEl.src = short.poster;
-    backdropEl.style.display = 'block';
-    placeholderEl.style.display = 'none';
-  } else {
-    backdropEl.style.display = 'none';
-    placeholderEl.style.display = 'block';
-  }
-
-  const typeLabel = short.contentType === 'series' ? `📺 ${short.episodeCount || 0} episodes` : '🎬 Feature';
-  document.getElementById('infoMeta').innerHTML = `
-    ${short.year ? `<span class="info-year">${short.year}</span>` : ''}
-    <span style="color:#666;font-size:0.72rem;">${typeLabel}</span>
-  `;
-  document.getElementById('infoDesc').textContent = short.overview || 'No description available.';
-
-  const narrativeEl = document.getElementById('infoNarrative');
-  if (narrativeEl) narrativeEl.textContent = short.vj ? `🎙️ ${short.vj}` : '';
-
-  document.getElementById('infoGenres').innerHTML = '';
-
-  // My List / Download don't apply to shorts yet — hide for now
-  const addBtn = document.getElementById('infoAddBtn');
-  if (addBtn) addBtn.style.display = 'none';
-  const dlBtn = document.getElementById('infoDownloadBtn');
-  if (dlBtn) dlBtn.style.display = 'none';
-
-  // Override Play button for this short specifically (avoids touching movie/series playFromInfo)
-  const playBtn = document.getElementById('infoPlayBtn');
-  if (playBtn) playBtn.onclick = () => playShortFromInfo(short);
-}
-
-function playShortFromInfo(short) {
-  // Playback wiring comes in a later step — placeholder for now.
-  showToast('Playback coming soon', '');
-}
-
-function closeShortsPager() {
-  document.getElementById('shortsPagerOverlay').style.display = 'none';
-}
-
 function fyTab(tab) {
   _fyTab = tab;
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
   document.getElementById('fyt-shorts').classList.toggle('active', tab === 'shorts');
+  document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
+  document.getElementById('shortsList').style.display = tab === 'shorts' ? 'block' : 'none';
   if (tab === 'shorts') {
-    // Shorts uses a dedicated fullscreen pager, not the grid — wired in separately.
-    if (typeof openShortsPager === 'function') openShortsPager();
+    loadShortsFeed();
     return;
   }
   renderForYou();
@@ -7564,9 +7514,5 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
     });
   })();
 
-</script><div id="shortsPagerOverlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;overflow-y:auto;">
-  <button onclick="closeShortsPager()" style="position:fixed;top:16px;right:16px;z-index:10000;background:rgba(0,0,0,0.5);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;">✕</button>
-  <div id="shortsPagerList" style="padding:60px 16px 16px;color:#fff;"></div>
-</div>
-</body>
+</script></body>
 </html>
