@@ -6413,6 +6413,50 @@ async function bnOpenForYou() {
   }
 }
 
+function showShortInfo(short) {
+  document.getElementById('infoTitle').textContent = short.title || '';
+  document.getElementById('infoModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const fyBtns = document.getElementById('fyFeedbackBtns');
+  if (fyBtns) fyBtns.style.display = 'none';
+
+  const backdropEl = document.getElementById('infoBackdrop');
+  const placeholderEl = document.getElementById('infoBackdropPlaceholder');
+  if (short.poster) {
+    backdropEl.src = short.poster;
+    backdropEl.style.display = 'block';
+    placeholderEl.style.display = 'none';
+  } else {
+    backdropEl.style.display = 'none';
+    placeholderEl.style.display = 'block';
+  }
+
+  const typeLabel = short.contentType === 'series' ? `📺 ${short.episodeCount || 0} episodes` : '🎬 Feature';
+  document.getElementById('infoMeta').innerHTML = `
+    ${short.year ? `<span class="info-year">${short.year}</span>` : ''}
+    <span style="color:#666;font-size:0.72rem;">${typeLabel}</span>
+  `;
+  document.getElementById('infoDesc').textContent = short.overview || 'No description available.';
+
+  const narrativeEl = document.getElementById('infoNarrative');
+  if (narrativeEl) narrativeEl.textContent = short.vj ? `🎙️ ${short.vj}` : '';
+
+  document.getElementById('infoGenres').innerHTML = '';
+
+  const addBtn = document.getElementById('infoAddBtn');
+  if (addBtn) addBtn.style.display = 'none';
+  const dlBtn = document.getElementById('infoDownloadBtn');
+  if (dlBtn) dlBtn.style.display = 'none';
+
+  const playBtn = document.getElementById('infoPlayBtn');
+  if (playBtn) playBtn.onclick = () => playShortFromInfo(short);
+}
+
+function playShortFromInfo(short) {
+  showToast('Playback coming soon', '');
+}
+
 async function loadShortsFeed() {
   const listEl = document.getElementById('shortsList');
   listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
