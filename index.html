@@ -6622,6 +6622,7 @@ async function _playShort(short, epKey) {
       <div style="position:absolute;left:12px;right:12px;bottom:18px;height:2px;background:rgba(255,255,255,0.25);border-radius:2px;">
         <div id="shortProgressBar" style="height:100%;width:0%;background:var(--gold);border-radius:2px;"></div>
       </div>
+      <div id="shortPreviewCountdown" style="display:none;position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;font-size:0.78rem;font-weight:600;padding:6px 14px;border-radius:100px;z-index:15;"></div>
     </div>`;
 
   try {
@@ -6650,12 +6651,24 @@ async function _playShort(short, epKey) {
     if (resumePos > 2) video.currentTime = resumePos;
 
     let lastSave = 0;
+    const previewSecs = data.isPreview ? data.previewSecs : null;
+    const warnWindow = previewSecs ? Math.min(30, previewSecs * 0.15) : 0;
     video.addEventListener('timeupdate', () => {
       _updateShortProgressBar();
       const now = Date.now();
       if (now - lastSave > 5000 && video.currentTime > 0) {
         lastSave = now;
         saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
+      }
+      const badge = document.getElementById('shortPreviewCountdown');
+      if (badge && previewSecs) {
+        const remaining = Math.ceil(previewSecs - video.currentTime);
+        if (remaining <= warnWindow && remaining > 0) {
+          badge.style.display = 'block';
+          badge.textContent = `${remaining}s left in free preview`;
+        } else {
+          badge.style.display = 'none';
+        }
       }
     });
     video.addEventListener('pause', () => {
