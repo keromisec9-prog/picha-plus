@@ -6488,7 +6488,36 @@ async function _playShort(short, epKey) {
   document.body.style.overflow = 'hidden';
 
   const playerWrapper = document.getElementById('playerWrapper');
-  playerWrapper.innerHTML = `<video id="player" playsinline autoplay style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" controls></video>`;
+  const epInfo = epKey && short.episodes ? short.episodes.find(e => e.epKey === epKey) : null;
+  const epLabel = epInfo ? `Episode ${epInfo.episode || ''}${epInfo.title ? ' • ' + epInfo.title : ''}` : '';
+  playerWrapper.innerHTML = `
+    <div id="shortPlayerRoot" style="position:relative;width:100%;height:100%;background:#000;overflow:hidden;">
+      <video id="player" playsinline autoplay style="width:100%;height:100%;object-fit:cover;display:block;background:#000;" onclick="toggleShortPlayPause()"></video>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 35%);pointer-events:none;"></div>
+      <div id="shortPauseIndicator" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;font-size:3rem;color:rgba(255,255,255,0.85);">⏸</div>
+      <div style="position:absolute;right:12px;bottom:90px;display:flex;flex-direction:column;align-items:center;gap:18px;color:#fff;text-align:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;">
+          <span class="material-symbols-rounded" style="font-size:28px;">favorite</span>
+          <span style="font-size:0.7rem;">Like</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;" onclick="shareCurrentTitle && shareCurrentTitle()">
+          <span class="material-symbols-rounded" style="font-size:26px;">share</span>
+          <span style="font-size:0.7rem;">Share</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;">
+          <span class="material-symbols-rounded" style="font-size:26px;">more_horiz</span>
+          <span style="font-size:0.7rem;">More</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:12px;right:80px;bottom:34px;color:#fff;">
+        <div style="font-weight:800;font-size:1.05rem;margin-bottom:2px;">${(short.title || '').toUpperCase()}</div>
+        ${epLabel ? `<div style="font-size:0.85rem;opacity:0.85;margin-bottom:4px;">${epLabel}</div>` : ''}
+        <div style="font-size:0.82rem;opacity:0.8;line-height:1.3;">${(short.overview || '').slice(0, 100)}${(short.overview || '').length > 100 ? '…' : ''}</div>
+      </div>
+      <div style="position:absolute;left:12px;right:12px;bottom:18px;height:2px;background:rgba(255,255,255,0.25);border-radius:2px;">
+        <div id="shortProgressBar" style="height:100%;width:0%;background:var(--gold);border-radius:2px;"></div>
+      </div>
+    </div>`;
 
   try {
     const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
@@ -6517,6 +6546,7 @@ async function _playShort(short, epKey) {
 
     let lastSave = 0;
     video.addEventListener('timeupdate', () => {
+      _updateShortProgressBar();
       const now = Date.now();
       if (now - lastSave > 5000 && video.currentTime > 0) {
         lastSave = now;
@@ -6544,6 +6574,26 @@ function saveShortProgress(shortKey, epKey, pos, dur) {
     headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
     body: JSON.stringify({ movieId: shortKey, episodeId: epKey, progressSeconds: pos, durationSeconds: dur })
   }).catch(() => {});
+}
+
+function toggleShortPlayPause() {
+  const video = document.getElementById('player');
+  const indicator = document.getElementById('shortPauseIndicator');
+  if (!video) return;
+  if (video.paused) {
+    video.play();
+    if (indicator) indicator.style.display = 'none';
+  } else {
+    video.pause();
+    if (indicator) indicator.style.display = 'flex';
+  }
+}
+
+function _updateShortProgressBar() {
+  const video = document.getElementById('player');
+  const bar = document.getElementById('shortProgressBar');
+  if (!video || !bar || !video.duration) return;
+  bar.style.width = (video.currentTime / video.duration * 100) + '%';
 }
 
 function showShortPaywallPrompt(short) {
