@@ -6681,6 +6681,9 @@ async function _playShort(short, epKey) {
       if (data.isPreview) showShortPaywallPrompt(short);
     });
     _wireShortSwipe();
+    if (!_shortEpisodeMode) {
+      _preloadAdjacentShort((window._shortsFeedIndex || 0) + 1);
+    }
   } catch (e) {
     closePlayer();
     showToast('Connection error. Please try again.', 'error');
@@ -6708,6 +6711,42 @@ function _wireShortSwipe() {
   }, { passive: true });
 }
 
+let _shortPreloadCache = {};
+
+async function _preloadAdjacentShort(index) {
+  const feedList = window._shortsFeedData || [];
+  if (index < 0 || index >= feedList.length) return;
+  const target = feedList[index];
+  const shortKey = _shortKeyOf(target);
+  if (_shortPreloadCache[shortKey]) return;
+
+  try {
+    let epKey = null;
+    if (target.contentType === 'series') {
+      epKey = (target.episodes && target.episodes[0]) ? target.episodes[0].epKey : null;
+      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const progData = await progRes.json();
+      if (progData.progress && progData.progress.episode_id) epKey = progData.progress.episode_id;
+    }
+    const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
+    const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    const data = await res.json();
+    if (!data.url) return;
+    _shortPreloadCache[shortKey] = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
+
+    // Warm the browser's network cache for the video bytes themselves
+    const warmVideo = document.createElement('video');
+    warmVideo.preload = 'auto';
+    warmVideo.muted = true;
+    warmVideo.src = data.url;
+    warmVideo.style.display = 'none';
+  } catch (e) {}
+}
+
 async function goToAdjacentShort(direction) {
   const feedList = window._shortsFeedData || [];
   const newIndex = (window._shortsFeedIndex || 0) + direction;
@@ -6720,13 +6759,15 @@ async function goToAdjacentShort(direction) {
 
   const nextShort = feedList[newIndex];
   window._shortsFeedIndex = newIndex;
+  const nextShortKey = _shortKeyOf(nextShort);
 
   let epKey = null;
-  if (nextShort.contentType === 'series') {
+  if (_shortPreloadCache[nextShortKey]) {
+    epKey = _shortPreloadCache[nextShortKey].epKey;
+  } else if (nextShort.contentType === 'series') {
     epKey = (nextShort.episodes && nextShort.episodes[0]) ? nextShort.episodes[0].epKey : null;
     try {
-      const shortKey = _shortKeyOf(nextShort);
-      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(nextShortKey)}`, {
         headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
       });
       const progData = await progRes.json();
@@ -6736,6 +6777,7 @@ async function goToAdjacentShort(direction) {
   }
 
   await _playShort(nextShort, epKey);
+  delete _shortPreloadCache[nextShortKey];
   _shortSwipeLocked = false;
 }
 
