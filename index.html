@@ -6460,6 +6460,9 @@ function _shortKeyOf(short) {
 async function playShortFromInfo(short) {
   if (!session.isLoggedIn()) { openSignin(); return; }
   closeInfo();
+  const feedList = window._shortsFeedData || [];
+  window._shortsFeedIndex = feedList.findIndex(s => _shortKeyOf(s) === _shortKeyOf(short));
+  if (window._shortsFeedIndex === -1) window._shortsFeedIndex = 0;
 
   const shortKey = _shortKeyOf(short);
   let epKey = null;
@@ -6566,10 +6569,63 @@ async function _playShort(short, epKey) {
     video.addEventListener('stalled', () => {
       if (data.isPreview) showShortPaywallPrompt(short);
     });
+    _wireShortSwipe();
   } catch (e) {
     closePlayer();
     showToast('Connection error. Please try again.', 'error');
   }
+}
+
+let _shortSwipeTsy = 0;
+let _shortSwipeLocked = false;
+
+function _wireShortSwipe() {
+  const root = document.getElementById('shortPlayerRoot');
+  if (!root || root._swipeWired) return;
+  root._swipeWired = true;
+
+  root.addEventListener('touchstart', (e) => {
+    _shortSwipeTsy = e.touches[0].clientY;
+  }, { passive: true });
+
+  root.addEventListener('touchend', (e) => {
+    if (_shortSwipeLocked) return;
+    const dy = e.changedTouches[0].clientY - _shortSwipeTsy;
+    const THRESHOLD = 60;
+    if (dy < -THRESHOLD) goToAdjacentShort(1);
+    else if (dy > THRESHOLD) goToAdjacentShort(-1);
+  }, { passive: true });
+}
+
+async function goToAdjacentShort(direction) {
+  const feedList = window._shortsFeedData || [];
+  const newIndex = (window._shortsFeedIndex || 0) + direction;
+  if (newIndex < 0 || newIndex >= feedList.length) {
+    showToast(direction > 0 ? "You're all caught up" : "That's the first one", '');
+    return;
+  }
+  if (_shortSwipeLocked) return;
+  _shortSwipeLocked = true;
+
+  const nextShort = feedList[newIndex];
+  window._shortsFeedIndex = newIndex;
+
+  let epKey = null;
+  if (nextShort.contentType === 'series') {
+    epKey = (nextShort.episodes && nextShort.episodes[0]) ? nextShort.episodes[0].epKey : null;
+    try {
+      const shortKey = _shortKeyOf(nextShort);
+      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const progData = await progRes.json();
+      if (progData.progress && progData.progress.episode_id) epKey = progData.progress.episode_id;
+    } catch (e) {}
+    if (!epKey) { _shortSwipeLocked = false; showToast('No episodes available yet', 'error'); return; }
+  }
+
+  await _playShort(nextShort, epKey);
+  _shortSwipeLocked = false;
 }
 
 function saveShortProgress(shortKey, epKey, pos, dur) {
