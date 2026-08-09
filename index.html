@@ -6674,6 +6674,7 @@ async function _playShort(short, epKey) {
     video.addEventListener('pause', () => {
       if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
     });
+    window._currentShortPlayback = { shortKey, epKey, isPreview: !!data.isPreview, short };
     video.addEventListener('error', () => {
       showShortPaywallPrompt(short);
     });
@@ -6789,16 +6790,45 @@ function saveShortProgress(shortKey, epKey, pos, dur) {
   }).catch(() => {});
 }
 
-function toggleShortPlayPause() {
+let _shortPausedAt = 0;
+
+async function toggleShortPlayPause() {
   const video = document.getElementById('player');
   const indicator = document.getElementById('shortPauseIndicator');
   if (!video) return;
   if (video.paused) {
+    const pausedDuration = _shortPausedAt ? (Date.now() - _shortPausedAt) / 1000 : 0;
+    const ctx = window._currentShortPlayback;
+    if (ctx && ctx.isPreview && pausedDuration > 8) {
+      // Long pause on a preview — reissue a fresh URL reflecting true remaining
+      // allowance (server-computed from recorded progress), rather than trusting
+      // the original URL's wall-clock countdown that kept ticking while paused.
+      const resumeTime = video.currentTime;
+      try {
+        const qs = ctx.epKey ? `&epKey=${encodeURIComponent(ctx.epKey)}` : '';
+        const res = await fetch(`${API}/short-video?id=${encodeURIComponent(ctx.shortKey)}${qs}`, {
+          headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+        });
+        const data = await res.json();
+        if (!data.url) {
+          showShortPaywallPrompt(ctx.short);
+          return;
+        }
+        video.src = data.url;
+        video.addEventListener('loadedmetadata', function seekOnce() {
+          video.currentTime = resumeTime;
+          video.removeEventListener('loadedmetadata', seekOnce);
+        });
+        window._currentShortPlayback.isPreview = !!data.isPreview;
+      } catch (e) {}
+    }
     video.play();
     if (indicator) indicator.style.display = 'none';
+    _shortPausedAt = 0;
   } else {
     video.pause();
     if (indicator) indicator.style.display = 'flex';
+    _shortPausedAt = Date.now();
   }
 }
 
