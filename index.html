@@ -6488,7 +6488,7 @@ async function _playShort(short, epKey) {
   document.body.style.overflow = 'hidden';
 
   const playerWrapper = document.getElementById('playerWrapper');
-  playerWrapper.innerHTML = `<video id="shortPlayerVideo" playsinline autoplay style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" controls></video>`;
+  playerWrapper.innerHTML = `<video id="player" playsinline autoplay style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" controls></video>`;
 
   try {
     const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
@@ -6502,7 +6502,7 @@ async function _playShort(short, epKey) {
       return;
     }
 
-    const video = document.getElementById('shortPlayerVideo');
+    const video = document.getElementById('player');
     let resumePos = 0;
     try {
       const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
@@ -6547,7 +6547,7 @@ function saveShortProgress(shortKey, epKey, pos, dur) {
 }
 
 function showShortPaywallPrompt(short) {
-  const video = document.getElementById('shortPlayerVideo');
+  const video = document.getElementById('player');
   if (video) video.pause();
   const wrapper = document.getElementById('playerWrapper');
   const promptDiv = document.createElement('div');
