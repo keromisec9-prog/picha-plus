@@ -6430,8 +6430,9 @@ async function openShortsPager() {
       listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">No short dramas yet.</div>';
       return;
     }
-    listEl.innerHTML = shorts.map(s => `
-      <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #222;">
+    window._shortsFeedData = shorts;
+    listEl.innerHTML = shorts.map((s, i) => `
+      <div onclick="showShortInfo(window._shortsFeedData[${i}])" style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #222;cursor:pointer;">
         ${s.poster ? `<img src="${s.poster}" style="width:56px;height:80px;object-fit:cover;border-radius:6px;flex-shrink:0;"/>` : `<div style="width:56px;height:80px;border-radius:6px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🎬</div>`}
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:0.95rem;">${s.title || ''}</div>
@@ -6443,6 +6444,53 @@ async function openShortsPager() {
   } catch (e) {
     listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#f87171;">Failed to load: ' + e.message + '</div>';
   }
+}
+
+function showShortInfo(short) {
+  document.getElementById('infoTitle').textContent = short.title || '';
+  document.getElementById('infoModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const fyBtns = document.getElementById('fyFeedbackBtns');
+  if (fyBtns) fyBtns.style.display = 'none';
+
+  const backdropEl = document.getElementById('infoBackdrop');
+  const placeholderEl = document.getElementById('infoBackdropPlaceholder');
+  if (short.poster) {
+    backdropEl.src = short.poster;
+    backdropEl.style.display = 'block';
+    placeholderEl.style.display = 'none';
+  } else {
+    backdropEl.style.display = 'none';
+    placeholderEl.style.display = 'block';
+  }
+
+  const typeLabel = short.contentType === 'series' ? `📺 ${short.episodeCount || 0} episodes` : '🎬 Feature';
+  document.getElementById('infoMeta').innerHTML = `
+    ${short.year ? `<span class="info-year">${short.year}</span>` : ''}
+    <span style="color:#666;font-size:0.72rem;">${typeLabel}</span>
+  `;
+  document.getElementById('infoDesc').textContent = short.overview || 'No description available.';
+
+  const narrativeEl = document.getElementById('infoNarrative');
+  if (narrativeEl) narrativeEl.textContent = short.vj ? `🎙️ ${short.vj}` : '';
+
+  document.getElementById('infoGenres').innerHTML = '';
+
+  // My List / Download don't apply to shorts yet — hide for now
+  const addBtn = document.getElementById('infoAddBtn');
+  if (addBtn) addBtn.style.display = 'none';
+  const dlBtn = document.getElementById('infoDownloadBtn');
+  if (dlBtn) dlBtn.style.display = 'none';
+
+  // Override Play button for this short specifically (avoids touching movie/series playFromInfo)
+  const playBtn = document.getElementById('infoPlayBtn');
+  if (playBtn) playBtn.onclick = () => playShortFromInfo(short);
+}
+
+function playShortFromInfo(short) {
+  // Playback wiring comes in a later step — placeholder for now.
+  showToast('Playback coming soon', '');
 }
 
 function closeShortsPager() {
