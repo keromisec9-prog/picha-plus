@@ -6453,8 +6453,111 @@ function showShortInfo(short) {
   if (playBtn) playBtn.onclick = () => playShortFromInfo(short);
 }
 
-function playShortFromInfo(short) {
-  showToast('Playback coming soon', '');
+function _shortKeyOf(short) {
+  return short._key || String(short.tmdbId);
+}
+
+async function playShortFromInfo(short) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  closeInfo();
+
+  const shortKey = _shortKeyOf(short);
+  let epKey = null;
+
+  if (short.contentType === 'series') {
+    // Resolve which episode to resume — default to first episode if never watched
+    let resumeEpKey = (short.episodes && short.episodes[0]) ? short.episodes[0].epKey : null;
+    try {
+      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const progData = await progRes.json();
+      if (progData.progress && progData.progress.episode_id) resumeEpKey = progData.progress.episode_id;
+    } catch (e) {}
+    epKey = resumeEpKey;
+    if (!epKey) { showToast('No episodes available yet', 'error'); return; }
+  }
+
+  await _playShort(short, epKey);
+}
+
+async function _playShort(short, epKey) {
+  const shortKey = _shortKeyOf(short);
+  document.getElementById('playerTitle').textContent = short.title || '';
+  document.getElementById('playerModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const playerWrapper = document.getElementById('playerWrapper');
+  playerWrapper.innerHTML = `<video id="shortPlayerVideo" playsinline autoplay style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" controls></video>`;
+
+  try {
+    const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
+    const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    const data = await res.json();
+    if (!data.url) {
+      closePlayer();
+      showToast('This title is not available for streaming', 'error');
+      return;
+    }
+
+    const video = document.getElementById('shortPlayerVideo');
+    let resumePos = 0;
+    try {
+      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const progData = await progRes.json();
+      if (progData.progress && progData.progress.episode_id === epKey) resumePos = progData.progress.progress_seconds || 0;
+    } catch (e) {}
+
+    video.src = data.url;
+    if (resumePos > 2) video.currentTime = resumePos;
+
+    let lastSave = 0;
+    video.addEventListener('timeupdate', () => {
+      const now = Date.now();
+      if (now - lastSave > 5000 && video.currentTime > 0) {
+        lastSave = now;
+        saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
+      }
+    });
+    video.addEventListener('pause', () => {
+      if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
+    });
+    video.addEventListener('error', () => {
+      showShortPaywallPrompt(short);
+    });
+    video.addEventListener('stalled', () => {
+      if (data.isPreview) showShortPaywallPrompt(short);
+    });
+  } catch (e) {
+    closePlayer();
+    showToast('Connection error. Please try again.', 'error');
+  }
+}
+
+function saveShortProgress(shortKey, epKey, pos, dur) {
+  fetch(`${API}/watch-progress`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
+    body: JSON.stringify({ movieId: shortKey, episodeId: epKey, progressSeconds: pos, durationSeconds: dur })
+  }).catch(() => {});
+}
+
+function showShortPaywallPrompt(short) {
+  const video = document.getElementById('shortPlayerVideo');
+  if (video) video.pause();
+  const wrapper = document.getElementById('playerWrapper');
+  const promptDiv = document.createElement('div');
+  promptDiv.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;color:#fff;z-index:10;';
+  promptDiv.innerHTML = `
+    <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;">You've reached the free preview limit</div>
+    <button onclick="closePlayer();showPaywall();" style="width:100%;max-width:280px;padding:0.75rem;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Upgrade my plan</button>
+    <button onclick="closePlayer();" style="width:100%;max-width:280px;padding:0.75rem;background:#2a2a2a;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Watch something else</button>
+  `;
+  wrapper.appendChild(promptDiv);
 }
 
 async function loadShortsFeed() {
