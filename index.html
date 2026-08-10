@@ -4291,11 +4291,30 @@ function closePlayer() {
   document.getElementById('upnextOverlay')?.classList.remove('active');
   if (window._controlsObserver) { window._controlsObserver.disconnect(); window._controlsObserver = null; }
   if (window.PichaApp) window.PichaApp.showCastButton(true);
+
+  if (window._shortPagerActive) {
+    Object.keys(_pagerSlideMeta).forEach(k => {
+      const i = Number(k);
+      const v = document.getElementById('pgVid_' + i);
+      const meta = _pagerSlideMeta[i];
+      if (v) {
+        v.pause();
+        if (meta && v.currentTime > 0) saveShortProgress(meta.shortKey, meta.epKey, v.currentTime, v.duration);
+        v.removeAttribute('src');
+        v.load();
+      }
+    });
+    _pagerSlideMeta = {};
+    window._shortPagerActive = false;
+  }
+
   const video = document.getElementById('player');
-  video.pause();
-  if (shakaUI)     { try { shakaUI.destroy();     } catch(e){} shakaUI = null; }
-  if (shakaPlayer) { try { shakaPlayer.destroy();  } catch(e){} shakaPlayer = null; }
-  video.src = '';
+  if (video) {
+    video.pause();
+    if (shakaUI)     { try { shakaUI.destroy();     } catch(e){} shakaUI = null; }
+    if (shakaPlayer) { try { shakaPlayer.destroy();  } catch(e){} shakaPlayer = null; }
+    video.src = '';
+  }
   document.getElementById('playerModal').classList.remove('active');
 
   // Restore whatever was open before the player
@@ -6495,10 +6514,11 @@ async function watchAllEpisodesFromInfo(short) {
 
   _shortEpisodeMode = true;
   _currentShortInFeed = short;
+  _pagerMode = 'episode';
   _shortEpisodeIndex = episodes.findIndex(e => e.epKey === resumeEpKey);
   if (_shortEpisodeIndex === -1) _shortEpisodeIndex = 0;
 
-  await _playShort(short, resumeEpKey);
+  await openShortPager(_shortEpisodeIndex);
   _updateEpisodeModeHeader();
 }
 
@@ -6528,82 +6548,116 @@ function _updateEpisodeModeHeader() {
   header.querySelector('span[onclick]').style.transform = 'rotate(180deg)';
 }
 
-function exitShortEpisodeMode() {
-  _shortEpisodeMode = false;
+async function exitShortEpisodeMode() {
   const header = document.getElementById('shortEpHeader');
   if (header) header.remove();
-  const feedList = window._shortsFeedData || [];
-  if (_currentShortInFeed) {
-    const idx = feedList.findIndex(s => _shortKeyOf(s) === _shortKeyOf(_currentShortInFeed));
-    if (idx !== -1) window._shortsFeedIndex = idx;
-  }
-}
+  _shortEpisodeMode = false;
 
-async function goToAdjacentEpisode(direction) {
-  const episodes = (_currentShortInFeed && _currentShortInFeed.episodes) || [];
-  const newIndex = _shortEpisodeIndex + direction;
-  if (newIndex < 0 || newIndex >= episodes.length) {
-    showToast(direction > 0 ? "That's the latest episode" : "That's the first episode", '');
-    return;
+  const feedList = window._shortsFeedData || [];
+  let newIdx = 0;
+  if (_currentShortInFeed) {
+    const found = feedList.findIndex(s => _shortKeyOf(s) === _shortKeyOf(_currentShortInFeed));
+    if (found !== -1) newIdx = found;
   }
-  if (_shortSwipeLocked) return;
-  _shortSwipeLocked = true;
-  _shortEpisodeIndex = newIndex;
-  await _playShort(_currentShortInFeed, episodes[newIndex].epKey);
-  _updateEpisodeModeHeader();
-  _shortSwipeLocked = false;
+  window._shortsFeedIndex = newIdx;
+
+  const oldIdx = _pagerIdx;
+  const oldVideo = document.getElementById('pgVid_' + oldIdx);
+  const resumeTime = oldVideo ? oldVideo.currentTime : 0;
+
+  Object.keys(_pagerSlideMeta).forEach(k => {
+    const el = document.getElementById('pgSlide_' + k);
+    if (el) el.remove();
+  });
+  _pagerSlideMeta = {};
+
+  _pagerMode = 'feed';
+  _pagerIdx = newIdx;
+  await _mountPagerSlide(newIdx, true);
+  const newVideo = document.getElementById('pgVid_' + newIdx);
+  if (newVideo && resumeTime > 1) newVideo.currentTime = resumeTime;
+
+  _mountPagerSlide(newIdx + 1, false);
+  _mountPagerSlide(newIdx - 1, false);
+  _placePagerSlides(newIdx);
 }
 
 async function playShortFromInfo(short) {
   if (!session.isLoggedIn()) { openSignin(); return; }
   closeInfo();
   _shortEpisodeMode = false;
+  _pagerMode = 'feed';
   const feedList = window._shortsFeedData || [];
-  window._shortsFeedIndex = feedList.findIndex(s => _shortKeyOf(s) === _shortKeyOf(short));
-  if (window._shortsFeedIndex === -1) window._shortsFeedIndex = 0;
-
-  const shortKey = _shortKeyOf(short);
-  let epKey = null;
+  let idx = feedList.findIndex(s => _shortKeyOf(s) === _shortKeyOf(short));
+  if (idx === -1) idx = 0;
+  window._shortsFeedIndex = idx;
 
   if (short.contentType === 'series') {
-    // Resolve which episode to resume — default to first episode if never watched
-    let resumeEpKey = (short.episodes && short.episodes[0]) ? short.episodes[0].epKey : null;
-    try {
-      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
-        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-      });
-      const progData = await progRes.json();
-      if (progData.progress && progData.progress.episode_id) resumeEpKey = progData.progress.episode_id;
-    } catch (e) {}
-    epKey = resumeEpKey;
+    const epKey = await _pagerResolveEpKey(short);
     if (!epKey) { showToast('No episodes available yet', 'error'); return; }
   }
 
-  await _playShort(short, epKey);
+  await openShortPager(idx);
 }
 
-async function _playShort(short, epKey) {
-  const shortKey = _shortKeyOf(short);
-  document.getElementById('playerTitle').textContent = short.title || '';
-  document.getElementById('playerModal').classList.add('active');
-  document.body.style.overflow = 'hidden';
+const SHORT_ANIM_MS = 320;
+const SHORT_SNAP_RATIO = 0.22;
+const SHORT_VELOCITY_THRESH = 0.3;
 
-  const playerWrapper = document.getElementById('playerWrapper');
-  const epInfo = epKey && short.episodes ? short.episodes.find(e => e.epKey === epKey) : null;
-  const epLabel = epInfo ? `Episode ${epInfo.episode || ''}${epInfo.title ? ' • ' + epInfo.title : ''}` : '';
-  playerWrapper.innerHTML = `
-    <div id="shortPlayerRoot" style="position:relative;width:100%;height:100%;background:#000;overflow:hidden;">
-      <video id="player" playsinline autoplay style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" onclick="toggleShortPlayPause()"></video>
+let _pagerMode = 'feed';
+let _pagerIdx = 0;
+let _pagerLocked = false;
+let _pagerDragging = false;
+let _pTsx = 0, _pTsy = 0, _pDragY = 0, _pLastY = 0, _pLastT = 0, _pVel = 0;
+let _pPeekIdx = null;
+let _pagerH = 0;
+let _pagerSlideMeta = {};
+
+function _easeOutCubicShort(t) { return 1 - Math.pow(1 - t, 3); }
+
+function _pagerList() {
+  return _pagerMode === 'episode'
+    ? ((_currentShortInFeed && _currentShortInFeed.episodes) || [])
+    : (window._shortsFeedData || []);
+}
+
+function _pagerItem(idx) {
+  const list = _pagerList();
+  if (_pagerMode === 'episode') {
+    const ep = list[idx];
+    return ep ? { short: _currentShortInFeed, epKey: ep.epKey, epInfo: ep } : null;
+  }
+  const s = list[idx];
+  return s ? { short: s, epKey: null } : null;
+}
+
+async function _pagerResolveEpKey(short) {
+  if (short.contentType !== 'series') return null;
+  let epKey = (short.episodes && short.episodes[0]) ? short.episodes[0].epKey : null;
+  try {
+    const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(_shortKeyOf(short))}`, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    const progData = await progRes.json();
+    if (progData.progress && progData.progress.episode_id) epKey = progData.progress.episode_id;
+  } catch (e) {}
+  return epKey;
+}
+
+function _pagerSlideHTML(idx) {
+  return `
+    <div class="pg-slide" id="pgSlide_${idx}" data-idx="${idx}" style="position:absolute;inset:0;background:#000;display:none;">
+      <video id="pgVid_${idx}" playsinline style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" onclick="togglePagerPlayPause(this.closest('.pg-slide'))"></video>
       <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 35%);pointer-events:none;"></div>
-      <div id="shortPauseIndicator" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
+      <div id="pgPause_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
         <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
           <span class="material-symbols-rounded" style="font-size:38px;color:#fff;">play_arrow</span>
         </div>
       </div>
       <div style="position:absolute;right:14px;bottom:140px;display:flex;flex-direction:column;align-items:center;gap:22px;color:#fff;text-align:center;">
-        <div id="shortLikeBtn" onclick="likeCurrentShort()" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
-          <span id="shortLikeIcon" class="material-symbols-rounded" style="font-size:30px;">favorite</span>
-          <span id="shortLikeCount" style="font-size:0.72rem;font-weight:600;">Like</span>
+        <div onclick="likePagerSlide(this.closest('.pg-slide'))" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+          <span id="pgLikeIcon_${idx}" class="material-symbols-rounded" style="font-size:30px;">favorite</span>
+          <span id="pgLikeCount_${idx}" style="font-size:0.72rem;font-weight:600;">Like</span>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" onclick="shareCurrentTitle && shareCurrentTitle()">
           <span class="material-symbols-rounded" style="font-size:28px;">share</span>
@@ -6615,173 +6669,369 @@ async function _playShort(short, epKey) {
         </div>
       </div>
       <div style="position:absolute;left:12px;right:80px;bottom:34px;color:#fff;">
-        <div style="font-weight:800;font-size:1.05rem;margin-bottom:2px;">${(short.title || '').toUpperCase()}</div>
-        ${epLabel ? `<div style="font-size:0.85rem;opacity:0.85;margin-bottom:4px;">${epLabel}</div>` : ''}
-        <div style="font-size:0.82rem;opacity:0.8;line-height:1.3;">${(short.overview || '').slice(0, 100)}${(short.overview || '').length > 100 ? '…' : ''}</div>
+        <div style="font-weight:800;font-size:1.05rem;margin-bottom:2px;" id="pgTitle_${idx}"></div>
+        <div style="font-size:0.85rem;opacity:0.85;margin-bottom:4px;display:none;" id="pgEpLabel_${idx}"></div>
+        <div style="font-size:0.82rem;opacity:0.8;line-height:1.3;" id="pgDesc_${idx}"></div>
       </div>
       <div style="position:absolute;left:12px;right:12px;bottom:18px;height:2px;background:rgba(255,255,255,0.25);border-radius:2px;">
-        <div id="shortProgressBar" style="height:100%;width:0%;background:var(--gold);border-radius:2px;"></div>
+        <div id="pgProgressBar_${idx}" style="height:100%;width:0%;background:var(--gold);border-radius:2px;"></div>
       </div>
-      <div id="shortPreviewCountdown" style="display:none;position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;font-size:0.78rem;font-weight:600;padding:6px 14px;border-radius:100px;z-index:15;"></div>
+      <div id="pgPreviewCountdown_${idx}" style="display:none;position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;font-size:0.78rem;font-weight:600;padding:6px 14px;border-radius:100px;z-index:15;"></div>
     </div>`;
+}
 
-  try {
-    const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
-    const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
-      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-    });
-    const data = await res.json();
-    if (!data.url) {
-      closePlayer();
-      showToast('This title is not available for streaming', 'error');
-      return;
+async function openShortPager(startIdx) {
+  _pagerLocked = false;
+  _pagerH = window.innerHeight;
+  _pagerSlideMeta = {};
+  window._shortPagerActive = true;
+
+  document.getElementById('playerModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const playerWrapper = document.getElementById('playerWrapper');
+  playerWrapper.innerHTML = `<div id="shortPlayerRoot" style="position:relative;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;"></div>`;
+
+  _pagerIdx = startIdx;
+  await _mountPagerSlide(startIdx, true);
+  _mountPagerSlide(startIdx + 1, false);
+  _mountPagerSlide(startIdx - 1, false);
+  _placePagerSlides(startIdx);
+  _wirePagerTouch();
+}
+
+async function _mountPagerSlide(idx, autoplay) {
+  const item = _pagerItem(idx);
+  if (!item) return;
+  const { short } = item;
+  let epKey = item.epKey;
+
+  const root = document.getElementById('shortPlayerRoot');
+  if (!root) return;
+  let slideEl = document.getElementById('pgSlide_' + idx);
+  if (!slideEl) {
+    root.insertAdjacentHTML('beforeend', _pagerSlideHTML(idx));
+    slideEl = document.getElementById('pgSlide_' + idx);
+  }
+  if (slideEl.dataset.mounted === '1' || slideEl.dataset.mounting === '1') {
+    if (autoplay) {
+      const v = document.getElementById('pgVid_' + idx);
+      if (v) v.play().catch(() => {});
     }
+    return;
+  }
+  slideEl.dataset.mounting = '1';
 
-    const video = document.getElementById('player');
-    let resumePos = 0;
+  const shortKey = _shortKeyOf(short);
+  if (_pagerMode === 'feed' && short.contentType === 'series' && !epKey) {
+    epKey = await _pagerResolveEpKey(short);
+    if (!epKey) { delete slideEl.dataset.mounting; return; }
+  }
+
+  document.getElementById('pgTitle_' + idx).textContent = (short.title || '').toUpperCase();
+  document.getElementById('pgDesc_' + idx).textContent = (short.overview || '').slice(0, 100) + ((short.overview || '').length > 100 ? '…' : '');
+  const epLabelEl = document.getElementById('pgEpLabel_' + idx);
+  if (item.epInfo && epLabelEl) {
+    epLabelEl.textContent = `Episode ${item.epInfo.episode || ''}${item.epInfo.title ? ' • ' + item.epInfo.title : ''}`;
+    epLabelEl.style.display = 'block';
+  }
+
+  const cacheKey = _pagerMode === 'episode' ? (shortKey + '::' + epKey) : shortKey;
+  let urlData = _shortPreloadCache[cacheKey];
+  if (!urlData) {
     try {
-      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+      const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
+      const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
         headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
       });
-      const progData = await progRes.json();
-      if (progData.progress && progData.progress.episode_id === epKey) resumePos = progData.progress.progress_seconds || 0;
-    } catch (e) {}
+      const data = await res.json();
+      if (!data.url) { delete slideEl.dataset.mounting; return; }
+      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
+      _shortPreloadCache[cacheKey] = urlData;
+    } catch (e) { delete slideEl.dataset.mounting; return; }
+  }
 
-    video.src = data.url;
-    if (resumePos > 2) video.currentTime = resumePos;
+  let resumePos = 0;
+  try {
+    const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    const progData = await progRes.json();
+    if (progData.progress && progData.progress.episode_id === epKey) resumePos = progData.progress.progress_seconds || 0;
+  } catch (e) {}
 
-    let lastSave = 0;
-    const previewSecs = data.isPreview ? data.previewSecs : null;
-    const warnWindow = previewSecs ? Math.min(30, previewSecs * 0.15) : 0;
-    video.addEventListener('timeupdate', () => {
-      _updateShortProgressBar();
-      const now = Date.now();
-      if (now - lastSave > 5000 && video.currentTime > 0) {
-        lastSave = now;
-        saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
-      }
-      const badge = document.getElementById('shortPreviewCountdown');
-      if (badge && previewSecs) {
-        const remaining = Math.ceil(previewSecs - video.currentTime);
-        if (remaining <= warnWindow && remaining > 0) {
-          badge.style.display = 'block';
-          badge.textContent = `${remaining}s left in free preview`;
-        } else {
-          badge.style.display = 'none';
-        }
-      }
-    });
-    video.addEventListener('pause', () => {
-      if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
-    });
-    window._currentShortPlayback = { shortKey, epKey, isPreview: !!data.isPreview, short };
-    _refreshShortLikeUI(shortKey);
-    video.addEventListener('error', () => {
-      showShortPaywallPrompt(short);
-    });
-    video.addEventListener('stalled', () => {
-      if (data.isPreview) showShortPaywallPrompt(short);
-    });
-    _wireShortSwipe();
-    if (!_shortEpisodeMode) {
-      _preloadAdjacentShort((window._shortsFeedIndex || 0) + 1);
+  const video = document.getElementById('pgVid_' + idx);
+  video.src = urlData.url;
+  if (resumePos > 2) video.currentTime = resumePos;
+  if (autoplay) video.play().catch(() => {});
+
+  let lastSave = 0;
+  const previewSecs = urlData.isPreview ? urlData.previewSecs : null;
+  const warnWindow = previewSecs ? Math.min(30, previewSecs * 0.15) : 0;
+  video.addEventListener('timeupdate', () => {
+    const bar = document.getElementById('pgProgressBar_' + idx);
+    if (bar && video.duration) bar.style.width = (video.currentTime / video.duration * 100) + '%';
+    const now = Date.now();
+    if (now - lastSave > 5000 && video.currentTime > 0) {
+      lastSave = now;
+      saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
     }
-  } catch (e) {
-    closePlayer();
-    showToast('Connection error. Please try again.', 'error');
+    const badge = document.getElementById('pgPreviewCountdown_' + idx);
+    if (badge && previewSecs) {
+      const remaining = Math.ceil(previewSecs - video.currentTime);
+      if (remaining <= warnWindow && remaining > 0) { badge.style.display = 'block'; badge.textContent = `${remaining}s left in free preview`; }
+      else badge.style.display = 'none';
+    }
+  });
+  video.addEventListener('pause', () => {
+    if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
+  });
+  video.addEventListener('error', () => showShortPaywallPrompt(short));
+  video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
+
+  slideEl.dataset.mounted = '1';
+  delete slideEl.dataset.mounting;
+  _pagerSlideMeta[idx] = { shortKey, epKey, short, isPreview: !!urlData.isPreview, previewSecs: urlData.previewSecs, cacheKey };
+
+  if (autoplay) {
+    window._currentShortPlayback = { shortKey, epKey, isPreview: !!urlData.isPreview, short };
+    document.getElementById('playerTitle').textContent = short.title || '';
+    _refreshPagerLikeUI(idx, shortKey);
+    delete _shortPreloadCache[cacheKey];
   }
 }
 
-let _shortSwipeTsy = 0;
-let _shortSwipeLocked = false;
+async function _refreshPagerLikeUI(idx, shortKey) {
+  const icon = document.getElementById('pgLikeIcon_' + idx);
+  const countEl = document.getElementById('pgLikeCount_' + idx);
+  const isLiked = _likedShorts.includes(shortKey);
+  if (icon) { icon.style.color = isLiked ? '#ff3b5c' : '#fff'; icon.style.fontVariationSettings = isLiked ? "'FILL' 1" : "'FILL' 0"; }
+  try {
+    const res = await fetch(`${API}/likes?videoId=${encodeURIComponent(shortKey)}`);
+    const data = await res.json();
+    if (countEl) countEl.textContent = data.likes > 0 ? _formatLikeCount(data.likes) : 'Like';
+  } catch (e) {}
+}
 
-function _wireShortSwipe() {
+function likePagerSlide(slideEl) {
+  const idx = Number(slideEl.dataset.idx);
+  const meta = _pagerSlideMeta[idx];
+  if (!meta) return;
+  const shortKey = meta.shortKey;
+  if (_likedShorts.includes(shortKey)) return;
+  _likedShorts.push(shortKey);
+  localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  const icon = document.getElementById('pgLikeIcon_' + idx);
+  if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; }
+  fetch(`${API}/likes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId: shortKey }) })
+    .then(r => r.json()).then(data => {
+      const countEl = document.getElementById('pgLikeCount_' + idx);
+      if (countEl && data.likes) countEl.textContent = _formatLikeCount(data.likes);
+    }).catch(() => {});
+}
+
+function togglePagerPlayPause(slideEl) {
+  const idx = Number(slideEl.dataset.idx);
+  const video = document.getElementById('pgVid_' + idx);
+  const indicator = document.getElementById('pgPause_' + idx);
+  if (!video) return;
+  if (video.paused) { video.play(); if (indicator) indicator.style.display = 'none'; }
+  else { video.pause(); if (indicator) indicator.style.display = 'flex'; }
+}
+
+function _setPagerSlideY(idx, px) {
+  const s = document.getElementById('pgSlide_' + idx);
+  if (s) { s.style.display = ''; s.style.transform = `translateY(${px}px)`; }
+}
+
+function _placePagerSlides(centerIdx) {
+  const H = _pagerH || window.innerHeight;
+  const list = _pagerList();
+  list.forEach((_, i) => {
+    const s = document.getElementById('pgSlide_' + i);
+    if (!s) return;
+    const dist = i - centerIdx;
+    if (Math.abs(dist) <= 1) { s.style.display = ''; s.style.transform = `translateY(${dist * H}px)`; }
+    else { s.style.display = 'none'; }
+  });
+}
+
+function _pagerGoTo(targetIdx, fromOffset) {
+  _pagerLocked = true;
+  const H = _pagerH || window.innerHeight;
+  const currIdx = _pagerIdx;
+  const startTime = performance.now();
+
+  _mountPagerSlide(targetIdx, false).then(() => {
+    const targetSlide = document.getElementById('pgSlide_' + targetIdx);
+    const currSlide = document.getElementById('pgSlide_' + currIdx);
+    if (targetSlide) targetSlide.style.display = '';
+
+    function frame(now) {
+      const t = Math.min((now - startTime) / SHORT_ANIM_MS, 1);
+      const ease = _easeOutCubicShort(t);
+      const currFinal = targetIdx > currIdx ? -H : H;
+      if (currSlide) currSlide.style.transform = `translateY(${fromOffset + (currFinal - fromOffset) * ease}px)`;
+      if (targetSlide) {
+        const targetInitial = targetIdx > currIdx ? H - Math.abs(fromOffset) : -(H - Math.abs(fromOffset));
+        targetSlide.style.transform = `translateY(${targetInitial * (1 - ease)}px)`;
+      }
+      if (t < 1) { requestAnimationFrame(frame); return; }
+      if (currSlide) currSlide.style.transform = `translateY(${currFinal}px)`;
+      if (targetSlide) targetSlide.style.transform = 'translateY(0px)';
+      _onPagerSlideCommitted(currIdx, targetIdx);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+async function _onPagerSlideCommitted(prevIdx, newIdx) {
+  const prevVideo = document.getElementById('pgVid_' + prevIdx);
+  if (prevVideo) {
+    prevVideo.pause();
+    const meta = _pagerSlideMeta[prevIdx];
+    if (meta && prevVideo.currentTime > 0) saveShortProgress(meta.shortKey, meta.epKey, prevVideo.currentTime, prevVideo.duration);
+  }
+
+  _pagerIdx = newIdx;
+  if (_pagerMode === 'feed') window._shortsFeedIndex = newIdx;
+  else _shortEpisodeIndex = newIdx;
+
+  const newVideo = document.getElementById('pgVid_' + newIdx);
+  if (newVideo) newVideo.play().catch(() => {});
+  const meta = _pagerSlideMeta[newIdx];
+  if (meta) {
+    window._currentShortPlayback = { shortKey: meta.shortKey, epKey: meta.epKey, isPreview: meta.isPreview, short: meta.short };
+    document.getElementById('playerTitle').textContent = meta.short.title || '';
+    _refreshPagerLikeUI(newIdx, meta.shortKey);
+  }
+  if (_pagerMode === 'episode') _updateEpisodeModeHeader();
+
+  await _mountPagerSlide(newIdx + 1, false);
+  await _mountPagerSlide(newIdx - 1, false);
+  _unmountFarPagerSlides(newIdx);
+  _placePagerSlides(newIdx);
+  _pagerLocked = false;
+}
+
+function _unmountFarPagerSlides(centerIdx) {
+  Object.keys(_pagerSlideMeta).forEach(k => {
+    const i = Number(k);
+    if (Math.abs(i - centerIdx) > 1) {
+      const el = document.getElementById('pgSlide_' + i);
+      if (el) el.remove();
+      delete _pagerSlideMeta[i];
+    }
+  });
+}
+
+function _snapPagerBack(fromOffset) {
+  const H = _pagerH || window.innerHeight;
+  const currIdx = _pagerIdx;
+  const nextIdx = _pPeekIdx;
+  const startTime = performance.now();
+
+  function frame(now) {
+    const t = Math.min((now - startTime) / SHORT_ANIM_MS, 1);
+    const ease = _easeOutCubicShort(t);
+    _setPagerSlideY(currIdx, fromOffset * (1 - ease));
+
+    if (nextIdx !== null) {
+      const peekDir = nextIdx > currIdx ? 1 : -1;
+      const peekStart = H * peekDir + fromOffset;
+      const peekEnd = H * peekDir;
+      _setPagerSlideY(nextIdx, peekStart + (peekEnd - peekStart) * ease);
+    }
+
+    if (t < 1) { requestAnimationFrame(frame); return; }
+    _placePagerSlides(currIdx);
+    _pagerLocked = false;
+  }
+  requestAnimationFrame(frame);
+}
+
+function _wirePagerTouch() {
+  _pagerH = window.innerHeight;
   const root = document.getElementById('shortPlayerRoot');
-  if (!root || root._swipeWired) return;
-  root._swipeWired = true;
+  if (!root) return;
+  const newRoot = root.cloneNode(false);
+  newRoot.id = 'shortPlayerRoot';
+  while (root.firstChild) newRoot.appendChild(root.firstChild);
+  root.parentNode.replaceChild(newRoot, root);
+  const f = newRoot;
 
-  root.addEventListener('touchstart', (e) => {
-    _shortSwipeTsy = e.touches[0].clientY;
+  f.addEventListener('touchstart', (e) => {
+    if (_pagerLocked) return;
+    _pagerH = window.innerHeight;
+    _pTsx = e.touches[0].clientX;
+    _pTsy = e.touches[0].clientY;
+    _pDragY = 0;
+    _pLastY = _pTsy;
+    _pLastT = performance.now();
+    _pVel = 0;
+    _pagerDragging = true;
+    _pPeekIdx = null;
   }, { passive: true });
 
-  root.addEventListener('touchend', (e) => {
-    if (_shortSwipeLocked) return;
-    const dy = e.changedTouches[0].clientY - _shortSwipeTsy;
-    const THRESHOLD = 60;
-    if (dy < -THRESHOLD) { _shortEpisodeMode ? goToAdjacentEpisode(1) : goToAdjacentShort(1); }
-    else if (dy > THRESHOLD) { _shortEpisodeMode ? goToAdjacentEpisode(-1) : goToAdjacentShort(-1); }
+  f.addEventListener('touchmove', (e) => {
+    if (!_pagerDragging || _pagerLocked) return;
+    const dy = e.touches[0].clientY - _pTsy;
+    const dx = Math.abs(e.touches[0].clientX - _pTsx);
+    if (dx > Math.abs(dy) && Math.abs(dy) < 12) { _pagerDragging = false; return; }
+
+    const now = performance.now();
+    const dt = now - _pLastT;
+    if (dt > 0) _pVel = (e.touches[0].clientY - _pLastY) / dt;
+    _pLastY = e.touches[0].clientY;
+    _pLastT = now;
+    _pDragY = dy;
+
+    _setPagerSlideY(_pagerIdx, dy);
+
+    const len = _pagerList().length;
+    if (dy < 0 && _pagerIdx + 1 < len) {
+      _pPeekIdx = _pagerIdx + 1;
+      _mountPagerSlide(_pPeekIdx, false);
+      const s = document.getElementById('pgSlide_' + _pPeekIdx);
+      if (s) { s.style.display = ''; s.style.transform = `translateY(${_pagerH + dy}px)`; }
+    } else if (dy > 0 && _pagerIdx - 1 >= 0) {
+      _pPeekIdx = _pagerIdx - 1;
+      _mountPagerSlide(_pPeekIdx, false);
+      const s = document.getElementById('pgSlide_' + _pPeekIdx);
+      if (s) { s.style.display = ''; s.style.transform = `translateY(${-_pagerH + dy}px)`; }
+    }
+  }, { passive: true });
+
+  f.addEventListener('touchend', () => {
+    if (!_pagerDragging) return;
+    _pagerDragging = false;
+    const H = _pagerH;
+    const dy = _pDragY;
+    const ratio = Math.abs(dy) / H;
+    const vel = Math.abs(_pVel);
+    const len = _pagerList().length;
+    const commit = ratio >= SHORT_SNAP_RATIO || vel >= SHORT_VELOCITY_THRESH;
+
+    if (commit) {
+      if (dy < 0 && _pagerIdx + 1 < len) { _pagerGoTo(_pagerIdx + 1, dy); }
+      else if (dy > 0 && _pagerIdx - 1 >= 0) { _pagerGoTo(_pagerIdx - 1, dy); }
+      else {
+        _pagerLocked = true;
+        _snapPagerBack(dy);
+        showToast(dy < 0 ? "You're all caught up" : "That's the first one", '');
+      }
+    } else {
+      _pagerLocked = true;
+      _snapPagerBack(dy);
+    }
+  }, { passive: true });
+
+  f.addEventListener('touchcancel', () => {
+    if (_pagerDragging) { _pagerDragging = false; _pagerLocked = true; _snapPagerBack(_pDragY); }
   }, { passive: true });
 }
 
 let _shortPreloadCache = {};
-
-async function _preloadAdjacentShort(index) {
-  const feedList = window._shortsFeedData || [];
-  if (index < 0 || index >= feedList.length) return;
-  const target = feedList[index];
-  const shortKey = _shortKeyOf(target);
-  if (_shortPreloadCache[shortKey]) return;
-
-  try {
-    let epKey = null;
-    if (target.contentType === 'series') {
-      epKey = (target.episodes && target.episodes[0]) ? target.episodes[0].epKey : null;
-      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
-        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-      });
-      const progData = await progRes.json();
-      if (progData.progress && progData.progress.episode_id) epKey = progData.progress.episode_id;
-    }
-    const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
-    const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
-      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-    });
-    const data = await res.json();
-    if (!data.url) return;
-    _shortPreloadCache[shortKey] = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
-
-    // Warm the browser's network cache for the video bytes themselves
-    const warmVideo = document.createElement('video');
-    warmVideo.preload = 'auto';
-    warmVideo.muted = true;
-    warmVideo.src = data.url;
-    warmVideo.style.display = 'none';
-  } catch (e) {}
-}
-
-async function goToAdjacentShort(direction) {
-  const feedList = window._shortsFeedData || [];
-  const newIndex = (window._shortsFeedIndex || 0) + direction;
-  if (newIndex < 0 || newIndex >= feedList.length) {
-    showToast(direction > 0 ? "You're all caught up" : "That's the first one", '');
-    return;
-  }
-  if (_shortSwipeLocked) return;
-  _shortSwipeLocked = true;
-
-  const nextShort = feedList[newIndex];
-  window._shortsFeedIndex = newIndex;
-  const nextShortKey = _shortKeyOf(nextShort);
-
-  let epKey = null;
-  if (_shortPreloadCache[nextShortKey]) {
-    epKey = _shortPreloadCache[nextShortKey].epKey;
-  } else if (nextShort.contentType === 'series') {
-    epKey = (nextShort.episodes && nextShort.episodes[0]) ? nextShort.episodes[0].epKey : null;
-    try {
-      const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(nextShortKey)}`, {
-        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-      });
-      const progData = await progRes.json();
-      if (progData.progress && progData.progress.episode_id) epKey = progData.progress.episode_id;
-    } catch (e) {}
-    if (!epKey) { _shortSwipeLocked = false; showToast('No episodes available yet', 'error'); return; }
-  }
-
-  await _playShort(nextShort, epKey);
-  delete _shortPreloadCache[nextShortKey];
-  _shortSwipeLocked = false;
-}
 
 function saveShortProgress(shortKey, epKey, pos, dur) {
   fetch(`${API}/watch-progress`, {
