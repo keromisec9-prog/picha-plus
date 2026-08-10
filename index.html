@@ -7271,8 +7271,43 @@ function showShortPaywallPrompt(short) {
   wrapper.appendChild(promptDiv);
 }
 
+const SHORTS_PREVIEW_COUNT = 6;
+const SHORTS_BATCH_SIZE = 10;
+
+function _shortMetaLabel(s) {
+  return s.contentType === 'series' ? `${s.episodeCount || 0} episodes` : 'Short Film';
+}
+
+function _featuredShortHTML(featured) {
+  if (!featured) return '';
+  return `
+    <div onclick="showShortInfo(window._shortsFeedData[0])" style="position:relative;border-radius:14px;overflow:hidden;cursor:pointer;margin-bottom:1.5rem;min-height:360px;background:#111;">
+      ${featured.poster ? `<img src="${featured.poster}" style="width:100%;height:360px;object-fit:cover;display:block;"/>` : `<div style="width:100%;height:360px;background:#222;"></div>`}
+      <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.92) 10%,rgba(0,0,0,0.32) 60%,rgba(0,0,0,0.04) 100%);"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 24px;">
+        <div style="font-weight:800;font-size:1.45rem;line-height:1.15;margin-bottom:8px;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${featured.title || ''}</div>
+        <div style="font-size:0.82rem;color:#ddd;margin-bottom:9px;">${_shortMetaLabel(featured)}</div>
+        ${featured.overview ? `<div style="font-size:0.83rem;color:#ccc;margin-bottom:14px;line-height:1.4;max-width:94%;">${featured.overview}</div>` : ''}
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#ffc107;color:#000;font-weight:700;font-size:0.85rem;padding:9px 18px;border-radius:8px;">
+          <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch now
+        </div>
+      </div>
+    </div>`;
+}
+
+function _shortCardHTML(s, idx) {
+  return `
+    <div onclick="showShortInfo(window._shortsFeedRest[${idx}])" style="cursor:pointer;">
+      ${s.poster ? `<img src="${s.poster}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;display:block;" loading="lazy"/>` : `<div style="width:100%;aspect-ratio:16/9;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
+      <div style="font-weight:600;font-size:0.78rem;margin-top:6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title || ''}</div>
+      <div style="font-size:0.68rem;color:#999;margin-top:2px;">${_shortMetaLabel(s)}</div>
+    </div>`;
+}
+
 async function loadShortsFeed() {
   const listEl = document.getElementById('shortsList');
+  listEl.style.paddingTop = '16px';
+  listEl.style.paddingBottom = '24px';
   listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
   try {
     const res = await fetch(`${API}/shorts-feed`, {
@@ -7289,46 +7324,80 @@ async function loadShortsFeed() {
       return;
     }
     window._shortsFeedData = shorts;
+    window._shortsFeedRest = shorts.slice(1);
 
-    const shortMeta = (s) => s.contentType === 'series'
-      ? `${s.episodeCount || 0} episodes`
-      : 'Short Film';
-
-    const featured = shorts[0];
-    const rest = shorts.slice(1);
-
-    const featuredHtml = featured ? `
-      <div onclick="showShortInfo(window._shortsFeedData[0])" style="position:relative;border-radius:14px;overflow:hidden;cursor:pointer;margin-bottom:1.5rem;min-height:360px;background:#111;">
-        ${featured.poster ? `<img src="${featured.poster}" style="width:100%;height:360px;object-fit:cover;display:block;"/>` : `<div style="width:100%;height:360px;background:#222;"></div>`}
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.92) 10%,rgba(0,0,0,0.32) 60%,rgba(0,0,0,0.04) 100%);"></div>
-        <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 24px;">
-          <div style="font-weight:800;font-size:1.45rem;line-height:1.15;margin-bottom:8px;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${featured.title || ''}</div>
-          <div style="font-size:0.82rem;color:#ddd;margin-bottom:9px;">${shortMeta(featured)}</div>
-          ${featured.overview ? `<div style="font-size:0.83rem;color:#ccc;margin-bottom:14px;line-height:1.4;max-width:94%;">${featured.overview}</div>` : ''}
-          <div style="display:inline-flex;align-items:center;gap:6px;background:#ffc107;color:#000;font-weight:700;font-size:0.85rem;padding:9px 18px;border-radius:8px;">
-            <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch now
-          </div>
-        </div>
-      </div>
-    ` : '';
-
-    const gridHtml = rest.length ? `
-      <div style="font-weight:700;font-size:1rem;margin-bottom:10px;">More Shorts</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;">
-        ${rest.map((s, i) => `
-          <div onclick="showShortInfo(window._shortsFeedData[${i + 1}])" style="cursor:pointer;">
-            ${s.poster ? `<img src="${s.poster}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;display:block;"/>` : `<div style="width:100%;aspect-ratio:16/9;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
-            <div style="font-weight:600;font-size:0.78rem;margin-top:6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title || ''}</div>
-            <div style="font-size:0.68rem;color:#999;margin-top:2px;">${shortMeta(s)}</div>
-          </div>
-        `).join('')}
-      </div>
-    ` : '';
-
-    listEl.innerHTML = featuredHtml + gridHtml;
+    listEl.innerHTML = _featuredShortHTML(shorts[0]) + '<div id="shortsMoreSection"></div>';
+    _renderShortsPreview();
   } catch (e) {
     listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#f87171;">Failed to load: ' + e.message + '</div>';
   }
+}
+
+function _renderShortsPreview() {
+  const section = document.getElementById('shortsMoreSection');
+  const rest = window._shortsFeedRest || [];
+  if (!section) return;
+  if (!rest.length) { section.innerHTML = ''; return; }
+  const preview = rest.slice(0, SHORTS_PREVIEW_COUNT);
+  section.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-weight:700;font-size:1rem;">More Shorts</div>
+      ${rest.length > SHORTS_PREVIEW_COUNT ? `<div onclick="_showAllShorts()" style="color:var(--gold);font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:2px;">View all <span class="material-symbols-rounded" style="font-size:16px;">chevron_right</span></div>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;">
+      ${preview.map((s, i) => _shortCardHTML(s, i)).join('')}
+    </div>
+  `;
+}
+
+function _showAllShorts() {
+  const listEl = document.getElementById('shortsList');
+  const rest = window._shortsFeedRest || [];
+
+  listEl.innerHTML = `
+    <div onclick="_backToShortsFeed()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:14px;color:#fff;">
+      <span class="material-symbols-rounded" style="font-size:20px;">arrow_back</span>
+      <span style="font-weight:700;font-size:1rem;">All Shorts</span>
+    </div>
+    <div id="allShortsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;"></div>
+  `;
+
+  const grid = document.getElementById('allShortsGrid');
+  grid._allItems = rest;
+  grid._renderedCount = 0;
+
+  function appendBatch(sentinel) {
+    const next = grid._allItems.slice(grid._renderedCount, grid._renderedCount + SHORTS_BATCH_SIZE);
+    const html = next.map((s, i) => _shortCardHTML(s, grid._renderedCount + i)).join('');
+    if (sentinel) sentinel.insertAdjacentHTML('beforebegin', html);
+    else grid.insertAdjacentHTML('beforeend', html);
+    grid._renderedCount += next.length;
+  }
+
+  appendBatch();
+
+  if (grid._allItems.length > SHORTS_BATCH_SIZE) {
+    const sentinel = document.createElement('div');
+    sentinel.style.cssText = 'grid-column:1/-1;height:1px;';
+    grid.appendChild(sentinel);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && grid._renderedCount < grid._allItems.length) {
+          appendBatch(sentinel);
+        }
+      });
+    }, { root: null, rootMargin: '400px 0px', threshold: 0 });
+    io.observe(sentinel);
+    grid._io = io;
+  }
+}
+
+function _backToShortsFeed() {
+  const listEl = document.getElementById('shortsList');
+  const shorts = window._shortsFeedData || [];
+  if (!shorts.length) { loadShortsFeed(); return; }
+  listEl.innerHTML = _featuredShortHTML(shorts[0]) + '<div id="shortsMoreSection"></div>';
+  _renderShortsPreview();
 }
 
 function fyTab(tab) {
