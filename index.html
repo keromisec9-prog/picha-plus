@@ -4922,24 +4922,38 @@ async function shareHistoryItem(title) {
 // (merged into the existing closeCategory patch at the bottom of the file)
 
 // ── LIKE ──────────────────────────────────────────────────────────────────────
-function toggleLike(itemId, btn) {
+async function _setLikeState(videoId, wantLiked, contentType) {
+  if (!session.isLoggedIn()) { openSignin(); return null; }
+  try {
+    const res = await fetch(`${API}/likes`, {
+      method: wantLiked ? 'POST' : 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify({ videoId, contentType })
+    });
+    return await res.json();
+  } catch (e) { return null; }
+}
+
+async function toggleLike(itemId, btn) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
   const idx = liked.indexOf(itemId);
-  if (idx > -1) {
-    liked.splice(idx, 1);
-    btn.classList.remove('liked');
-    btn.querySelector('svg').setAttribute('fill', 'none');
-  } else {
+  const wantLiked = idx === -1;
+  if (wantLiked) {
     liked.push(itemId);
     btn.classList.add('liked');
     btn.querySelector('svg').setAttribute('fill', 'currentColor');
-    // Send to server
-    fetch(`${API}/likes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId: itemId }),
-    }).catch(() => {});
+  } else {
+    liked.splice(idx, 1);
+    btn.classList.remove('liked');
+    btn.querySelector('svg').setAttribute('fill', 'none');
   }
   saveLiked();
+  const result = await _setLikeState(itemId, wantLiked, 'movie');
+  if (!result) {
+    if (wantLiked) { const i2 = liked.indexOf(itemId); if (i2 > -1) liked.splice(i2, 1); btn.classList.remove('liked'); btn.querySelector('svg').setAttribute('fill', 'none'); }
+    else { liked.push(itemId); btn.classList.add('liked'); btn.querySelector('svg').setAttribute('fill', 'currentColor'); }
+    saveLiked();
+  }
 }
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
@@ -6340,6 +6354,23 @@ async function loadFirstOfferPricing() {
 // Close modals on overlay click — use DOMContentLoaded so all elements are ready
 document.addEventListener('DOMContentLoaded', () => {
   loadPromoPricing().then(() => loadFirstOfferPricing());
+  if (session.isLoggedIn()) {
+    fetch(`${API}/likes/mine`, { headers: { 'X-Session-Token': session.token } })
+      .then(r => r.json())
+      .then(data => {
+        (data.liked || []).forEach(row => {
+          if (row.contentType === 'short') {
+            if (!_likedShorts.includes(row.videoId)) _likedShorts.push(row.videoId);
+          } else {
+            const id = isNaN(Number(row.videoId)) ? row.videoId : Number(row.videoId);
+            if (!liked.includes(id)) liked.push(id);
+          }
+        });
+        localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+        saveLiked();
+      })
+      .catch(() => {});
+  }
   document.getElementById('categoryOverlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('categoryOverlay')) {
       if (document.getElementById('categoryGrid')?.classList.contains('list-mode')) return;
@@ -6807,27 +6838,32 @@ async function _refreshPagerLikeUI(idx, shortKey) {
   const isLiked = _likedShorts.includes(shortKey);
   if (icon) { icon.style.color = isLiked ? '#ff3b5c' : '#fff'; icon.style.fontVariationSettings = isLiked ? "'FILL' 1" : "'FILL' 0"; }
   try {
-    const res = await fetch(`${API}/likes?videoId=${encodeURIComponent(shortKey)}`);
+    const headers = session.isLoggedIn() ? { 'X-Session-Token': session.token } : {};
+    const res = await fetch(`${API}/likes?videoId=${encodeURIComponent(shortKey)}`, { headers });
     const data = await res.json();
     if (countEl) countEl.textContent = data.likes > 0 ? _formatLikeCount(data.likes) : 'Like';
   } catch (e) {}
 }
 
-function likePagerSlide(slideEl) {
+async function likePagerSlide(slideEl) {
   const idx = Number(slideEl.dataset.idx);
   const meta = _pagerSlideMeta[idx];
   if (!meta) return;
+  if (!session.isLoggedIn()) { openSignin(); return; }
   const shortKey = meta.shortKey;
-  if (_likedShorts.includes(shortKey)) return;
-  _likedShorts.push(shortKey);
-  localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  const wantLiked = !_likedShorts.includes(shortKey);
   const icon = document.getElementById('pgLikeIcon_' + idx);
-  if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; }
-  fetch(`${API}/likes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId: shortKey }) })
-    .then(r => r.json()).then(data => {
-      const countEl = document.getElementById('pgLikeCount_' + idx);
-      if (countEl && data.likes) countEl.textContent = _formatLikeCount(data.likes);
-    }).catch(() => {});
+  const countEl = document.getElementById('pgLikeCount_' + idx);
+  if (wantLiked) { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+  else { _likedShorts.splice(_likedShorts.indexOf(shortKey), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+  localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  const result = await _setLikeState(shortKey, wantLiked, 'short');
+  if (result && countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
+  if (!result) {
+    if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+    else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+    localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  }
 }
 
 function togglePagerPlayPause(slideEl) {
@@ -7055,7 +7091,8 @@ async function _refreshShortLikeUI(shortKey) {
   const isLiked = _likedShorts.includes(shortKey);
   if (icon) { icon.style.color = isLiked ? '#ff3b5c' : '#fff'; icon.style.fontVariationSettings = isLiked ? "'FILL' 1" : "'FILL' 0"; }
   try {
-    const res = await fetch(`${API}/likes?videoId=${encodeURIComponent(shortKey)}`);
+    const headers = session.isLoggedIn() ? { 'X-Session-Token': session.token } : {};
+    const res = await fetch(`${API}/likes?videoId=${encodeURIComponent(shortKey)}`, { headers });
     const data = await res.json();
     if (countEl) countEl.textContent = data.likes > 0 ? _formatLikeCount(data.likes) : 'Like';
   } catch (e) {}
@@ -7064,22 +7101,21 @@ async function _refreshShortLikeUI(shortKey) {
 async function likeCurrentShort() {
   const ctx = window._currentShortPlayback;
   if (!ctx) return;
+  if (!session.isLoggedIn()) { openSignin(); return; }
   const shortKey = ctx.shortKey;
-  if (_likedShorts.includes(shortKey)) return; // already liked, no unlike support server-side
-  _likedShorts.push(shortKey);
-  localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  const wantLiked = !_likedShorts.includes(shortKey);
   const icon = document.getElementById('shortLikeIcon');
-  if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; }
-  try {
-    const res = await fetch(`${API}/likes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId: shortKey })
-    });
-    const data = await res.json();
-    const countEl = document.getElementById('shortLikeCount');
-    if (countEl && data.likes) countEl.textContent = _formatLikeCount(data.likes);
-  } catch (e) {}
+  const countEl = document.getElementById('shortLikeCount');
+  if (wantLiked) { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+  else { _likedShorts.splice(_likedShorts.indexOf(shortKey), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+  localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  const result = await _setLikeState(shortKey, wantLiked, 'short');
+  if (result && countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
+  if (!result) {
+    if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+    else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+    localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+  }
 }
 
 let _shortPausedAt = 0;
@@ -7653,40 +7689,44 @@ function _syncFyFeedbackButtons(itemId) {
   dislikeBtn.style.color = isDisliked ? '#ff5a5a' : '#fff';
 }
 
-function fyDislike(itemId) {
+async function fyDislike(itemId) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
   if (_disliked.includes(itemId)) {
-    // toggle off
     _disliked.splice(_disliked.indexOf(itemId), 1);
     saveDisliked();
     showToast('Removed', '');
   } else {
     _disliked.push(itemId);
     saveDisliked();
-    // remove like if exists
     const likeIdx = liked.indexOf(itemId);
-    if (likeIdx > -1) { liked.splice(likeIdx, 1); localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
+    if (likeIdx > -1) {
+      liked.splice(likeIdx, 1);
+      localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
+      _setLikeState(itemId, false, 'movie');
+    }
     showToast('Got it — we\'ll show this less', '');
   }
   renderForYou();
   _syncFyFeedbackButtons(itemId);
 }
 
-function fyLike(itemId) {
-  if (liked.includes(itemId)) {
-    // toggle off
-    liked.splice(liked.indexOf(itemId), 1);
-    localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
-    showToast('Removed', '');
-  } else {
+async function fyLike(itemId) {
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  const wantLiked = !liked.includes(itemId);
+  if (wantLiked) {
     liked.push(itemId);
     localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
-    // remove dislike if exists
     const dislikeIdx = _disliked.indexOf(itemId);
     if (dislikeIdx > -1) { _disliked.splice(dislikeIdx, 1); saveDisliked(); }
     showToast('Thanks for the feedback!', '');
+  } else {
+    liked.splice(liked.indexOf(itemId), 1);
+    localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
+    showToast('Removed', '');
   }
   renderForYou();
   _syncFyFeedbackButtons(itemId);
+  _setLikeState(itemId, wantLiked, 'movie');
 }
 
 function _blurThenRun(fn, delay = 150) {
