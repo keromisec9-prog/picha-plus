@@ -4872,6 +4872,7 @@ async function loadMoreHistoryFromServer() {
     const items = data.items || [];
     if (!items.length) { _historyNoMore = true; return; }
     _historyCursor = items[items.length - 1].updated_at;
+    await ensureShortsFeedData();
     const resolved = items.map(resolveServerHistoryRow).filter(Boolean);
     if (resolved.length) {
       window._historyFullList = [...(window._historyFullList || []), ...resolved]
@@ -6458,6 +6459,7 @@ async function fetchCrossDeviceProgress() {
   const token = session.token;
   if (!token) { _crossDeviceMatched = []; return; }
   const localIds = new Set(Object.keys(progress));
+  await ensureShortsFeedData();
   const results = [];
   let before = null;
   try {
@@ -6853,7 +6855,7 @@ async function _mountPagerSlide(idx, autoplay) {
     const now = Date.now();
     if (now - lastSave > 5000 && video.currentTime > 0) {
       lastSave = now;
-      saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
+      saveShortProgress(shortKey, epKey, video.currentTime, video.duration, short.title);
     }
     const badge = document.getElementById('pgPreviewCountdown_' + idx);
     if (badge && previewSecs) {
@@ -6863,7 +6865,7 @@ async function _mountPagerSlide(idx, autoplay) {
     }
   });
   video.addEventListener('pause', () => {
-    if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
+    if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration, short.title);
   });
   video.addEventListener('canplay', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; }, { once: true });
   video.addEventListener('error', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; showShortPaywallPrompt(short); });
@@ -7239,13 +7241,13 @@ function _wirePagerTouch() {
 let _shortPreloadCache = {};
 const SHORT_URL_CACHE_TTL_MS = 7200 * 1000; // matches resolveStreamUrl's default validDuration on the worker
 
-function saveShortProgress(shortKey, epKey, pos, dur) {
+function saveShortProgress(shortKey, epKey, pos, dur, title) {
   progress[shortKey] = { position: pos, duration: dur, ts: Date.now(), epKey: epKey || null };
   localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
   fetch(`${API}/watch-progress`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
-    body: JSON.stringify({ movieId: shortKey, episodeId: epKey, progressSeconds: pos, durationSeconds: dur })
+    body: JSON.stringify({ movieId: shortKey, episodeId: epKey, progressSeconds: pos, durationSeconds: dur, title: title || null })
   }).catch(() => {});
   if (!document.getElementById('playerModal')?.classList.contains('active')) {
     renderContinueWatching();
@@ -7451,6 +7453,23 @@ function _shortCardHTML(s, idx) {
       <div style="font-weight:600;font-size:0.78rem;margin-top:6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title || ''}</div>
       <div style="font-size:0.68rem;color:#999;margin-top:2px;">${_shortMetaLabel(s)}</div>
     </div>`;
+}
+
+let _shortsFeedLoadPromise = null;
+function ensureShortsFeedData() {
+  if (window._shortsFeedData && window._shortsFeedData.length) return Promise.resolve(window._shortsFeedData);
+  if (_shortsFeedLoadPromise) return _shortsFeedLoadPromise;
+  const headers = session.isLoggedIn() ? { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } : {};
+  _shortsFeedLoadPromise = fetch(`${API}/shorts-feed`, { headers })
+    .then(res => res.json())
+    .then(data => {
+      const shorts = data.shorts || [];
+      window._shortsFeedData = shorts;
+      return shorts;
+    })
+    .catch(() => [])
+    .finally(() => { _shortsFeedLoadPromise = null; });
+  return _shortsFeedLoadPromise;
 }
 
 async function loadShortsFeed() {
