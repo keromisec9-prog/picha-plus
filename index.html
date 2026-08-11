@@ -7320,11 +7320,10 @@ async function loadShortsFeed() {
   listEl.style.paddingBottom = '24px';
   listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
   try {
-    const res = await fetch(`${API}/shorts-feed`, {
-      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-    });
+    const headers = session.isLoggedIn() ? { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } : {};
+    const res = await fetch(`${API}/shorts-feed`, { headers });
     if (res.status === 401 || res.status === 403) {
-      listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Please sign in to watch Shorts.</div>';
+      listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Something went wrong loading Shorts. Please try again.</div>';
       return;
     }
     const data = await res.json();
