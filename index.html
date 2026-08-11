@@ -7290,15 +7290,28 @@ function _shortMetaLabel(s) {
   return s.contentType === 'series' ? `${s.episodeCount || 0} episodes` : 'Short Film';
 }
 
+function _shortDurationLabel(s) {
+  if (s.contentType !== 'feature' || !s.durationSecs) return '';
+  const total = Math.max(0, Math.round(Number(s.durationSecs) || 0));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = total % 60;
+  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+  const ss = String(sec).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
 function _shortsHeroSlideHTML(featured, idx, total) {
   if (!featured) return '';
   const dots = total > 1 ? `
     <div style="position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:2;">
       ${Array.from({ length: total }).map((_, i) => `<div onclick="_goShortsHero(${i})" style="width:${i === idx ? '18px' : '6px'};height:6px;border-radius:3px;background:${i === idx ? '#ffc107' : 'rgba(255,255,255,0.4)'};cursor:pointer;transition:width 0.25s;"></div>`).join('')}
     </div>` : '';
+  const heroDur = _shortDurationLabel(featured);
   return `
     <div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:1.5rem;min-height:360px;background:#111;">
       ${featured.poster ? `<img src="${featured.poster}" style="width:100%;height:360px;object-fit:cover;display:block;"/>` : `<div style="width:100%;height:360px;background:#222;"></div>`}
+      ${heroDur ? `<div style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.78rem;font-weight:600;padding:4px 10px;border-radius:6px;z-index:2;">${heroDur}</div>` : ''}
       <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.92) 10%,rgba(0,0,0,0.32) 60%,rgba(0,0,0,0.04) 100%);"></div>
       <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 34px;">
         <div style="font-weight:800;font-size:1.45rem;line-height:1.15;margin-bottom:8px;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${featured.title || ''}</div>
@@ -7353,9 +7366,13 @@ function _stopShortsHeroRotation() {
 }
 
 function _shortCardHTML(s, idx) {
+  const cardDur = _shortDurationLabel(s);
   return `
     <div onclick="playShortFromInfo(window._shortsFeedRest[${idx}])" style="cursor:pointer;min-width:0;">
-      ${s.poster ? `<img src="${s.poster}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;display:block;" loading="lazy"/>` : `<div style="width:100%;aspect-ratio:16/9;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
+      <div style="position:relative;">
+        ${s.poster ? `<img src="${s.poster}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;display:block;" loading="lazy"/>` : `<div style="width:100%;aspect-ratio:16/9;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
+        ${cardDur ? `<div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.65rem;font-weight:600;padding:2px 6px;border-radius:4px;">${cardDur}</div>` : ''}
+      </div>
       <div style="font-weight:600;font-size:0.78rem;margin-top:6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title || ''}</div>
       <div style="font-size:0.68rem;color:#999;margin-top:2px;">${_shortMetaLabel(s)}</div>
     </div>`;
