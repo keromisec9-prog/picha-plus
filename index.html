@@ -7307,7 +7307,7 @@ function _featuredShortHTML(featured) {
 
 function _shortCardHTML(s, idx) {
   return `
-    <div onclick="showShortInfo(window._shortsFeedRest[${idx}])" style="cursor:pointer;">
+    <div onclick="showShortInfo(window._shortsFeedRest[${idx}])" style="cursor:pointer;min-width:0;">
       ${s.poster ? `<img src="${s.poster}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;display:block;" loading="lazy"/>` : `<div style="width:100%;aspect-ratio:16/9;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎬</div>`}
       <div style="font-weight:600;font-size:0.78rem;margin-top:6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title || ''}</div>
       <div style="font-size:0.68rem;color:#999;margin-top:2px;">${_shortMetaLabel(s)}</div>
@@ -7343,12 +7343,23 @@ async function loadShortsFeed() {
   }
 }
 
+function _shortsColumnCount() {
+  const w = window.innerWidth;
+  if (w >= 1920) return 9;
+  if (w >= 1280) return 7;
+  if (w >= 1024) return 6;
+  if (w >= 768) return 4;
+  if (w >= 500) return 3;
+  return 2;
+}
+
 function _renderShortsPreview() {
   const section = document.getElementById('shortsMoreSection');
   const rest = window._shortsFeedRest || [];
   if (!section) return;
   if (!rest.length) { section.innerHTML = ''; return; }
-  const preview = rest.slice(0, SHORTS_PREVIEW_COUNT);
+  const previewCount = _shortsColumnCount() * 2; // exactly 2 rows, whatever the breakpoint
+  const preview = rest.slice(0, previewCount);
   section.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="font-weight:700;font-size:1rem;">More Shorts</div>
