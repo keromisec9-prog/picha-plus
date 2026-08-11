@@ -7311,7 +7311,7 @@ function _shortsHeroSlideHTML(featured, idx, total) {
   return `
     <div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:1.5rem;min-height:360px;background:#111;">
       ${featured.poster ? `<img src="${featured.poster}" style="width:100%;height:360px;object-fit:cover;display:block;"/>` : `<div style="width:100%;height:360px;background:#222;"></div>`}
-      ${heroDur ? `<div style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.78rem;font-weight:600;padding:4px 10px;border-radius:6px;z-index:2;">${heroDur}</div>` : ''}
+      ${heroDur ? `<div style="position:absolute;bottom:14px;right:14px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.78rem;font-weight:600;padding:4px 10px;border-radius:6px;z-index:2;">${heroDur}</div>` : ''}
       <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.92) 10%,rgba(0,0,0,0.32) 60%,rgba(0,0,0,0.04) 100%);"></div>
       <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 34px;">
         <div style="font-weight:800;font-size:1.45rem;line-height:1.15;margin-bottom:8px;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${featured.title || ''}</div>
@@ -7500,6 +7500,7 @@ function fyTab(tab) {
   document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
   document.getElementById('shortsList').style.display = tab === 'shorts' ? 'block' : 'none';
   if (tab === 'shorts') {
+    if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
     loadShortsFeed();
     return;
   }
