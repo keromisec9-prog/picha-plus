@@ -7284,17 +7284,23 @@ function showShortPaywallPrompt(short) {
 const SHORTS_PREVIEW_COUNT = 6;
 const SHORTS_BATCH_SIZE = 10;
 
+const SHORTS_HERO_COUNT = 5;
+
 function _shortMetaLabel(s) {
   return s.contentType === 'series' ? `${s.episodeCount || 0} episodes` : 'Short Film';
 }
 
-function _featuredShortHTML(featured) {
+function _shortsHeroSlideHTML(featured, idx, total) {
   if (!featured) return '';
+  const dots = total > 1 ? `
+    <div style="position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:2;">
+      ${Array.from({ length: total }).map((_, i) => `<div onclick="event.stopPropagation();_goShortsHero(${i})" style="width:${i === idx ? '18px' : '6px'};height:6px;border-radius:3px;background:${i === idx ? '#ffc107' : 'rgba(255,255,255,0.4)'};cursor:pointer;transition:width 0.25s;"></div>`).join('')}
+    </div>` : '';
   return `
-    <div onclick="showShortInfo(window._shortsFeedData[0])" style="position:relative;border-radius:14px;overflow:hidden;cursor:pointer;margin-bottom:1.5rem;min-height:360px;background:#111;">
+    <div onclick="showShortInfo(window._shortsHeroItems[${idx}])" style="position:relative;border-radius:14px;overflow:hidden;cursor:pointer;margin-bottom:1.5rem;min-height:360px;background:#111;">
       ${featured.poster ? `<img src="${featured.poster}" style="width:100%;height:360px;object-fit:cover;display:block;"/>` : `<div style="width:100%;height:360px;background:#222;"></div>`}
       <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.92) 10%,rgba(0,0,0,0.32) 60%,rgba(0,0,0,0.04) 100%);"></div>
-      <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 24px;">
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 34px;">
         <div style="font-weight:800;font-size:1.45rem;line-height:1.15;margin-bottom:8px;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${featured.title || ''}</div>
         <div style="font-size:0.82rem;color:#ddd;margin-bottom:9px;">${_shortMetaLabel(featured)}</div>
         ${featured.overview ? `<div style="font-size:0.83rem;color:#ccc;margin-bottom:14px;line-height:1.4;max-width:94%;">${featured.overview}</div>` : ''}
@@ -7302,7 +7308,37 @@ function _featuredShortHTML(featured) {
           <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch now
         </div>
       </div>
+      ${dots}
     </div>`;
+}
+
+function _renderShortsHero() {
+  const section = document.getElementById('shortsFeaturedSection');
+  if (!section) return;
+  const items = window._shortsHeroItems || [];
+  const idx = window._shortsHeroIndex || 0;
+  section.innerHTML = _shortsHeroSlideHTML(items[idx], idx, items.length);
+}
+
+function _goShortsHero(i) {
+  window._shortsHeroIndex = i;
+  _renderShortsHero();
+  _startShortsHeroRotation();
+}
+
+function _startShortsHeroRotation() {
+  clearInterval(window._shortsHeroTimer);
+  const items = window._shortsHeroItems || [];
+  if (items.length <= 1) return;
+  window._shortsHeroTimer = setInterval(() => {
+    window._shortsHeroIndex = (window._shortsHeroIndex + 1) % items.length;
+    _renderShortsHero();
+  }, 6000);
+}
+
+function _stopShortsHeroRotation() {
+  clearInterval(window._shortsHeroTimer);
+  window._shortsHeroTimer = null;
 }
 
 function _shortCardHTML(s, idx) {
@@ -7333,9 +7369,13 @@ async function loadShortsFeed() {
       return;
     }
     window._shortsFeedData = shorts;
-    window._shortsFeedRest = shorts.slice(1);
+    window._shortsFeedRest = shorts;
+    window._shortsHeroItems = shorts.slice(0, Math.min(SHORTS_HERO_COUNT, shorts.length));
+    window._shortsHeroIndex = 0;
 
-    listEl.innerHTML = _featuredShortHTML(shorts[0]) + '<div id="shortsMoreSection"></div>';
+    listEl.innerHTML = '<div id="shortsFeaturedSection"></div><div id="shortsMoreSection"></div>';
+    _renderShortsHero();
+    _startShortsHeroRotation();
     _renderShortsPreview();
   } catch (e) {
     listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#f87171;">Failed to load: ' + e.message + '</div>';
@@ -7371,6 +7411,7 @@ function _renderShortsPreview() {
 }
 
 function _showAllShorts() {
+  _stopShortsHeroRotation();
   const listEl = document.getElementById('shortsList');
   const rest = window._shortsFeedRest || [];
 
@@ -7416,7 +7457,10 @@ function _backToShortsFeed() {
   const listEl = document.getElementById('shortsList');
   const shorts = window._shortsFeedData || [];
   if (!shorts.length) { loadShortsFeed(); return; }
-  listEl.innerHTML = _featuredShortHTML(shorts[0]) + '<div id="shortsMoreSection"></div>';
+  window._shortsHeroIndex = 0;
+  listEl.innerHTML = '<div id="shortsFeaturedSection"></div><div id="shortsMoreSection"></div>';
+  _renderShortsHero();
+  _startShortsHeroRotation();
   _renderShortsPreview();
 }
 
@@ -7431,6 +7475,7 @@ function fyTab(tab) {
     loadShortsFeed();
     return;
   }
+  _stopShortsHeroRotation();
   renderForYou();
 }
 
