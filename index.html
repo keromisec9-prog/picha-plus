@@ -7216,7 +7216,7 @@ function _wirePagerTouch() {
 }
 
 let _shortPreloadCache = {};
-const SHORT_URL_CACHE_TTL_MS = 3 * 60 * 1000;
+const SHORT_URL_CACHE_TTL_MS = 7200 * 1000; // matches resolveStreamUrl's default validDuration on the worker
 
 function saveShortProgress(shortKey, epKey, pos, dur) {
   fetch(`${API}/watch-progress`, {
