@@ -6791,7 +6791,7 @@ async function _mountPagerSlide(idx, autoplay) {
 
   const cacheKey = _pagerMode === 'episode' ? (shortKey + '::' + epKey) : shortKey;
   const spinnerEl = document.getElementById('pgSpinner_' + idx);
-  if (spinnerEl) spinnerEl.style.display = 'flex';
+  const _spinnerShowTimer = spinnerEl ? setTimeout(() => { spinnerEl.style.display = 'flex'; }, 180) : null;
   let urlData = _shortPreloadCache[cacheKey];
   if (urlData && (Date.now() - urlData.cachedAt > SHORT_URL_CACHE_TTL_MS)) urlData = null;
   if (!urlData) {
@@ -6801,10 +6801,10 @@ async function _mountPagerSlide(idx, autoplay) {
         headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
       });
       const data = await res.json();
-      if (!data.url) { delete slideEl.dataset.mounting; if (spinnerEl) spinnerEl.style.display = 'none'; return; }
+      if (!data.url) { delete slideEl.dataset.mounting; clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; return; }
       urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
       _shortPreloadCache[cacheKey] = urlData;
-    } catch (e) { delete slideEl.dataset.mounting; if (spinnerEl) spinnerEl.style.display = 'none'; return; }
+    } catch (e) { delete slideEl.dataset.mounting; clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; return; }
   }
 
   let resumePos = 0;
@@ -6844,8 +6844,8 @@ async function _mountPagerSlide(idx, autoplay) {
   video.addEventListener('pause', () => {
     if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration);
   });
-  video.addEventListener('canplay', () => { if (spinnerEl) spinnerEl.style.display = 'none'; }, { once: true });
-  video.addEventListener('error', () => { if (spinnerEl) spinnerEl.style.display = 'none'; showShortPaywallPrompt(short); });
+  video.addEventListener('canplay', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; }, { once: true });
+  video.addEventListener('error', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; showShortPaywallPrompt(short); });
   video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
 
   slideEl.dataset.mounted = '1';
