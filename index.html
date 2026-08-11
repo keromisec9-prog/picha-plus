@@ -1701,8 +1701,8 @@
     }
     .shorts-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
     }
     /* content-visibility removed: its implicit containment clips the
        absolutely-positioned dropdown menu to the row's own bounds. A personal
@@ -1710,11 +1710,11 @@
        trading away a working menu for. */
     @media (min-width: 500px) {
       .category-grid { grid-template-columns: repeat(4, 1fr); }
-      .shorts-grid { grid-template-columns: repeat(4, 1fr); }
+      .shorts-grid { grid-template-columns: repeat(3, 1fr); }
     }
     @media (min-width: 768px) {
       .category-grid { grid-template-columns: repeat(5, 1fr); }
-      .shorts-grid { grid-template-columns: repeat(5, 1fr); }
+      .shorts-grid { grid-template-columns: repeat(4, 1fr); }
     }
     .category-card {
       position: relative;
@@ -1901,7 +1901,7 @@
       .row-title { font-size: 1.2rem; padding: 0 4vw; }
       .cards-row { padding: 0 4vw; gap: 0.75rem; }
       .category-grid { grid-template-columns: repeat(8, 1fr); gap: 0.75rem; padding: 1.5rem 4vw 4rem; }
-      .shorts-grid { grid-template-columns: repeat(8, 1fr); gap: 0.75rem; }
+      .shorts-grid { grid-template-columns: repeat(6, 1fr); gap: 0.75rem; }
       .plans-grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
       .footer-top { padding: 3rem 4vw; }
     }
@@ -1913,7 +1913,7 @@
       .hero-title { font-size: 3.5rem; }
       .nav { height: 80px; }
       .category-grid { grid-template-columns: repeat(9, 1fr); }
-      .shorts-grid { grid-template-columns: repeat(9, 1fr); }
+      .shorts-grid { grid-template-columns: repeat(7, 1fr); }
     }
 
     @media (min-width: 1920px) {
@@ -1925,7 +1925,7 @@
       .row-title { font-size: 1.4rem; padding: 0 6vw; }
       .cards-row { padding: 0 6vw; gap: 1rem; }
       .category-grid { grid-template-columns: repeat(11, 1fr); padding: 2rem 6vw 5rem; }
-      .shorts-grid { grid-template-columns: repeat(11, 1fr); }
+      .shorts-grid { grid-template-columns: repeat(9, 1fr); }
     }
 
     /* ── FOCUS / D-PAD NAVIGATION ── */
