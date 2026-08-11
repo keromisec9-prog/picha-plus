@@ -7258,10 +7258,12 @@ function saveShortProgress(shortKey, epKey, pos, dur, title) {
     if (!res.ok || (body && body.ok === false)) {
       console.error('[shortProgress] save failed', res.status, body);
       window._lastShortSaveError = { status: res.status, body, shortKey, epKey, pos, dur, ts: Date.now() };
+      showToast('Progress sync failed: ' + (res.status || '') + ' ' + (body && (body.error || JSON.stringify(body.body || '')) || ''), 'error');
     }
   }).catch(e => {
     console.error('[shortProgress] fetch threw', e);
     window._lastShortSaveError = { threw: String(e), shortKey, epKey, pos, dur, ts: Date.now() };
+    showToast('Progress sync error: ' + String(e), 'error');
   });
   if (!document.getElementById('playerModal')?.classList.contains('active')) {
     renderContinueWatching();
