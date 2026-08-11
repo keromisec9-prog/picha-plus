@@ -4486,6 +4486,8 @@ function renderContinueWatching() {
   // Deduplicate series by KV key — keep MOST RECENTLY WATCHED episode per VJ version
   const seriesBest = {}; // kvKey -> { id, prog, epIndex }
   const movieEntries = [];
+  const shortEntries = [];
+  const shortsPool = window._shortsFeedData || [];
   entries.forEach(([id, prog]) => {
     if (id.startsWith('series__')) {
       const parts = id.split('__');
@@ -4495,6 +4497,8 @@ function renderContinueWatching() {
       if (!seriesBest[kvKey] || ts > seriesBest[kvKey].prog.ts) {
         seriesBest[kvKey] = { id, prog, epIndex };
       }
+    } else if (shortsPool.some(s => _shortKeyOf(s) === id)) {
+      shortEntries.push([id, prog]);
     } else {
       movieEntries.push([id, prog]);
     }
@@ -4515,8 +4519,14 @@ function renderContinueWatching() {
     return { id, prog, poster: card._customPoster || (card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null), title: card.title || card.name || '', isSeries: false, card };
   }).filter(Boolean);
 
+  const shortMatched = shortEntries.map(([id, prog]) => {
+    const short = shortsPool.find(s => _shortKeyOf(s) === id);
+    if (!short) return null;
+    return { id, prog, poster: short.poster || null, title: short.title || '', isShort: true, short };
+  }).filter(Boolean);
+
   // Sort all by most recently watched
-  const matched = [...seriesMatched, ...movieMatched]
+  const matched = [...seriesMatched, ...movieMatched, ...shortMatched]
     .sort((a, b) => (b.prog.ts || 0) - (a.prog.ts || 0))
     .slice(0, 10);
 
@@ -4528,11 +4538,13 @@ function renderContinueWatching() {
 
   row.innerHTML = matched.map(m => {
     const pct = Math.round((m.prog.position / m.prog.duration) * 100);
-    const regIdx2 = m.isSeries ? -1 : registerItem(m.card);
+    const regIdx2 = (m.isSeries || m.isShort) ? -1 : registerItem(m.card);
     const clickHandler = m.isSeries
       ? `resumeWatchingSeries('${m.kvKey}', ${m.epIndex})`
-      : `resumeWatching(getItem(${regIdx2}))`;
-    // Remove key: for series remove all episodes of that kvKey; for movies remove by id
+      : (m.isShort
+        ? `playShortFromInfo(getItem(${registerItem(m.short)}))`
+        : `resumeWatching(getItem(${regIdx2}))`);
+    // Remove key: for series remove all episodes of that kvKey; for movies/shorts remove by id
     const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
 
     return `
@@ -4706,11 +4718,13 @@ function _renderHistoryRow(m) {
   const progressLabel = `${formatTime(m.prog.position)} / ${formatTime(m.prog.duration)}`;
   const dateLabel = _historyDateLabel(m.prog.ts);
   const timeLabel = new Date(m.prog.ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  const statusLabel = m.isSeries ? `${m.epLabel} \u2022 Watching` : 'Watching';
+  const statusLabel = m.isSeries ? `${m.epLabel} \u2022 Watching` : (m.isShort ? 'Short \u2022 Watching' : 'Watching');
   const removeKey = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
   const playFn = m.isSeries
     ? `resumeWatchingSeries('${m.kvKey}',${m.epIndex})`
-    : `handleCardPlay(getItem(${registerItem(m.card)}))`;
+    : (m.isShort
+      ? `playShortFromInfo(getItem(${registerItem(m.short)}))`
+      : `handleCardPlay(getItem(${registerItem(m.card)}))`);
   return `
     <div style="display:flex;align-items:center;gap:0.9rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
       <div style="position:relative;flex-shrink:0;">
@@ -4742,9 +4756,9 @@ function _renderHistoryRow(m) {
       <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
         <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
         <button onclick="removeHistoryItem('${removeKey}',event)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
-        <button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${m.card && myList.some(x => x.id === m.card.id)
+        ${m.card ? `<button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${myList.some(x => x.id === m.card.id)
           ? '<span class="material-symbols-rounded" style="font-size:16px;">check_circle</span>Remove from Watch Later'
-          : '<span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later'}</button>
+          : '<span class="material-symbols-rounded" style="font-size:16px;">add</span>Save to Watch Later'}</button>` : ''}
         <button onclick="event.stopPropagation();shareHistoryItem('${title}')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">share</span>Share</button>
       </div>
     </div>`;
@@ -4821,8 +4835,15 @@ function resolveServerHistoryRow(row) {
     return { id: row.movie_id, prog, poster: s.poster || null, title: s.title || row.title, epLabel, isSeries: true, kvKey, epIndex };
   }
   const card = (window._allCards || []).find(c => String(c.id) === String(row.movie_id));
-  if (!card) return null;
-  return { id: row.movie_id, prog, poster: card._customPoster || (card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null), title: card.title || card.name || row.title, isSeries: false, card };
+  if (card) {
+    return { id: row.movie_id, prog, poster: card._customPoster || (card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null), title: card.title || card.name || row.title, isSeries: false, card };
+  }
+  const short = (window._shortsFeedData || []).find(s => _shortKeyOf(s) === String(row.movie_id));
+  if (short) {
+    const epLabel = row.episode_id ? `E${row.episode_id}` : null;
+    return { id: row.movie_id, prog, poster: short.poster || null, title: short.title || row.title, isShort: true, epLabel, short };
+  }
+  return null;
 }
 
 let _historyCursor = null;
@@ -7219,11 +7240,16 @@ let _shortPreloadCache = {};
 const SHORT_URL_CACHE_TTL_MS = 7200 * 1000; // matches resolveStreamUrl's default validDuration on the worker
 
 function saveShortProgress(shortKey, epKey, pos, dur) {
+  progress[shortKey] = { position: pos, duration: dur, ts: Date.now(), epKey: epKey || null };
+  localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
   fetch(`${API}/watch-progress`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
     body: JSON.stringify({ movieId: shortKey, episodeId: epKey, progressSeconds: pos, durationSeconds: dur })
   }).catch(() => {});
+  if (!document.getElementById('playerModal')?.classList.contains('active')) {
+    renderContinueWatching();
+  }
 }
 
 const _likedShorts = JSON.parse(localStorage.getItem('pichaplus_liked_shorts') || '[]');
