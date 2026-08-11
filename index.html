@@ -4473,6 +4473,10 @@ function removeFromContinue(id, event) {
 }
 
 function renderContinueWatching() {
+  if (!window._shortsFeedFetchAttempted && !(window._shortsFeedData && window._shortsFeedData.length)) {
+    window._shortsFeedFetchAttempted = true;
+    ensureShortsFeedData().then(() => { renderContinueWatching(); });
+  }
   const section = document.getElementById('continueSection');
   const row = document.getElementById('continueRow');
 
