@@ -6905,6 +6905,7 @@ function _pagerSlideHTML(idx) {
 }
 
 async function openShortPager(startIdx) {
+  if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
   _pagerLocked = false;
   _pagerH = window.innerHeight;
   _pagerSlideMeta = {};
@@ -8107,6 +8108,7 @@ function setPreviewSoundPref(soundOn) {
 }
 
 function _setupPreviewObserver(grid) {
+  if (_fyTab === 'shorts') { _stopPreviewSequence(true); return; }
   const isFirstSetup = !_fySeqVideo;
   _stopPreviewSequence(true); // keep index — don't restart from the top
   let cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
