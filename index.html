@@ -4655,12 +4655,6 @@ async function openContinueWatchingAll() {
   }
   const matched = _computeContinueMatched();
   window._continueMatched = matched;
-  if (!matched.length) {
-    _buildContinueOverlay([]); // shows the existing "Nothing watched yet" empty state
-    document.getElementById('categoryOverlay').classList.add('active');
-    document.body.style.overflow = 'hidden';
-    return;
-  }
   window._historyFullList = matched.slice();
   _buildContinueOverlay(window._historyFullList);
   document.getElementById('categoryOverlay').classList.add('active');
@@ -4673,6 +4667,12 @@ async function openContinueWatchingAll() {
   _historyNoMore = false;
   _historyLoading = false;
   _setupHistoryScrollObserver();
+  // Pull in server-side history right away, not just once the user scrolls near the
+  // bottom — otherwise a device with no LOCAL watch activity shows an empty state
+  // forever, even when the account has real history from other devices/sessions.
+  // loadMoreHistoryFromServer() already merges + dedupes against window._historyFullList
+  // and re-renders the overlay once results resolve.
+  await loadMoreHistoryFromServer();
 }
 
 function _computeContinueMatched() {
