@@ -4645,9 +4645,22 @@ function resumeWatchingSeries(kvKey, epIndex) {
   }, 50);
 }
 
-function openContinueWatchingAll() {
-  const matched = window._continueMatched || [];
-  if (!matched.length) return;
+async function openContinueWatchingAll() {
+  // Don't rely on window._continueMatched — it's only ever set as a side effect of the
+  // home-screen Continue Watching row rendering. If that row hasn't rendered yet this
+  // session (or ever, e.g. opened straight from the account dropdown), compute fresh
+  // instead of silently doing nothing.
+  if (!(window._shortsFeedData && window._shortsFeedData.length)) {
+    await ensureShortsFeedData().catch(() => {});
+  }
+  const matched = _computeContinueMatched();
+  window._continueMatched = matched;
+  if (!matched.length) {
+    _buildContinueOverlay([]); // shows the existing "Nothing watched yet" empty state
+    document.getElementById('categoryOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
   window._historyFullList = matched.slice();
   _buildContinueOverlay(window._historyFullList);
   document.getElementById('categoryOverlay').classList.add('active');
@@ -4660,6 +4673,58 @@ function openContinueWatchingAll() {
   _historyNoMore = false;
   _historyLoading = false;
   _setupHistoryScrollObserver();
+}
+
+function _computeContinueMatched() {
+  const entries = Object.entries(progress).filter(([, v]) =>
+    v.position > 30 && v.duration > 0 && v.position < v.duration - 90
+  );
+  if (!entries.length) return [];
+
+  const seriesBest = {};
+  const movieEntries = [];
+  const shortEntries = [];
+  const shortsPool = window._shortsFeedData || [];
+  entries.forEach(([id, prog]) => {
+    if (id.startsWith('series__')) {
+      const parts = id.split('__');
+      const kvKey = parts[1];
+      const epIndex = parseInt(parts[2], 10);
+      const ts = prog.ts || 0;
+      if (!seriesBest[kvKey] || ts > seriesBest[kvKey].prog.ts) {
+        seriesBest[kvKey] = { id, prog, epIndex };
+      }
+    } else if (shortsPool.some(s => _shortKeyOf(s) === id)) {
+      shortEntries.push([id, prog]);
+    } else {
+      movieEntries.push([id, prog]);
+    }
+  });
+
+  const seriesMatched = Object.entries(seriesBest).map(([kvKey, { id, prog, epIndex }]) => {
+    const s = (window._seriesList || []).find(s => s._kvKey === kvKey);
+    if (!s) return null;
+    const ep = s.episodes?.[epIndex];
+    if (ep?.is18Plus && session.user?.parentalControlsEnabled) return null;
+    const epLabel = ep ? `S${ep.season || 1}\u00b7E${ep.episode || (epIndex+1)}` : `E${epIndex+1}`;
+    return { id, prog, poster: s.poster || null, title: s.title, epLabel, isSeries: true, kvKey, epIndex };
+  }).filter(Boolean);
+
+  const movieMatched = movieEntries.map(([id, prog]) => {
+    const card = (window._allCards || []).find(c => String(c.id) === String(id));
+    if (!card) return null;
+    return { id, prog, poster: card._customPoster || (card.poster_path ? `${TMDB_IMG}w300${card.poster_path}` : null), title: card.title || card.name || '', isSeries: false, card };
+  }).filter(Boolean);
+
+  const shortMatched = shortEntries.map(([id, prog]) => {
+    const short = shortsPool.find(s => _shortKeyOf(s) === id);
+    if (!short) return null;
+    return { id, prog, poster: short.poster || null, title: short.title || '', isShort: true, short };
+  }).filter(Boolean);
+
+  return [...seriesMatched, ...movieMatched, ...shortMatched]
+    .sort((a, b) => (b.prog.ts || 0) - (a.prog.ts || 0))
+    .slice(0, 10);
 }
 
 function filterHistoryList(query) {
