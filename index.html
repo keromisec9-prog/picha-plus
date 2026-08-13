@@ -7997,6 +7997,10 @@ function resumeGridPreviewAfterModal() {
   _fyGridPausedForModal = false;
   if (_fySeqVideo && _fySeqRunning && _fySeqActiveCards && _fySeqActiveGen === _fySeqGen) {
     _fySeqVideo.play().catch(() => {});
+    _fySeqVideo.style.opacity = '1';
+    if (_fySeqMuteBtn) _fySeqMuteBtn.style.opacity = '1';
+    const _locateBtn = document.getElementById('fyLocateBtn');
+    if (_locateBtn) _locateBtn.style.display = 'flex';
     _scheduleAdvance(_fySeqActiveCards, _fySeqActiveGen, 30000);
   }
 }
@@ -8223,6 +8227,12 @@ async function _playSequenceStep(cards, myGen) {
       }, { once: true });
     }
     video.muted = _fyPreviewMuted;
+    if (document.getElementById('infoModal')?.classList.contains('active')) {
+      _fyGridPausedForModal = true;
+      _fySeqActiveCards = cards;
+      _fySeqActiveGen = myGen;
+      return;
+    }
     await video.play();
     if (!_fySeqRunning || myGen !== _fySeqGen) return;
     video.style.opacity = '1';
