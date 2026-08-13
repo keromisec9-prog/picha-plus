@@ -2021,7 +2021,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,all_inclusive,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,keyboard_arrow_right,live_tv,lock,logout,more_horiz,more_vert,movie,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,all_inclusive,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_right,live_tv,lock,logout,more_horiz,more_vert,movie,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="icon-512.png" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -2138,13 +2138,17 @@ function saveProgress(id, pos, dur, forceSync, title) {
     <div class="nav-user" id="navUser" onclick="toggleUserMenu()">
       <img class="nav-avatar" id="navAvatar" src="" alt=""/>
       <div class="nav-dropdown" id="userDropdown">
-        <div class="nav-dropdown-item" id="subStatusItem">
-          <span id="subStatusText">Not subscribed</span>
-        </div>
+        <div id="subStatusItem" onclick="showPaywall()" style="cursor:pointer;padding:0.85rem 1rem;"></div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);margin:0.25rem 0;"></div>
         <div class="nav-dropdown-item" onclick="showMyList()">
           <span class="material-symbols-rounded" style="font-size:16px;">subscriptions</span>
           My List
         </div>
+        <div class="nav-dropdown-item" onclick="openContinueWatchingAll()">
+          <span class="material-symbols-rounded" style="font-size:16px;">history</span>
+          Watch History
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);margin:0.25rem 0;"></div>
         <div class="nav-dropdown-item" onclick="showPaywall()">
           <span class="material-symbols-rounded" style="font-size:16px;">card_membership</span>
           Manage Plan
@@ -2153,6 +2157,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
           <span class="material-symbols-rounded" style="font-size:16px;">settings</span>
           Account Settings
         </div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);margin:0.25rem 0;"></div>
         <div class="nav-dropdown-item danger" onclick="signOut()">
           <span class="material-symbols-rounded" style="font-size:16px;">logout</span>
           Sign Out
@@ -5157,14 +5162,29 @@ function updateUI() {
       ? Math.ceil((session.user.subscriptionExpiry - Date.now()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    const subText = document.getElementById('subStatusText');
+    const subBox = document.getElementById('subStatusItem');
     if (subscribed) {
-      const _pendingHTML = session.user.pendingPlan
-        ? ` · then ${session.user.pendingPlan} (${Math.ceil(session.user.pendingDurationMs/(1000*60*60*24))}d)`
-        : '';
-      subText.innerHTML = `<span class="sub-pill">ACTIVE</span> ${session.user.subscriptionPlan} · ${days}d left${_pendingHTML}`;
+      const _cadence = /annual|year/i.test(session.user.subscriptionPlan || '') ? 'annually'
+                      : /week/i.test(session.user.subscriptionPlan || '') ? 'weekly'
+                      : 'monthly';
+      const _secondLine = session.user.pendingPlan
+        ? `Next: <strong>${session.user.pendingPlan}</strong> · ${Math.ceil(session.user.pendingDurationMs/(1000*60*60*24))} days`
+        : `Auto-renews ${_cadence}`;
+      subBox.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:2.4rem;height:2.4rem;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="material-symbols-rounded" style="font-size:20px;color:#000;">workspace_premium</span>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <span class="sub-pill">ACTIVE</span>
+            <div style="font-weight:700;font-size:0.95rem;color:#fff;margin-top:0.15rem;">${session.user.subscriptionPlan}</div>
+            <div style="font-size:0.8rem;color:var(--gold);font-weight:600;">${days} days remaining</div>
+            <div style="font-size:0.75rem;color:var(--gray);margin-top:0.1rem;">${_secondLine}</div>
+          </div>
+          <span class="material-symbols-rounded" style="font-size:18px;color:var(--gray);">keyboard_arrow_right</span>
+        </div>`;
     } else {
-      subText.textContent = 'Not subscribed';
+      subBox.innerHTML = `<span style="color:var(--gray);">Not subscribed</span>`;
     }
 
     let _subBarClass = 'status-bar';
