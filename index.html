@@ -6686,6 +6686,115 @@ let _pTsx = 0, _pTsy = 0, _pDragY = 0, _pLastY = 0, _pLastT = 0, _pVel = 0;
 let _pPeekIdx = null;
 let _pagerH = 0;
 let _pagerSlideMeta = {};
+const PAGER_AHEAD = 2;
+const PAGER_BEHIND = 3;
+
+// Serial preload queue: only ONE background neighbor downloads at a time,
+// so prefetching never competes for bandwidth with the currently-playing video.
+let _pagerPreloadQueue = [];
+let _pagerPreloadBusy = false;
+
+function _queuePagerNeighbors(centerIdx) {
+  // Immediate neighbor (offset 1) gets a full mount — real streaming, instant swipe-to.
+  if (PAGER_AHEAD >= 1) _queuePagerPreload(centerIdx + 1);
+  if (PAGER_BEHIND >= 1) _queuePagerPreload(centerIdx - 1);
+  // Farther neighbors just get a small adaptive chunk warmed into a blob — cheap,
+  // promoted to a full mount only once the user swipes close enough to need it.
+  for (let off = 2; off <= PAGER_AHEAD; off++) _queuePartialChunkPrefetch(centerIdx + off);
+  for (let off = 2; off <= PAGER_BEHIND; off++) _queuePartialChunkPrefetch(centerIdx - off);
+}
+
+function _adaptiveChunkBytes() {
+  const conn = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
+  if (!conn) return 800000; // ~800KB default when Network Information API isn't available
+  if (conn.saveData) return 150000;
+  switch (conn.effectiveType) {
+    case 'slow-2g':
+    case '2g': return 150000;
+    case '3g': return 400000;
+    default: return 1000000; // 4g or unknown-but-fast
+  }
+}
+
+let _partialChunkQueue = [];
+let _partialChunkBusy = false;
+
+function _queuePartialChunkPrefetch(idx) {
+  if (_pagerSlideMeta[idx]) return; // already fully mounted
+  if (_partialChunkCache[idx]) return; // already have a chunk
+  if (_partialChunkQueue.includes(idx)) return;
+  _partialChunkQueue.push(idx);
+  _processPartialChunkQueue();
+}
+
+const _partialChunkCache = {};
+
+async function _processPartialChunkQueue() {
+  if (_partialChunkBusy) return;
+  _partialChunkBusy = true;
+  while (_partialChunkQueue.length) {
+    const idx = _partialChunkQueue.shift();
+    if (idx > _pagerIdx + PAGER_AHEAD || idx < _pagerIdx - PAGER_BEHIND) continue; // stale
+    await _prefetchPartialChunk(idx);
+  }
+  _partialChunkBusy = false;
+}
+
+async function _prefetchPartialChunk(idx) {
+  const item = _pagerItem(idx);
+  if (!item) return;
+  const { short } = item;
+  let epKey = item.epKey;
+  if (_pagerMode === 'feed' && short.contentType === 'series' && !epKey) {
+    epKey = await _pagerResolveEpKey(short);
+    if (!epKey) return;
+  }
+  const shortKey = _shortKeyOf(short);
+  const cacheKey = _pagerMode === 'episode' ? (shortKey + '::' + epKey) : shortKey;
+
+  let urlData = _shortPreloadCache[cacheKey];
+  if (urlData && (Date.now() - urlData.cachedAt > SHORT_URL_CACHE_TTL_MS)) urlData = null;
+  if (!urlData) {
+    try {
+      const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
+      const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const data = await res.json();
+      if (!data.url) return;
+      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
+      _shortPreloadCache[cacheKey] = urlData;
+    } catch (e) { return; }
+  }
+
+  try {
+    const chunkBytes = _adaptiveChunkBytes();
+    const res = await fetch(urlData.url, { headers: { Range: `bytes=0-${chunkBytes}` } });
+    if (!res.ok && res.status !== 206) return;
+    const blob = await res.blob();
+    _partialChunkCache[idx] = { blobUrl: URL.createObjectURL(blob), realUrl: urlData.url };
+  } catch (e) {}
+}
+
+function _queuePagerPreload(idx) {
+  if (_pagerSlideMeta[idx]) return;
+  const slideEl = document.getElementById('pgSlide_' + idx);
+  if (slideEl && (slideEl.dataset.mounted === '1' || slideEl.dataset.mounting === '1')) return;
+  if (_pagerPreloadQueue.includes(idx)) return;
+  _pagerPreloadQueue.push(idx);
+  _processPagerPreloadQueue();
+}
+
+async function _processPagerPreloadQueue() {
+  if (_pagerPreloadBusy) return;
+  _pagerPreloadBusy = true;
+  while (_pagerPreloadQueue.length) {
+    const idx = _pagerPreloadQueue.shift();
+    if (idx > _pagerIdx + PAGER_AHEAD || idx < _pagerIdx - PAGER_BEHIND) continue; // stale — user already swiped past it
+    await _mountPagerSlide(idx, false);
+  }
+  _pagerPreloadBusy = false;
+}
 
 function _easeOutCubicShort(t) { return 1 - Math.pow(1 - t, 3); }
 
@@ -6774,8 +6883,7 @@ async function openShortPager(startIdx) {
 
   _pagerIdx = startIdx;
   await _mountPagerSlide(startIdx, true);
-  _mountPagerSlide(startIdx + 1, false);
-  _mountPagerSlide(startIdx - 1, false);
+  _queuePagerNeighbors(startIdx);
   _placePagerSlides(startIdx);
   _wirePagerTouch();
 }
@@ -6844,8 +6952,34 @@ async function _mountPagerSlide(idx, autoplay) {
   } catch (e) {}
 
   const video = document.getElementById('pgVid_' + idx);
-  video.src = urlData.url;
-  if (resumePos > 2) video.currentTime = resumePos;
+  const chunk = _partialChunkCache[idx];
+  if (chunk && resumePos <= 2) {
+    // instant start from the warmed blob, then proactively hand off to the real
+    // streaming URL BEFORE the blob runs out — using buffered range + currentTime,
+    // not waiting for an actual stall.
+    video.src = chunk.blobUrl;
+    let swapped = false;
+    const SWAP_LEAD_SECS = 1.0; // swap once we're within 1s of the blob's buffered end
+    const checkSwap = () => {
+      if (swapped) return;
+      if (!video.buffered.length) return;
+      const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+      if (bufferedEnd - video.currentTime <= SWAP_LEAD_SECS) {
+        swapped = true;
+        const t = video.currentTime;
+        const wasPaused = video.paused;
+        video.src = chunk.realUrl;
+        video.currentTime = t;
+        if (!wasPaused) video.play().catch(() => {});
+        video.removeEventListener('timeupdate', checkSwap);
+      }
+    };
+    video.addEventListener('timeupdate', checkSwap);
+    delete _partialChunkCache[idx];
+  } else {
+    video.src = urlData.url;
+    if (resumePos > 2) video.currentTime = resumePos;
+  }
   if (autoplay) video.play().catch(() => {});
   _wireSeekBar(idx);
   _wireEdgeLongPress(idx);
@@ -6911,13 +7045,15 @@ async function likePagerSlide(slideEl) {
   if (wantLiked) { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
   else { _likedShorts.splice(_likedShorts.indexOf(shortKey), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
   localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
-  const result = await _setLikeState(shortKey, wantLiked, 'short');
-  if (result && countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
-  if (!result) {
-    if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
-    else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
-    localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
-  }
+  _scheduleLikeCommit(shortKey, wantLiked, 'short', (result) => {
+    if (result) {
+      if (countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
+    } else {
+      if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+      else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+      localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+    }
+  });
 }
 
 let _videoTapTimer = null;
@@ -7118,8 +7254,7 @@ async function _onPagerSlideCommitted(prevIdx, newIdx) {
   }
   if (_pagerMode === 'episode') _updateEpisodeModeHeader();
 
-  await _mountPagerSlide(newIdx + 1, false);
-  await _mountPagerSlide(newIdx - 1, false);
+  _queuePagerNeighbors(newIdx);
   _unmountFarPagerSlides(newIdx);
   _placePagerSlides(newIdx);
   _pagerLocked = false;
@@ -7128,12 +7263,14 @@ async function _onPagerSlideCommitted(prevIdx, newIdx) {
 function _unmountFarPagerSlides(centerIdx) {
   Object.keys(_pagerSlideMeta).forEach(k => {
     const i = Number(k);
-    if (Math.abs(i - centerIdx) > 1) {
+    if (i > centerIdx + PAGER_AHEAD || i < centerIdx - PAGER_BEHIND) {
       const el = document.getElementById('pgSlide_' + i);
       if (el) el.remove();
       delete _pagerSlideMeta[i];
     }
   });
+  // drop any queued-but-not-yet-fetched neighbors that fell outside the window
+  _pagerPreloadQueue = _pagerPreloadQueue.filter(i => i <= centerIdx + PAGER_AHEAD && i >= centerIdx - PAGER_BEHIND);
 }
 
 function _snapPagerBack(fromOffset) {
@@ -7260,6 +7397,27 @@ function saveShortProgress(shortKey, epKey, pos, dur, title) {
 
 const _likedShorts = JSON.parse(localStorage.getItem('pichaplus_liked_shorts') || '[]');
 
+// Trailing debounce for like taps: mashing the button collapses to at most one network request
+const _likeDebounceTimers = new Map();
+const _likeDebounceOriginal = new Map();
+const LIKE_DEBOUNCE_MS = 500;
+
+function _scheduleLikeCommit(shortKey, wantLiked, contentType, onResult) {
+  if (!_likeDebounceTimers.has(shortKey)) {
+    _likeDebounceOriginal.set(shortKey, !wantLiked); // state as of the first tap in this burst
+  }
+  clearTimeout(_likeDebounceTimers.get(shortKey));
+  const timer = setTimeout(async () => {
+    const original = _likeDebounceOriginal.get(shortKey);
+    _likeDebounceTimers.delete(shortKey);
+    _likeDebounceOriginal.delete(shortKey);
+    if (wantLiked === original) return; // ended back where it started — skip the network call
+    const result = await _setLikeState(shortKey, wantLiked, contentType);
+    onResult(result);
+  }, LIKE_DEBOUNCE_MS);
+  _likeDebounceTimers.set(shortKey, timer);
+}
+
 function _formatLikeCount(n) {
   if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
@@ -7290,13 +7448,15 @@ async function likeCurrentShort() {
   if (wantLiked) { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
   else { _likedShorts.splice(_likedShorts.indexOf(shortKey), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
   localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
-  const result = await _setLikeState(shortKey, wantLiked, 'short');
-  if (result && countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
-  if (!result) {
-    if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
-    else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
-    localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
-  }
+  _scheduleLikeCommit(shortKey, wantLiked, 'short', (result) => {
+    if (result) {
+      if (countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
+    } else {
+      if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+      else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+      localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
+    }
+  });
 }
 
 let _shortPausedAt = 0;
