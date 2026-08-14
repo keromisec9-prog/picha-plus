@@ -6786,8 +6786,8 @@ let _pTsx = 0, _pTsy = 0, _pDragY = 0, _pLastY = 0, _pLastT = 0, _pVel = 0;
 let _pPeekIdx = null;
 let _pagerH = 0;
 let _pagerSlideMeta = {};
-const PAGER_AHEAD = 2;
-const PAGER_BEHIND = 3;
+const PAGER_AHEAD = 3;
+const PAGER_BEHIND = 2;
 
 // Serial preload queue: only ONE background neighbor downloads at a time,
 // so prefetching never competes for bandwidth with the currently-playing video.
@@ -6856,14 +6856,20 @@ async function _prefetchPartialChunk(idx) {
   if (urlData && (Date.now() - urlData.cachedAt > SHORT_URL_CACHE_TTL_MS)) urlData = null;
   if (!urlData) {
     try {
+      // Background chunk prefetch never uses progress/likes — /short-url skips both
+      // Neon queries that /short-meta pays for, so this doesn't compete for DB
+      // latency with the actually-playing slide's own request.
       const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
-      const res = await fetch(`${API}/short-meta?id=${encodeURIComponent(shortKey)}${qs}`, {
+      const res = await fetch(`${API}/short-url?id=${encodeURIComponent(shortKey)}${qs}`, {
         headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
       });
       const data = await res.json();
       if (!data.url) return;
-      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, progress: data.progress, likes: data.likes, isLiked: data.isLiked, cachedAt: Date.now() };
-      _shortPreloadCache[cacheKey] = urlData;
+      // Deliberately NOT cached into _shortPreloadCache (which _mountPagerSlide also
+      // reads) — that cache now implies progress/likes are present, and this response
+      // never has them. Once the user actually swipes to this slide, _mountPagerSlide
+      // will do its own real /short-meta call, and _partialChunkCache carries the blob.
+      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs };
     } catch (e) { return; }
   }
 
