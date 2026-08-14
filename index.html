@@ -6857,12 +6857,12 @@ async function _prefetchPartialChunk(idx) {
   if (!urlData) {
     try {
       const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
-      const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
+      const res = await fetch(`${API}/short-meta?id=${encodeURIComponent(shortKey)}${qs}`, {
         headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
       });
       const data = await res.json();
       if (!data.url) return;
-      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
+      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, progress: data.progress, likes: data.likes, isLiked: data.isLiked, cachedAt: Date.now() };
       _shortPreloadCache[cacheKey] = urlData;
     } catch (e) { return; }
   }
@@ -7033,24 +7033,32 @@ async function _mountPagerSlide(idx, autoplay) {
   if (!urlData) {
     try {
       const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
-      const res = await fetch(`${API}/short-video?id=${encodeURIComponent(shortKey)}${qs}`, {
+      const res = await fetch(`${API}/short-meta?id=${encodeURIComponent(shortKey)}${qs}`, {
         headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
       });
       const data = await res.json();
       if (!data.url) { delete slideEl.dataset.mounting; clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; return; }
-      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, cachedAt: Date.now() };
+      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs, progress: data.progress, likes: data.likes, isLiked: data.isLiked, cachedAt: Date.now() };
       _shortPreloadCache[cacheKey] = urlData;
     } catch (e) { delete slideEl.dataset.mounting; clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; return; }
   }
 
   let resumePos = 0;
-  try {
-    const progRes = await fetch(`${API}/short-progress?id=${encodeURIComponent(shortKey)}`, {
-      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-    });
-    const progData = await progRes.json();
-    if (progData.progress && progData.progress.episode_id === epKey) resumePos = progData.progress.progress_seconds || 0;
-  } catch (e) {}
+  if (urlData.progress && urlData.progress.episode_id === epKey) resumePos = urlData.progress.progress_seconds || 0;
+
+  // Apply like state straight from the combined response — no separate /likes fetch
+  // needed here. _refreshPagerLikeUI's own fetch still runs on swipe-commit (a
+  // separate, much less frequent call site) to catch likes changed elsewhere.
+  if (typeof urlData.likes === 'number') {
+    if (shortKey === _shortKeyOf(short)) {
+      if (!_likedShorts.includes(shortKey) && urlData.isLiked) _likedShorts.push(shortKey);
+      else if (_likedShorts.includes(shortKey) && !urlData.isLiked) _likedShorts.splice(_likedShorts.indexOf(shortKey), 1);
+    }
+    const likeIcon = document.getElementById('pgLikeIcon_' + idx);
+    const likeCountEl = document.getElementById('pgLikeCount_' + idx);
+    if (likeIcon) { likeIcon.style.color = urlData.isLiked ? '#ff3b5c' : '#fff'; likeIcon.style.fontVariationSettings = urlData.isLiked ? "'FILL' 1" : "'FILL' 0"; }
+    if (likeCountEl) likeCountEl.textContent = urlData.likes > 0 ? _formatLikeCount(urlData.likes) : 'Like';
+  }
 
   const video = document.getElementById('pgVid_' + idx);
   const chunk = _partialChunkCache[idx];
