@@ -4335,6 +4335,22 @@ function closePlayer() {
     });
     _pagerSlideMeta = {};
     window._shortPagerActive = false;
+
+    // Release every warmed blob (forward-prefetch chunks + recently-played recall
+    // cache) and stop all background queues — none of this should keep memory or
+    // bandwidth tied up once the user has actually left the shorts experience.
+    Object.values(_partialChunkCache).forEach(c => { if (c && c.blobUrl) URL.revokeObjectURL(c.blobUrl); });
+    Object.keys(_partialChunkCache).forEach(k => delete _partialChunkCache[k]);
+    Object.values(_recentlyPlayedChunkCache).forEach(c => { if (c && c.blobUrl) URL.revokeObjectURL(c.blobUrl); });
+    Object.keys(_recentlyPlayedChunkCache).forEach(k => delete _recentlyPlayedChunkCache[k]);
+    _recentlyPlayedOrder = [];
+    _partialChunkQueue = [];
+    _recentlyPlayedQueue = [];
+    _pagerPreloadQueue = [];
+    _partialChunkBusy = false;
+    _recentlyPlayedBusy = false;
+    _pagerPreloadBusy = false;
+    _backgroundPrefetchPaused = false;
   }
 
   const video = document.getElementById('player');
@@ -6807,6 +6823,79 @@ function _waitForBackgroundPrefetchAllowed() {
   });
 }
 
+// Recently-played recall cache: when a slide falls out of the preload window, instead
+// of forgetting it entirely, warm a small blob at LOW priority (same bandwidth gate as
+// forward prefetch) so swiping back to it still starts instantly even though it's no
+// longer competing for bandwidth. Capped + LRU-evicted so it can't grow unbounded.
+const RECENT_CACHE_MAX = 5;
+const _recentlyPlayedChunkCache = {};
+let _recentlyPlayedOrder = [];
+let _recentlyPlayedQueue = [];
+let _recentlyPlayedBusy = false;
+
+function _queueRecentlyPlayedWarm(idx) {
+  if (_recentlyPlayedChunkCache[idx]) return;
+  if (_recentlyPlayedQueue.includes(idx)) return;
+  _recentlyPlayedQueue.push(idx);
+  _processRecentlyPlayedQueue();
+}
+
+async function _processRecentlyPlayedQueue() {
+  if (_recentlyPlayedBusy) return;
+  _recentlyPlayedBusy = true;
+  while (_recentlyPlayedQueue.length) {
+    await _waitForBackgroundPrefetchAllowed();
+    const idx = _recentlyPlayedQueue.shift();
+    if (idx === undefined) break;
+    if (_pagerSlideMeta[idx]) continue; // re-mounted (user swiped back already) — no need to warm
+    await _warmRecentlyPlayedChunk(idx);
+  }
+  _recentlyPlayedBusy = false;
+}
+
+async function _warmRecentlyPlayedChunk(idx) {
+  const item = _pagerItem(idx);
+  if (!item) return;
+  const { short } = item;
+  let epKey = item.epKey;
+  if (_pagerMode === 'feed' && short.contentType === 'series' && !epKey) {
+    epKey = await _pagerResolveEpKey(short);
+    if (!epKey) return;
+  }
+  const shortKey = _shortKeyOf(short);
+  const cacheKey = _pagerMode === 'episode' ? (shortKey + '::' + epKey) : shortKey;
+
+  let urlData = _shortPreloadCache[cacheKey];
+  if (urlData && (Date.now() - urlData.cachedAt > SHORT_URL_CACHE_TTL_MS)) urlData = null;
+  if (!urlData) {
+    try {
+      const qs = epKey ? `&epKey=${encodeURIComponent(epKey)}` : '';
+      const res = await fetch(`${API}/short-url?id=${encodeURIComponent(shortKey)}${qs}`, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const data = await res.json();
+      if (!data.url) return;
+      urlData = { epKey, url: data.url, isPreview: data.isPreview, previewSecs: data.previewSecs };
+    } catch (e) { return; }
+  }
+
+  try {
+    const chunkBytes = _adaptiveChunkBytes();
+    const res = await fetch(urlData.url, { headers: { Range: `bytes=0-${chunkBytes}` } });
+    if (!res.ok && res.status !== 206) return;
+    const blob = await res.blob();
+
+    if (_recentlyPlayedOrder.length >= RECENT_CACHE_MAX) {
+      const oldestIdx = _recentlyPlayedOrder.shift();
+      const oldest = _recentlyPlayedChunkCache[oldestIdx];
+      if (oldest) URL.revokeObjectURL(oldest.blobUrl);
+      delete _recentlyPlayedChunkCache[oldestIdx];
+    }
+    _recentlyPlayedChunkCache[idx] = { blobUrl: URL.createObjectURL(blob), realUrl: urlData.url };
+    _recentlyPlayedOrder.push(idx);
+  } catch (e) {}
+}
+
 // Serial preload queue: only ONE background neighbor downloads at a time,
 // so prefetching never competes for bandwidth with the currently-playing video.
 let _pagerPreloadQueue = [];
@@ -7089,7 +7178,8 @@ async function _mountPagerSlide(idx, autoplay) {
   }
 
   const video = document.getElementById('pgVid_' + idx);
-  const chunk = _partialChunkCache[idx];
+  const chunk = _partialChunkCache[idx] || _recentlyPlayedChunkCache[idx];
+  const isFromRecentCache = !_partialChunkCache[idx] && !!_recentlyPlayedChunkCache[idx];
   if (chunk && resumePos <= 2) {
     // instant start from the warmed blob, then proactively hand off to the real
     // streaming URL BEFORE the blob runs out — using buffered range + currentTime,
@@ -7112,7 +7202,12 @@ async function _mountPagerSlide(idx, autoplay) {
       }
     };
     video.addEventListener('timeupdate', checkSwap);
-    delete _partialChunkCache[idx];
+    if (isFromRecentCache) {
+      delete _recentlyPlayedChunkCache[idx];
+      _recentlyPlayedOrder = _recentlyPlayedOrder.filter(i => i !== idx);
+    } else {
+      delete _partialChunkCache[idx];
+    }
   } else {
     video.src = urlData.url;
     if (resumePos > 2) video.currentTime = resumePos;
@@ -7413,6 +7508,9 @@ function _unmountFarPagerSlides(centerIdx) {
       const el = document.getElementById('pgSlide_' + i);
       if (el) el.remove();
       delete _pagerSlideMeta[i];
+      // Don't just forget it — warm a small recall blob at low priority so swiping
+      // back later still starts instantly, without it competing for bandwidth now.
+      _queueRecentlyPlayedWarm(i);
     }
   });
   // drop any queued-but-not-yet-fetched neighbors that fell outside the window
