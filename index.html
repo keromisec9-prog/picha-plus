@@ -6789,6 +6789,24 @@ let _pagerSlideMeta = {};
 const PAGER_AHEAD = 3;
 const PAGER_BEHIND = 2;
 
+// Buffer-priority: background preload/chunk queues pause whenever the ACTIVELY
+// PLAYING slide's own buffer margin runs thin, so a network dip always gives that
+// video priority bandwidth instead of competing with background prefetching.
+const BUFFER_PAUSE_THRESHOLD_SECS = 5;   // pause background work below this margin
+const BUFFER_RESUME_THRESHOLD_SECS = 8;  // resume only once margin recovers past this (hysteresis, avoids flicker)
+let _backgroundPrefetchPaused = false;
+
+function _waitForBackgroundPrefetchAllowed() {
+  return new Promise(resolve => {
+    if (!_backgroundPrefetchPaused) { resolve(); return; }
+    const check = () => {
+      if (!_backgroundPrefetchPaused) resolve();
+      else setTimeout(check, 400);
+    };
+    check();
+  });
+}
+
 // Serial preload queue: only ONE background neighbor downloads at a time,
 // so prefetching never competes for bandwidth with the currently-playing video.
 let _pagerPreloadQueue = [];
@@ -6833,7 +6851,9 @@ async function _processPartialChunkQueue() {
   if (_partialChunkBusy) return;
   _partialChunkBusy = true;
   while (_partialChunkQueue.length) {
+    await _waitForBackgroundPrefetchAllowed();
     const idx = _partialChunkQueue.shift();
+    if (idx === undefined) break;
     if (idx > _pagerIdx + PAGER_AHEAD || idx < _pagerIdx - PAGER_BEHIND) continue; // stale
     await _prefetchPartialChunk(idx);
   }
@@ -6895,7 +6915,9 @@ async function _processPagerPreloadQueue() {
   if (_pagerPreloadBusy) return;
   _pagerPreloadBusy = true;
   while (_pagerPreloadQueue.length) {
+    await _waitForBackgroundPrefetchAllowed();
     const idx = _pagerPreloadQueue.shift();
+    if (idx === undefined) break;
     if (idx > _pagerIdx + PAGER_AHEAD || idx < _pagerIdx - PAGER_BEHIND) continue; // stale — user already swiped past it
     await _mountPagerSlide(idx, false);
   }
@@ -7115,6 +7137,15 @@ async function _mountPagerSlide(idx, autoplay) {
       const remaining = Math.ceil(previewSecs - video.currentTime);
       if (remaining <= warnWindow && remaining > 0) { badge.style.display = 'block'; badge.textContent = `${remaining}s left in free preview`; }
       else badge.style.display = 'none';
+    }
+    // Buffer-priority check — only meaningful for the slide actually being watched.
+    if (idx === _pagerIdx && video.buffered.length) {
+      const bufferedAhead = video.buffered.end(video.buffered.length - 1) - video.currentTime;
+      if (!_backgroundPrefetchPaused && bufferedAhead < BUFFER_PAUSE_THRESHOLD_SECS) {
+        _backgroundPrefetchPaused = true;
+      } else if (_backgroundPrefetchPaused && bufferedAhead > BUFFER_RESUME_THRESHOLD_SECS) {
+        _backgroundPrefetchPaused = false;
+      }
     }
   });
   video.addEventListener('pause', () => {
