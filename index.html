@@ -8555,6 +8555,14 @@ function _navLocked() {
 
 function bnGo(tab) {
   if (_navLocked()) return;
+  // Switching bottom-nav tabs while a movie or the shorts pager is still open must
+  // tear it down properly first — otherwise it keeps running behind the new tab
+  // (background prefetch queues, still-playing video, etc.), and reopening any
+  // player later can show its stale leftover state instead of the new content.
+  const _openPlayerModal = document.getElementById('playerModal');
+  if (_openPlayerModal && _openPlayerModal.classList.contains('active')) {
+    closePlayer();
+  }
   _bnActive = tab;
   document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('bn-' + tab)?.classList.add('active');
