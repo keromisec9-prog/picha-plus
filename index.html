@@ -3353,6 +3353,13 @@ async function showInfo(item) {
     if (idx !== -1) { showSeries(idx); return; }
   }
   currentInfoItem = item;
+  // showShortInfo() overrides infoPlayBtn's onclick via a JS property assignment,
+  // which takes permanent precedence over the button's static HTML attribute —
+  // it persists even after that modal closes without playing anything. Reclaim
+  // the button here so a movie's info modal always uses its correct default
+  // playFromInfo() behavior instead of whichever short was viewed last.
+  const _infoPlayBtn = document.getElementById('infoPlayBtn');
+  if (_infoPlayBtn) _infoPlayBtn.onclick = null;
   const title = item.title || item.name || '';
   const type = item.media_type === 'tv' || item.first_air_date ? 'tv' : 'movie';
 
