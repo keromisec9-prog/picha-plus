@@ -6350,6 +6350,13 @@ function openCategory(name, items) {
   if (searchInput) searchInput.value = '';
   const gridReset = document.getElementById('categoryGrid');
   if (gridReset) gridReset.classList.remove('list-mode');
+  // Stop Watch History's infinite-scroll observer — it lives outside categoryGrid
+  // (a sibling sentinel), so it survives a plain innerHTML swap and can silently
+  // fire a server fetch that overwrites whatever category is showing now.
+  if (_historyObserver) { _historyObserver.disconnect(); _historyObserver = null; }
+  const staleSentinel = document.getElementById('historyScrollSentinel');
+  if (staleSentinel) staleSentinel.remove();
+  _historyNoMore = true;
 
   document.getElementById('categoryTitle').textContent = name;
   document.getElementById('categoryCount').textContent = `${_categoryItems.length} title${_categoryItems.length !== 1 ? 's' : ''}`;
@@ -6380,6 +6387,12 @@ function openCategory(name, items) {
 function closeCategory() {
   document.getElementById('categoryOverlay').classList.remove('active');
   document.body.style.overflow = '';
+  // Same cleanup as openCategory's reset — closing shouldn't leave a live observer
+  // running in the background against a sentinel nobody can see anymore.
+  if (_historyObserver) { _historyObserver.disconnect(); _historyObserver = null; }
+  const staleSentinel = document.getElementById('historyScrollSentinel');
+  if (staleSentinel) staleSentinel.remove();
+  _historyNoMore = true;
 }
 
 function openInfoFromCategory(item) {
