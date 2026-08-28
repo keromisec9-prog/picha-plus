@@ -4236,8 +4236,11 @@ async function initPlayer(data, item) {
   } catch (err) {
     console.error('Load error:', err);
     const dbgCode = err && err.code !== undefined ? err.code : 'n/a';
+    const dbgCategory = err && err.category !== undefined ? err.category : 'n/a';
     const dbgMsg = err && err.message ? err.message : String(err);
-    alert(`DEBUG Load error\ncode: ${dbgCode}\nmessage: ${dbgMsg}\nurl: ${url}`);
+    let dbgData = 'n/a';
+    try { dbgData = JSON.stringify(err && err.data); } catch(e) { dbgData = String(err && err.data); }
+    alert(`DEBUG Load error\ncode: ${dbgCode}\ncategory: ${dbgCategory}\nmessage: ${dbgMsg}\ndata: ${dbgData}\nurl: ${url}`);
     showToast('Failed to load video', 'error');
     closePlayer();
   }
