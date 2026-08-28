@@ -4077,7 +4077,7 @@ async function initPlayer(data, item) {
 
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
-    showToast('Playback error. Please try again.', 'error');
+    showToast(`DEBUG Shaka error ${e.detail.code}: ${e.detail.message || e.detail}`, 'error');
   });
 
   // Cast session events — show/hide banner
@@ -4099,6 +4099,7 @@ async function initPlayer(data, item) {
   video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration, true, item.title || item.name); });
 
   try {
+    console.log('DEBUG stream URL:', url);
     await shakaPlayer.load(url);
     if (savedPos > 30) {
       video.currentTime = savedPos;
