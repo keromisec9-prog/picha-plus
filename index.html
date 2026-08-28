@@ -4077,7 +4077,7 @@ async function initPlayer(data, item) {
 
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
-    showToast(`DEBUG Shaka error ${e.detail.code}: ${e.detail.message || e.detail}`, 'error');
+    showToast('Playback error. Please try again.', 'error');
   });
 
   // Cast session events — show/hide banner
@@ -4099,7 +4099,6 @@ async function initPlayer(data, item) {
   video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration, true, item.title || item.name); });
 
   try {
-    console.log('DEBUG stream URL:', url);
     await shakaPlayer.load(url);
     if (savedPos > 30) {
       video.currentTime = savedPos;
@@ -4235,12 +4234,6 @@ async function initPlayer(data, item) {
 
   } catch (err) {
     console.error('Load error:', err);
-    const dbgCode = err && err.code !== undefined ? err.code : 'n/a';
-    const dbgCategory = err && err.category !== undefined ? err.category : 'n/a';
-    const dbgMsg = err && err.message ? err.message : String(err);
-    let dbgData = 'n/a';
-    try { dbgData = JSON.stringify(err && err.data); } catch(e) { dbgData = String(err && err.data); }
-    alert(`DEBUG Load error\ncode: ${dbgCode}\ncategory: ${dbgCategory}\nmessage: ${dbgMsg}\ndata: ${dbgData}\nurl: ${url}`);
     showToast('Failed to load video', 'error');
     closePlayer();
   }
