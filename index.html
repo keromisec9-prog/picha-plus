@@ -3971,7 +3971,7 @@ async function handleCardPlay(item) {
     const data = await res.json();
 
     if (data.url) {
-      initPlayer(data.url, item);
+      initPlayer(data, item);
       return;
     }
 
@@ -3991,7 +3991,12 @@ async function handleCardPlay(item) {
   }
 }
 
-async function initPlayer(url, item) {
+async function initPlayer(data, item) {
+  // Prefer the cached/authenticated Worker proxy route; fall back to the raw
+  // presigned URL if streamToken/streamKey are missing (e.g. legacy externalUrl entries).
+  const url = (data && data.streamToken && data.streamKey)
+    ? `${API}/stream?key=${encodeURIComponent(data.streamKey)}&token=${encodeURIComponent(data.streamToken)}`
+    : (typeof data === 'string' ? data : data.url);
   try {
     await loadShaka();
   } catch (e) {
@@ -4616,7 +4621,7 @@ async function resumeWatching(item) {
   try {
     const res = await fetch(`${API}/video?id=${item.id}`, { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } });
     const data = await res.json();
-    if (data.url) { initPlayer(data.url, item); return; }
+    if (data.url) { initPlayer(data, item); return; }
     closePlayer();
     if (res.status === 401 || res.status === 403 || (data.error && /session|device|concurrent|another|sign in|revoked/i.test(data.error))) {
       showSessionConflictToast();
