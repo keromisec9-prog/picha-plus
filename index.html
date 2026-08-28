@@ -4279,7 +4279,7 @@ async function upnextPlayNow() {
       const epKey = `series__${s._kvKey}__${idx}`;
       currentSeries = s;
       showToast('Starting episode ' + (idx+1), 'info');
-      initPlayer(data.url, { id: epKey, title: epTitle, _seriesKvKey: s._kvKey, _epIndex: idx });
+      initPlayer(data, { id: epKey, title: epTitle, _seriesKvKey: s._kvKey, _epIndex: idx });
     } else {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
@@ -4311,7 +4311,7 @@ async function prefetchNextEpisode(s, nextIndex) {
     });
     const data = await res.json();
     if (data.url) {
-      window._prefetchCache[cacheKey] = data.url;
+      window._prefetchCache[cacheKey] = data;
       console.log('[Prefetch] Cached ep', nextIndex, 'for', s.title);
     }
   } catch(e) {
@@ -6045,7 +6045,7 @@ async function playEpisode(epIndex) {
         return;
       }
       const epKey = `series__${s._kvKey}__${epIndex}`;
-      initPlayer(data.url, { id: epKey, title: `${s.title} — Episode ${ep.episode || (epIndex+1)}`, _seriesKvKey: s._kvKey, _epIndex: epIndex });
+      initPlayer(data, { id: epKey, title: `${s.title} — Episode ${ep.episode || (epIndex+1)}`, _seriesKvKey: s._kvKey, _epIndex: epIndex });
     } else {
       closePlayer();
       showToast(data.error || 'Episode unavailable', 'error');
@@ -6084,7 +6084,7 @@ async function playEpisodePart(kvKey, tmdbId, epIndex, partIndex) {
     const data = await res.json();
     if (data.url) {
       const epKey = `series__${kvKey}__${epIndex}__p${partIndex}`;
-      initPlayer(data.url, { id: epKey, title: `${s?.title || ''} — E${ep?.episode || (epIndex+1)} Part ${partIndex+1}`, _seriesKvKey: kvKey, _epIndex: epIndex });
+      initPlayer(data, { id: epKey, title: `${s?.title || ''} — E${ep?.episode || (epIndex+1)} Part ${partIndex+1}`, _seriesKvKey: kvKey, _epIndex: epIndex });
     } else {
       closePlayer();
       showToast(data.error || 'Part unavailable', 'error');
