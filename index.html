@@ -2428,10 +2428,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9z"/></svg>
           Play
         </button>
-        <button class="info-play-btn" id="infoRequestBtn" onclick="requestCurrentTitle()" style="display:none;">
-          <span class="material-symbols-rounded" style="font-size:14px;line-height:1;">notifications_active</span>
-          <span id="infoRequestBtnLabel">I Want This</span>
-        </button>
         <button class="info-add-btn" id="infoAddBtn" onclick="toggleMyListFromInfo()" title="Add to My List">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </button>
@@ -2459,6 +2455,14 @@ function saveProgress(id, pos, dur, forceSync, title) {
       <p class="info-desc" id="infoDesc"></p>
       <p class="info-genres" id="infoGenres"></p>
       <p class="info-narrative" id="infoNarrative" style="font-size:0.75rem;color:var(--gold);margin-top:0.5rem;"></p>
+      <div id="titleRequestSection" style="display:none;background:#1a1a1a;border-radius:8px;padding:1rem;margin-top:1rem;">
+        <p id="requestCopy" style="font-size:0.83rem;line-height:1.5;color:rgba(255,255,255,0.75);margin:0 0 0.7rem;">Don't have this title? Tell us you want it and we'll try to add it for you.</p>
+        <div id="requestCountRow" style="display:none;font-size:0.85rem;color:var(--gold);font-weight:600;margin-bottom:0.7rem;"></div>
+        <button id="infoRequestBtnFull" onclick="requestCurrentTitle()" style="width:100%;padding:0.75rem;border-radius:6px;border:none;background:var(--gold);color:#000;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:background 0.2s,color 0.2s;">
+          <span class="material-symbols-rounded" style="font-size:16px;line-height:1;">notifications_active</span>
+          <span id="infoRequestBtnFullLabel">I Want This</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -3447,14 +3451,14 @@ async function showInfo(item) {
 
   // Play vs Request toggle based on library availability
   const playBtnEl = document.getElementById('infoPlayBtn');
-  const requestBtnEl = document.getElementById('infoRequestBtn');
+  const requestSectionEl = document.getElementById('titleRequestSection');
   if (item._isOwned) {
     if (playBtnEl) playBtnEl.style.display = 'flex';
-    if (requestBtnEl) requestBtnEl.style.display = 'none';
+    if (requestSectionEl) requestSectionEl.style.display = 'none';
   } else {
     if (playBtnEl) playBtnEl.style.display = 'none';
-    if (requestBtnEl) {
-      requestBtnEl.style.display = 'flex';
+    if (requestSectionEl) {
+      requestSectionEl.style.display = 'block';
       refreshRequestButtonState(item);
     }
   }
@@ -3509,25 +3513,41 @@ async function shareCurrentTitle() {
   }
 }
 
+function _requestCountText(count) {
+  return count === 1 ? '1 person wants this' : `${count.toLocaleString()} people want this`;
+}
+
 async function refreshRequestButtonState(item) {
   const tmdbId = String(item.tmdbId || item.id);
   const mediaType = (item.media_type === 'tv' || item.first_air_date) ? 'series' : 'movie';
-  const btn = document.getElementById('infoRequestBtn');
-  const label = document.getElementById('infoRequestBtnLabel');
+  const btn = document.getElementById('infoRequestBtnFull');
+  const label = document.getElementById('infoRequestBtnFullLabel');
+  const countRow = document.getElementById('requestCountRow');
+  const copyEl = document.getElementById('requestCopy');
   if (!btn || !label) return;
   try {
     const headers = {};
     if (session.token) headers['X-Session-Token'] = session.token;
     const res = await fetch(`${API}/requests/status?tmdbId=${encodeURIComponent(tmdbId)}&mediaType=${mediaType}`, { headers });
     const data = await res.json();
+    if (countRow) {
+      if (data.count > 0) { countRow.style.display = 'block'; countRow.textContent = _requestCountText(data.count); }
+      else countRow.style.display = 'none';
+    }
     if (data.userRequested) {
-      label.textContent = data.count > 0 ? `Requested (${data.count})` : 'Requested';
+      label.textContent = 'Requested';
       btn.disabled = true;
-      btn.style.opacity = '0.7';
+      btn.style.background = 'transparent';
+      btn.style.border = '1px solid #2ecc71';
+      btn.style.color = '#2ecc71';
+      if (copyEl) copyEl.textContent = "You're on the list. We'll let you know if it becomes available.";
     } else {
-      label.textContent = data.count > 0 ? `I Want This (${data.count})` : 'I Want This';
+      label.textContent = 'I Want This';
       btn.disabled = false;
-      btn.style.opacity = '1';
+      btn.style.background = 'var(--gold)';
+      btn.style.border = 'none';
+      btn.style.color = '#000';
+      if (copyEl) copyEl.textContent = "Don't have this title? Tell us you want it and we'll try to add it for you.";
     }
   } catch (e) {
     label.textContent = 'I Want This';
@@ -3540,8 +3560,10 @@ async function requestCurrentTitle() {
   if (!session.isLoggedIn()) { openSignin(); return; }
   const tmdbId = String(item.tmdbId || item.id);
   const mediaType = (item.media_type === 'tv' || item.first_air_date) ? 'series' : 'movie';
-  const btn = document.getElementById('infoRequestBtn');
-  const label = document.getElementById('infoRequestBtnLabel');
+  const btn = document.getElementById('infoRequestBtnFull');
+  const label = document.getElementById('infoRequestBtnFullLabel');
+  const countRow = document.getElementById('requestCountRow');
+  const copyEl = document.getElementById('requestCopy');
   if (btn) btn.disabled = true;
   try {
     const res = await fetch(`${API}/requests/toggle`, {
@@ -3550,8 +3572,14 @@ async function requestCurrentTitle() {
       body: JSON.stringify({ tmdbId, mediaType })
     });
     const data = await res.json();
-    if (label) label.textContent = data.count > 0 ? `Requested (${data.count})` : 'Requested';
-    if (btn) btn.style.opacity = '0.7';
+    if (label) label.textContent = 'Requested';
+    if (countRow && data.count > 0) { countRow.style.display = 'block'; countRow.textContent = _requestCountText(data.count); }
+    if (copyEl) copyEl.textContent = "You're on the list. We'll let you know if it becomes available.";
+    if (btn) {
+      btn.style.background = 'transparent';
+      btn.style.border = '1px solid #2ecc71';
+      btn.style.color = '#2ecc71';
+    }
   } catch (e) {
     if (btn) btn.disabled = false;
   }
