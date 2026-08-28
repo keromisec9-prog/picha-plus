@@ -2428,6 +2428,10 @@ function saveProgress(id, pos, dur, forceSync, title) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9z"/></svg>
           Play
         </button>
+        <button class="info-play-btn" id="infoRequestBtn" onclick="requestCurrentTitle()" style="display:none;">
+          <span class="material-symbols-rounded" style="font-size:14px;line-height:1;">notifications_active</span>
+          <span id="infoRequestBtnLabel">I Want This</span>
+        </button>
         <button class="info-add-btn" id="infoAddBtn" onclick="toggleMyListFromInfo()" title="Add to My List">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </button>
@@ -3441,6 +3445,20 @@ async function showInfo(item) {
   addBtn.style.borderColor = isSaved ? 'var(--gold)' : '';
   addBtn.style.color = isSaved ? 'var(--gold)' : '';
 
+  // Play vs Request toggle based on library availability
+  const playBtnEl = document.getElementById('infoPlayBtn');
+  const requestBtnEl = document.getElementById('infoRequestBtn');
+  if (item._isOwned) {
+    if (playBtnEl) playBtnEl.style.display = 'flex';
+    if (requestBtnEl) requestBtnEl.style.display = 'none';
+  } else {
+    if (playBtnEl) playBtnEl.style.display = 'none';
+    if (requestBtnEl) {
+      requestBtnEl.style.display = 'flex';
+      refreshRequestButtonState(item);
+    }
+  }
+
   // Show download button for owned content
   const dlBtn = document.getElementById('infoDownloadBtn');
   if (dlBtn && item._isOwned) {
@@ -3488,6 +3506,54 @@ async function shareCurrentTitle() {
     showToast('Link copied ✓', 'gold');
   } catch (e) {
     showToast('Could not copy link', 'error');
+  }
+}
+
+async function refreshRequestButtonState(item) {
+  const tmdbId = String(item.tmdbId || item.id);
+  const mediaType = (item.media_type === 'tv' || item.first_air_date) ? 'series' : 'movie';
+  const btn = document.getElementById('infoRequestBtn');
+  const label = document.getElementById('infoRequestBtnLabel');
+  if (!btn || !label) return;
+  try {
+    const headers = {};
+    if (session.token) headers['X-Session-Token'] = session.token;
+    const res = await fetch(`${API}/requests/status?tmdbId=${encodeURIComponent(tmdbId)}&mediaType=${mediaType}`, { headers });
+    const data = await res.json();
+    if (data.userRequested) {
+      label.textContent = data.count > 0 ? `Requested (${data.count})` : 'Requested';
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+    } else {
+      label.textContent = data.count > 0 ? `I Want This (${data.count})` : 'I Want This';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  } catch (e) {
+    label.textContent = 'I Want This';
+  }
+}
+
+async function requestCurrentTitle() {
+  const item = currentInfoItem;
+  if (!item) return;
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  const tmdbId = String(item.tmdbId || item.id);
+  const mediaType = (item.media_type === 'tv' || item.first_air_date) ? 'series' : 'movie';
+  const btn = document.getElementById('infoRequestBtn');
+  const label = document.getElementById('infoRequestBtnLabel');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/requests/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
+      body: JSON.stringify({ tmdbId, mediaType })
+    });
+    const data = await res.json();
+    if (label) label.textContent = data.count > 0 ? `Requested (${data.count})` : 'Requested';
+    if (btn) btn.style.opacity = '0.7';
+  } catch (e) {
+    if (btn) btn.disabled = false;
   }
 }
 
