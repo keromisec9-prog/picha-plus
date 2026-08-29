@@ -7303,6 +7303,7 @@ async function _mountPagerSlide(idx, autoplay) {
     const likeCountEl = document.getElementById('pgLikeCount_' + idx);
     if (likeIcon) { likeIcon.style.color = urlData.isLiked ? '#ff3b5c' : '#fff'; likeIcon.style.fontVariationSettings = urlData.isLiked ? "'FILL' 1" : "'FILL' 0"; }
     if (likeCountEl) likeCountEl.textContent = urlData.likes > 0 ? _formatLikeCount(urlData.likes) : 'Like';
+    if (window._pgDebug) showToast('MOUNT key=' + shortKey + ' likes=' + urlData.likes + ' isLiked=' + urlData.isLiked, 'gold');
   }
 
   const video = document.getElementById('pgVid_' + idx);
@@ -7756,6 +7757,7 @@ function _wirePagerTouch() {
   }, { passive: true });
 }
 
+window._pgDebug = new URLSearchParams(window.location.search).has('pgdebug');
 let _shortPreloadCache = {};
 const SHORT_URL_CACHE_TTL_MS = 7200 * 1000; // matches resolveStreamUrl's default validDuration on the worker
 
