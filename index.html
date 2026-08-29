@@ -7417,6 +7417,11 @@ async function likePagerSlide(slideEl) {
   _scheduleLikeCommit(shortKey, wantLiked, 'short', (result) => {
     if (result) {
       if (countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
+      const cacheKey = meta.epKey ? (shortKey + '::' + meta.epKey) : shortKey;
+      if (_shortPreloadCache[cacheKey]) {
+        _shortPreloadCache[cacheKey].likes = result.likes;
+        _shortPreloadCache[cacheKey].isLiked = result.isLiked;
+      }
     } else {
       if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
       else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
