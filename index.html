@@ -9317,7 +9317,10 @@ function _mpfSizeContainer() {
   const container = document.getElementById('mpfContainer');
   if (!container) return 0;
   const top = container.getBoundingClientRect().top;
-  const h = Math.max(200, window.innerHeight - top);
+  // .bn-page reserves 70px of bottom padding for the bottom nav bar — subtract it
+  // so the slide's bottom (CTA button) actually lands in the visible viewport
+  // instead of past it, requiring a scroll to reach.
+  const h = Math.max(200, window.innerHeight - top - 70);
   container.style.height = h + 'px';
   return h;
 }
