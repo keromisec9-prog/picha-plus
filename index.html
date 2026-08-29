@@ -5177,8 +5177,10 @@ async function _setLikeState(videoId, wantLiked, contentType) {
       headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
       body: JSON.stringify({ videoId, contentType })
     });
-    return await res.json();
-  } catch (e) { return null; }
+    const data = await res.json();
+    if (!res.ok) { console.error('[_setLikeState] HTTP', res.status, data); showToast('Like failed: ' + (data.error || res.status), 'error'); return null; }
+    return data;
+  } catch (e) { console.error('[_setLikeState] network error', e); showToast('Like failed: network error', 'error'); return null; }
 }
 
 async function toggleLike(itemId, btn) {
