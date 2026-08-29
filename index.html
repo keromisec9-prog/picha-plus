@@ -2371,6 +2371,9 @@ function saveProgress(id, pos, dur, forceSync, title) {
     </button>
   </div>
   <div id="fyGrid" class="category-grid"></div>
+  <div id="mpfContainer" style="display:none;position:relative;width:100%;height:calc(100vh - 56px);background:#000;overflow:hidden;touch-action:none;">
+    <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
+  </div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
@@ -9241,10 +9244,6 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
 
 </script>
 <!-- MOVIE/SERIES PREVIEW DISCOVERY FEED -->
-<div id="mpfContainer" style="display:none;position:relative;width:100%;height:calc(100vh - 56px);background:#000;overflow:hidden;touch-action:none;">
-  <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
-</div>
-
 <script>
 // ── MOVIE/SERIES PREVIEW DISCOVERY FEED ─────────────────────────────────────
 // Full-screen vertical swipe feed showing existing preview clips for movies
