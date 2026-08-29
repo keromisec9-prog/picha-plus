@@ -2362,7 +2362,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <button class="bn-inner-tab" id="fyt-shorts" onclick="fyTab('shorts')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
+    <!-- TODO(Stage B): new Shorts discovery tab (vertical Movies/Series preview feed) goes here -->
     <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
       <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
     </button>
@@ -2371,7 +2371,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
     </button>
   </div>
   <div id="fyGrid" class="category-grid"></div>
-  <div id="shortsList" style="display:none;padding:0 1rem;"></div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
@@ -2948,14 +2947,14 @@ async function loadContent() {
     try {
       const settings = settingsRes ? await settingsRes.json() : {};
       window._africanCinemaEnabled = settings.africanCinemaEnabled !== false;
-      window._shortsEnabled = settings.shortsEnabled !== false;
+      window._shortFilmEnabled = settings.shortFilmEnabled !== false;
     } catch (e) {
       window._africanCinemaEnabled = true; // default to enabled if the settings fetch fails
-      window._shortsEnabled = true;
+      window._shortFilmEnabled = true;
     }
     {
-      const shortsTabBtn = document.getElementById('fyt-shorts');
-      if (shortsTabBtn) shortsTabBtn.style.display = window._shortsEnabled ? '' : 'none';
+      const shortFilmTabBtn = document.getElementById('bit-shortfilm');
+      if (shortFilmTabBtn) shortFilmTabBtn.style.display = window._shortFilmEnabled ? '' : 'none';
     }
     const movies = Object.values(catalogData.movies || {});
     const series = Object.values(catalogData.series || {});
@@ -8122,19 +8121,9 @@ function _backToShortsFeed() {
 }
 
 function fyTab(tab) {
-  if (tab === 'shorts' && window._shortsEnabled === false) tab = 'movies';
   _fyTab = tab;
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
-  document.getElementById('fyt-shorts').classList.toggle('active', tab === 'shorts');
-  document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
-  document.getElementById('shortsList').style.display = tab === 'shorts' ? 'block' : 'none';
-  if (tab === 'shorts') {
-    if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
-    loadShortsFeed();
-    return;
-  }
-  _stopShortsHeroRotation();
   renderForYou();
 }
 
@@ -8687,6 +8676,7 @@ function bnGo(tab) {
   document.getElementById('bnSavedPage').style.display = 'none';
   document.getElementById('bnForYouPage').style.display = 'none';
   if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
+  if (typeof _stopShortsHeroRotation === 'function') _stopShortsHeroRotation();
 
   if (tab === 'home') {
     document.getElementById('categoryOverlay')?.classList.remove('active');
@@ -8749,7 +8739,10 @@ function bnInnerTab(tab) {
   document.getElementById('bit-' + tab)?.classList.add('active');
   document.getElementById('bnGenreList').style.display = tab === 'genre' ? 'block' : 'none';
   document.getElementById('bnVjList').style.display  = tab === 'vj'    ? 'block' : 'none';
+  document.getElementById('shortsList').style.display = tab === 'shortfilm' ? 'block' : 'none';
   if (tab === 'vj') bnBuildVJList();
+  if (tab === 'shortfilm') { loadShortsFeed(); }
+  else if (typeof _stopShortsHeroRotation === 'function') { _stopShortsHeroRotation(); }
 }
 
 function bnBuildGenreList() {
@@ -9012,9 +9005,14 @@ closeCategory = function() {
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Veejays
     </button>
+    <button class="bn-inner-tab" id="bit-shortfilm" onclick="bnInnerTab('shortfilm')" style="display:none;">
+      <span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;">smart_display</span>
+      Short Film
+    </button>
   </div>
   <div id="bnGenreList" class="bn-list"></div>
   <div id="bnVjList" class="bn-list" style="display:none;"></div>
+  <div id="shortsList" style="display:none;padding:0 1rem;"></div>
 </div>
 
 <!-- SAVED PAGE -->
