@@ -2362,7 +2362,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <button class="bn-inner-tab" id="fyt-shorts" onclick="openMoviePreviewFeed()"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
+    <button class="bn-inner-tab" id="fyt-shorts" onclick="fyTab('shorts')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
     <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
       <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
     </button>
@@ -8142,6 +8142,14 @@ function fyTab(tab) {
   _fyTab = tab;
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
+  document.getElementById('fyt-shorts').classList.toggle('active', tab === 'shorts');
+  document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
+  document.getElementById('mpfContainer').style.display = tab === 'shorts' ? 'block' : 'none';
+  if (tab === 'shorts') {
+    openMoviePreviewFeed();
+    return;
+  }
+  closeMoviePreviewFeed();
   renderForYou();
 }
 
@@ -9233,10 +9241,7 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
 
 </script>
 <!-- MOVIE/SERIES PREVIEW DISCOVERY FEED -->
-<div id="mpfOverlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;overflow:hidden;touch-action:none;">
-  <button onclick="closeMoviePreviewFeed()" style="position:absolute;top:14px;left:14px;z-index:30;background:rgba(0,0,0,0.5);border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
-    <span class="material-symbols-rounded" style="font-size:20px;">close</span>
-  </button>
+<div id="mpfContainer" style="display:none;position:relative;width:100%;height:calc(100vh - 56px);background:#000;overflow:hidden;touch-action:none;">
   <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
 </div>
 
@@ -9309,16 +9314,15 @@ function _mpfSlideHTML(idx) {
 function _mpfEase(t) { return 1 - Math.pow(1 - t, 3); }
 
 async function openMoviePreviewFeed() {
-  _mpfList = _mpfBuildList();
+  if (!_mpfList.length) _mpfList = _mpfBuildList();
   if (!_mpfList.length) { showToast('Nothing to preview yet', 'error'); return; }
   if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
+  const container = document.getElementById('mpfContainer');
   _mpfIdx = 0;
   _mpfLocked = false;
-  _mpfH = window.innerHeight;
+  _mpfH = container.clientHeight || window.innerHeight;
   _mpfSlideMeta = {};
   document.getElementById('mpfRoot').innerHTML = '';
-  document.getElementById('mpfOverlay').style.display = 'block';
-  document.body.style.overflow = 'hidden';
   await _mpfMountSlide(0, true);
   _mpfPlaceSlides(0);
   _mpfWireTouch();
@@ -9329,10 +9333,9 @@ function closeMoviePreviewFeed() {
     const v = document.getElementById('mpfVid_' + k);
     if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
   });
-  document.getElementById('mpfOverlay').style.display = 'none';
   document.getElementById('mpfRoot').innerHTML = '';
-  document.body.style.overflow = '';
   _mpfSlideMeta = {};
+  _mpfList = [];
 }
 
 async function _mpfMountSlide(idx, autoplay) {
@@ -9636,7 +9639,8 @@ function _mpfWireEdgeLongPress(idx) {
 }
 
 function _mpfWireTouch() {
-  _mpfH = window.innerHeight;
+  const containerEl = document.getElementById('mpfContainer');
+  _mpfH = (containerEl && containerEl.clientHeight) || window.innerHeight;
   const root = document.getElementById('mpfRoot');
   if (!root) return;
   const newRoot = root.cloneNode(false);
@@ -9647,7 +9651,8 @@ function _mpfWireTouch() {
 
   f.addEventListener('touchstart', (e) => {
     if (_mpfLocked) return;
-    _mpfH = window.innerHeight;
+    const containerEl = document.getElementById('mpfContainer');
+    _mpfH = (containerEl && containerEl.clientHeight) || window.innerHeight;
     _mpfTsy = e.touches[0].clientY;
     _mpfDragY = 0;
     _mpfLastY = _mpfTsy;
