@@ -6642,14 +6642,23 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(`${API}/likes/mine`, { headers: { 'X-Session-Token': session.token } })
       .then(r => r.json())
       .then(data => {
+        // Server is the source of truth — replace local arrays entirely rather than
+        // merging into them, so a like removed on another device actually disappears
+        // here too instead of lingering forever (a merge-only add never clears stale
+        // entries for likes that were undone elsewhere).
+        const serverShorts = [];
+        const serverLiked = [];
         (data.liked || []).forEach(row => {
           if (row.contentType === 'short') {
-            if (!_likedShorts.includes(row.videoId)) _likedShorts.push(row.videoId);
+            serverShorts.push(row.videoId);
           } else {
-            const id = isNaN(Number(row.videoId)) ? row.videoId : Number(row.videoId);
-            if (!liked.includes(id)) liked.push(id);
+            serverLiked.push(isNaN(Number(row.videoId)) ? row.videoId : Number(row.videoId));
           }
         });
+        _likedShorts.length = 0;
+        _likedShorts.push(...serverShorts);
+        liked.length = 0;
+        liked.push(...serverLiked);
         localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
         saveLiked();
       })
