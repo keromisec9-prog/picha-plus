@@ -2362,7 +2362,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
     <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <!-- TODO(Stage B): new Shorts discovery tab (vertical Movies/Series preview feed) goes here -->
+    <button class="bn-inner-tab" id="fyt-shorts" onclick="openMoviePreviewFeed()"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
     <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
       <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
     </button>
@@ -9213,5 +9213,321 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
     });
   })();
 
-</script></body>
+</script>
+<!-- MOVIE/SERIES PREVIEW DISCOVERY FEED -->
+<div id="mpfOverlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;overflow:hidden;touch-action:none;">
+  <button onclick="closeMoviePreviewFeed()" style="position:absolute;top:14px;left:14px;z-index:30;background:rgba(0,0,0,0.5);border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+    <span class="material-symbols-rounded" style="font-size:20px;">close</span>
+  </button>
+  <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
+</div>
+
+<script>
+// ── MOVIE/SERIES PREVIEW DISCOVERY FEED ─────────────────────────────────────
+// Full-screen vertical swipe feed showing existing preview clips for movies
+// and series (not short films), ranked by the same fyScore used in For You,
+// with a Watch Full Movie/Series CTA that hands off to the normal player.
+let _mpfList = [];
+let _mpfIdx = 0;
+let _mpfH = 0;
+let _mpfSlideMeta = {};
+let _mpfDragging = false;
+let _mpfLocked = false;
+let _mpfTsy = 0, _mpfDragY = 0, _mpfLastY = 0, _mpfLastT = 0, _mpfVel = 0, _mpfPeekIdx = null;
+const MPF_SNAP_RATIO = 0.22;
+const MPF_VELOCITY_THRESH = 0.5;
+const MPF_ANIM_MS = 260;
+
+function _mpfBuildList() {
+  const allCards = window._allCards || [];
+  // Same scoring as renderForYou, with jitter every time the feed opens so it
+  // doesn't always start on the same titles.
+  const scored = allCards.map(item => ({ item, score: fyScore(item) + (Math.random() * 8 - 4) }))
+    .sort((a, b) => {
+      const aLiked = liked.includes(a.item.id) ? 1 : 0;
+      const bLiked = liked.includes(b.item.id) ? 1 : 0;
+      if (aLiked !== bLiked) return bLiked - aLiked;
+      const aDisliked = _disliked.includes(a.item.id) ? 1 : 0;
+      const bDisliked = _disliked.includes(b.item.id) ? 1 : 0;
+      if (aDisliked !== bDisliked) return aDisliked - bDisliked;
+      return b.score - a.score;
+    });
+  return scored.map(s => s.item);
+}
+
+function _mpfSlideHTML(idx) {
+  return `
+    <div class="mpf-slide" id="mpfSlide_${idx}" data-idx="${idx}" style="position:absolute;inset:0;background:#000;display:none;">
+      <video id="mpfVid_${idx}" playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;background:#000;"></video>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 40%);pointer-events:none;"></div>
+      <div id="mpfSpinner_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
+        <div class="spinner"></div>
+      </div>
+      <div style="position:absolute;left:16px;right:16px;bottom:100px;color:#fff;">
+        <div style="font-weight:800;font-size:1.2rem;margin-bottom:6px;text-shadow:0 2px 6px rgba(0,0,0,0.6);" id="mpfTitle_${idx}"></div>
+        <div style="font-size:0.85rem;opacity:0.85;margin-bottom:16px;line-height:1.4;" id="mpfDesc_${idx}"></div>
+        <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:inline-flex;align-items:center;gap:6px;background:var(--gold);color:#000;font-weight:700;font-size:0.9rem;padding:11px 20px;border-radius:8px;border:none;cursor:pointer;">
+          <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch Full Movie
+        </button>
+      </div>
+    </div>`;
+}
+
+function _mpfEase(t) { return 1 - Math.pow(1 - t, 3); }
+
+async function openMoviePreviewFeed() {
+  _mpfList = _mpfBuildList();
+  if (!_mpfList.length) { showToast('Nothing to preview yet', 'error'); return; }
+  if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
+  _mpfIdx = 0;
+  _mpfLocked = false;
+  _mpfH = window.innerHeight;
+  _mpfSlideMeta = {};
+  document.getElementById('mpfRoot').innerHTML = '';
+  document.getElementById('mpfOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  await _mpfMountSlide(0, true);
+  _mpfPlaceSlides(0);
+  _mpfWireTouch();
+}
+
+function closeMoviePreviewFeed() {
+  Object.keys(_mpfSlideMeta).forEach(k => {
+    const v = document.getElementById('mpfVid_' + k);
+    if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+  });
+  document.getElementById('mpfOverlay').style.display = 'none';
+  document.getElementById('mpfRoot').innerHTML = '';
+  document.body.style.overflow = '';
+  _mpfSlideMeta = {};
+}
+
+async function _mpfMountSlide(idx, autoplay) {
+  const item = _mpfList[idx];
+  if (!item) return;
+  const root = document.getElementById('mpfRoot');
+  let slideEl = document.getElementById('mpfSlide_' + idx);
+  if (!slideEl) {
+    root.insertAdjacentHTML('beforeend', _mpfSlideHTML(idx));
+    slideEl = document.getElementById('mpfSlide_' + idx);
+  }
+  if (slideEl.dataset.mounted === '1') {
+    if (autoplay) { const v = document.getElementById('mpfVid_' + idx); if (v) v.play().catch(() => {}); }
+    return;
+  }
+  slideEl.dataset.mounted = '1';
+
+  const isTV = item.media_type === 'tv';
+  document.getElementById('mpfTitle_' + idx).textContent = item.title || item.name || '';
+  document.getElementById('mpfDesc_' + idx).textContent = (item.overview || '').slice(0, 110) + ((item.overview || '').length > 110 ? '…' : '');
+  document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
+
+  const spinnerEl = document.getElementById('mpfSpinner_' + idx);
+  const spinnerTimer = setTimeout(() => { if (spinnerEl) spinnerEl.style.display = 'flex'; }, 180);
+  const video = document.getElementById('mpfVid_' + idx);
+
+  try {
+    const cacheKey = isTV ? (item.id + '_ep0') : item.id;
+    let previewUrl = _previewCache[cacheKey];
+    if (!previewUrl) {
+      const endpoint = isTV
+        ? `${API}/episode-preview?seriesId=${item.id}&ep=0`
+        : `${API}/preview?id=${item.id}`;
+      const res = await fetch(endpoint, {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+      });
+      const data = await res.json();
+      if (!data.url) throw new Error('no preview url');
+      previewUrl = data.url;
+      _previewCache[cacheKey] = previewUrl;
+    }
+    video.src = previewUrl;
+    video.addEventListener('loadedmetadata', () => {
+      if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
+    }, { once: true });
+    if (autoplay) video.play().catch(() => {});
+  } catch (e) {
+    // fall through silently — spinner will just hide, slide stays without video
+  } finally {
+    clearTimeout(spinnerTimer);
+    if (spinnerEl) spinnerEl.style.display = 'none';
+  }
+
+  _mpfSlideMeta[idx] = { item };
+}
+
+function _mpfWatchFull(idx) {
+  const meta = _mpfSlideMeta[idx];
+  if (!meta) return;
+  closeMoviePreviewFeed();
+  handleCardPlay(meta.item);
+}
+
+function _mpfSetSlideY(idx, px) {
+  const s = document.getElementById('mpfSlide_' + idx);
+  if (s) { s.style.display = ''; s.style.transform = `translateY(${px}px)`; }
+}
+
+function _mpfPlaceSlides(centerIdx) {
+  const H = _mpfH || window.innerHeight;
+  _mpfList.forEach((_, i) => {
+    const s = document.getElementById('mpfSlide_' + i);
+    if (!s) return;
+    const dist = i - centerIdx;
+    if (Math.abs(dist) <= 1) { s.style.display = ''; s.style.transform = `translateY(${dist * H}px)`; }
+    else { s.style.display = 'none'; }
+  });
+}
+
+function _mpfGoTo(targetIdx, fromOffset) {
+  _mpfLocked = true;
+  const H = _mpfH || window.innerHeight;
+  const currIdx = _mpfIdx;
+  const startTime = performance.now();
+
+  _mpfMountSlide(targetIdx, false).then(() => {
+    const targetSlide = document.getElementById('mpfSlide_' + targetIdx);
+    const currSlide = document.getElementById('mpfSlide_' + currIdx);
+    if (targetSlide) targetSlide.style.display = '';
+
+    function frame(now) {
+      const t = Math.min((now - startTime) / MPF_ANIM_MS, 1);
+      const ease = _mpfEase(t);
+      const currFinal = targetIdx > currIdx ? -H : H;
+      if (currSlide) currSlide.style.transform = `translateY(${fromOffset + (currFinal - fromOffset) * ease}px)`;
+      if (targetSlide) {
+        const targetInitial = targetIdx > currIdx ? H - Math.abs(fromOffset) : -(H - Math.abs(fromOffset));
+        targetSlide.style.transform = `translateY(${targetInitial * (1 - ease)}px)`;
+      }
+      if (t < 1) { requestAnimationFrame(frame); return; }
+      if (currSlide) currSlide.style.transform = `translateY(${currFinal}px)`;
+      if (targetSlide) targetSlide.style.transform = 'translateY(0px)';
+      _mpfOnCommitted(currIdx, targetIdx);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+function _mpfOnCommitted(prevIdx, newIdx) {
+  const prevVideo = document.getElementById('mpfVid_' + prevIdx);
+  if (prevVideo) prevVideo.pause();
+  _mpfIdx = newIdx;
+  const newVideo = document.getElementById('mpfVid_' + newIdx);
+  if (newVideo) newVideo.play().catch(() => {});
+
+  // Prefetch just the next slide's URL (no speculative byte fetching) and mount it
+  if (newIdx + 1 < _mpfList.length) _mpfMountSlide(newIdx + 1, false);
+  if (newIdx - 1 >= 0) _mpfMountSlide(newIdx - 1, false);
+
+  // Drop far slides to keep memory bounded
+  Object.keys(_mpfSlideMeta).forEach(k => {
+    const i = Number(k);
+    if (Math.abs(i - newIdx) > 2) {
+      const el = document.getElementById('mpfSlide_' + i);
+      if (el) el.remove();
+      delete _mpfSlideMeta[i];
+    }
+  });
+
+  _mpfPlaceSlides(newIdx);
+  _mpfLocked = false;
+}
+
+function _mpfSnapBack(fromOffset) {
+  const H = _mpfH || window.innerHeight;
+  const currIdx = _mpfIdx;
+  const nextIdx = _mpfPeekIdx;
+  const startTime = performance.now();
+
+  function frame(now) {
+    const t = Math.min((now - startTime) / MPF_ANIM_MS, 1);
+    const ease = _mpfEase(t);
+    _mpfSetSlideY(currIdx, fromOffset * (1 - ease));
+    if (nextIdx !== null) {
+      const peekDir = nextIdx > currIdx ? 1 : -1;
+      const peekStart = H * peekDir + fromOffset;
+      const peekEnd = H * peekDir;
+      _mpfSetSlideY(nextIdx, peekStart + (peekEnd - peekStart) * ease);
+    }
+    if (t < 1) { requestAnimationFrame(frame); return; }
+    _mpfPlaceSlides(currIdx);
+    _mpfLocked = false;
+  }
+  requestAnimationFrame(frame);
+}
+
+function _mpfWireTouch() {
+  _mpfH = window.innerHeight;
+  const root = document.getElementById('mpfRoot');
+  if (!root) return;
+  const newRoot = root.cloneNode(false);
+  newRoot.id = 'mpfRoot';
+  while (root.firstChild) newRoot.appendChild(root.firstChild);
+  root.parentNode.replaceChild(newRoot, root);
+  const f = newRoot;
+
+  f.addEventListener('touchstart', (e) => {
+    if (_mpfLocked) return;
+    _mpfH = window.innerHeight;
+    _mpfTsy = e.touches[0].clientY;
+    _mpfDragY = 0;
+    _mpfLastY = _mpfTsy;
+    _mpfLastT = performance.now();
+    _mpfVel = 0;
+    _mpfDragging = true;
+    _mpfPeekIdx = null;
+  }, { passive: true });
+
+  f.addEventListener('touchmove', (e) => {
+    if (!_mpfDragging || _mpfLocked) return;
+    const dy = e.touches[0].clientY - _mpfTsy;
+    const now = performance.now();
+    const dt = now - _mpfLastT;
+    if (dt > 0) _mpfVel = (e.touches[0].clientY - _mpfLastY) / dt;
+    _mpfLastY = e.touches[0].clientY;
+    _mpfLastT = now;
+    _mpfDragY = dy;
+
+    _mpfSetSlideY(_mpfIdx, dy);
+
+    const len = _mpfList.length;
+    if (dy < 0 && _mpfIdx + 1 < len) {
+      _mpfPeekIdx = _mpfIdx + 1;
+      _mpfMountSlide(_mpfPeekIdx, false);
+      const s = document.getElementById('mpfSlide_' + _mpfPeekIdx);
+      if (s) { s.style.display = ''; s.style.transform = `translateY(${_mpfH + dy}px)`; }
+    } else if (dy > 0 && _mpfIdx - 1 >= 0) {
+      _mpfPeekIdx = _mpfIdx - 1;
+      _mpfMountSlide(_mpfPeekIdx, false);
+      const s = document.getElementById('mpfSlide_' + _mpfPeekIdx);
+      if (s) { s.style.display = ''; s.style.transform = `translateY(${-_mpfH + dy}px)`; }
+    }
+  }, { passive: true });
+
+  f.addEventListener('touchend', () => {
+    if (!_mpfDragging) return;
+    _mpfDragging = false;
+    const H = _mpfH;
+    const dy = _mpfDragY;
+    const ratio = Math.abs(dy) / H;
+    const vel = Math.abs(_mpfVel);
+    const len = _mpfList.length;
+    const commit = ratio >= MPF_SNAP_RATIO || vel >= MPF_VELOCITY_THRESH;
+
+    if (commit) {
+      if (dy < 0 && _mpfIdx + 1 < len) { _mpfGoTo(_mpfIdx + 1, dy); }
+      else if (dy > 0 && _mpfIdx - 1 >= 0) { _mpfGoTo(_mpfIdx - 1, dy); }
+      else { _mpfLocked = true; _mpfSnapBack(dy); }
+    } else {
+      _mpfLocked = true;
+      _mpfSnapBack(dy);
+    }
+  }, { passive: true });
+
+  f.addEventListener('touchcancel', () => {
+    if (_mpfDragging) { _mpfDragging = false; _mpfLocked = true; _mpfSnapBack(_mpfDragY); }
+  }, { passive: true });
+}
+</script>
+</body>
 </html>
