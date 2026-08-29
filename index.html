@@ -2371,7 +2371,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
     </button>
   </div>
   <div id="fyGrid" class="category-grid"></div>
-  <div id="mpfContainer" style="display:none;position:relative;width:100%;height:calc(100vh - 56px);background:#000;overflow:hidden;touch-action:none;">
+  <div id="mpfContainer" style="display:none;position:relative;width:100%;background:#000;overflow:hidden;touch-action:none;">
     <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
   </div>
   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
@@ -9313,14 +9313,22 @@ function _mpfSlideHTML(idx) {
 
 function _mpfEase(t) { return 1 - Math.pow(1 - t, 3); }
 
+function _mpfSizeContainer() {
+  const container = document.getElementById('mpfContainer');
+  if (!container) return 0;
+  const top = container.getBoundingClientRect().top;
+  const h = Math.max(200, window.innerHeight - top);
+  container.style.height = h + 'px';
+  return h;
+}
+
 async function openMoviePreviewFeed() {
   if (!_mpfList.length) _mpfList = _mpfBuildList();
   if (!_mpfList.length) { showToast('Nothing to preview yet', 'error'); return; }
   if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
-  const container = document.getElementById('mpfContainer');
   _mpfIdx = 0;
   _mpfLocked = false;
-  _mpfH = container.clientHeight || window.innerHeight;
+  _mpfH = _mpfSizeContainer();
   _mpfSlideMeta = {};
   document.getElementById('mpfRoot').innerHTML = '';
   await _mpfMountSlide(0, true);
@@ -9643,8 +9651,7 @@ function _mpfWireEdgeLongPress(idx) {
 }
 
 function _mpfWireTouch() {
-  const containerEl = document.getElementById('mpfContainer');
-  _mpfH = (containerEl && containerEl.clientHeight) || window.innerHeight;
+  _mpfH = _mpfSizeContainer();
   const root = document.getElementById('mpfRoot');
   if (!root) return;
   const newRoot = root.cloneNode(false);
@@ -9655,8 +9662,7 @@ function _mpfWireTouch() {
 
   f.addEventListener('touchstart', (e) => {
     if (_mpfLocked) return;
-    const containerEl = document.getElementById('mpfContainer');
-    _mpfH = (containerEl && containerEl.clientHeight) || window.innerHeight;
+    _mpfH = _mpfSizeContainer();
     _mpfTsy = e.touches[0].clientY;
     _mpfDragY = 0;
     _mpfLastY = _mpfTsy;
