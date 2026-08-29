@@ -9289,7 +9289,7 @@ function _mpfSlideHTML(idx) {
       <div style="position:absolute;right:14px;bottom:180px;display:flex;flex-direction:column;align-items:center;gap:22px;color:#fff;text-align:center;">
         <div onclick="_mpfToggleLike(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
           <span id="mpfLikeIcon_${idx}" class="material-symbols-rounded" style="font-size:30px;">favorite</span>
-          <span style="font-size:0.72rem;font-weight:600;">Like</span>
+          <span id="mpfLikeCount_${idx}" style="font-size:0.72rem;font-weight:600;">Like</span>
         </div>
         <div onclick="_mpfShare(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
           <span class="material-symbols-rounded" style="font-size:28px;">share</span>
@@ -9387,11 +9387,24 @@ async function _mpfMountSlide(idx, autoplay) {
   }
 
   const likeIcon = document.getElementById('mpfLikeIcon_' + idx);
+  const likeCountEl = document.getElementById('mpfLikeCount_' + idx);
   if (likeIcon) {
     const isLiked = liked.includes(item.id);
     likeIcon.style.color = isLiked ? '#ff3b5c' : '#fff';
     likeIcon.style.fontVariationSettings = isLiked ? "'FILL' 1" : "'FILL' 0";
   }
+  try {
+    const headers = session.isLoggedIn() ? { 'X-Session-Token': session.token } : {};
+    const likesRes = await fetch(`${API}/likes?videoId=${encodeURIComponent(item.id)}`, { headers });
+    const likesData = await likesRes.json();
+    if (likeCountEl) likeCountEl.textContent = likesData.likes > 0 ? _formatLikeCount(likesData.likes) : 'Like';
+    if (likeIcon && typeof likesData.isLiked === 'boolean') {
+      likeIcon.style.color = likesData.isLiked ? '#ff3b5c' : '#fff';
+      likeIcon.style.fontVariationSettings = likesData.isLiked ? "'FILL' 1" : "'FILL' 0";
+      if (likesData.isLiked && !liked.includes(item.id)) liked.push(item.id);
+      else if (!likesData.isLiked && liked.includes(item.id)) liked.splice(liked.indexOf(item.id), 1);
+    }
+  } catch (e) {}
   _mpfWireEdgeLongPress(idx);
 
   _mpfSlideMeta[idx] = { item };
@@ -9553,8 +9566,11 @@ async function _mpfToggleLike(idx) {
   if (wantLiked) { liked.push(itemId); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
   else { liked.splice(liked.indexOf(itemId), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
   saveLiked();
+  const countEl = document.getElementById('mpfLikeCount_' + idx);
   const result = await _setLikeState(itemId, wantLiked, 'movie');
-  if (!result) {
+  if (result) {
+    if (countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
+  } else {
     if (wantLiked) { const i = liked.indexOf(itemId); if (i > -1) liked.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
     else { liked.push(itemId); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
     saveLiked();
