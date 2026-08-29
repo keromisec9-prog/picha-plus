@@ -9258,10 +9258,25 @@ function _mpfBuildList() {
 function _mpfSlideHTML(idx) {
   return `
     <div class="mpf-slide" id="mpfSlide_${idx}" data-idx="${idx}" style="position:absolute;inset:0;background:#000;display:none;">
-      <video id="mpfVid_${idx}" playsinline style="width:100%;height:100%;object-fit:contain;display:block;background:#000;"></video>
+      <video id="mpfVid_${idx}" playsinline style="width:100%;height:100%;object-fit:contain;display:block;background:#000;" onclick="_mpfHandleVideoTap(this.closest('.mpf-slide'))"></video>
       <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 40%);pointer-events:none;"></div>
       <div id="mpfSpinner_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
         <div class="spinner"></div>
+      </div>
+      <div id="mpfPause_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
+          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;">play_arrow</span>
+        </div>
+      </div>
+      <div style="position:absolute;right:14px;bottom:180px;display:flex;flex-direction:column;align-items:center;gap:22px;color:#fff;text-align:center;">
+        <div onclick="_mpfToggleLike(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+          <span id="mpfLikeIcon_${idx}" class="material-symbols-rounded" style="font-size:30px;">favorite</span>
+          <span style="font-size:0.72rem;font-weight:600;">Like</span>
+        </div>
+        <div onclick="_mpfShare(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+          <span class="material-symbols-rounded" style="font-size:28px;">share</span>
+          <span style="font-size:0.72rem;font-weight:600;">Share</span>
+        </div>
       </div>
       <div style="position:absolute;left:16px;right:16px;bottom:100px;color:#fff;">
         <div style="font-weight:800;font-size:1.2rem;margin-bottom:6px;text-shadow:0 2px 6px rgba(0,0,0,0.6);" id="mpfTitle_${idx}"></div>
@@ -9352,6 +9367,14 @@ async function _mpfMountSlide(idx, autoplay) {
     clearTimeout(spinnerTimer);
     if (spinnerEl) spinnerEl.style.display = 'none';
   }
+
+  const likeIcon = document.getElementById('mpfLikeIcon_' + idx);
+  if (likeIcon) {
+    const isLiked = liked.includes(item.id);
+    likeIcon.style.color = isLiked ? '#ff3b5c' : '#fff';
+    likeIcon.style.fontVariationSettings = isLiked ? "'FILL' 1" : "'FILL' 0";
+  }
+  _mpfWireEdgeLongPress(idx);
 
   _mpfSlideMeta[idx] = { item };
 }
@@ -9454,6 +9477,128 @@ function _mpfSnapBack(fromOffset) {
     _mpfLocked = false;
   }
   requestAnimationFrame(frame);
+}
+
+let _mpfTapTimer = null;
+let _mpfTapCount = 0;
+
+function _mpfHandleVideoTap(slideEl) {
+  _mpfTapCount++;
+  if (_mpfTapCount === 1) {
+    _mpfTapTimer = setTimeout(() => {
+      _mpfTogglePlayPause(slideEl);
+      _mpfTapCount = 0;
+    }, 260);
+  } else {
+    clearTimeout(_mpfTapTimer);
+    _mpfTapCount = 0;
+    _mpfDoubleTapLike(slideEl);
+  }
+}
+
+function _mpfTogglePlayPause(slideEl) {
+  if (window._mpfSuppressClick) return;
+  const idx = Number(slideEl.dataset.idx);
+  const video = document.getElementById('mpfVid_' + idx);
+  const indicator = document.getElementById('mpfPause_' + idx);
+  if (!video) return;
+  if (video.paused) { video.play(); if (indicator) indicator.style.display = 'none'; }
+  else { video.pause(); if (indicator) indicator.style.display = 'flex'; }
+}
+
+function _mpfDoubleTapLike(slideEl) {
+  const idx = Number(slideEl.dataset.idx);
+  const meta = _mpfSlideMeta[idx];
+  if (meta && !liked.includes(meta.item.id)) {
+    _mpfToggleLike(idx);
+  }
+  _mpfShowDoubleTapHeart(slideEl);
+}
+
+function _mpfShowDoubleTapHeart(slideEl) {
+  const heart = document.createElement('span');
+  heart.className = 'material-symbols-rounded';
+  heart.textContent = 'favorite';
+  heart.style.cssText = 'position:absolute;inset:0;margin:auto;width:76px;height:76px;font-size:76px;color:#ff3b5c;pointer-events:none;z-index:25;display:flex;align-items:center;justify-content:center;animation:pgHeartPop 0.6s ease forwards;';
+  heart.style.fontVariationSettings = "'FILL' 1";
+  slideEl.appendChild(heart);
+  setTimeout(() => heart.remove(), 650);
+}
+
+async function _mpfToggleLike(idx) {
+  const meta = _mpfSlideMeta[idx];
+  if (!meta) return;
+  if (!session.isLoggedIn()) { openSignin(); return; }
+  const itemId = meta.item.id;
+  const wantLiked = !liked.includes(itemId);
+  const icon = document.getElementById('mpfLikeIcon_' + idx);
+  if (wantLiked) { liked.push(itemId); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+  else { liked.splice(liked.indexOf(itemId), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+  saveLiked();
+  const result = await _setLikeState(itemId, wantLiked, 'movie');
+  if (!result) {
+    if (wantLiked) { const i = liked.indexOf(itemId); if (i > -1) liked.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
+    else { liked.push(itemId); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
+    saveLiked();
+  }
+}
+
+async function _mpfShare(idx) {
+  const meta = _mpfSlideMeta[idx];
+  if (!meta) return;
+  const title = meta.item.title || meta.item.name || 'Picha+';
+  const url = window.location.href;
+  const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
+  if (navigator.share) {
+    try { await navigator.share(shareData); return; } catch (e) { /* cancelled or unsupported */ }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link copied ✓', 'gold');
+  } catch (e) {
+    showToast('Could not copy link', 'error');
+  }
+}
+
+function _mpfWireEdgeLongPress(idx) {
+  const video = document.getElementById('mpfVid_' + idx);
+  if (!video || video.dataset.lpWired === '1') return;
+  video.dataset.lpWired = '1';
+  const EDGE_RATIO = 0.2;
+  const HOLD_MS = 350;
+  let timer = null;
+  let active = false;
+  let startX = 0, startY = 0;
+
+  function clearHold() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (active) {
+      active = false;
+      video.playbackRate = 1;
+      window._mpfSuppressClick = true;
+      setTimeout(() => { window._mpfSuppressClick = false; }, 80);
+    }
+  }
+
+  video.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY;
+    const rect = video.getBoundingClientRect();
+    const relX = (t.clientX - rect.left) / rect.width;
+    if (relX > EDGE_RATIO && relX < 1 - EDGE_RATIO) return;
+    timer = setTimeout(() => {
+      active = true;
+      video.playbackRate = 3;
+    }, HOLD_MS);
+  }, { passive: true });
+
+  video.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) clearHold();
+  }, { passive: true });
+
+  video.addEventListener('touchend', clearHold);
+  video.addEventListener('touchcancel', clearHold);
 }
 
 function _mpfWireTouch() {
