@@ -7415,12 +7415,9 @@ async function likePagerSlide(slideEl) {
   else { _likedShorts.splice(_likedShorts.indexOf(shortKey), 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
   localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
   _scheduleLikeCommit(shortKey, wantLiked, 'short', (result) => {
-    console.log('[likePagerSlide] videoId=', shortKey, 'wantLiked=', wantLiked, 'result=', result);
     if (result) {
-      showToast('Server: ' + result.likes + ' likes, isLiked=' + result.isLiked, 'gold');
       if (countEl) countEl.textContent = result.likes > 0 ? _formatLikeCount(result.likes) : 'Like';
     } else {
-      showToast('Like commit returned null (see console)', 'error');
       if (wantLiked) { const i = _likedShorts.indexOf(shortKey); if (i > -1) _likedShorts.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
       else { _likedShorts.push(shortKey); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
       localStorage.setItem('pichaplus_liked_shorts', JSON.stringify(_likedShorts));
