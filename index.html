@@ -2948,8 +2948,14 @@ async function loadContent() {
     try {
       const settings = settingsRes ? await settingsRes.json() : {};
       window._africanCinemaEnabled = settings.africanCinemaEnabled !== false;
+      window._shortsEnabled = settings.shortsEnabled !== false;
     } catch (e) {
       window._africanCinemaEnabled = true; // default to enabled if the settings fetch fails
+      window._shortsEnabled = true;
+    }
+    {
+      const shortsTabBtn = document.getElementById('fyt-shorts');
+      if (shortsTabBtn) shortsTabBtn.style.display = window._shortsEnabled ? '' : 'none';
     }
     const movies = Object.values(catalogData.movies || {});
     const series = Object.values(catalogData.series || {});
@@ -8116,6 +8122,7 @@ function _backToShortsFeed() {
 }
 
 function fyTab(tab) {
+  if (tab === 'shorts' && window._shortsEnabled === false) tab = 'movies';
   _fyTab = tab;
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
