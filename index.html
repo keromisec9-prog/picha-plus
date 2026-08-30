@@ -9375,8 +9375,15 @@ function _mpfSizeContainer() {
   return h;
 }
 
-const MPF_AHEAD = 1;
+const MPF_AHEAD = 2;
 const MPF_BEHIND = 2;
+const MPF_NEIGHBOR_PRELOAD_MS = 6000; // wall-clock ms each ahead-neighbor is allowed to preload before being cut off
+let _mpfNeighborChainToken = 0; // bumped every time the active slide changes, invalidating any in-flight preload chain
+
+function _mpfStopNeighborPreload(idx) {
+  const v = document.getElementById('mpfVid_' + idx);
+  if (v) { v.pause(); v.preload = 'none'; }
+}
 let _mpfBackgroundPrefetchPaused = false;
 
 function _mpfWaitForPrefetchAllowed() {
@@ -9505,17 +9512,26 @@ async function _mpfWarmRecentlyPlayedChunk(idx) {
 
 // Full mount for immediate neighbors (idx±1), lightweight chunk warm for farther
 // ones — mirrors the short pager's neighbor strategy.
-async function _mpfQueuePreload(idx) {
+async function _mpfQueuePreload(idx, token) {
   if (_mpfSlideMeta[idx]) return;
   const slideEl = document.getElementById('mpfSlide_' + idx);
   if (slideEl && slideEl.dataset.mounted === '1') return;
   await _mpfWaitForPrefetchAllowed();
-  if (_mpfSlideMeta[idx]) return; // may have been mounted by the time we were allowed to proceed
-  _mpfMountSlide(idx, false);
+  if (token !== _mpfNeighborChainToken) return; // active slide changed before we were allowed to proceed
+  if (_mpfSlideMeta[idx]) return;
+  await _mpfMountSlide(idx, false);
+  if (token !== _mpfNeighborChainToken) { _mpfStopNeighborPreload(idx); return; }
+  await new Promise(r => setTimeout(r, MPF_NEIGHBOR_PRELOAD_MS));
+  if (token !== _mpfNeighborChainToken) return; // already handled by the stop-all pass in _mpfOnCommitted
+  _mpfStopNeighborPreload(idx);
 }
 
-function _mpfQueueNeighbors(centerIdx) {
-  for (let off = 1; off <= MPF_AHEAD; off++) _mpfQueuePreload(centerIdx + off);
+async function _mpfQueueNeighbors(centerIdx) {
+  const token = ++_mpfNeighborChainToken;
+  for (let off = 1; off <= MPF_AHEAD; off++) {
+    if (token !== _mpfNeighborChainToken) return; // superseded mid-chain
+    await _mpfQueuePreload(centerIdx + off, token);
+  }
 }
 
 async function openMoviePreviewFeed() {
@@ -9741,6 +9757,10 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) newVideo.play().catch(() => {});
 
+  Object.keys(_mpfSlideMeta).forEach(k => {
+    const i = Number(k);
+    if (i !== newIdx) _mpfStopNeighborPreload(i);
+  });
   _mpfQueueNeighbors(newIdx);
 
   // Only evict slides that fall outside the wider keep-alive window — anything
