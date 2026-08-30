@@ -9375,7 +9375,7 @@ function _mpfSizeContainer() {
   return h;
 }
 
-const MPF_AHEAD = 3;
+const MPF_AHEAD = 1;
 const MPF_BEHIND = 2;
 let _mpfBackgroundPrefetchPaused = false;
 
@@ -9505,10 +9505,12 @@ async function _mpfWarmRecentlyPlayedChunk(idx) {
 
 // Full mount for immediate neighbors (idx±1), lightweight chunk warm for farther
 // ones — mirrors the short pager's neighbor strategy.
-function _mpfQueuePreload(idx) {
+async function _mpfQueuePreload(idx) {
   if (_mpfSlideMeta[idx]) return;
   const slideEl = document.getElementById('mpfSlide_' + idx);
   if (slideEl && slideEl.dataset.mounted === '1') return;
+  await _mpfWaitForPrefetchAllowed();
+  if (_mpfSlideMeta[idx]) return; // may have been mounted by the time we were allowed to proceed
   _mpfMountSlide(idx, false);
 }
 
@@ -9526,6 +9528,7 @@ async function openMoviePreviewFeed() {
   _mpfSlideMeta = {};
   document.getElementById('mpfRoot').innerHTML = '';
   await _mpfMountSlide(0, true);
+  _mpfBackgroundPrefetchPaused = true; // wait for the first video to buffer before preloading ahead
   _mpfQueueNeighbors(0);
   _mpfPlaceSlides(0);
   _mpfWireTouch();
@@ -9717,6 +9720,7 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   const prevVideo = document.getElementById('mpfVid_' + prevIdx);
   if (prevVideo) prevVideo.pause();
   _mpfIdx = newIdx;
+  _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) newVideo.play().catch(() => {});
 
