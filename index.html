@@ -9325,6 +9325,150 @@ function _mpfSizeContainer() {
   return h;
 }
 
+const MPF_AHEAD = 3;
+const MPF_BEHIND = 2;
+let _mpfBackgroundPrefetchPaused = false;
+
+function _mpfWaitForPrefetchAllowed() {
+  return new Promise(resolve => {
+    if (!_mpfBackgroundPrefetchPaused) { resolve(); return; }
+    const check = () => {
+      if (!_mpfBackgroundPrefetchPaused) resolve();
+      else setTimeout(check, 400);
+    };
+    check();
+  });
+}
+
+function _mpfCacheKeyFor(item) {
+  return item.media_type === 'tv' ? (item.id + '_ep0') : item.id;
+}
+
+async function _mpfResolvePreviewUrl(item) {
+  const cacheKey = _mpfCacheKeyFor(item);
+  let url = _previewCache[cacheKey];
+  if (!url) {
+    const isTV = item.media_type === 'tv';
+    const endpoint = isTV
+      ? `${API}/episode-preview?seriesId=${item.id}&ep=0`
+      : `${API}/preview?id=${item.id}`;
+    const res = await fetch(endpoint, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    const data = await res.json();
+    if (!data.url) return null;
+    url = data.url;
+    _previewCache[cacheKey] = url;
+  }
+  return url;
+}
+
+// Small chunk cache for near-neighbor slides — warmed ahead of time so swiping
+// to them starts instantly, then handed off to the real streaming URL.
+const _mpfPartialChunkCache = {};
+let _mpfPartialChunkQueue = [];
+let _mpfPartialChunkBusy = false;
+
+function _mpfQueuePartialChunkPrefetch(idx) {
+  if (_mpfSlideMeta[idx]) return;
+  if (_mpfPartialChunkCache[idx]) return;
+  if (_mpfPartialChunkQueue.includes(idx)) return;
+  _mpfPartialChunkQueue.push(idx);
+  _mpfProcessPartialChunkQueue();
+}
+
+async function _mpfProcessPartialChunkQueue() {
+  if (_mpfPartialChunkBusy) return;
+  _mpfPartialChunkBusy = true;
+  while (_mpfPartialChunkQueue.length) {
+    await _mpfWaitForPrefetchAllowed();
+    const idx = _mpfPartialChunkQueue.shift();
+    if (idx === undefined) break;
+    if (idx > _mpfIdx + MPF_AHEAD || idx < _mpfIdx - MPF_BEHIND) continue;
+    await _mpfPrefetchPartialChunk(idx);
+  }
+  _mpfPartialChunkBusy = false;
+}
+
+async function _mpfPrefetchPartialChunk(idx) {
+  const item = _mpfList[idx];
+  if (!item) return;
+  try {
+    const url = await _mpfResolvePreviewUrl(item);
+    if (!url) return;
+    const chunkBytes = _adaptiveChunkBytes();
+    const res = await fetch(url, { headers: { Range: `bytes=0-${chunkBytes}` } });
+    if (!res.ok && res.status !== 206) return;
+    const blob = await res.blob();
+    _mpfPartialChunkCache[idx] = { blobUrl: URL.createObjectURL(blob), realUrl: url };
+  } catch (e) {}
+}
+
+// Recently-played recall cache — a slide that scrolls out of range gets a small
+// warm blob at low priority so swiping back to it still starts instantly.
+const MPF_RECENT_CACHE_MAX = 5;
+const _mpfRecentlyPlayedChunkCache = {};
+let _mpfRecentlyPlayedOrder = [];
+let _mpfRecentlyPlayedQueue = [];
+let _mpfRecentlyPlayedBusy = false;
+
+function _mpfQueueRecentlyPlayedWarm(idx) {
+  if (_mpfRecentlyPlayedChunkCache[idx]) return;
+  if (_mpfRecentlyPlayedQueue.includes(idx)) return;
+  _mpfRecentlyPlayedQueue.push(idx);
+  _mpfProcessRecentlyPlayedQueue();
+}
+
+async function _mpfProcessRecentlyPlayedQueue() {
+  if (_mpfRecentlyPlayedBusy) return;
+  _mpfRecentlyPlayedBusy = true;
+  while (_mpfRecentlyPlayedQueue.length) {
+    await _mpfWaitForPrefetchAllowed();
+    const idx = _mpfRecentlyPlayedQueue.shift();
+    if (idx === undefined) break;
+    if (_mpfSlideMeta[idx]) continue;
+    await _mpfWarmRecentlyPlayedChunk(idx);
+  }
+  _mpfRecentlyPlayedBusy = false;
+}
+
+async function _mpfWarmRecentlyPlayedChunk(idx) {
+  const item = _mpfList[idx];
+  if (!item) return;
+  try {
+    const url = await _mpfResolvePreviewUrl(item);
+    if (!url) return;
+    const chunkBytes = _adaptiveChunkBytes();
+    const res = await fetch(url, { headers: { Range: `bytes=0-${chunkBytes}` } });
+    if (!res.ok && res.status !== 206) return;
+    const blob = await res.blob();
+    if (_mpfRecentlyPlayedOrder.length >= MPF_RECENT_CACHE_MAX) {
+      const oldestIdx = _mpfRecentlyPlayedOrder.shift();
+      const oldest = _mpfRecentlyPlayedChunkCache[oldestIdx];
+      if (oldest) URL.revokeObjectURL(oldest.blobUrl);
+      delete _mpfRecentlyPlayedChunkCache[oldestIdx];
+    }
+    _mpfRecentlyPlayedChunkCache[idx] = { blobUrl: URL.createObjectURL(blob), realUrl: url };
+    _mpfRecentlyPlayedOrder.push(idx);
+  } catch (e) {}
+}
+
+// Full mount for immediate neighbors (idx±1), lightweight chunk warm for farther
+// ones — mirrors the short pager's neighbor strategy.
+function _mpfQueuePreload(idx) {
+  if (_mpfSlideMeta[idx]) return;
+  const slideEl = document.getElementById('mpfSlide_' + idx);
+  if (slideEl && slideEl.dataset.mounted === '1') return;
+  _mpfMountSlide(idx, false);
+}
+
+function _mpfQueueNeighbors(centerIdx) {
+  if (MPF_AHEAD >= 1) _mpfQueuePreload(centerIdx + 1);
+  if (MPF_BEHIND >= 1) _mpfQueuePreload(centerIdx - 1);
+  for (let off = 2; off <= MPF_AHEAD; off++) _mpfQueuePartialChunkPrefetch(centerIdx + off);
+  for (let off = 2; off <= MPF_BEHIND; off++) _mpfQueuePartialChunkPrefetch(centerIdx - off);
+}
+
 async function openMoviePreviewFeed() {
   if (!_mpfList.length) _mpfList = _mpfBuildList();
   if (!_mpfList.length) { showToast('Nothing to preview yet', 'error'); return; }
@@ -9335,6 +9479,7 @@ async function openMoviePreviewFeed() {
   _mpfSlideMeta = {};
   document.getElementById('mpfRoot').innerHTML = '';
   await _mpfMountSlide(0, true);
+  _mpfQueueNeighbors(0);
   _mpfPlaceSlides(0);
   _mpfWireTouch();
 }
@@ -9378,25 +9523,58 @@ async function _mpfMountSlide(idx, autoplay) {
   const video = document.getElementById('mpfVid_' + idx);
 
   try {
-    const cacheKey = isTV ? (item.id + '_ep0') : item.id;
-    let previewUrl = _previewCache[cacheKey];
-    if (!previewUrl) {
-      const endpoint = isTV
-        ? `${API}/episode-preview?seriesId=${item.id}&ep=0`
-        : `${API}/preview?id=${item.id}`;
-      const res = await fetch(endpoint, {
-        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-      });
-      const data = await res.json();
-      if (!data.url) throw new Error('no preview url');
-      previewUrl = data.url;
-      _previewCache[cacheKey] = previewUrl;
+    const previewUrl = await _mpfResolvePreviewUrl(item);
+    if (!previewUrl) throw new Error('no preview url');
+
+    const chunk = _mpfPartialChunkCache[idx] || _mpfRecentlyPlayedChunkCache[idx];
+    const isFromRecentCache = !_mpfPartialChunkCache[idx] && !!_mpfRecentlyPlayedChunkCache[idx];
+    if (chunk) {
+      video.src = chunk.blobUrl;
+      let swapped = false;
+      const SWAP_LEAD_SECS = 1.0;
+      const checkSwap = () => {
+        if (swapped) return;
+        if (!video.buffered.length) return;
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+        if (bufferedEnd - video.currentTime <= SWAP_LEAD_SECS) {
+          swapped = true;
+          const t = video.currentTime;
+          const wasPaused = video.paused;
+          video.src = chunk.realUrl;
+          video.currentTime = t;
+          if (!wasPaused) video.play().catch(() => {});
+          video.removeEventListener('timeupdate', checkSwap);
+        }
+      };
+      video.addEventListener('timeupdate', checkSwap);
+      if (isFromRecentCache) {
+        delete _mpfRecentlyPlayedChunkCache[idx];
+        _mpfRecentlyPlayedOrder = _mpfRecentlyPlayedOrder.filter(i => i !== idx);
+      } else {
+        delete _mpfPartialChunkCache[idx];
+      }
+    } else {
+      video.src = previewUrl;
     }
-    video.src = previewUrl;
+
     video.addEventListener('loadedmetadata', () => {
       if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
     }, { once: true });
     if (autoplay) video.play().catch(() => {});
+
+    // Buffer-priority: pause background prefetch work whenever THIS slide (if it's
+    // the active one) runs low on buffered runway, so a network dip prioritizes
+    // what's actually playing over speculative neighbor fetches.
+    video.addEventListener('timeupdate', () => {
+      if (idx === _mpfIdx && video.buffered.length) {
+        const bufferedAhead = video.buffered.end(video.buffered.length - 1) - video.currentTime;
+        if (!_mpfBackgroundPrefetchPaused && bufferedAhead < 5) {
+          _mpfBackgroundPrefetchPaused = true;
+        } else if (_mpfBackgroundPrefetchPaused && bufferedAhead > 8) {
+          _mpfBackgroundPrefetchPaused = false;
+        }
+      }
+    });
   } catch (e) {
     // fall through silently — spinner will just hide, slide stays without video
   } finally {
@@ -9487,19 +9665,20 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) newVideo.play().catch(() => {});
 
-  // Prefetch just the next slide's URL (no speculative byte fetching) and mount it
-  if (newIdx + 1 < _mpfList.length) _mpfMountSlide(newIdx + 1, false);
-  if (newIdx - 1 >= 0) _mpfMountSlide(newIdx - 1, false);
+  _mpfQueueNeighbors(newIdx);
 
-  // Drop far slides to keep memory bounded
+  // Drop far slides, warming a small recall blob before forgetting them so
+  // swiping back later still starts instantly.
   Object.keys(_mpfSlideMeta).forEach(k => {
     const i = Number(k);
-    if (Math.abs(i - newIdx) > 2) {
+    if (i > newIdx + MPF_AHEAD || i < newIdx - MPF_BEHIND) {
       const el = document.getElementById('mpfSlide_' + i);
       if (el) el.remove();
       delete _mpfSlideMeta[i];
+      _mpfQueueRecentlyPlayedWarm(i);
     }
   });
+  _mpfPartialChunkQueue = _mpfPartialChunkQueue.filter(i => i <= newIdx + MPF_AHEAD && i >= newIdx - MPF_BEHIND);
 
   _mpfPlaceSlides(newIdx);
   _mpfLocked = false;
