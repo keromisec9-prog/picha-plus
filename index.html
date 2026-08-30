@@ -9573,10 +9573,27 @@ async function _mpfMountSlide(idx, autoplay) {
   const video = document.getElementById('mpfVid_' + idx);
 
   try {
+    const _mpfMintStart = performance.now();
     const previewUrl = await _mpfResolvePreviewUrl(item);
     if (!previewUrl) throw new Error('no preview url');
+    const _mpfMintMs = performance.now() - _mpfMintStart;
 
     video.src = previewUrl;
+
+    // Debug: parallel probe fetch to surface real server timing/cache status
+    // without blocking actual playback. Remove once diagnosis is done.
+    (async () => {
+      try {
+        const _t0 = performance.now();
+        const _resp = await fetch(previewUrl, { headers: { Range: 'bytes=0-500000' } });
+        const _ttfb = performance.now() - _t0;
+        const _cache = _resp.headers.get('X-Cache') || 'none';
+        const _range = _resp.headers.get('Content-Range') || 'none';
+        showToast(`mint:${_mpfMintMs.toFixed(0)}ms ttfb:${_ttfb.toFixed(0)}ms cache:${_cache} range:${_range}`, 'gold');
+      } catch (e) {
+        showToast(`debug fetch failed: ${e.message}`, 'red');
+      }
+    })();
 
     video.addEventListener('loadedmetadata', () => {
       if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
