@@ -9463,10 +9463,7 @@ function _mpfQueuePreload(idx) {
 }
 
 function _mpfQueueNeighbors(centerIdx) {
-  if (MPF_AHEAD >= 1) _mpfQueuePreload(centerIdx + 1);
-  if (MPF_BEHIND >= 1) _mpfQueuePreload(centerIdx - 1);
-  for (let off = 2; off <= MPF_AHEAD; off++) _mpfQueuePartialChunkPrefetch(centerIdx + off);
-  for (let off = 2; off <= MPF_BEHIND; off++) _mpfQueuePartialChunkPrefetch(centerIdx - off);
+  for (let off = 1; off <= MPF_AHEAD; off++) _mpfQueuePartialChunkPrefetch(centerIdx + off);
 }
 
 async function openMoviePreviewFeed() {
@@ -9560,6 +9557,10 @@ async function _mpfMountSlide(idx, autoplay) {
     video.addEventListener('loadedmetadata', () => {
       if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
     }, { once: true });
+    // Persistent spinner: reappears any time playback actually stalls waiting for
+    // data (not just on first load), disappears the moment it's playing again.
+    video.addEventListener('waiting', () => { if (spinnerEl) spinnerEl.style.display = 'flex'; });
+    video.addEventListener('playing', () => { if (spinnerEl) spinnerEl.style.display = 'none'; });
     if (autoplay) video.play().catch(() => {});
 
     // Buffer-priority: pause background prefetch work whenever THIS slide (if it's
@@ -9576,8 +9577,8 @@ async function _mpfMountSlide(idx, autoplay) {
       }
     });
   } catch (e) {
-    // fall through silently — spinner will just hide, slide stays without video
-  } finally {
+    // fall through silently — clear the pending show-timer and hide, since there's
+    // no video to wait on; the waiting/playing listeners own visibility otherwise.
     clearTimeout(spinnerTimer);
     if (spinnerEl) spinnerEl.style.display = 'none';
   }
@@ -9658,6 +9659,10 @@ function _mpfGoTo(targetIdx, fromOffset) {
   });
 }
 
+const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <video>
+                          // element (and whatever the browser already buffered) alive —
+                          // only truly evicted once they fall further out than this.
+
 function _mpfOnCommitted(prevIdx, newIdx) {
   const prevVideo = document.getElementById('mpfVid_' + prevIdx);
   if (prevVideo) prevVideo.pause();
@@ -9667,11 +9672,11 @@ function _mpfOnCommitted(prevIdx, newIdx) {
 
   _mpfQueueNeighbors(newIdx);
 
-  // Drop far slides, warming a small recall blob before forgetting them so
-  // swiping back later still starts instantly.
+  // Only evict slides that fall outside the wider keep-alive window — anything
+  // closer keeps its actual buffered video data intact for instant scroll-back.
   Object.keys(_mpfSlideMeta).forEach(k => {
     const i = Number(k);
-    if (i > newIdx + MPF_AHEAD || i < newIdx - MPF_BEHIND) {
+    if (i > newIdx + MPF_KEEPALIVE || i < newIdx - MPF_KEEPALIVE) {
       const el = document.getElementById('mpfSlide_' + i);
       if (el) el.remove();
       delete _mpfSlideMeta[i];
