@@ -7388,7 +7388,18 @@ async function _mountPagerSlide(idx, autoplay) {
     if (video.currentTime > 0) saveShortProgress(shortKey, epKey, video.currentTime, video.duration, short.title);
   });
   video.addEventListener('canplay', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; }, { once: true });
-  video.addEventListener('error', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; showShortPaywallPrompt(short); });
+  video.addEventListener('error', () => {
+    clearTimeout(_spinnerShowTimer);
+    if (spinnerEl) spinnerEl.style.display = 'none';
+    // Only treat this as a paywall hit when the stream genuinely was preview-limited —
+    // a plain playback error (network blip, decode failure, etc.) was previously always
+    // mislabeled as "reached the free preview limit" even for fully subscribed users.
+    if (urlData.isPreview) {
+      showShortPaywallPrompt(short);
+    } else {
+      showToast('Playback error — please try again', 'red');
+    }
+  });
   video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
 
   slideEl.dataset.mounted = '1';
@@ -9595,21 +9606,6 @@ async function _mpfMountSlide(idx, autoplay) {
     const _mpfMintMs = performance.now() - _mpfMintStart;
 
     video.src = previewUrl;
-
-    // Debug: parallel probe fetch to surface real server timing/cache status
-    // without blocking actual playback. Remove once diagnosis is done.
-    (async () => {
-      try {
-        const _t0 = performance.now();
-        const _resp = await fetch(previewUrl, { headers: { Range: 'bytes=0-500000' } });
-        const _ttfb = performance.now() - _t0;
-        const _cache = _resp.headers.get('X-Cache') || 'none';
-        const _range = _resp.headers.get('Content-Range') || 'none';
-        showToast(`mint:${_mpfMintMs.toFixed(0)}ms ttfb:${_ttfb.toFixed(0)}ms cache:${_cache} range:${_range}`, 'gold');
-      } catch (e) {
-        showToast(`debug fetch failed: ${e.message}`, 'red');
-      }
-    })();
 
     video.addEventListener('loadedmetadata', () => {
       if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
