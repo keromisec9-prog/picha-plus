@@ -4180,7 +4180,9 @@ async function initPlayer(data, item) {
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
     const d = e.detail || {};
-    showToast(`Shaka err code:${d.code} cat:${d.category} sev:${d.severity} msg:${(d.message||'').slice(0,80)}`, 'red');
+    let dataStr = '';
+    try { dataStr = JSON.stringify(d.data || []).slice(0, 150); } catch (_) { dataStr = String(d.data); }
+    showToast(`Shaka code:${d.code} cat:${d.category} data:${dataStr}`, 'red');
   });
 
   // Cast session events — show/hide banner
@@ -7392,13 +7394,11 @@ async function _mountPagerSlide(idx, autoplay) {
   video.addEventListener('error', () => {
     clearTimeout(_spinnerShowTimer);
     if (spinnerEl) spinnerEl.style.display = 'none';
-    // Only treat this as a paywall hit when the stream genuinely was preview-limited —
-    // a plain playback error (network blip, decode failure, etc.) was previously always
-    // mislabeled as "reached the free preview limit" even for fully subscribed users.
     if (urlData.isPreview) {
       showShortPaywallPrompt(short);
     } else {
-      showToast('Playback error. Please try again', 'red');
+      const ve = video.error || {};
+      showToast(`Video err code:${ve.code} msg:${(ve.message||'none').slice(0,100)}`, 'red');
     }
   });
   video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
