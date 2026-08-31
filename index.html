@@ -4179,7 +4179,8 @@ async function initPlayer(data, item) {
 
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
-    showToast('Playback error. Please try again.', 'error');
+    const d = e.detail || {};
+    showToast(`Shaka err code:${d.code} cat:${d.category} sev:${d.severity} msg:${(d.message||'').slice(0,80)}`, 'red');
   });
 
   // Cast session events — show/hide banner
