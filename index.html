@@ -4094,11 +4094,10 @@ async function handleCardPlay(item) {
 }
 
 async function initPlayer(data, item) {
-  // Prefer the cached/authenticated Worker proxy route; fall back to the raw
-  // presigned URL if streamToken/streamKey are missing (e.g. legacy externalUrl entries).
-  const url = (data && data.streamToken && data.streamKey)
-    ? `${API}/stream?key=${encodeURIComponent(data.streamKey)}&token=${encodeURIComponent(data.streamToken)}`
-    : (typeof data === 'string' ? data : data.url);
+  // Always use the direct presigned B2 URL — the Worker's own /stream proxy path
+  // was unreliable (Cloudflare's internal fetch path to B2 could silently ignore
+  // Range headers), so every consumer now gets a direct signed URL instead.
+  const url = typeof data === 'string' ? data : data.url;
   try {
     await loadShaka();
   } catch (e) {
