@@ -7397,7 +7397,7 @@ async function _mountPagerSlide(idx, autoplay) {
     if (urlData.isPreview) {
       showShortPaywallPrompt(short);
     } else {
-      showToast('Playback error — please try again', 'red');
+      showToast('Playback error. Please try again', 'red');
     }
   });
   video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
