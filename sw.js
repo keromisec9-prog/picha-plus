@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-v3';
+const CACHE_NAME = 'picha-plus-v4';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -32,6 +32,16 @@ self.addEventListener('fetch', e => {
 
   // Always network-first for API calls
   if (url.hostname.includes('workers.dev') || url.hostname.includes('tmdb.org')) {
+    return;
+  }
+
+  // Never intercept video/media requests (B2) or any Range-bearing request. The Cache
+  // API matches by request URL only, not by Range header — since a single video URL
+  // gets reused for every Range sub-request during playback (Shaka and native <video>
+  // both do this), caching one range and serving it back for a completely different
+  // range silently hands the media pipeline wrong-offset bytes, breaking playback after
+  // the first cached chunk. Always go straight to network for these.
+  if (url.hostname.includes('backblazeb2.com') || e.request.headers.has('Range')) {
     return;
   }
 
