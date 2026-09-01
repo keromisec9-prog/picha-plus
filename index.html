@@ -7345,7 +7345,10 @@ async function _mountPagerSlide(idx, autoplay) {
         swapped = true;
         const t = video.currentTime;
         const wasPaused = video.paused;
-        video.src = chunk.realUrl;
+        // Use the URL this mount call just freshly resolved, not chunk.realUrl —
+        // that's whatever URL was current whenever the blob was originally warmed,
+        // which can be arbitrarily old/stale by the time the swap actually happens.
+        video.src = urlData.url;
         video.currentTime = t;
         if (!wasPaused) video.play().catch(() => {});
         video.removeEventListener('timeupdate', checkSwap);
