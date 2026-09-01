@@ -9354,7 +9354,27 @@ function _mpfTopCandidates(items, n) {
     .map(s => s.item);
 }
 
+// Cheap Fisher-Yates shuffle — no per-item scoring at all. This is the ONLY thing
+// allowed on the critical path for opening the feed, so slide 0 never waits on the
+// heavier ranked/interleaved build below. Matches how the regular For You grid stays
+// snappy: show something reasonable immediately, refine in the background after.
+function _mpfQuickShuffle(items) {
+  const a = items.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function _mpfBuildList() {
+  return _mpfQuickShuffle(window._allCards || []);
+}
+
+// The real ranked/interleaved order (scoring, series-interleaving) — expensive,
+// never called on the critical path. Computed in the background and spliced in
+// ahead of wherever the user hasn't scrolled to yet (see _mpfRefineListInBackground).
+function _mpfBuildRankedList() {
   const allCards = window._allCards || [];
   const likedFirst = allCards.filter(c => liked.includes(c.id));
   const disliked = allCards.filter(c => _disliked.includes(c.id) && !liked.includes(c.id));
@@ -9363,10 +9383,6 @@ function _mpfBuildList() {
   const movies = _mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type !== 'tv'), 80));
   const series = _mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type === 'tv'), 40));
 
-  // Interleave so series actually surface instead of getting buried behind a much
-  // larger movie pool — roughly 1 series slide for every 4 movie slides, front-loaded
-  // a bit so you don't have to scroll far to see the mix, but never guaranteed-exact
-  // (real feeds don't feel like a metronome).
   const interleaved = [];
   let mi = 0, si = 0;
   while (mi < movies.length || si < series.length) {
@@ -9375,6 +9391,22 @@ function _mpfBuildList() {
   }
 
   return [..._mpfWeightedShuffle(likedFirst), ...interleaved, ..._mpfWeightedShuffle(disliked)];
+}
+
+// Runs after the feed is already open and slide 0 is mounted — computes the proper
+// ranked order off the critical path, then replaces only the not-yet-reached tail of
+// _mpfList so nothing already shown/playing shifts under the user's finger.
+function _mpfRefineListInBackground() {
+  const myGen = _mpfGeneration;
+  const schedule = window.requestIdleCallback || (fn => setTimeout(fn, 50));
+  schedule(() => {
+    if (myGen !== _mpfGeneration) return; // feed closed/reopened meanwhile — stale, discard
+    const ranked = _mpfBuildRankedList();
+    const keepCount = _mpfIdx + 1;
+    const already = new Set(_mpfList.slice(0, keepCount).map(c => c.id));
+    const tail = ranked.filter(c => !already.has(c.id));
+    _mpfList = _mpfList.slice(0, keepCount).concat(tail);
+  });
 }
 
 function _mpfSlideHTML(idx) {
@@ -9609,6 +9641,7 @@ async function openMoviePreviewFeed() {
   _mpfQueueNeighbors(0);
   _mpfPlaceSlides(0);
   _mpfWireTouch();
+  _mpfRefineListInBackground();
 }
 
 function closeMoviePreviewFeed() {
