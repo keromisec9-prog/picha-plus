@@ -9342,14 +9342,26 @@ function _mpfWeightedShuffle(items) {
   return result;
 }
 
+// Weighted shuffle is O(n^2) (repeated reduce+splice) — fine for a capped candidate
+// pool, too slow run directly over a large catalog. Pre-score and take the top N by
+// raw score first (cheap O(n log n) sort), then only weighted-shuffle that smaller
+// pool. Keeps quality/relevance while keeping the feed fast to open.
+function _mpfTopCandidates(items, n) {
+  return items
+    .map(item => ({ item, score: fyScore(item) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
+    .map(s => s.item);
+}
+
 function _mpfBuildList() {
   const allCards = window._allCards || [];
   const likedFirst = allCards.filter(c => liked.includes(c.id));
   const disliked = allCards.filter(c => _disliked.includes(c.id) && !liked.includes(c.id));
   const rest = allCards.filter(c => !liked.includes(c.id) && !_disliked.includes(c.id));
 
-  const movies = _mpfWeightedShuffle(rest.filter(c => c.media_type !== 'tv'));
-  const series = _mpfWeightedShuffle(rest.filter(c => c.media_type === 'tv'));
+  const movies = _mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type !== 'tv'), 80));
+  const series = _mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type === 'tv'), 40));
 
   // Interleave so series actually surface instead of getting buried behind a much
   // larger movie pool — roughly 1 series slide for every 4 movie slides, front-loaded
