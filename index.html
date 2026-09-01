@@ -9316,21 +9316,53 @@ const MPF_SNAP_RATIO = 0.22;
 const MPF_VELOCITY_THRESH = 0.5;
 const MPF_ANIM_MS = 260;
 
+// Weighted-random shuffle: higher-scored items are more LIKELY to come first, but
+// not guaranteed — every call produces a genuinely different order, not just the
+// same ranked list with a small jitter on top. Liked items still always lead;
+// disliked items still always trail; everything between is real weighted sampling.
+function _mpfWeightedShuffle(items) {
+  const pool = items.map(item => {
+    const raw = fyScore(item);
+    // Softmax-ish weight so score differences matter but don't create near-certainty —
+    // a big lead still usually wins, but a lower-scored item gets a real shot too.
+    const weight = Math.exp(raw / 12) + 0.05;
+    return { item, weight };
+  });
+  const result = [];
+  while (pool.length) {
+    const total = pool.reduce((s, p) => s + p.weight, 0);
+    let r = Math.random() * total;
+    let pick = 0;
+    for (; pick < pool.length; pick++) {
+      r -= pool[pick].weight;
+      if (r <= 0) break;
+    }
+    result.push(pool.splice(Math.min(pick, pool.length - 1), 1)[0].item);
+  }
+  return result;
+}
+
 function _mpfBuildList() {
   const allCards = window._allCards || [];
-  // Same scoring as renderForYou, with jitter every time the feed opens so it
-  // doesn't always start on the same titles.
-  const scored = allCards.map(item => ({ item, score: fyScore(item) + (Math.random() * 8 - 4) }))
-    .sort((a, b) => {
-      const aLiked = liked.includes(a.item.id) ? 1 : 0;
-      const bLiked = liked.includes(b.item.id) ? 1 : 0;
-      if (aLiked !== bLiked) return bLiked - aLiked;
-      const aDisliked = _disliked.includes(a.item.id) ? 1 : 0;
-      const bDisliked = _disliked.includes(b.item.id) ? 1 : 0;
-      if (aDisliked !== bDisliked) return aDisliked - bDisliked;
-      return b.score - a.score;
-    });
-  return scored.map(s => s.item);
+  const likedFirst = allCards.filter(c => liked.includes(c.id));
+  const disliked = allCards.filter(c => _disliked.includes(c.id) && !liked.includes(c.id));
+  const rest = allCards.filter(c => !liked.includes(c.id) && !_disliked.includes(c.id));
+
+  const movies = _mpfWeightedShuffle(rest.filter(c => c.media_type !== 'tv'));
+  const series = _mpfWeightedShuffle(rest.filter(c => c.media_type === 'tv'));
+
+  // Interleave so series actually surface instead of getting buried behind a much
+  // larger movie pool — roughly 1 series slide for every 4 movie slides, front-loaded
+  // a bit so you don't have to scroll far to see the mix, but never guaranteed-exact
+  // (real feeds don't feel like a metronome).
+  const interleaved = [];
+  let mi = 0, si = 0;
+  while (mi < movies.length || si < series.length) {
+    for (let k = 0; k < 4 && mi < movies.length; k++) interleaved.push(movies[mi++]);
+    if (si < series.length) interleaved.push(series[si++]);
+  }
+
+  return [..._mpfWeightedShuffle(likedFirst), ...interleaved, ..._mpfWeightedShuffle(disliked)];
 }
 
 function _mpfSlideHTML(idx) {
