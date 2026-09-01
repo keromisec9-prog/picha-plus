@@ -7331,6 +7331,7 @@ async function _mountPagerSlide(idx, autoplay) {
 
   let resumePos = 0;
   if (urlData.progress && urlData.progress.episode_id === epKey) resumePos = urlData.progress.progress_seconds || 0;
+  if (urlData.isPreview && urlData.previewSecs && resumePos >= urlData.previewSecs) resumePos = 0;
 
   // Apply like state straight from the combined response — no separate /likes fetch
   // needed here. _refreshPagerLikeUI's own fetch still runs on swipe-commit (a
@@ -7391,10 +7392,22 @@ async function _mountPagerSlide(idx, autoplay) {
 
   let lastSave = 0;
   const previewSecs = urlData.isPreview ? urlData.previewSecs : null;
-  const warnWindow = previewSecs ? Math.min(30, previewSecs * 0.15) : 0;
+  const warnWindow = 10; // final 10-second countdown before the hard stop
+  let _previewLimitHit = false;
   video.addEventListener('timeupdate', () => {
+    if (previewSecs && !_previewLimitHit && video.currentTime >= previewSecs) {
+      _previewLimitHit = true;
+      video.pause();
+      showShortPaywallPrompt(short, idx);
+      return;
+    }
     const bar = document.getElementById('pgProgressBar_' + idx);
-    if (bar && video.duration) bar.style.width = (video.currentTime / video.duration * 100) + '%';
+    const knob = document.getElementById('pgSeekKnob_' + idx);
+    if (video.duration) {
+      const pct = (video.currentTime / video.duration * 100);
+      if (bar) bar.style.width = pct + '%';
+      if (knob) knob.style.left = pct + '%'; // previously only moved on manual drag/click — froze in place during normal playback while the bar kept filling
+    }
     const now = Date.now();
     if (now - lastSave > 5000 && video.currentTime > 0) {
       lastSave = now;
@@ -7424,13 +7437,15 @@ async function _mountPagerSlide(idx, autoplay) {
     clearTimeout(_spinnerShowTimer);
     if (spinnerEl) spinnerEl.style.display = 'none';
     if (urlData.isPreview) {
-      showShortPaywallPrompt(short);
+      showShortPaywallPrompt(short, idx);
     } else {
       console.error('Video error:', video.error);
       showToast('Playback error. Please try again', 'red');
     }
   });
-  video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
+  // Preview limit is now enforced deterministically in the timeupdate handler below,
+  // instead of waiting for a 'stalled' event from the URL naturally running out — that
+  // was unreliable and sometimes never fired before the limit was already well past.
 
   slideEl.dataset.mounted = '1';
   delete slideEl.dataset.mounting;
@@ -7941,18 +7956,40 @@ function _updateShortProgressBar() {
   bar.style.width = (video.currentTime / video.duration * 100) + '%';
 }
 
-function showShortPaywallPrompt(short) {
-  const video = document.getElementById('player');
+function showShortPaywallPrompt(short, idx) {
+  // idx is optional for backward compatibility with one legacy call site that predates
+  // the current per-slide pager — falls back to the old generic lookup if omitted,
+  // though that path likely never actually fires in the current UI.
+  const video = idx != null ? document.getElementById('pgVid_' + idx) : document.getElementById('player');
   if (video) video.pause();
-  const wrapper = document.getElementById('playerWrapper');
+  const container = idx != null ? document.getElementById('pgSlide_' + idx) : document.getElementById('playerWrapper');
+  if (!container) return;
+  const promptId = 'shortPaywallPrompt_' + (idx != null ? idx : 'legacy');
+  if (document.getElementById(promptId)) return; // already showing for this slide
   const promptDiv = document.createElement('div');
-  promptDiv.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;color:#fff;z-index:10;';
+  promptDiv.id = promptId;
+  promptDiv.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;color:#fff;z-index:10;opacity:0;transition:opacity 0.4s ease;';
   promptDiv.innerHTML = `
     <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;">You've reached the free preview limit</div>
     <button onclick="closePlayer();showPaywall();" style="width:100%;max-width:280px;padding:0.75rem;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Upgrade my plan</button>
-    <button onclick="closePlayer();" style="width:100%;max-width:280px;padding:0.75rem;background:#2a2a2a;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Watch something else</button>
+    <button onclick="_pagerWatchSomethingElse(${idx != null ? idx : 'null'})" style="width:100%;max-width:280px;padding:0.75rem;background:#2a2a2a;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Watch something else</button>
   `;
-  wrapper.appendChild(promptDiv);
+  container.appendChild(promptDiv);
+  requestAnimationFrame(() => { promptDiv.style.opacity = '1'; });
+}
+
+function _pagerWatchSomethingElse(idx) {
+  const promptEl = document.getElementById('shortPaywallPrompt_' + (idx != null ? idx : 'legacy'));
+  if (promptEl) promptEl.remove();
+  if (idx == null) { closePlayer(); return; }
+  const list = _pagerList();
+  if (idx + 1 < list.length) {
+    _pagerGoTo(idx + 1, 0);
+  } else if (idx - 1 >= 0) {
+    _pagerGoTo(idx - 1, 0);
+  } else {
+    closePlayer(); // only one item in the whole list — nowhere else to go
+  }
 }
 
 const SHORTS_PREVIEW_COUNT = 6;
