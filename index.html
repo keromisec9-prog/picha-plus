@@ -9298,11 +9298,13 @@ function _mpfWireSeekBar(idx) {
   wrap.addEventListener('click', (e) => { e.stopPropagation(); const r = ratioFromX(e.clientX); applyUI(r); seekTo(r); });
 }
 
+const _mpfAutoOnSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>`;
+const _mpfAutoOffSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`;
 function _mpfToggleAutoScroll() {
   window._mpfAutoScroll = !window._mpfAutoScroll;
   localStorage.setItem('pichaplus_mpf_autoscroll', window._mpfAutoScroll ? 'on' : 'off');
   document.querySelectorAll('.mpf-auto-icon').forEach(el => {
-    el.textContent = window._mpfAutoScroll ? 'play_circle' : 'pause_circle';
+    el.innerHTML = window._mpfAutoScroll ? _mpfAutoOnSvg : _mpfAutoOffSvg;
   });
   showToast(window._mpfAutoScroll ? 'Auto-scroll on' : 'Auto-scroll off', 'gold');
 }
@@ -9432,7 +9434,7 @@ function _mpfSlideHTML(idx) {
           <span style="font-size:0.68rem;font-weight:600;">Share</span>
         </div>
         <div onclick="_mpfToggleAutoScroll()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
-          <span class="mpf-auto-icon material-symbols-rounded" style="font-size:26px;">${window._mpfAutoScroll !== false ? 'play_circle' : 'pause_circle'}</span>
+          <span class="mpf-auto-icon" style="display:inline-flex;">${window._mpfAutoScroll !== false ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`}</span>
           <span style="font-size:0.68rem;font-weight:600;">Auto</span>
         </div>
       </div>
@@ -9846,7 +9848,14 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   _mpfIdx = newIdx;
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
   const newVideo = document.getElementById('mpfVid_' + newIdx);
-  if (newVideo) newVideo.play().catch(() => {});
+  if (newVideo) {
+    // Reset the clip-timer baseline every time this slide becomes active — otherwise
+    // scrolling back to a slide you already fully watched once means currentTime is
+    // already past start+MPF_CLIP_SECS, so the very next timeupdate immediately
+    // auto-advances again without ever actually playing.
+    _mpfClipStarts[newIdx] = newVideo.currentTime;
+    newVideo.play().catch(() => {});
+  }
 
   _mpfPlayedIndices.add(newIdx);
   Object.keys(_mpfSlideMeta).forEach(k => {
