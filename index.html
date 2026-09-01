@@ -4178,10 +4178,7 @@ async function initPlayer(data, item) {
 
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
-    const d = e.detail || {};
-    let dataStr = '';
-    try { dataStr = JSON.stringify(d.data || []).slice(0, 150); } catch (_) { dataStr = String(d.data); }
-    showToast(`Shaka code:${d.code} cat:${d.category} data:${dataStr}`, 'red');
+    showToast('Playback error. Please try again.', 'error');
   });
 
   // Cast session events — show/hide banner
@@ -7396,8 +7393,8 @@ async function _mountPagerSlide(idx, autoplay) {
     if (urlData.isPreview) {
       showShortPaywallPrompt(short);
     } else {
-      const ve = video.error || {};
-      showToast(`Video err code:${ve.code} msg:${(ve.message||'none').slice(0,100)}`, 'red');
+      console.error('Video error:', video.error);
+      showToast('Playback error. Please try again', 'red');
     }
   });
   video.addEventListener('stalled', () => { if (urlData.isPreview) showShortPaywallPrompt(short); });
