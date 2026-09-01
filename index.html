@@ -9299,6 +9299,7 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
 let _mpfList = [];
 window._mpfAutoScroll = localStorage.getItem('pichaplus_mpf_autoscroll') !== 'off';
 const _mpfClipStarts = {};
+const _mpfClipFixedStart = {}; // the ORIGINAL clip start (27% mark) — never changes, so a revisit can always rewind back to it instead of drifting forward
 const MPF_CLIP_SECS = 30;
 
 function _mpfWireSeekBar(idx) {
@@ -9736,6 +9737,7 @@ async function _mpfMountSlide(idx, autoplay) {
     video.addEventListener('loadedmetadata', () => {
       if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
       _mpfClipStarts[idx] = video.currentTime;
+      _mpfClipFixedStart[idx] = video.currentTime;
     }, { once: true });
     // Persistent spinner: reappears any time playback actually stalls waiting for
     // data (not just on first load), disappears the moment it's playing again.
@@ -9880,11 +9882,18 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) {
-    // Reset the clip-timer baseline every time this slide becomes active — otherwise
-    // scrolling back to a slide you already fully watched once means currentTime is
-    // already past start+MPF_CLIP_SECS, so the very next timeupdate immediately
-    // auto-advances again without ever actually playing.
-    _mpfClipStarts[newIdx] = newVideo.currentTime;
+    if (_mpfPlayedIndices.has(newIdx) && _mpfClipFixedStart[newIdx] != null) {
+      // Revisit — rewind to the ORIGINAL clip start every time, so each replay shows
+      // the same short preview window. Previously this just reset the timer baseline
+      // to wherever currentTime happened to be, which meant every revisit granted
+      // another fresh MPF_CLIP_SECS forward from that drifted position — letting
+      // repeated swiping-away-and-back creep through the entire film in chunks.
+      newVideo.currentTime = _mpfClipFixedStart[newIdx];
+      _mpfClipStarts[newIdx] = _mpfClipFixedStart[newIdx];
+    } else {
+      // First-ever activation — loadedmetadata already set the baseline correctly.
+      _mpfClipStarts[newIdx] = newVideo.currentTime;
+    }
     newVideo.play().catch(() => {});
   }
 
