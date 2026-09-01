@@ -9635,6 +9635,8 @@ async function openMoviePreviewFeed() {
   _mpfLocked = false;
   _mpfH = _mpfSizeContainer();
   _mpfSlideMeta = {};
+  _mpfPlayedIndices.clear();
+  _mpfPlayedIndices.add(0);
   document.getElementById('mpfRoot').innerHTML = '';
   await _mpfMountSlide(0, true);
   _mpfBackgroundPrefetchPaused = true; // wait for the first video to buffer before preloading ahead
@@ -9653,6 +9655,7 @@ function closeMoviePreviewFeed() {
   document.getElementById('mpfRoot').innerHTML = '';
   _mpfSlideMeta = {};
   _mpfList = [];
+  _mpfPlayedIndices.clear();
 }
 
 async function _mpfMountSlide(idx, autoplay) {
@@ -9832,6 +9835,7 @@ function _mpfGoTo(targetIdx, fromOffset) {
 }
 
 let _mpfGeneration = 0; // bumped on every open/close — lets a stray async mount that resolves after teardown detect it's stale and bail out silently
+const _mpfPlayedIndices = new Set(); // indices that have actually been the active slide — never hard-stopped/downgraded, only genuinely speculative ahead-preload slides are
 const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <video>
                           // element (and whatever the browser already buffered) alive —
                           // only truly evicted once they fall further out than this.
@@ -9844,9 +9848,14 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) newVideo.play().catch(() => {});
 
+  _mpfPlayedIndices.add(newIdx);
   Object.keys(_mpfSlideMeta).forEach(k => {
     const i = Number(k);
-    if (i !== newIdx) _mpfStopNeighborPreload(i);
+    // Only hard-stop slides that were purely speculative ahead-preload and never
+    // actually watched — downgrading a slide you've already played strips its
+    // buffered data (many browsers drop it on preload='none'), forcing a full
+    // refetch if you scroll back to something you already saw.
+    if (i !== newIdx && !_mpfPlayedIndices.has(i)) _mpfStopNeighborPreload(i);
   });
   _mpfQueueNeighbors(newIdx);
 
