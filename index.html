@@ -8717,6 +8717,11 @@ function bnGo(tab) {
   document.getElementById('bnForYouPage').style.display = 'none';
   if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
   if (typeof _stopShortsHeroRotation === 'function') _stopShortsHeroRotation();
+  // The mpf preview feed (For You's "Shorts" mini-tab) has its own playing video and
+  // background prefetch — bnGo previously only tore down the full-screen player modal,
+  // so switching to Home/Categories/Saved while a preview clip was playing left it
+  // running audibly behind the new tab.
+  if (typeof closeMoviePreviewFeed === 'function') closeMoviePreviewFeed();
 
   if (tab === 'home') {
     document.getElementById('categoryOverlay')?.classList.remove('active');
@@ -9546,6 +9551,7 @@ async function _mpfQueueNeighbors(centerIdx) {
 }
 
 async function openMoviePreviewFeed() {
+  _mpfGeneration++;
   if (!_mpfList.length) _mpfList = _mpfBuildList();
   if (!_mpfList.length) { showToast('Nothing to preview yet', 'error'); return; }
   if (typeof _stopPreviewSequence === 'function') _stopPreviewSequence(true);
@@ -9562,6 +9568,7 @@ async function openMoviePreviewFeed() {
 }
 
 function closeMoviePreviewFeed() {
+  _mpfGeneration++;
   Object.keys(_mpfSlideMeta).forEach(k => {
     const v = document.getElementById('mpfVid_' + k);
     if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
@@ -9572,6 +9579,7 @@ function closeMoviePreviewFeed() {
 }
 
 async function _mpfMountSlide(idx, autoplay) {
+  const _mpfMyGen = _mpfGeneration;
   const item = _mpfList[idx];
   if (!item) return;
   const root = document.getElementById('mpfRoot');
@@ -9603,6 +9611,11 @@ async function _mpfMountSlide(idx, autoplay) {
     const _mpfMintStart = performance.now();
     const previewUrl = await _mpfResolvePreviewUrl(item);
     if (!previewUrl) throw new Error('no preview url');
+    // The feed may have been closed (or reopened, invalidating this whole session)
+    // while this fetch was in flight — bail out before touching the DOM or starting
+    // playback, otherwise a late-resolving mount can play audio behind a hidden/
+    // torn-down feed even though it's no longer visibly open.
+    if (_mpfMyGen !== _mpfGeneration) { clearTimeout(spinnerTimer); return; }
     const _mpfMintMs = performance.now() - _mpfMintStart;
 
     video.src = previewUrl;
@@ -9741,6 +9754,7 @@ function _mpfGoTo(targetIdx, fromOffset) {
   });
 }
 
+let _mpfGeneration = 0; // bumped on every open/close — lets a stray async mount that resolves after teardown detect it's stale and bail out silently
 const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <video>
                           // element (and whatever the browser already buffered) alive —
                           // only truly evicted once they fall further out than this.
