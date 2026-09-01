@@ -7050,6 +7050,18 @@ async function _warmRecentlyPlayedChunk(idx) {
 let _pagerPreloadQueue = [];
 let _pagerPreloadBusy = false;
 
+// Neighbor preload budget: a fully-mounted-but-not-yet-active slide only gets to
+// buffer for this long before being downgraded — otherwise every slide within the
+// AHEAD/BEHIND window buffers indefinitely and unrestricted, competing with the
+// actually-playing video for bandwidth the whole time it sits in the window.
+const PAGER_NEIGHBOR_PRELOAD_MS = 6000;
+const _pagerPlayedIndices = new Set(); // never downgraded — only genuinely-unwatched speculative preloads are
+
+function _stopPagerNeighborPreload(idx) {
+  const v = document.getElementById('pgVid_' + idx);
+  if (v) { v.pause(); v.preload = 'none'; }
+}
+
 function _queuePagerNeighbors(centerIdx) {
   // Immediate neighbor (offset 1) gets a full mount — real streaming, instant swipe-to.
   if (PAGER_AHEAD >= 1) _queuePagerPreload(centerIdx + 1);
@@ -7158,6 +7170,12 @@ async function _processPagerPreloadQueue() {
     if (idx === undefined) break;
     if (idx > _pagerIdx + PAGER_AHEAD || idx < _pagerIdx - PAGER_BEHIND) continue; // stale — user already swiped past it
     await _mountPagerSlide(idx, false);
+    // Budget this neighbor's unattended buffering — if it never actually becomes
+    // the active slide (or gets watched) within the window, stop it from continuing
+    // to consume bandwidth just for sitting near the current position.
+    setTimeout(() => {
+      if (idx !== _pagerIdx && !_pagerPlayedIndices.has(idx)) _stopPagerNeighborPreload(idx);
+    }, PAGER_NEIGHBOR_PRELOAD_MS);
   }
   _pagerPreloadBusy = false;
 }
@@ -7249,6 +7267,8 @@ async function openShortPager(startIdx) {
   playerWrapper.innerHTML = `<div id="shortPlayerRoot" style="position:relative;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;"></div>`;
 
   _pagerIdx = startIdx;
+  _pagerPlayedIndices.clear();
+  _pagerPlayedIndices.add(startIdx);
   await _mountPagerSlide(startIdx, true);
   _queuePagerNeighbors(startIdx);
   _placePagerSlides(startIdx);
@@ -7649,6 +7669,7 @@ async function _onPagerSlideCommitted(prevIdx, newIdx) {
   }
 
   _pagerIdx = newIdx;
+  _pagerPlayedIndices.add(newIdx);
   if (_pagerMode === 'feed') window._shortsFeedIndex = newIdx;
   else _shortEpisodeIndex = newIdx;
 
