@@ -6017,7 +6017,8 @@ function loadSeries(catalog) {
   const seriesEntries = Object.entries(catalog.series || {});
   if (!seriesEntries.length) return;
   // Attach the KV key to each series object so it's unique even for same-tmdbId, different-VJ versions
-  const seriesData = seriesEntries.map(([kvKey, s]) => ({ ...s, _kvKey: kvKey })).filter(s => !s.isUgandan);
+  const seriesData = seriesEntries.map(([kvKey, s]) => ({ ...s, _kvKey: kvKey })).filter(s => !s.isUgandan)
+    .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0)); // latest added first
 
   const section = document.getElementById('seriesSection');
   const row = document.getElementById('seriesRow');
