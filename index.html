@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
     <script>
+// detect Android WebView wrapper and disable focus outline only there
+if (/; wv\)/.test(navigator.userAgent)) {
+  document.documentElement.classList.add("is-webview");
+}
       // Single Page Apps for GitHub Pages — decode the redirect from 404.html
       // back into a real pathname via history.replaceState, before anything else runs.
       (function(l) {
@@ -10195,6 +10199,8 @@ button, a, [tabindex], .nav-item, input, select {
 button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
   outline: 2px solid #d4af37;
   outline-offset: 2px;
+}
+.is-webview button:focus-visible, .is-webview a:focus-visible, .is-webview [tabindex]:focus-visible {
 }
 
 /* --- custom Picha+ press effect (YouTube-style, but gold-themed) --- */
