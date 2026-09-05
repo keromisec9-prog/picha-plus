@@ -10184,5 +10184,71 @@ function _mpfWireTouch() {
   }, { passive: true });
 }
 </script>
+<style>
+/* --- kill all default browser touch/focus feedback --- */
+button, a, [tabindex], .nav-item, input, select {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+/* --- custom Picha+ press effect (YouTube-style, but gold-themed) --- */
+button, a, [role="button"] {
+  position: relative;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+  overflow: hidden;
+}
+button.pz-pressed, a.pz-pressed, [role="button"].pz-pressed {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+button::after, a::after, [role="button"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(212,175,55,0.35) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+button.pz-pressed::after, a.pz-pressed::after, [role="button"].pz-pressed::after {
+  opacity: 1;
+  transition: opacity 0s;
+}
+
+/* keep your existing gold nav-selected state untouched */
+.nav-item.active, .nav-item.selected {
+  border-color: #d4af37 !important;
+}
+</style>
+<script>
+// apply the custom press class to any element you want the effect on
+document.addEventListener('touchstart', e => {
+  const target = e.target.closest('button, a, [role="button"]');
+  if (target) target.classList.add('pz-pressed');
+}, { passive: true });
+
+['touchend', 'touchcancel'].forEach(evt => {
+  document.addEventListener(evt, e => {
+    const target = e.target.closest('button, a, [role="button"]');
+    if (target) setTimeout(() => target.classList.remove('pz-pressed'), 120);
+  }, { passive: true });
+});
+
+// force-blur any stuck focus on resume (fingerprint unlock, app-switch, screen off/on)
+function clearStrayFocus() {
+  const el = document.activeElement;
+  if (el && el !== document.body) el.blur();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
+window.addEventListener('pageshow', clearStrayFocus);
+window.addEventListener('focus', clearStrayFocus);
+</script>
+
 </body>
 </html>
