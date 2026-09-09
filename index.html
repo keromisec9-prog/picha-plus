@@ -4188,6 +4188,33 @@ async function initPlayer(data, item) {
 
   shakaPlayer.addEventListener('error', e => {
     console.error('Shaka error:', e.detail);
+    const d = e.detail || {};
+    let bufferedStr = 'none';
+    try {
+      if (video.buffered.length) {
+        const parts = [];
+        for (let i = 0; i < video.buffered.length; i++) {
+          parts.push(`${video.buffered.start(i).toFixed(1)}-${video.buffered.end(i).toFixed(1)}`);
+        }
+        bufferedStr = parts.join(',');
+      }
+    } catch (_) {}
+    const conn = navigator.connection || {};
+    const diag = {
+      code: d.code, category: d.category, data: d.data,
+      currentTime: video.currentTime, duration: video.duration,
+      buffered: bufferedStr, readyState: video.readyState, networkState: video.networkState,
+      downlink: conn.downlink, effectiveType: conn.effectiveType, rtt: conn.rtt,
+      title: item?.title || item?.name || 'unknown',
+      url: (typeof url !== 'undefined' ? url : 'unknown').slice(0, 150),
+      t: Date.now()
+    };
+    console.error('[VIDEO_ERROR_DIAG]', JSON.stringify(diag));
+    fetch(`${API}/client-error-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify(diag)
+    }).catch(() => {});
     showToast('Playback error. Please try again.', 'error');
   });
 
