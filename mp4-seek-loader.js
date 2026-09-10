@@ -17,17 +17,24 @@ class SeekableMSELoader {
   }
 
   async load() {
+    if (this.onProgress) this.onProgress('getting file size...');
     this.fileSize = await this._getFileSize();
+    if (this.onProgress) this.onProgress('file size = ' + this.fileSize);
+    if (this.onProgress) this.onProgress('locating moov...');
     const { moovStart, moovEnd, mdatStart } = await this._locateMoov();
+    if (this.onProgress) this.onProgress('moov found at ' + moovStart + '-' + moovEnd);
     this.mdatStart = mdatStart;
 
     // Fetch ftyp+moov region and feed to mp4box so it can parse the sample table.
+    if (this.onProgress) this.onProgress('fetching header bytes...');
     const headerBuf = await this._fetchRange(0, moovEnd - 1);
     headerBuf.fileStart = 0;
-    this.mp4boxfile.onReady = (info) => this._onMoovReady(info);
-    this.mp4boxfile.onError = (e) => console.error('mp4box error:', e);
+    this.mp4boxfile.onReady = (info) => { if (this.onProgress) this.onProgress('mp4box onReady fired, tracks=' + info.tracks.length); this._onMoovReady(info); };
+    this.mp4boxfile.onError = (e) => { if (this.onProgress) this.onProgress('mp4box ERROR: ' + e); console.error('mp4box error:', e); };
+    if (this.onProgress) this.onProgress('appending header to mp4box...');
     this.mp4boxfile.appendBuffer(headerBuf);
     this.mp4boxfile.flush();
+    if (this.onProgress) this.onProgress('flushed, waiting for onReady...');
 
     this.mediaSource = new MediaSource();
     this.video.src = URL.createObjectURL(this.mediaSource);

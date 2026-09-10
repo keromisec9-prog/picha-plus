@@ -2755,17 +2755,30 @@ if (!console.warn)  console.warn  = console.log;
       }
       const statusEl = document.createElement('div');
       statusEl.id = 'mseTestStatus';
-      statusEl.style.cssText = 'position:fixed;top:245px;left:10px;width:300px;z-index:99999;background:#000;color:#0f0;font-size:12px;padding:4px;font-family:monospace;';
+      statusEl.style.cssText = 'position:fixed;top:245px;left:10px;width:300px;max-height:300px;overflow-y:auto;z-index:99999;background:#000;color:#0f0;font-size:11px;padding:4px;font-family:monospace;';
       statusEl.textContent = 'loading MSE test...';
       document.body.appendChild(statusEl);
-      loadShortVideoMSE(testVid, testUrl).then(l => {
-        window._testLoader = l;
-        statusEl.textContent = 'MSE loader ready, duration=' + l.duration;
-        statusEl.style.color = '#0f0';
-      }).catch(e => {
-        statusEl.textContent = 'MSE loader FAILED: ' + e.message;
-        statusEl.style.color = '#f00';
-        console.error('MSE test failed:', e);
+      loadMp4Box().then(() => {
+        const loader = new SeekableMSELoader(testVid, testUrl);
+        loader.onProgress = (msg) => {
+          const line = document.createElement('div');
+          line.textContent = msg;
+          statusEl.appendChild(line);
+        };
+        statusEl.textContent = '';
+        loader.load().then(() => {
+          window._testLoader = loader;
+          const line = document.createElement('div');
+          line.textContent = 'LOADER COMPLETE, duration=' + loader.duration;
+          line.style.color = '#0f0';
+          statusEl.appendChild(line);
+        }).catch(e => {
+          const line = document.createElement('div');
+          line.textContent = 'LOAD FAILED: ' + e.message;
+          line.style.color = '#f00';
+          statusEl.appendChild(line);
+          console.error('MSE test failed:', e);
+        });
       });
     }, 1500);
   });
