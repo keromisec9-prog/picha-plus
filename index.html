@@ -4213,7 +4213,7 @@ async function initPlayer(data, item) {
     fetch(`${API}/client-error-log`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
-      body: JSON.stringify({ ...diag, kind: 'fatal_error' })
+      body: JSON.stringify({ ...diag, kind: 'fatal_error', ua: navigator.userAgent })
     }).catch(() => {});
     showToast('Playback error. Please try again.', 'error');
   });
@@ -4245,7 +4245,7 @@ async function initPlayer(data, item) {
         currentTime: video.currentTime, duration: video.duration,
         buffered: bufferedStr, readyState: video.readyState, networkState: video.networkState,
         downlink: conn.downlink, effectiveType: conn.effectiveType, rtt: conn.rtt,
-        title: item?.title || item?.name || 'unknown', t: now
+        title: item?.title || item?.name || 'unknown', t: now, ua: navigator.userAgent
       })
     }).catch(() => {});
   };
