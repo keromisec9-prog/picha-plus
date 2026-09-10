@@ -7513,17 +7513,28 @@ async function _mountPagerSlide(idx, autoplay) {
   });
   video.addEventListener('canplay', () => { clearTimeout(_spinnerShowTimer); if (spinnerEl) spinnerEl.style.display = 'none'; }, { once: true });
   video.addEventListener('error', () => {
-    // Clearing src + calling load() during intentional teardown (unmounting a
-    // far slide, closing the pager) fires this same native 'error' event as a
-    // side effect — not a real playback failure. Skip it when we set this flag
-    // ourselves right before doing that teardown.
     if (video.dataset.intentionalUnmount === '1') return;
     clearTimeout(_spinnerShowTimer);
     if (spinnerEl) spinnerEl.style.display = 'none';
+    const mediaErr = video.error || {};
+    console.error('Video error:', mediaErr);
+    fetch(`${API}/client-error-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify({
+        kind: 'pager_video_error',
+        mediaErrorCode: mediaErr.code, mediaErrorMessage: mediaErr.message,
+        currentTime: video.currentTime, duration: video.duration,
+        src: (video.currentSrc || video.src || '').slice(0, 150),
+        readyState: video.readyState, networkState: video.networkState,
+        isPreview: !!urlData.isPreview,
+        title: short?.title || short?.name || 'unknown',
+        ua: navigator.userAgent, t: Date.now()
+      })
+    }).catch(() => {});
     if (urlData.isPreview) {
       showShortPaywallPrompt(short, idx);
     } else {
-      console.error('Video error:', video.error);
       showToast('Playback error. Please try again', 'red');
     }
   });
