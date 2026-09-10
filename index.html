@@ -6370,6 +6370,19 @@ function showToast(msg, type = '') {
   setTimeout(() => t.remove(), 3500);
 }
 
+// Diagnostic-only: stays on screen until tapped, doesn't auto-dismiss.
+// Use for surfacing real error detail while actively debugging — never for
+// normal user-facing messages.
+function showPersistentDiagToast(msg) {
+  document.querySelectorAll('.toast.diag-persist').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast red diag-persist';
+  t.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;z-index:99999;background:#3a0d0d;border:1px solid #ff5555;color:#fff;padding:10px 14px;border-radius:10px;font-size:0.75rem;line-height:1.4;word-break:break-word;cursor:pointer;';
+  t.textContent = msg + ' (tap to dismiss)';
+  t.onclick = () => t.remove();
+  document.body.appendChild(t);
+}
+
 function showAfricanUpgradeToast() {
   document.querySelectorAll('.toast, .african-toast, .african-modal-overlay').forEach(t => t.remove());
 
@@ -7532,6 +7545,7 @@ async function _mountPagerSlide(idx, autoplay) {
         ua: navigator.userAgent, t: Date.now()
       })
     }).catch(() => {});
+    showPersistentDiagToast(`code:${mediaErr.code} msg:${mediaErr.message||'none'} t:${video.currentTime?.toFixed(1)} ready:${video.readyState} net:${video.networkState}`);
     if (urlData.isPreview) {
       showShortPaywallPrompt(short, idx);
     } else {
