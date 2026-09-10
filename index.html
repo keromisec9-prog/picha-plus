@@ -2740,6 +2740,36 @@ if (!console.warn)  console.warn  = console.log;
     document.head.appendChild(s);
   })();
 
+  // TEMP TEST — remove after verifying MSE loader works
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const testUrl = 'https://s3.eu-central-003.backblazeb2.com/picha-plus-videos/shorts/1786410310362_Spend__1_Get_Millions_Back___Poor_Guy_Awakens_Cashback_System_Becomes_Billionaire_Overnight__720p_.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=00320e2ac27146b0000000001%2F20260910%2Feu-central-003%2Fs3%2Faws4_request&X-Amz-Date=20260910T101902Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&_cb=oz7e585l578&X-Amz-Signature=610768650afb804ae892b2410ef3d9ca53ee8ce9903c7b4c7b2d0d44ca031c5d';
+      let testVid = document.getElementById('mseTestVid');
+      if (!testVid) {
+        testVid = document.createElement('video');
+        testVid.id = 'mseTestVid';
+        testVid.controls = true;
+        testVid.playsInline = true;
+        testVid.style.cssText = 'position:fixed;top:60px;left:10px;width:300px;height:180px;z-index:99999;background:#000;border:3px solid lime;';
+        document.body.appendChild(testVid);
+      }
+      const statusEl = document.createElement('div');
+      statusEl.id = 'mseTestStatus';
+      statusEl.style.cssText = 'position:fixed;top:245px;left:10px;width:300px;z-index:99999;background:#000;color:#0f0;font-size:12px;padding:4px;font-family:monospace;';
+      statusEl.textContent = 'loading MSE test...';
+      document.body.appendChild(statusEl);
+      loadShortVideoMSE(testVid, testUrl).then(l => {
+        window._testLoader = l;
+        statusEl.textContent = 'MSE loader ready, duration=' + l.duration;
+        statusEl.style.color = '#0f0';
+      }).catch(e => {
+        statusEl.textContent = 'MSE loader FAILED: ' + e.message;
+        statusEl.style.color = '#f00';
+        console.error('MSE test failed:', e);
+      });
+    }, 1500);
+  });
+
   let _mp4boxLoaded = false;
   let _mp4boxPromise = null;
   function loadMp4Box() {
