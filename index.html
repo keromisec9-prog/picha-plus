@@ -2734,6 +2734,27 @@ if (!console.warn)  console.warn  = console.log;
     return _shakaPromise;
   }
 
+  (function() {
+    const s = document.createElement('script');
+    s.src = 'mp4-seek-loader.js';
+    document.head.appendChild(s);
+  })();
+
+  let _mp4boxLoaded = false;
+  let _mp4boxPromise = null;
+  function loadMp4Box() {
+    if (_mp4boxPromise) return _mp4boxPromise;
+    _mp4boxPromise = new Promise((resolve, reject) => {
+      if (window.MP4Box) { _mp4boxLoaded = true; resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mp4box.js/0.5.2/mp4box.all.min.js';
+      s.onload = () => { _mp4boxLoaded = true; resolve(); };
+      s.onerror = () => reject(new Error('Failed to load mp4box.js'));
+      document.head.appendChild(s);
+    });
+    return _mp4boxPromise;
+  }
+
   // Load Cast SDK during idle time — off the critical initial-paint path, but ready soon after load
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => loadCastSDK());
