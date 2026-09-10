@@ -4213,10 +4213,44 @@ async function initPlayer(data, item) {
     fetch(`${API}/client-error-log`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
-      body: JSON.stringify(diag)
+      body: JSON.stringify({ ...diag, kind: 'fatal_error' })
     }).catch(() => {});
     showToast('Playback error. Please try again.', 'error');
   });
+
+  // Silent capture of non-fatal stalls too — these might recover on their own
+  // and never surface as a fatal Shaka error, but could be an early symptom
+  // of the same underlying issue. No user-facing toast, purely diagnostic.
+  let _lastStallLog = 0;
+  const logStallEvent = (eventName) => {
+    const now = Date.now();
+    if (now - _lastStallLog < 15000) return; // throttle — don't spam on rapid re-stalls
+    _lastStallLog = now;
+    let bufferedStr = 'none';
+    try {
+      if (video.buffered.length) {
+        const parts = [];
+        for (let i = 0; i < video.buffered.length; i++) {
+          parts.push(`${video.buffered.start(i).toFixed(1)}-${video.buffered.end(i).toFixed(1)}`);
+        }
+        bufferedStr = parts.join(',');
+      }
+    } catch (_) {}
+    const conn = navigator.connection || {};
+    fetch(`${API}/client-error-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify({
+        kind: 'stall_event', event: eventName,
+        currentTime: video.currentTime, duration: video.duration,
+        buffered: bufferedStr, readyState: video.readyState, networkState: video.networkState,
+        downlink: conn.downlink, effectiveType: conn.effectiveType, rtt: conn.rtt,
+        title: item?.title || item?.name || 'unknown', t: now
+      })
+    }).catch(() => {});
+  };
+  video.addEventListener('stalled', () => logStallEvent('stalled'));
+  video.addEventListener('waiting', () => logStallEvent('waiting'));
 
   // Cast session events — show/hide banner
   shakaPlayer.addEventListener('caststatuschanged', e => {
