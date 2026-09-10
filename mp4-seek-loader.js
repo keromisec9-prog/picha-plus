@@ -26,13 +26,18 @@ class SeekableMSELoader {
     this.mdatStart = mdatStart;
 
     // Fetch ftyp+moov region and feed to mp4box so it can parse the sample table.
-    if (this.onProgress) this.onProgress('fetching header bytes...');
-    const headerBuf = await this._fetchRange(0, moovEnd - 1);
-    headerBuf.fileStart = 0;
+    if (this.onProgress) this.onProgress('fetching ftyp bytes (0-' + (mdatStart - 1) + ')...');
+    const ftypBuf = await this._fetchRange(0, mdatStart - 1);
+    ftypBuf.fileStart = 0;
+    if (this.onProgress) this.onProgress('fetching moov bytes (' + moovStart + '-' + (moovEnd - 1) + ')...');
+    const moovBuf = await this._fetchRange(moovStart, moovEnd - 1);
+    moovBuf.fileStart = moovStart;
     this.mp4boxfile.onReady = (info) => { if (this.onProgress) this.onProgress('mp4box onReady fired, tracks=' + info.tracks.length); this._onMoovReady(info); };
     this.mp4boxfile.onError = (e) => { if (this.onProgress) this.onProgress('mp4box ERROR: ' + e); console.error('mp4box error:', e); };
-    if (this.onProgress) this.onProgress('appending header to mp4box...');
-    this.mp4boxfile.appendBuffer(headerBuf);
+    if (this.onProgress) this.onProgress('appending ftyp to mp4box...');
+    this.mp4boxfile.appendBuffer(ftypBuf);
+    if (this.onProgress) this.onProgress('appending moov to mp4box...');
+    this.mp4boxfile.appendBuffer(moovBuf);
     this.mp4boxfile.flush();
     if (this.onProgress) this.onProgress('flushed, waiting for onReady...');
 
