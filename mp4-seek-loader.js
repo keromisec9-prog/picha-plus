@@ -29,13 +29,24 @@ class SeekableMSELoader {
     if (this.onProgress) this.onProgress('fetching ftyp bytes (0-' + (mdatStart - 1) + ')...');
     const ftypBuf = await this._fetchRange(0, mdatStart - 1);
     ftypBuf.fileStart = 0;
+
+    // mp4box needs the mdat box HEADER (type+size) so it can identify and skip
+    // over the huge content without needing the actual video bytes. 16 bytes
+    // covers both 32-bit and 64-bit size encodings.
+    if (this.onProgress) this.onProgress('fetching mdat header (' + mdatStart + '-' + (mdatStart + 15) + ')...');
+    const mdatHeaderBuf = await this._fetchRange(mdatStart, mdatStart + 15);
+    mdatHeaderBuf.fileStart = mdatStart;
+
     if (this.onProgress) this.onProgress('fetching moov bytes (' + moovStart + '-' + (moovEnd - 1) + ')...');
     const moovBuf = await this._fetchRange(moovStart, moovEnd - 1);
     moovBuf.fileStart = moovStart;
+
     this.mp4boxfile.onReady = (info) => { if (this.onProgress) this.onProgress('mp4box onReady fired, tracks=' + info.tracks.length); this._onMoovReady(info); };
     this.mp4boxfile.onError = (e) => { if (this.onProgress) this.onProgress('mp4box ERROR: ' + e); console.error('mp4box error:', e); };
     if (this.onProgress) this.onProgress('appending ftyp to mp4box...');
     this.mp4boxfile.appendBuffer(ftypBuf);
+    if (this.onProgress) this.onProgress('appending mdat header to mp4box...');
+    this.mp4boxfile.appendBuffer(mdatHeaderBuf);
     if (this.onProgress) this.onProgress('appending moov to mp4box...');
     this.mp4boxfile.appendBuffer(moovBuf);
     this.mp4boxfile.flush();
