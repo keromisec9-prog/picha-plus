@@ -2734,11 +2734,20 @@ if (!console.warn)  console.warn  = console.log;
     return _shakaPromise;
   }
 
-  (function() {
-    const s = document.createElement('script');
-    s.src = 'mp4-seek-loader.js';
-    document.head.appendChild(s);
-  })();
+  let _seekLoaderPromise = null;
+  function loadSeekLoaderScript() {
+    if (_seekLoaderPromise) return _seekLoaderPromise;
+    _seekLoaderPromise = new Promise((resolve, reject) => {
+      if (window.loadShortVideoMSE) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'mp4-seek-loader.js';
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load mp4-seek-loader.js'));
+      document.head.appendChild(s);
+    });
+    return _seekLoaderPromise;
+  }
+  loadSeekLoaderScript(); // kick off eagerly, but callers still await it
       });
     }, 1500);
   });
@@ -7423,6 +7432,7 @@ async function _processNeighborMSEQueue() {
   const { idx, video, url, resumePos } = item;
   _pagerDebugLog('idx=' + idx + ' NEIGHBOR mse load start (queue len=' + _neighborMSEQueue.length + ')');
   try {
+    await loadSeekLoaderScript();
     // Skip if this slide's video element has moved on to different content
     // since this item was queued (e.g. rapid scrolling past it).
     if (video.dataset && video.dataset.mounted === '1' && document.getElementById('pgVid_' + idx) === video) {
@@ -7567,6 +7577,7 @@ async function _mountPagerSlide(idx, autoplay) {
     // Active slide — load MSE immediately, no queueing.
     _pagerDebugLog('idx=' + idx + ' ACTIVE mse load start');
     try {
+      await loadSeekLoaderScript();
       const loader = await loadShortVideoMSE(video, urlData.url);
       _pagerDebugLog('idx=' + idx + ' ACTIVE mse load OK');
       window._pagerMSELoaders[idx] = loader;
