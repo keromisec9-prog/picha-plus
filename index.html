@@ -7445,7 +7445,10 @@ async function _processNeighborMSEQueue() {
     // since this item was queued (e.g. rapid scrolling past it).
     if (video.dataset && video.dataset.mounted === '1' && document.getElementById('pgVid_' + idx) === video) {
       if (!window._pagerMSELoaders) window._pagerMSELoaders = {};
-      const loader = await loadShortVideoMSE(video, url);
+      await loadMp4Box();
+      const loader = new SeekableMSELoader(video, url);
+      loader.onProgress = (msg) => _pagerDebugLog('idx=' + idx + ' ' + msg);
+      await loader.load();
       window._pagerMSELoaders[idx] = loader;
       if (resumePos > 2) video.currentTime = resumePos;
       _pagerDebugLog('idx=' + idx + ' NEIGHBOR mse load OK');
@@ -7586,7 +7589,10 @@ async function _mountPagerSlide(idx, autoplay) {
     _pagerDebugLog('idx=' + idx + ' ACTIVE mse load start');
     try {
       await loadSeekLoaderScript();
-      const loader = await loadShortVideoMSE(video, urlData.url);
+      await loadMp4Box();
+      const loader = new SeekableMSELoader(video, urlData.url);
+      loader.onProgress = (msg) => _pagerDebugLog('idx=' + idx + ' ' + msg);
+      await loader.load();
       _pagerDebugLog('idx=' + idx + ' ACTIVE mse load OK');
       window._pagerMSELoaders[idx] = loader;
       if (resumePos > 2) video.currentTime = resumePos;
