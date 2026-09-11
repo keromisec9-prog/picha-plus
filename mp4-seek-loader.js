@@ -41,6 +41,12 @@ class SeekableMSELoader {
     this.mp4boxfile.flush();
     if (this.onProgress) this.onProgress('flushed, waiting for onReady...');
 
+    await new Promise((resolve, reject) => {
+      this._readyResolve = resolve;
+      setTimeout(() => reject(new Error('onReady never fired within 8s — mp4box could not parse moov')), 8000);
+    });
+    if (this.onProgress) this.onProgress('onReady resolved, duration=' + this.duration);
+
     this.mediaSource = new MediaSource();
     this.video.src = URL.createObjectURL(this.mediaSource);
     this.mediaSource.addEventListener('sourceopen', this._onSourceOpen, { once: true });
