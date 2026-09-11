@@ -7394,6 +7394,21 @@ async function openShortPager(startIdx) {
 let _neighborMSEQueue = [];
 let _neighborMSEBusy = false;
 
+function _pagerDebugLog(msg) {
+  let el = document.getElementById('_pagerDebugLog');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_pagerDebugLog';
+    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:35vh;overflow-y:auto;background:rgba(0,0,0,0.85);color:#0f0;font-size:10px;font-family:monospace;padding:6px;z-index:999999;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  const line = document.createElement('div');
+  line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
+  el.appendChild(line);
+  while (el.children.length > 40) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+
 function _enqueueNeighborMSELoad(idx, video, url, resumePos) {
   _neighborMSEQueue = _neighborMSEQueue.filter(item => item.idx !== idx); // dedupe stale entries for the same slide
   _neighborMSEQueue.push({ idx, video, url, resumePos });
@@ -7406,6 +7421,7 @@ async function _processNeighborMSEQueue() {
   if (!item) return;
   _neighborMSEBusy = true;
   const { idx, video, url, resumePos } = item;
+  _pagerDebugLog('idx=' + idx + ' NEIGHBOR mse load start (queue len=' + _neighborMSEQueue.length + ')');
   try {
     // Skip if this slide's video element has moved on to different content
     // since this item was queued (e.g. rapid scrolling past it).
@@ -7414,8 +7430,10 @@ async function _processNeighborMSEQueue() {
       const loader = await loadShortVideoMSE(video, url);
       window._pagerMSELoaders[idx] = loader;
       if (resumePos > 2) video.currentTime = resumePos;
+      _pagerDebugLog('idx=' + idx + ' NEIGHBOR mse load OK');
     }
   } catch (e) {
+    _pagerDebugLog('idx=' + idx + ' NEIGHBOR mse load FAILED: ' + e.message);
     console.error('Neighbor MSE preload failed, falling back to direct src:', e);
     try { video.src = url; if (resumePos > 2) video.currentTime = resumePos; } catch (e2) {}
   } finally {
@@ -7547,11 +7565,14 @@ async function _mountPagerSlide(idx, autoplay) {
     }
   } else if (autoplay) {
     // Active slide — load MSE immediately, no queueing.
+    _pagerDebugLog('idx=' + idx + ' ACTIVE mse load start');
     try {
       const loader = await loadShortVideoMSE(video, urlData.url);
+      _pagerDebugLog('idx=' + idx + ' ACTIVE mse load OK');
       window._pagerMSELoaders[idx] = loader;
       if (resumePos > 2) video.currentTime = resumePos;
     } catch (e) {
+      _pagerDebugLog('idx=' + idx + ' ACTIVE mse load FAILED: ' + e.message);
       console.error('MSE load failed, falling back to direct src:', e);
       video.src = urlData.url;
       if (resumePos > 2) video.currentTime = resumePos;
@@ -7631,6 +7652,7 @@ async function _mountPagerSlide(idx, autoplay) {
       })
     }).catch(() => {});
     showPersistentDiagToast(`code:${mediaErr.code} msg:${mediaErr.message||'none'} t:${video.currentTime?.toFixed(1)} ready:${video.readyState} net:${video.networkState}`);
+    _pagerDebugLog('idx=' + idx + ' VIDEO ERROR code=' + mediaErr.code + ' msg=' + mediaErr.message + ' ready=' + video.readyState + ' net=' + video.networkState);
     if (urlData.isPreview) {
       showShortPaywallPrompt(short, idx);
     } else {
