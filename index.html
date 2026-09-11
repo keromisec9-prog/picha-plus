@@ -2739,48 +2739,6 @@ if (!console.warn)  console.warn  = console.log;
     s.src = 'mp4-seek-loader.js';
     document.head.appendChild(s);
   })();
-
-  // TEMP TEST — remove after verifying MSE loader works
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const testUrl = 'https://s3.eu-central-003.backblazeb2.com/picha-plus-videos/shorts/1788294496772__ENG_DUB_Poor_Freshman_Got_a_Tycoon_System_Drove_a_Ferrari_and_Shocked_the_Campus_Beauty_minidrama_720p_.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=00320e2ac27146b0000000001%2F20260911%2Feu-central-003%2Fs3%2Faws4_request&X-Amz-Date=20260911T080901Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&_cb=0ebhsjf9obi8&X-Amz-Signature=1a1a0bbd2adc296d91fd9bd98e22ae409f3f729e22106a14fdfadc8cbf8f300f';
-      let testVid = document.getElementById('mseTestVid');
-      if (!testVid) {
-        testVid = document.createElement('video');
-        testVid.id = 'mseTestVid';
-        testVid.controls = true;
-        testVid.playsInline = true;
-        testVid.style.cssText = 'position:fixed;top:60px;left:10px;width:300px;height:180px;z-index:99999;background:#000;border:3px solid lime;';
-        document.body.appendChild(testVid);
-      }
-      const statusEl = document.createElement('div');
-      statusEl.id = 'mseTestStatus';
-      statusEl.style.cssText = 'position:fixed;top:245px;left:10px;width:300px;max-height:300px;overflow-y:auto;z-index:99999;background:#000;color:#0f0;font-size:11px;padding:4px;font-family:monospace;';
-      statusEl.textContent = 'loading MSE test...';
-      document.body.appendChild(statusEl);
-      loadMp4Box().then(() => {
-        const loader = new SeekableMSELoader(testVid, testUrl);
-        loader.onProgress = (msg) => {
-          const line = document.createElement('div');
-          line.textContent = msg;
-          statusEl.appendChild(line);
-        };
-        statusEl.textContent = '';
-        loader.load().then(() => {
-          window._testLoader = loader;
-          const line = document.createElement('div');
-          line.textContent = 'LOADER COMPLETE, duration=' + loader.duration;
-          line.style.color = '#0f0';
-          statusEl.appendChild(line);
-        }).catch(e => {
-          const line = document.createElement('div');
-          line.textContent = 'LOAD FAILED: ' + (e && e.stack ? e.stack : String(e));
-          line.style.color = '#f00';
-          line.style.fontSize = '9px';
-          line.style.wordBreak = 'break-all';
-          statusEl.appendChild(line);
-          console.error('MSE test failed:', e);
-        });
       });
     }, 1500);
   });
@@ -7509,10 +7467,17 @@ async function _mountPagerSlide(idx, autoplay) {
   const video = document.getElementById('pgVid_' + idx);
   const chunk = _partialChunkCache[idx] || _recentlyPlayedChunkCache[idx];
   const isFromRecentCache = !_partialChunkCache[idx] && !!_recentlyPlayedChunkCache[idx];
+  if (!window._pagerMSELoaders) window._pagerMSELoaders = {};
+  if (window._pagerMSELoaders[idx]) {
+    try { window._pagerMSELoaders[idx].destroy(); } catch (e) {}
+    delete window._pagerMSELoaders[idx];
+  }
+
   if (chunk && resumePos <= 2) {
     // instant start from the warmed blob, then proactively hand off to the real
     // streaming URL BEFORE the blob runs out — using buffered range + currentTime,
-    // not waiting for an actual stall.
+    // not waiting for an actual stall. The handoff now goes through the MSE loader
+    // (non-faststart files) instead of a plain src swap.
     video.src = chunk.blobUrl;
     let swapped = false;
     const SWAP_LEAD_SECS = 1.0; // swap once we're within 1s of the blob's buffered end
@@ -7524,13 +7489,20 @@ async function _mountPagerSlide(idx, autoplay) {
         swapped = true;
         const t = video.currentTime;
         const wasPaused = video.paused;
+        video.removeEventListener('timeupdate', checkSwap);
         // Use the URL this mount call just freshly resolved, not chunk.realUrl —
         // that's whatever URL was current whenever the blob was originally warmed,
         // which can be arbitrarily old/stale by the time the swap actually happens.
-        video.src = urlData.url;
-        video.currentTime = t;
-        if (!wasPaused) video.play().catch(() => {});
-        video.removeEventListener('timeupdate', checkSwap);
+        loadShortVideoMSE(video, urlData.url).then(loader => {
+          window._pagerMSELoaders[idx] = loader;
+          video.currentTime = t;
+          if (!wasPaused) video.play().catch(() => {});
+        }).catch(e => {
+          console.error('MSE swap failed, falling back to direct src:', e);
+          video.src = urlData.url;
+          video.currentTime = t;
+          if (!wasPaused) video.play().catch(() => {});
+        });
       }
     };
     video.addEventListener('timeupdate', checkSwap);
@@ -7541,8 +7513,15 @@ async function _mountPagerSlide(idx, autoplay) {
       delete _partialChunkCache[idx];
     }
   } else {
-    video.src = urlData.url;
-    if (resumePos > 2) video.currentTime = resumePos;
+    try {
+      const loader = await loadShortVideoMSE(video, urlData.url);
+      window._pagerMSELoaders[idx] = loader;
+      if (resumePos > 2) video.currentTime = resumePos;
+    } catch (e) {
+      console.error('MSE load failed, falling back to direct src:', e);
+      video.src = urlData.url;
+      if (resumePos > 2) video.currentTime = resumePos;
+    }
   }
   if (autoplay) video.play().catch(() => {});
   _wireSeekBar(idx);
