@@ -7405,6 +7405,15 @@ async function openShortPager(startIdx) {
 let _neighborMSEQueue = [];
 let _neighborMSEBusy = false;
 
+window.addEventListener('error', function(e) {
+  try {
+    _pagerDebugLog('GLOBAL JS ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
+  } catch (ignore) {
+    // _pagerDebugLog itself may not exist yet if the error happened very early
+    document.title = 'JSERR: ' + e.message;
+  }
+});
+
 function _pagerDebugLog(msg) {
   let el = document.getElementById('_pagerDebugLog');
   if (!el) {
