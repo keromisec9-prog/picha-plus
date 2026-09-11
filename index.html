@@ -7391,6 +7391,39 @@ async function openShortPager(startIdx) {
   _wirePagerTouch();
 }
 
+let _neighborMSEQueue = [];
+let _neighborMSEBusy = false;
+
+function _enqueueNeighborMSELoad(idx, video, url, resumePos) {
+  _neighborMSEQueue = _neighborMSEQueue.filter(item => item.idx !== idx); // dedupe stale entries for the same slide
+  _neighborMSEQueue.push({ idx, video, url, resumePos });
+  _processNeighborMSEQueue();
+}
+
+async function _processNeighborMSEQueue() {
+  if (_neighborMSEBusy) return;
+  const item = _neighborMSEQueue.shift();
+  if (!item) return;
+  _neighborMSEBusy = true;
+  const { idx, video, url, resumePos } = item;
+  try {
+    // Skip if this slide's video element has moved on to different content
+    // since this item was queued (e.g. rapid scrolling past it).
+    if (video.dataset && video.dataset.mounted === '1' && document.getElementById('pgVid_' + idx) === video) {
+      if (!window._pagerMSELoaders) window._pagerMSELoaders = {};
+      const loader = await loadShortVideoMSE(video, url);
+      window._pagerMSELoaders[idx] = loader;
+      if (resumePos > 2) video.currentTime = resumePos;
+    }
+  } catch (e) {
+    console.error('Neighbor MSE preload failed, falling back to direct src:', e);
+    try { video.src = url; if (resumePos > 2) video.currentTime = resumePos; } catch (e2) {}
+  } finally {
+    _neighborMSEBusy = false;
+    _processNeighborMSEQueue();
+  }
+}
+
 async function _mountPagerSlide(idx, autoplay) {
   const item = _pagerItem(idx);
   if (!item) return;
@@ -7512,7 +7545,8 @@ async function _mountPagerSlide(idx, autoplay) {
     } else {
       delete _partialChunkCache[idx];
     }
-  } else {
+  } else if (autoplay) {
+    // Active slide — load MSE immediately, no queueing.
     try {
       const loader = await loadShortVideoMSE(video, urlData.url);
       window._pagerMSELoaders[idx] = loader;
@@ -7522,6 +7556,12 @@ async function _mountPagerSlide(idx, autoplay) {
       video.src = urlData.url;
       if (resumePos > 2) video.currentTime = resumePos;
     }
+  } else {
+    // Background/neighbor preload — queued so only one MSE loader runs at a
+    // time. Running the active slide's loader alongside multiple neighbor
+    // loaders simultaneously made the active video take minutes to start,
+    // since they were all competing for the same bandwidth.
+    _enqueueNeighborMSELoad(idx, video, urlData.url, resumePos);
   }
   if (autoplay) video.play().catch(() => {});
   _wireSeekBar(idx);
