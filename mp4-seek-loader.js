@@ -48,14 +48,17 @@ class SeekableMSELoader {
     if (this.onProgress) this.onProgress('appending mdat header to mp4box...');
     this.mp4boxfile.appendBuffer(mdatHeaderBuf);
     if (this.onProgress) this.onProgress('appending moov to mp4box...');
+
+    const readyPromise = new Promise((resolve, reject) => {
+      this._readyResolve = resolve;
+      setTimeout(() => { if (!this.ready) reject(new Error('onReady never fired within 8s — mp4box could not parse moov')); }, 8000);
+    });
+
     this.mp4boxfile.appendBuffer(moovBuf);
     this.mp4boxfile.flush();
     if (this.onProgress) this.onProgress('flushed, waiting for onReady...');
 
-    await new Promise((resolve, reject) => {
-      this._readyResolve = resolve;
-      setTimeout(() => reject(new Error('onReady never fired within 8s — mp4box could not parse moov')), 8000);
-    });
+    await readyPromise;
     if (this.onProgress) this.onProgress('onReady resolved, duration=' + this.duration);
 
     this.mediaSource = new MediaSource();
