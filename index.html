@@ -2743,7 +2743,7 @@ if (!console.warn)  console.warn  = console.log;
   // TEMP TEST — remove after verifying MSE loader works
   window.addEventListener('load', () => {
     setTimeout(() => {
-      const testUrl = 'https://s3.eu-central-003.backblazeb2.com/picha-plus-videos/shorts/1786410310362_Spend__1_Get_Millions_Back___Poor_Guy_Awakens_Cashback_System_Becomes_Billionaire_Overnight__720p_.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=00320e2ac27146b0000000001%2F20260910%2Feu-central-003%2Fs3%2Faws4_request&X-Amz-Date=20260910T101902Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&_cb=oz7e585l578&X-Amz-Signature=610768650afb804ae892b2410ef3d9ca53ee8ce9903c7b4c7b2d0d44ca031c5d';
+      const testUrl = 'https://s3.eu-central-003.backblazeb2.com/picha-plus-videos/shorts/1788294496772__ENG_DUB_Poor_Freshman_Got_a_Tycoon_System_Drove_a_Ferrari_and_Shocked_the_Campus_Beauty_minidrama_720p_.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=00320e2ac27146b0000000001%2F20260911%2Feu-central-003%2Fs3%2Faws4_request&X-Amz-Date=20260911T080901Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&_cb=0ebhsjf9obi8&X-Amz-Signature=1a1a0bbd2adc296d91fd9bd98e22ae409f3f729e22106a14fdfadc8cbf8f300f';
       let testVid = document.getElementById('mseTestVid');
       if (!testVid) {
         testVid = document.createElement('video');
@@ -2774,8 +2774,10 @@ if (!console.warn)  console.warn  = console.log;
           statusEl.appendChild(line);
         }).catch(e => {
           const line = document.createElement('div');
-          line.textContent = 'LOAD FAILED: ' + e.message;
+          line.textContent = 'LOAD FAILED: ' + (e && e.stack ? e.stack : String(e));
           line.style.color = '#f00';
+          line.style.fontSize = '9px';
+          line.style.wordBreak = 'break-all';
           statusEl.appendChild(line);
           console.error('MSE test failed:', e);
         });
