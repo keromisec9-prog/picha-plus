@@ -7930,7 +7930,35 @@ async function _onPagerSlideCommitted(prevIdx, newIdx) {
   else _shortEpisodeIndex = newIdx;
 
   const newVideo = document.getElementById('pgVid_' + newIdx);
-  if (newVideo) newVideo.play().catch(() => {});
+  if (newVideo) {
+    if (!(window._pagerMSELoaders && window._pagerMSELoaders[newIdx])) {
+      // This slide never finished its MSE upgrade before becoming active
+      // (still on the raw src fallback, which can't open non-faststart files).
+      // Jump the queue and force it now instead of letting playback fail.
+      _neighborMSEQueue = _neighborMSEQueue.filter(item => item.idx !== newIdx);
+      const meta0 = _pagerSlideMeta[newIdx];
+      const cachedUrlData = meta0 ? _shortPreloadCache[meta0.cacheKey] : null;
+      if (cachedUrlData && cachedUrlData.url) {
+        _pagerDebugLog('idx=' + newIdx + ' COMMIT forcing MSE upgrade (was on fallback src)');
+        (async () => {
+          try {
+            await loadSeekLoaderScript();
+            await loadMp4Box();
+            const loader = new SeekableMSELoader(newVideo, cachedUrlData.url);
+            loader.onProgress = (msg) => _pagerDebugLog('idx=' + newIdx + ' ' + msg);
+            await loader.load();
+            if (!window._pagerMSELoaders) window._pagerMSELoaders = {};
+            window._pagerMSELoaders[newIdx] = loader;
+            newVideo.play().catch(() => {});
+          } catch (e) {
+            _pagerDebugLog('idx=' + newIdx + ' COMMIT forced MSE upgrade FAILED: ' + e.message);
+          }
+        })();
+      }
+    } else {
+      newVideo.play().catch(() => {});
+    }
+  }
   const meta = _pagerSlideMeta[newIdx];
   if (meta) {
     window._currentShortPlayback = { shortKey: meta.shortKey, epKey: meta.epKey, isPreview: meta.isPreview, short: meta.short };
