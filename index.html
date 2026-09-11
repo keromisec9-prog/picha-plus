@@ -2747,6 +2747,7 @@ if (!console.warn)  console.warn  = console.log;
     });
     return _seekLoaderPromise;
   }
+  window.loadSeekLoaderScript = loadSeekLoaderScript; // must be reachable from other <script> blocks
   loadSeekLoaderScript(); // kick off eagerly, but callers still await it
       });
     }, 1500);
@@ -2766,6 +2767,7 @@ if (!console.warn)  console.warn  = console.log;
     });
     return _mp4boxPromise;
   }
+  window.loadMp4Box = loadMp4Box; // must be reachable from the separate mp4-seek-loader.js file
 
   // Load Cast SDK during idle time — off the critical initial-paint path, but ready soon after load
   if ('requestIdleCallback' in window) {
