@@ -4140,6 +4140,27 @@ async function initPlayer(data, item) {
   // was unreliable (Cloudflare's internal fetch path to B2 could silently ignore
   // Range headers), so every consumer now gets a direct signed URL instead.
   const url = typeof data === 'string' ? data : data.url;
+
+  // Diagnostic: catch stale shorts-pager state bleeding into a fresh movie/episode
+  // load. Should never be true here — if it is, that's the actual bug to chase.
+  if (window._shortPagerActive || Object.keys(_pagerSlideMeta || {}).length) {
+    console.error('[STALE_PAGER_STATE]', JSON.stringify({
+      shortPagerActive: window._shortPagerActive,
+      pagerSlideMetaKeys: Object.keys(_pagerSlideMeta || {}),
+      shortPlayerRootExists: !!document.getElementById('shortPlayerRoot'),
+      title: item?.title || item?.name || 'unknown'
+    }));
+    fetch(`${API}/client-error-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token },
+      body: JSON.stringify({
+        kind: 'stale_pager_state', shortPagerActive: window._shortPagerActive,
+        pagerSlideMetaKeys: Object.keys(_pagerSlideMeta || {}),
+        shortPlayerRootExists: !!document.getElementById('shortPlayerRoot'),
+        title: item?.title || item?.name || 'unknown', t: Date.now()
+      })
+    }).catch(() => {});
+  }
   try {
     await loadShaka();
   } catch (e) {
@@ -4564,9 +4585,11 @@ function closePlayer() {
     _partialChunkQueue = [];
     _recentlyPlayedQueue = [];
     _pagerPreloadQueue = [];
+    _neighborMSEQueue = [];
     _partialChunkBusy = false;
     _recentlyPlayedBusy = false;
     _pagerPreloadBusy = false;
+    _neighborMSEBusy = false;
     _backgroundPrefetchPaused = false;
   }
 
