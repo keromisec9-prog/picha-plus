@@ -10549,12 +10549,20 @@ window.addEventListener('focus', clearStrayFocus);
 // Categories(Veejays) → For You → Saved, and back the other way. Ignores
 // swipes starting inside horizontally-scrollable rows (so scrolling a movie
 // carousel still works normally) and while the player modal is open.
-const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'foryou', 'saved'];
+const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved'];
 
 function _getCurrentSwipeTabKey() {
   if (_bnActive === 'categories') {
-    const activeInner = document.querySelector('.bn-inner-tab.active')?.id || '';
+    // Scoped to this page's own tabs — For You has a same-class button set that
+    // could otherwise falsely match here since both stay in the DOM at once.
+    const activeInner = document.querySelector('#bnCategoriesPage .bn-inner-tab.active')?.id || '';
     return activeInner === 'bit-vj' ? 'cat:vj' : 'cat:genre';
+  }
+  if (_bnActive === 'foryou') {
+    const activeInner = document.querySelector('#bnForYouPage .bn-inner-tab.active')?.id || '';
+    if (activeInner === 'fyt-series') return 'fy:series';
+    if (activeInner === 'fyt-shorts') return 'fy:shorts';
+    return 'fy:movies';
   }
   return _bnActive;
 }
@@ -10562,6 +10570,9 @@ function _getCurrentSwipeTabKey() {
 function _goToSwipeTabKey(key) {
   if (key === 'cat:genre') { bnGo('categories'); bnInnerTab('genre'); }
   else if (key === 'cat:vj') { bnGo('categories'); bnInnerTab('vj'); }
+  else if (key === 'fy:movies') { bnGo('foryou'); fyTab('movies'); }
+  else if (key === 'fy:series') { bnGo('foryou'); fyTab('series'); }
+  else if (key === 'fy:shorts') { bnGo('foryou'); fyTab('shorts'); }
   else { bnGo(key); }
 }
 
