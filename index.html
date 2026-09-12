@@ -10544,6 +10544,60 @@ function clearStrayFocus() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
 window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
+
+// ── Swipe left/right to move through tabs: Home → Categories(Genre) →
+// Categories(Veejays) → For You → Saved, and back the other way. Ignores
+// swipes starting inside horizontally-scrollable rows (so scrolling a movie
+// carousel still works normally) and while the player modal is open.
+const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'foryou', 'saved'];
+
+function _getCurrentSwipeTabKey() {
+  if (_bnActive === 'categories') {
+    const activeInner = document.querySelector('.bn-inner-tab.active')?.id || '';
+    return activeInner === 'bit-vj' ? 'cat:vj' : 'cat:genre';
+  }
+  return _bnActive;
+}
+
+function _goToSwipeTabKey(key) {
+  if (key === 'cat:genre') { bnGo('categories'); bnInnerTab('genre'); }
+  else if (key === 'cat:vj') { bnGo('categories'); bnInnerTab('vj'); }
+  else { bnGo(key); }
+}
+
+function _handleTabSwipe(direction) {
+  const curKey = _getCurrentSwipeTabKey();
+  const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
+  if (idx === -1) return;
+  const nextIdx = idx + direction;
+  if (nextIdx < 0 || nextIdx >= _SWIPE_TAB_SEQUENCE.length) return;
+  _goToSwipeTabKey(_SWIPE_TAB_SEQUENCE[nextIdx]);
+}
+
+let _tabSwipeStartX = 0, _tabSwipeStartY = 0, _tabSwipeStartT = 0, _tabSwipeTracking = false;
+
+document.addEventListener('touchstart', (e) => {
+  if (document.getElementById('playerModal')?.classList.contains('active')) { _tabSwipeTracking = false; return; }
+  if (e.target.closest('.scroll-row, .sb-swipe-wrap, .lang-filter')) { _tabSwipeTracking = false; return; }
+  if (e.touches.length !== 1) { _tabSwipeTracking = false; return; }
+  _tabSwipeStartX = e.touches[0].clientX;
+  _tabSwipeStartY = e.touches[0].clientY;
+  _tabSwipeStartT = Date.now();
+  _tabSwipeTracking = true;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (!_tabSwipeTracking) return;
+  _tabSwipeTracking = false;
+  const touch = e.changedTouches[0];
+  const dx = touch.clientX - _tabSwipeStartX;
+  const dy = touch.clientY - _tabSwipeStartY;
+  const dt = Date.now() - _tabSwipeStartT;
+  if (dt > 600) return;
+  if (Math.abs(dx) < 70) return;
+  if (Math.abs(dy) > Math.abs(dx) * 0.5) return;
+  _handleTabSwipe(dx < 0 ? 1 : -1);
+}, { passive: true });
 </script>
 
 </body>
