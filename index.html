@@ -10600,6 +10600,23 @@ const TAB_SWIPE_ANIM_MS = 280;
 
 function _tabSwipeEaseOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
+// Home (#main) sits behind every .bn-page as a permanent base layer — it's
+// only ever visually covered, never hidden. Dragging a page reveals empty
+// space beside it with nothing else positioned there, so Home bleeds through
+// underneath by default. This plain background cover sits just behind
+// whatever's being dragged so that reveal space is blank, not stale content.
+let _tabSwipeCoverEl = null;
+function _tabSwipeShowCover() {
+  if (_tabSwipeCoverEl) return;
+  const cover = document.createElement('div');
+  cover.style.cssText = 'position:fixed;inset:0;z-index:499;background:var(--bg);pointer-events:none;';
+  document.body.appendChild(cover);
+  _tabSwipeCoverEl = cover;
+}
+function _tabSwipeRemoveCover() {
+  if (_tabSwipeCoverEl) { _tabSwipeCoverEl.remove(); _tabSwipeCoverEl = null; }
+}
+
 document.addEventListener('touchstart', (e) => {
   _tabSwipeDragging = false;
   if (document.getElementById('playerModal')?.classList.contains('active')) { _tabSwipeTracking = false; return; }
@@ -10636,6 +10653,8 @@ document.addEventListener('touchmove', (e) => {
     _tabSwipeEl = el;
     _tabSwipeEl.style.transition = 'none';
     _tabSwipeEl.style.willChange = 'transform';
+    _tabSwipeEl.style.zIndex = '501';
+    _tabSwipeShowCover();
     _tabSwipeDragging = true;
   }
 
@@ -10673,6 +10692,8 @@ document.addEventListener('touchend', () => {
       el.style.transform = '';
       el.style.transition = '';
       el.style.willChange = '';
+      el.style.zIndex = '';
+      _tabSwipeRemoveCover();
     }
     requestAnimationFrame(snapBack);
     return;
@@ -10701,6 +10722,7 @@ document.addEventListener('touchend', () => {
   el.style.transform = '';
   el.style.transition = '';
   el.style.willChange = '';
+  el.style.zIndex = '';
 
   const curKey = _getCurrentSwipeTabKey();
   const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
@@ -10711,6 +10733,7 @@ document.addEventListener('touchend', () => {
   const incomingStartX = dir * viewportW - dx; // continue from an equivalent remaining distance
   if (incomingEl) {
     incomingEl.style.transition = 'none';
+    incomingEl.style.zIndex = '501';
     incomingEl.style.transform = `translateX(${dir * viewportW}px)`;
     void incomingEl.offsetWidth; // force reflow so the start position registers
   }
@@ -10725,7 +10748,8 @@ document.addEventListener('touchend', () => {
     if (incomingEl) incomingEl.style.transform = `translateX(${dir * viewportW * (1 - eased)}px)`;
     if (t < 1) { requestAnimationFrame(finish); return; }
     clone.remove();
-    if (incomingEl) { incomingEl.style.transform = ''; incomingEl.style.transition = ''; }
+    if (incomingEl) { incomingEl.style.transform = ''; incomingEl.style.transition = ''; incomingEl.style.zIndex = ''; }
+    _tabSwipeRemoveCover();
   }
   requestAnimationFrame(finish);
 });
