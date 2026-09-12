@@ -10545,16 +10545,15 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) clea
 window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
 
-// ── Swipe left/right to move through tabs: Home → Categories(Genre) →
-// Categories(Veejays) → For You → Saved, and back the other way. Ignores
-// swipes starting inside horizontally-scrollable rows (so scrolling a movie
-// carousel still works normally) and while the player modal is open.
+// ── Swipe left/right to move through tabs with real finger-tracking, matching
+// the shorts pager's feel: Home ↔ Categories(Genre) ↔ Categories(Veejays) ↔
+// For You(Movies) ↔ For You(Series) ↔ For You(Shorts) ↔ Saved.
+// Ignores swipes starting inside horizontally-scrollable rows (so scrolling a
+// movie carousel still works normally) and while the player modal is open.
 const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved'];
 
 function _getCurrentSwipeTabKey() {
   if (_bnActive === 'categories') {
-    // Scoped to this page's own tabs — For You has a same-class button set that
-    // could otherwise falsely match here since both stay in the DOM at once.
     const activeInner = document.querySelector('#bnCategoriesPage .bn-inner-tab.active')?.id || '';
     return activeInner === 'bit-vj' ? 'cat:vj' : 'cat:genre';
   }
@@ -10576,18 +10575,33 @@ function _goToSwipeTabKey(key) {
   else { bnGo(key); }
 }
 
-function _handleTabSwipe(direction) {
-  const curKey = _getCurrentSwipeTabKey();
-  const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
-  if (idx === -1) return;
-  const nextIdx = idx + direction;
-  if (nextIdx < 0 || nextIdx >= _SWIPE_TAB_SEQUENCE.length) return;
-  _goToSwipeTabKey(_SWIPE_TAB_SEQUENCE[nextIdx]);
+// The single top-level element that visually represents a given slide's
+// entire on-screen content — used as the thing we physically drag/clone.
+// Sub-tabs (cat:genre/cat:vj, fy:movies/series/shorts) share their parent
+// page's container since they toggle content within it, not separate pages.
+function _getSlideContainerForKey(key) {
+  if (key === 'home') return document.getElementById('main');
+  if (key.startsWith('cat:')) return document.getElementById('bnCategoriesPage');
+  if (key.startsWith('fy:')) return document.getElementById('bnForYouPage');
+  if (key === 'saved') return document.getElementById('bnSavedPage');
+  return null;
 }
 
-let _tabSwipeStartX = 0, _tabSwipeStartY = 0, _tabSwipeStartT = 0, _tabSwipeTracking = false;
+let _tabSwipeStartX = 0, _tabSwipeStartY = 0, _tabSwipeStartT = 0;
+let _tabSwipeTracking = false;       // touchstart happened in a valid spot, watching for direction
+let _tabSwipeDragging = false;       // horizontal drag confirmed, actively translating content
+let _tabSwipeCurDx = 0;
+let _tabSwipeEl = null;              // the real, live container currently being dragged
+let _tabSwipeDirClamped = 0;         // 1 if a "next" exists in the drag direction, -1 same for prev, 0 if neither
+
+const TAB_SWIPE_THRESHOLD = 70;
+const TAB_SWIPE_RESIST = 0.35;       // how much drag still applies past a sequence boundary (rubber-band)
+const TAB_SWIPE_ANIM_MS = 280;
+
+function _tabSwipeEaseOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
 document.addEventListener('touchstart', (e) => {
+  _tabSwipeDragging = false;
   if (document.getElementById('playerModal')?.classList.contains('active')) { _tabSwipeTracking = false; return; }
   if (e.target.closest('.scroll-row, .sb-swipe-wrap, .lang-filter')) { _tabSwipeTracking = false; return; }
   if (e.touches.length !== 1) { _tabSwipeTracking = false; return; }
@@ -10597,18 +10611,124 @@ document.addEventListener('touchstart', (e) => {
   _tabSwipeTracking = true;
 }, { passive: true });
 
-document.addEventListener('touchend', (e) => {
+document.addEventListener('touchmove', (e) => {
   if (!_tabSwipeTracking) return;
-  _tabSwipeTracking = false;
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   const dx = touch.clientX - _tabSwipeStartX;
   const dy = touch.clientY - _tabSwipeStartY;
-  const dt = Date.now() - _tabSwipeStartT;
-  if (dt > 600) return;
-  if (Math.abs(dx) < 70) return;
-  if (Math.abs(dy) > Math.abs(dx) * 0.5) return;
-  _handleTabSwipe(dx < 0 ? 1 : -1);
-}, { passive: true });
+
+  if (!_tabSwipeDragging) {
+    // Not yet committed to a horizontal drag — wait for clear horizontal intent
+    // before taking over the gesture (so vertical page scroll stays untouched).
+    if (Math.abs(dx) < 12) return;
+    if (Math.abs(dy) > Math.abs(dx)) { _tabSwipeTracking = false; return; }
+
+    const curKey = _getCurrentSwipeTabKey();
+    const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
+    if (idx === -1) { _tabSwipeTracking = false; return; }
+    const el = _getSlideContainerForKey(curKey);
+    if (!el) { _tabSwipeTracking = false; return; }
+
+    const hasNext = idx + 1 < _SWIPE_TAB_SEQUENCE.length;
+    const hasPrev = idx - 1 >= 0;
+    _tabSwipeDirClamped = dx < 0 ? (hasNext ? 1 : 0) : (hasPrev ? -1 : 0);
+
+    _tabSwipeEl = el;
+    _tabSwipeEl.style.transition = 'none';
+    _tabSwipeEl.style.willChange = 'transform';
+    _tabSwipeDragging = true;
+  }
+
+  if (e.cancelable) e.preventDefault();
+  let effectiveDx = dx;
+  // Rubber-band resistance at either end of the sequence
+  if ((dx < 0 && _tabSwipeDirClamped === 0 && dx < 0) || (dx > 0 && _tabSwipeDirClamped === 0)) {
+    effectiveDx = dx * TAB_SWIPE_RESIST;
+  }
+  _tabSwipeCurDx = effectiveDx;
+  if (_tabSwipeEl) _tabSwipeEl.style.transform = `translateX(${effectiveDx}px)`;
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  _tabSwipeTracking = false;
+  if (!_tabSwipeDragging) return;
+  _tabSwipeDragging = false;
+
+  const el = _tabSwipeEl;
+  _tabSwipeEl = null;
+  if (!el) return;
+
+  const dx = _tabSwipeCurDx;
+  const committed = Math.abs(dx) >= TAB_SWIPE_THRESHOLD && _tabSwipeDirClamped !== 0;
+
+  if (!committed) {
+    // Snap back to resting position
+    const startX = dx;
+    const start = performance.now();
+    function snapBack(now) {
+      const t = Math.min((now - start) / (TAB_SWIPE_ANIM_MS * 0.7), 1);
+      const eased = _tabSwipeEaseOutCubic(t);
+      el.style.transform = `translateX(${startX * (1 - eased)}px)`;
+      if (t < 1) { requestAnimationFrame(snapBack); return; }
+      el.style.transform = '';
+      el.style.transition = '';
+      el.style.willChange = '';
+    }
+    requestAnimationFrame(snapBack);
+    return;
+  }
+
+  // Committed: hand off from the live-dragged element to a clone (so we can
+  // instantly perform the real tab switch underneath without a visible jump),
+  // then finish animating both the outgoing clone and the real incoming
+  // container the rest of the way, continuing smoothly from the drag's
+  // current position rather than restarting from 100%.
+  const dir = _tabSwipeDirClamped; // 1 = moving to "next" (dragged left), -1 = "prev"
+  const viewportW = window.innerWidth;
+
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+  clone.style.position = 'fixed';
+  clone.style.top = '0'; clone.style.left = '0'; clone.style.right = '0'; clone.style.bottom = '0';
+  clone.style.zIndex = '500';
+  clone.style.margin = '0';
+  clone.style.pointerEvents = 'none';
+  clone.style.transition = 'none';
+  clone.style.transform = `translateX(${dx}px)`;
+  document.body.appendChild(clone);
+
+  // Reset the real element before the real switch changes/hides it
+  el.style.transform = '';
+  el.style.transition = '';
+  el.style.willChange = '';
+
+  const curKey = _getCurrentSwipeTabKey();
+  const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
+  const nextKey = _SWIPE_TAB_SEQUENCE[idx + dir];
+  _goToSwipeTabKey(nextKey);
+
+  const incomingEl = _getSlideContainerForKey(nextKey);
+  const incomingStartX = dir * viewportW - dx; // continue from an equivalent remaining distance
+  if (incomingEl) {
+    incomingEl.style.transition = 'none';
+    incomingEl.style.transform = `translateX(${dir * viewportW}px)`;
+    void incomingEl.offsetWidth; // force reflow so the start position registers
+  }
+
+  const cloneStartX = dx;
+  const cloneEndX = -dir * viewportW;
+  const start = performance.now();
+  function finish(now) {
+    const t = Math.min((now - start) / TAB_SWIPE_ANIM_MS, 1);
+    const eased = _tabSwipeEaseOutCubic(t);
+    clone.style.transform = `translateX(${cloneStartX + (cloneEndX - cloneStartX) * eased}px)`;
+    if (incomingEl) incomingEl.style.transform = `translateX(${dir * viewportW * (1 - eased)}px)`;
+    if (t < 1) { requestAnimationFrame(finish); return; }
+    clone.remove();
+    if (incomingEl) { incomingEl.style.transform = ''; incomingEl.style.transition = ''; }
+  }
+  requestAnimationFrame(finish);
+});
 </script>
 
 </body>
