@@ -10545,11 +10545,16 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) clea
 window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
 
-// ── Swipe left/right to move through tabs with real finger-tracking, matching
-// the shorts pager's feel: Home ↔ Categories(Genre) ↔ Categories(Veejays) ↔
-// For You(Movies) ↔ For You(Series) ↔ For You(Shorts) ↔ Saved.
-// Ignores swipes starting inside horizontally-scrollable rows (so scrolling a
-// movie carousel still works normally) and while the player modal is open.
+// ── Swipe left/right to move through tabs with real, live content-tracking,
+// matching the shorts pager's feel: Home ↔ Categories(Genre) ↔
+// Categories(Veejays) ↔ For You(Movies) ↔ For You(Series) ↔ For You(Shorts) ↔
+// Saved. Both the outgoing and incoming pages are shown for real during the
+// drag (as clones — the live DOM nodes are only ever hidden via visibility,
+// never repositioned, so nothing about their normal layout/scroll state can
+// be corrupted). The one exception: entering Shorts defers the real switch
+// until the drag actually commits, since that mounts the same autoplaying
+// video preview feed used elsewhere — starting it on a drag that might get
+// canceled would waste bandwidth and briefly play video nobody asked for.
 const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved'];
 
 function _getCurrentSwipeTabKey() {
@@ -10575,10 +10580,6 @@ function _goToSwipeTabKey(key) {
   else { bnGo(key); }
 }
 
-// The single top-level element that visually represents a given slide's
-// entire on-screen content — used as the thing we physically drag/clone.
-// Sub-tabs (cat:genre/cat:vj, fy:movies/series/shorts) share their parent
-// page's container since they toggle content within it, not separate pages.
 function _getSlideContainerForKey(key) {
   if (key === 'home') return document.getElementById('main');
   if (key.startsWith('cat:')) return document.getElementById('bnCategoriesPage');
@@ -10587,24 +10588,38 @@ function _getSlideContainerForKey(key) {
   return null;
 }
 
-let _tabSwipeStartX = 0, _tabSwipeStartY = 0, _tabSwipeStartT = 0;
-let _tabSwipeTracking = false;       // touchstart happened in a valid spot, watching for direction
-let _tabSwipeDragging = false;       // horizontal drag confirmed, actively translating content
+let _tabSwipeStartX = 0, _tabSwipeStartY = 0;
+let _tabSwipeTracking = false;
+let _tabSwipeDragging = false;
 let _tabSwipeCurDx = 0;
-let _tabSwipeEl = null;              // the real, live container currently being dragged
-let _tabSwipeDirClamped = 0;         // 1 if a "next" exists in the drag direction, -1 same for prev, 0 if neither
+let _tabSwipeDirClamped = 0;
+let _tabSwipeFromKey = null;
+let _tabSwipeToKey = null;
+let _tabSwipeFromEl = null;
+let _tabSwipeToEl = null;
+let _tabSwipeFromClone = null;
+let _tabSwipeToClone = null;
+let _tabSwipeDeferredEntry = false;
 
 const TAB_SWIPE_THRESHOLD = 70;
-const TAB_SWIPE_RESIST = 0.35;       // how much drag still applies past a sequence boundary (rubber-band)
+const TAB_SWIPE_RESIST = 0.35;
 const TAB_SWIPE_ANIM_MS = 280;
 
 function _tabSwipeEaseOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-// Home (#main) sits behind every .bn-page as a permanent base layer — it's
-// only ever visually covered, never hidden. Dragging a page reveals empty
-// space beside it with nothing else positioned there, so Home bleeds through
-// underneath by default. This plain background cover sits just behind
-// whatever's being dragged so that reveal space is blank, not stale content.
+function _tabSwipeMakeClone(el) {
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+  clone.style.position = 'fixed';
+  clone.style.top = '0'; clone.style.left = '0'; clone.style.right = '0'; clone.style.bottom = '0';
+  clone.style.margin = '0';
+  clone.style.pointerEvents = 'none';
+  clone.style.transition = 'none';
+  clone.style.zIndex = '500';
+  document.body.appendChild(clone);
+  return clone;
+}
+
 let _tabSwipeCoverEl = null;
 function _tabSwipeShowCover() {
   if (_tabSwipeCoverEl) return;
@@ -10617,6 +10632,14 @@ function _tabSwipeRemoveCover() {
   if (_tabSwipeCoverEl) { _tabSwipeCoverEl.remove(); _tabSwipeCoverEl = null; }
 }
 
+function _tabSwipeCleanup() {
+  if (_tabSwipeFromClone) { _tabSwipeFromClone.remove(); _tabSwipeFromClone = null; }
+  if (_tabSwipeToClone) { _tabSwipeToClone.remove(); _tabSwipeToClone = null; }
+  if (_tabSwipeFromEl) { _tabSwipeFromEl.style.visibility = ''; _tabSwipeFromEl = null; }
+  if (_tabSwipeToEl) { _tabSwipeToEl.style.transform = ''; _tabSwipeToEl.style.transition = ''; _tabSwipeToEl.style.visibility = ''; _tabSwipeToEl = null; }
+  _tabSwipeRemoveCover();
+}
+
 document.addEventListener('touchstart', (e) => {
   _tabSwipeDragging = false;
   if (document.getElementById('playerModal')?.classList.contains('active')) { _tabSwipeTracking = false; return; }
@@ -10624,7 +10647,6 @@ document.addEventListener('touchstart', (e) => {
   if (e.touches.length !== 1) { _tabSwipeTracking = false; return; }
   _tabSwipeStartX = e.touches[0].clientX;
   _tabSwipeStartY = e.touches[0].clientY;
-  _tabSwipeStartT = Date.now();
   _tabSwipeTracking = true;
 }, { passive: true });
 
@@ -10635,37 +10657,62 @@ document.addEventListener('touchmove', (e) => {
   const dy = touch.clientY - _tabSwipeStartY;
 
   if (!_tabSwipeDragging) {
-    // Not yet committed to a horizontal drag — wait for clear horizontal intent
-    // before taking over the gesture (so vertical page scroll stays untouched).
     if (Math.abs(dx) < 12) return;
     if (Math.abs(dy) > Math.abs(dx)) { _tabSwipeTracking = false; return; }
 
-    const curKey = _getCurrentSwipeTabKey();
-    const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
+    const fromKey = _getCurrentSwipeTabKey();
+    const idx = _SWIPE_TAB_SEQUENCE.indexOf(fromKey);
     if (idx === -1) { _tabSwipeTracking = false; return; }
-    const el = _getSlideContainerForKey(curKey);
-    if (!el) { _tabSwipeTracking = false; return; }
+    const fromEl = _getSlideContainerForKey(fromKey);
+    if (!fromEl) { _tabSwipeTracking = false; return; }
 
     const hasNext = idx + 1 < _SWIPE_TAB_SEQUENCE.length;
     const hasPrev = idx - 1 >= 0;
-    _tabSwipeDirClamped = dx < 0 ? (hasNext ? 1 : 0) : (hasPrev ? -1 : 0);
+    const dir = dx < 0 ? (hasNext ? 1 : 0) : (hasPrev ? -1 : 0);
+    _tabSwipeDirClamped = dir;
+    _tabSwipeFromKey = fromKey;
 
-    _tabSwipeEl = el;
-    _tabSwipeEl.style.transition = 'none';
-    _tabSwipeEl.style.willChange = 'transform';
-    _tabSwipeEl.style.zIndex = '501';
-    _tabSwipeShowCover();
+    const viewportW = window.innerWidth;
+    _tabSwipeFromClone = _tabSwipeMakeClone(fromEl);
+    _tabSwipeFromEl = fromEl;
+    fromEl.style.visibility = 'hidden';
+
+    if (dir !== 0) {
+      const toKey = _SWIPE_TAB_SEQUENCE[idx + dir];
+      _tabSwipeToKey = toKey;
+      _tabSwipeDeferredEntry = (toKey === 'fy:shorts');
+
+      if (_tabSwipeDeferredEntry) {
+        _tabSwipeShowCover();
+      } else {
+        _goToSwipeTabKey(toKey);
+        const toEl = _getSlideContainerForKey(toKey);
+        _tabSwipeToEl = toEl;
+        if (toEl) {
+          _tabSwipeToClone = _tabSwipeMakeClone(toEl);
+          _tabSwipeToClone.style.transform = `translateX(${dir * viewportW}px)`;
+          toEl.style.visibility = 'hidden';
+        }
+      }
+    } else {
+      _tabSwipeToKey = null;
+      _tabSwipeDeferredEntry = false;
+      _tabSwipeShowCover();
+    }
+
     _tabSwipeDragging = true;
   }
 
   if (e.cancelable) e.preventDefault();
   let effectiveDx = dx;
-  // Rubber-band resistance at either end of the sequence
-  if ((dx < 0 && _tabSwipeDirClamped === 0 && dx < 0) || (dx > 0 && _tabSwipeDirClamped === 0)) {
-    effectiveDx = dx * TAB_SWIPE_RESIST;
-  }
+  if (_tabSwipeDirClamped === 0) effectiveDx = dx * TAB_SWIPE_RESIST;
   _tabSwipeCurDx = effectiveDx;
-  if (_tabSwipeEl) _tabSwipeEl.style.transform = `translateX(${effectiveDx}px)`;
+
+  const viewportW = window.innerWidth;
+  if (_tabSwipeFromClone) _tabSwipeFromClone.style.transform = `translateX(${effectiveDx}px)`;
+  if (_tabSwipeToClone && _tabSwipeDirClamped !== 0) {
+    _tabSwipeToClone.style.transform = `translateX(${_tabSwipeDirClamped * viewportW + effectiveDx}px)`;
+  }
 }, { passive: false });
 
 document.addEventListener('touchend', () => {
@@ -10673,83 +10720,56 @@ document.addEventListener('touchend', () => {
   if (!_tabSwipeDragging) return;
   _tabSwipeDragging = false;
 
-  const el = _tabSwipeEl;
-  _tabSwipeEl = null;
-  if (!el) return;
-
   const dx = _tabSwipeCurDx;
-  const committed = Math.abs(dx) >= TAB_SWIPE_THRESHOLD && _tabSwipeDirClamped !== 0;
+  const dir = _tabSwipeDirClamped;
+  const committed = Math.abs(dx) >= TAB_SWIPE_THRESHOLD && dir !== 0;
+  const viewportW = window.innerWidth;
+  const fromClone = _tabSwipeFromClone;
+  const toClone = _tabSwipeToClone;
+  const deferred = _tabSwipeDeferredEntry;
+  const fromKey = _tabSwipeFromKey;
+  const toKey = _tabSwipeToKey;
 
   if (!committed) {
-    // Snap back to resting position
-    const startX = dx;
     const start = performance.now();
     function snapBack(now) {
       const t = Math.min((now - start) / (TAB_SWIPE_ANIM_MS * 0.7), 1);
       const eased = _tabSwipeEaseOutCubic(t);
-      el.style.transform = `translateX(${startX * (1 - eased)}px)`;
+      if (fromClone) fromClone.style.transform = `translateX(${dx * (1 - eased)}px)`;
+      if (toClone && dir !== 0) toClone.style.transform = `translateX(${dir * viewportW + dx * (1 - eased)}px)`;
       if (t < 1) { requestAnimationFrame(snapBack); return; }
-      el.style.transform = '';
-      el.style.transition = '';
-      el.style.willChange = '';
-      el.style.zIndex = '';
-      _tabSwipeRemoveCover();
+      if (!deferred && toKey) _goToSwipeTabKey(fromKey);
+      _tabSwipeCleanup();
     }
     requestAnimationFrame(snapBack);
     return;
   }
 
-  // Committed: hand off from the live-dragged element to a clone (so we can
-  // instantly perform the real tab switch underneath without a visible jump),
-  // then finish animating both the outgoing clone and the real incoming
-  // container the rest of the way, continuing smoothly from the drag's
-  // current position rather than restarting from 100%.
-  const dir = _tabSwipeDirClamped; // 1 = moving to "next" (dragged left), -1 = "prev"
-  const viewportW = window.innerWidth;
-
-  const clone = el.cloneNode(true);
-  clone.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
-  clone.style.position = 'fixed';
-  clone.style.top = '0'; clone.style.left = '0'; clone.style.right = '0'; clone.style.bottom = '0';
-  clone.style.zIndex = '500';
-  clone.style.margin = '0';
-  clone.style.pointerEvents = 'none';
-  clone.style.transition = 'none';
-  clone.style.transform = `translateX(${dx}px)`;
-  document.body.appendChild(clone);
-
-  // Reset the real element before the real switch changes/hides it
-  el.style.transform = '';
-  el.style.transition = '';
-  el.style.willChange = '';
-  el.style.zIndex = '';
-
-  const curKey = _getCurrentSwipeTabKey();
-  const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
-  const nextKey = _SWIPE_TAB_SEQUENCE[idx + dir];
-  _goToSwipeTabKey(nextKey);
-
-  const incomingEl = _getSlideContainerForKey(nextKey);
-  const incomingStartX = dir * viewportW - dx; // continue from an equivalent remaining distance
-  if (incomingEl) {
-    incomingEl.style.transition = 'none';
-    incomingEl.style.zIndex = '501';
-    incomingEl.style.transform = `translateX(${dir * viewportW}px)`;
-    void incomingEl.offsetWidth; // force reflow so the start position registers
+  if (deferred) {
+    _goToSwipeTabKey(toKey);
+    const toEl = _getSlideContainerForKey(toKey);
+    _tabSwipeToEl = toEl;
+    if (toEl) {
+      toEl.style.transition = 'none';
+      toEl.style.transform = `translateX(${dir * viewportW}px)`;
+      toEl.style.visibility = '';
+      void toEl.offsetWidth;
+    }
   }
 
-  const cloneStartX = dx;
-  const cloneEndX = -dir * viewportW;
   const start = performance.now();
   function finish(now) {
     const t = Math.min((now - start) / TAB_SWIPE_ANIM_MS, 1);
     const eased = _tabSwipeEaseOutCubic(t);
-    clone.style.transform = `translateX(${cloneStartX + (cloneEndX - cloneStartX) * eased}px)`;
-    if (incomingEl) incomingEl.style.transform = `translateX(${dir * viewportW * (1 - eased)}px)`;
+    if (fromClone) fromClone.style.transform = `translateX(${dx + (-dir * viewportW - dx) * eased}px)`;
+    if (deferred) {
+      if (_tabSwipeToEl) _tabSwipeToEl.style.transform = `translateX(${dir * viewportW * (1 - eased)}px)`;
+    } else if (toClone) {
+      const startX = dir * viewportW + dx;
+      toClone.style.transform = `translateX(${startX * (1 - eased)}px)`;
+    }
     if (t < 1) { requestAnimationFrame(finish); return; }
-    clone.remove();
-    if (incomingEl) { incomingEl.style.transform = ''; incomingEl.style.transition = ''; incomingEl.style.zIndex = ''; }
-    _tabSwipeRemoveCover();
+    _tabSwipeCleanup();
   }
   requestAnimationFrame(finish);
 });
