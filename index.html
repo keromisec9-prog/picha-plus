@@ -2336,27 +2336,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
     }
   </script>
 
-  <nav class="bottom-nav" id="bottomNav">
-    <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
-      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      HOME
-    </button>
-    <button class="bn-tab" id="bn-categories" onclick="bnGo('categories')">
-      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/></svg>
-      CATEGORIES
-    </button>
-    <button class="bn-tab" id="bn-foryou" onclick="bnGo('foryou')">
-      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">auto_awesome</span>
-      FOR YOU
-    </button>
-    <button class="bn-tab" id="bn-saved" onclick="bnGo('saved')">
-      <svg class="icon-outline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-      <svg class="icon-filled" fill="currentColor" viewBox="0 0 24 24" style="display:none"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-      SAVED
-    </button>
-  </nav>
-
-
 <!-- FOR YOU PAGE -->
 <div class="bn-page" id="bnForYouPage" style="display:none;">
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
@@ -2382,6 +2361,27 @@ function saveProgress(id, pos, dur, forceSync, title) {
 </div>
 
 </main>
+
+<nav class="bottom-nav" id="bottomNav">
+    <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      HOME
+    </button>
+    <button class="bn-tab" id="bn-categories" onclick="bnGo('categories')">
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/></svg>
+      CATEGORIES
+    </button>
+    <button class="bn-tab" id="bn-foryou" onclick="bnGo('foryou')">
+      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">auto_awesome</span>
+      FOR YOU
+    </button>
+    <button class="bn-tab" id="bn-saved" onclick="bnGo('saved')">
+      <svg class="icon-outline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      <svg class="icon-filled" fill="currentColor" viewBox="0 0 24 24" style="display:none"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+      SAVED
+    </button>
+  </nav>
+
 
 <!-- SERIES DETAIL PAGE -->
 <div class="modal-overlay" id="seriesModal">
