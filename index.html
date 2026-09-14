@@ -1790,6 +1790,10 @@
       display: flex; align-items: stretch;
       height: 58px;
       padding-bottom: env(safe-area-inset-bottom);
+      /* Lives inside <main>, so an ancestor's visibility:hidden (used by the
+         tab-swipe transition when dragging away from Home) would otherwise
+         hide this too. An explicit value here always wins over inheritance. */
+      visibility: visible;
     }
     body:has(.modal-overlay.active) .bottom-nav { display: none; }
 
