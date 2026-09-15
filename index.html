@@ -1841,6 +1841,13 @@
       padding-top: 60px;
       padding-bottom: 70px;
     }
+    #main {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 62px; /* clears the fixed bottom nav — was previously handled by body's own padding-bottom, which no longer applies now that #main scrolls internally instead of the page */
+    }
     .bn-page-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 1.2rem 0.5rem;
@@ -2182,6 +2189,9 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <div class="status-bar" id="statusBar"></div>
 
 <!-- HERO -->
+<!-- MAIN CONTENT -->
+<main id="main">
+
 <section class="hero" id="hero">
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-overlay"></div>
@@ -2203,9 +2213,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
   </div>
   <div class="hero-dots" id="heroDots"></div>
 </section>
-
-<!-- MAIN CONTENT -->
-<main id="main">
 
   <!-- Continue Watching -->
   <div class="content-section" id="continueSection" style="display:none;">
@@ -2941,9 +2948,9 @@ window.addEventListener('load', async () => {
     }
   }
 
-  // Nav scroll effect
-  window.addEventListener('scroll', () => {
-    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+  // Nav scroll effect — #main scrolls internally now, not the page
+  document.getElementById('main')?.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', document.getElementById('main').scrollTop > 50);
   });
 });
 
@@ -6083,7 +6090,7 @@ async function startPayment(plan) {
   document.getElementById('paymentLoading').style.display = 'flex';
   document.getElementById('paymentFrame').style.display = 'none';
   document.getElementById('paymentModal').classList.add('active');
-  window._paymentScrollY = window.scrollY || window.pageYOffset || 0;
+  window._paymentScrollY = document.getElementById('main')?.scrollTop || 0;
   document.documentElement.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
   document.body.style.top = `-${window._paymentScrollY}px`;
@@ -6123,7 +6130,7 @@ function closePayment() {
   document.body.style.left = '';
   document.body.style.right = '';
   document.body.style.overflow = '';
-  window.scrollTo(0, window._paymentScrollY || 0);
+  const _mainEl_pay = document.getElementById('main'); if (_mainEl_pay) _mainEl_pay.scrollTop = window._paymentScrollY || 0;
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -6492,7 +6499,7 @@ function showAfricanUpgradeToast() {
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-  const _africanScrollY = window.scrollY || window.pageYOffset || 0;
+  const _africanScrollY = document.getElementById('main')?.scrollTop || 0;
   document.documentElement.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
   document.body.style.top = `-${_africanScrollY}px`;
@@ -6507,7 +6514,7 @@ function showAfricanUpgradeToast() {
     document.body.style.left = '';
     document.body.style.right = '';
     document.body.style.overflow = '';
-    window.scrollTo(0, _africanScrollY);
+    const _mainEl_af = document.getElementById('main'); if (_mainEl_af) _mainEl_af.scrollTop = _africanScrollY;
   };
   overlay.addEventListener('remove', restoreScroll); // not a real DOM event, handled via MutationObserver below
   new MutationObserver((mutations, obs) => {
@@ -6596,7 +6603,7 @@ function showPlansFromManage() {
 }
 
 function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('main')?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function loadMoreGenre(genreId, name, type) {
@@ -9091,7 +9098,7 @@ function bnGo(tab) {
   if (tab === 'home') {
     document.getElementById('categoryOverlay')?.classList.remove('active');
     document.body.style.overflow = '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('main')?.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (tab === 'categories') {
     bnOpenCategories();
   } else if (tab === 'foryou') {
@@ -9480,11 +9487,13 @@ window.addEventListener('visibilitychange', () => {
 
 // Pause shimmer animation during scroll for performance
 let _scrollTimer;
-window.addEventListener('scroll', () => {
+function _handleScrollShimmerPause() {
   document.body.classList.add('is-scrolling');
   clearTimeout(_scrollTimer);
   _scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 150);
-}, { passive: true });
+}
+window.addEventListener('scroll', _handleScrollShimmerPause, { passive: true });
+document.getElementById('main')?.addEventListener('scroll', _handleScrollShimmerPause, { passive: true });
 // Kill shimmer after 3s — content should be loaded by then
 setTimeout(() => { document.querySelectorAll('.skeleton').forEach(el => el.style.animation = 'none'); }, 3000);
 
