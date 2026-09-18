@@ -562,7 +562,7 @@
     }
     .scroll-row::-webkit-scrollbar { display: none; }
 
-    #fyGridMovies .card, #fyGridSeries .card { width: 100%; }
+    #fyGrid .card { width: 100%; }
 
     /* ── CARDS ── */
     .card {
@@ -577,10 +577,6 @@
       background: #1a1a1a;
       content-visibility: auto;
       contain-intrinsic-size: var(--card-w) calc(var(--card-w) * 1.5);
-    }
-
-    .tab-swipe-dragging .card {
-      content-visibility: visible;
     }
 
     .card:hover {
@@ -1845,13 +1841,6 @@
       padding-top: 60px;
       padding-bottom: 70px;
     }
-    #main {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 62px; /* clears the fixed bottom nav — was previously handled by body's own padding-bottom, which no longer applies now that #main scrolls internally instead of the page */
-    }
     .bn-page-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 1.2rem 0.5rem;
@@ -2189,12 +2178,10 @@ function saveProgress(id, pos, dur, forceSync, title) {
   </div>
 </nav>
 
-<!-- MAIN CONTENT -->
-<main id="main">
-
 <!-- STATUS BAR -->
 <div class="status-bar" id="statusBar"></div>
 
+<!-- HERO -->
 <section class="hero" id="hero">
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-overlay"></div>
@@ -2216,6 +2203,9 @@ function saveProgress(id, pos, dur, forceSync, title) {
   </div>
   <div class="hero-dots" id="heroDots"></div>
 </section>
+
+<!-- MAIN CONTENT -->
+<main id="main">
 
   <!-- Continue Watching -->
   <div class="content-section" id="continueSection" style="display:none;">
@@ -2330,34 +2320,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
       <span>Built for East Africa 🌍</span>
     </div>
   </footer>
-<!-- FOR YOU PAGE -->
-<div class="bn-page" id="bnForYouPage" style="display:none;">
-  <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
-    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
-    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
-    <button class="bn-inner-tab" id="fyt-shorts" onclick="fyTab('shorts')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
-    <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
-      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
-    </button>
-    <button onclick="refreshForYou()" title="Refresh" style="background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
-      <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
-    </button>
-  </div>
-  <div id="fyGridMovies" class="category-grid"></div>
-  <div id="fyGridSeries" class="category-grid" style="display:none;"></div>
-  <div id="mpfContainer" style="display:none;position:relative;width:100%;background:#000;overflow:hidden;touch-action:none;">
-    <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
-  </div>
-  <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
-    <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
-    <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
-    <div style="font-size:0.85rem;">Watch some movies or series and we'll personalize this for you</div>
-  </div>
-</div>
-
-</main>
-
-<!-- BOTTOM NAV -->
+  <!-- BOTTOM NAV -->
   <div class="apk-banner" id="apkBanner" style="display:none;">
     <img src="icon-192.png" class="apk-banner-icon" alt=""/>
     <div class="apk-banner-text"><strong>Get the PichaPlus app</strong>Faster, offline downloads & more</div>
@@ -2373,6 +2336,31 @@ function saveProgress(id, pos, dur, forceSync, title) {
     }
   </script>
 
+<!-- FOR YOU PAGE -->
+<div class="bn-page" id="bnForYouPage" style="display:none;">
+  <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
+    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
+    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
+    <button class="bn-inner-tab" id="fyt-shorts" onclick="fyTab('shorts')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
+    <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
+      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
+    </button>
+    <button onclick="refreshForYou()" title="Refresh" style="background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:flex;align-items:center;">
+      <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
+    </button>
+  </div>
+  <div id="fyGrid" class="category-grid"></div>
+  <div id="mpfContainer" style="display:none;position:relative;width:100%;background:#000;overflow:hidden;touch-action:none;">
+    <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
+  </div>
+  <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">
+    <div style="font-size:3rem;margin-bottom:1rem;">✨</div>
+    <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>
+    <div style="font-size:0.85rem;">Watch some movies or series and we'll personalize this for you</div>
+  </div>
+</div>
+
+</main>
 
 <nav class="bottom-nav" id="bottomNav">
     <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
@@ -2953,9 +2941,9 @@ window.addEventListener('load', async () => {
     }
   }
 
-  // Nav scroll effect — #main scrolls internally now, not the page
-  document.getElementById('main')?.addEventListener('scroll', () => {
-    document.getElementById('nav').classList.toggle('scrolled', document.getElementById('main').scrollTop > 50);
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
   });
 });
 
@@ -6095,7 +6083,7 @@ async function startPayment(plan) {
   document.getElementById('paymentLoading').style.display = 'flex';
   document.getElementById('paymentFrame').style.display = 'none';
   document.getElementById('paymentModal').classList.add('active');
-  window._paymentScrollY = document.getElementById('main')?.scrollTop || 0;
+  window._paymentScrollY = window.scrollY || window.pageYOffset || 0;
   document.documentElement.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
   document.body.style.top = `-${window._paymentScrollY}px`;
@@ -6135,7 +6123,7 @@ function closePayment() {
   document.body.style.left = '';
   document.body.style.right = '';
   document.body.style.overflow = '';
-  const _mainEl_pay = document.getElementById('main'); if (_mainEl_pay) _mainEl_pay.scrollTop = window._paymentScrollY || 0;
+  window.scrollTo(0, window._paymentScrollY || 0);
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -6504,7 +6492,7 @@ function showAfricanUpgradeToast() {
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-  const _africanScrollY = document.getElementById('main')?.scrollTop || 0;
+  const _africanScrollY = window.scrollY || window.pageYOffset || 0;
   document.documentElement.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
   document.body.style.top = `-${_africanScrollY}px`;
@@ -6519,7 +6507,7 @@ function showAfricanUpgradeToast() {
     document.body.style.left = '';
     document.body.style.right = '';
     document.body.style.overflow = '';
-    const _mainEl_af = document.getElementById('main'); if (_mainEl_af) _mainEl_af.scrollTop = _africanScrollY;
+    window.scrollTo(0, _africanScrollY);
   };
   overlay.addEventListener('remove', restoreScroll); // not a real DOM event, handled via MutationObserver below
   new MutationObserver((mutations, obs) => {
@@ -6608,7 +6596,7 @@ function showPlansFromManage() {
 }
 
 function scrollToTop() {
-  document.getElementById('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function loadMoreGenre(genreId, name, type) {
@@ -6870,8 +6858,6 @@ async function refreshForYou() {
     const res = await fetch(`${API}/stats`);
     _fyStats = await res.json();
   } catch (e) {}
-  _fyRendered.movies = false;
-  _fyRendered.series = false;
   renderForYou();
   setTimeout(() => { if (icon) icon.style.transform = 'rotate(0deg)'; }, 500);
 }
@@ -8536,15 +8522,14 @@ function fyTab(tab) {
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
   document.getElementById('fyt-shorts').classList.toggle('active', tab === 'shorts');
-  document.getElementById('fyGridMovies').style.display = tab === 'movies' ? '' : 'none';
-  document.getElementById('fyGridSeries').style.display = tab === 'series' ? '' : 'none';
+  document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
   document.getElementById('mpfContainer').style.display = tab === 'shorts' ? 'block' : 'none';
   if (tab === 'shorts') {
     openMoviePreviewFeed();
     return;
   }
   closeMoviePreviewFeed();
-  if (!_fyRendered[tab]) renderForYou();
+  renderForYou();
 }
 
 function fyScore(item) {
@@ -8620,13 +8605,13 @@ const FY_BATCH_SIZE = 20;
 const FY_SCROLL_THRESHOLD = 600; // px from bottom that triggers loading the next batch
 let _fyRenderState = null;
 let _fyScrollListenerAttached = false;
-let _fyRendered = { movies: false, series: false };
 
 function _fyRenderNextBatch() {
   if (!_fyRenderState) return;
-  const { scored, rendered, cardHTML, grid } = _fyRenderState;
+  const { scored, rendered, cardHTML } = _fyRenderState;
   if (rendered >= scored.length) return;
   const next = scored.slice(rendered, rendered + FY_BATCH_SIZE);
+  const grid = document.getElementById('fyGrid');
   if (!grid) return;
   grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
   _fyRenderState.rendered += next.length;
@@ -8649,14 +8634,13 @@ function _fySetupScrollListener() {
 }
 
 function renderForYou() {
-  const tab = _fyTab;
-  const grid = document.getElementById(tab === 'series' ? 'fyGridSeries' : 'fyGridMovies');
+  const grid = document.getElementById('fyGrid');
   const empty = document.getElementById('fyEmpty');
   const allCards = window._allCards || [];
-  const isTV = tab === 'series';
+  const isTV = _fyTab === 'series';
   const pool = allCards.filter(c => isTV ? c.media_type === 'tv' : c.media_type !== 'tv');
 
-  if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; _fyRendered[tab] = true; return; }
+  if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
   const _useJitter = _fyForceJitter;
@@ -8688,10 +8672,9 @@ function renderForYou() {
   };
 
   grid.innerHTML = '';
-  _fyRenderState = { scored, rendered: 0, cardHTML: _fyCardHTML, grid };
+  _fyRenderState = { scored, rendered: 0, cardHTML: _fyCardHTML };
   _fyRenderNextBatch();
   _fySetupScrollListener();
-  _fyRendered[tab] = true;
 
   // Cards from createCard call showInfo() directly, so we can't hook showInfoFromForYou.
   // Instead, mark the flag on any click within this grid, before showInfo runs.
@@ -9038,8 +9021,6 @@ async function fyDislike(itemId) {
     }
     showToast('Got it — we\'ll show this less', '');
   }
-  _fyRendered.movies = false;
-  _fyRendered.series = false;
   renderForYou();
   _syncFyFeedbackButtons(itemId);
 }
@@ -9058,8 +9039,6 @@ async function fyLike(itemId) {
     localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
     showToast('Removed', '');
   }
-  _fyRendered.movies = false;
-  _fyRendered.series = false;
   renderForYou();
   _syncFyFeedbackButtons(itemId);
   _setLikeState(itemId, wantLiked, 'movie');
@@ -9112,7 +9091,7 @@ function bnGo(tab) {
   if (tab === 'home') {
     document.getElementById('categoryOverlay')?.classList.remove('active');
     document.body.style.overflow = '';
-    document.getElementById('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (tab === 'categories') {
     bnOpenCategories();
   } else if (tab === 'foryou') {
@@ -9501,13 +9480,11 @@ window.addEventListener('visibilitychange', () => {
 
 // Pause shimmer animation during scroll for performance
 let _scrollTimer;
-function _handleScrollShimmerPause() {
+window.addEventListener('scroll', () => {
   document.body.classList.add('is-scrolling');
   clearTimeout(_scrollTimer);
   _scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 150);
-}
-window.addEventListener('scroll', _handleScrollShimmerPause, { passive: true });
-document.getElementById('main')?.addEventListener('scroll', _handleScrollShimmerPause, { passive: true });
+}, { passive: true });
 // Kill shimmer after 3s — content should be loaded by then
 setTimeout(() => { document.querySelectorAll('.skeleton').forEach(el => el.style.animation = 'none'); }, 3000);
 
@@ -10590,16 +10567,11 @@ function _getCurrentSwipeTabKey() {
 }
 
 function _goToSwipeTabKey(key) {
-  // Only run bnGo() (which hides/rebuilds every bn-page) when actually
-  // switching to a different top-level page. Calling it on every mini-tab
-  // swipe within the same page forced a needless display:none -> block
-  // cycle on containers using content-visibility:auto, causing content to
-  // blank out during For You's own movies/series swipe.
-  if (key === 'cat:genre') { if (_bnActive !== 'categories') bnGo('categories'); bnInnerTab('genre'); }
-  else if (key === 'cat:vj') { if (_bnActive !== 'categories') bnGo('categories'); bnInnerTab('vj'); }
-  else if (key === 'fy:movies') { if (_bnActive !== 'foryou') bnGo('foryou'); fyTab('movies'); }
-  else if (key === 'fy:series') { if (_bnActive !== 'foryou') bnGo('foryou'); fyTab('series'); }
-  else if (key === 'fy:shorts') { if (_bnActive !== 'foryou') bnGo('foryou'); fyTab('shorts'); }
+  if (key === 'cat:genre') { bnGo('categories'); bnInnerTab('genre'); }
+  else if (key === 'cat:vj') { bnGo('categories'); bnInnerTab('vj'); }
+  else if (key === 'fy:movies') { bnGo('foryou'); fyTab('movies'); }
+  else if (key === 'fy:series') { bnGo('foryou'); fyTab('series'); }
+  else if (key === 'fy:shorts') { bnGo('foryou'); fyTab('shorts'); }
   else { bnGo(key); }
 }
 
@@ -10682,7 +10654,6 @@ document.addEventListener('touchmove', (e) => {
     _tabSwipeEl.style.transition = 'none';
     _tabSwipeEl.style.willChange = 'transform';
     _tabSwipeEl.style.zIndex = '501';
-    _tabSwipeEl.classList.add('tab-swipe-dragging');
     _tabSwipeShowCover();
     _tabSwipeDragging = true;
   }
@@ -10722,7 +10693,6 @@ document.addEventListener('touchend', () => {
       el.style.transition = '';
       el.style.willChange = '';
       el.style.zIndex = '';
-      el.classList.remove('tab-swipe-dragging');
       _tabSwipeRemoveCover();
     }
     requestAnimationFrame(snapBack);
@@ -10753,7 +10723,6 @@ document.addEventListener('touchend', () => {
   el.style.transition = '';
   el.style.willChange = '';
   el.style.zIndex = '';
-  el.classList.remove('tab-swipe-dragging');
 
   const curKey = _getCurrentSwipeTabKey();
   const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
