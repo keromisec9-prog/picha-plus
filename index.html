@@ -562,7 +562,7 @@
     }
     .scroll-row::-webkit-scrollbar { display: none; }
 
-    #fyGrid .card { width: 100%; }
+    #fyGridMovies .card, #fyGridSeries .card { width: 100%; }
 
     /* ── CARDS ── */
     .card {
@@ -2339,7 +2339,8 @@ function saveProgress(id, pos, dur, forceSync, title) {
       <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>
     </button>
   </div>
-  <div id="fyGrid" class="category-grid"></div>
+  <div id="fyGridMovies" class="category-grid"></div>
+  <div id="fyGridSeries" class="category-grid" style="display:none;"></div>
   <div id="mpfContainer" style="display:none;position:relative;width:100%;background:#000;overflow:hidden;touch-action:none;">
     <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
   </div>
@@ -8529,14 +8530,15 @@ function fyTab(tab) {
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
   document.getElementById('fyt-shorts').classList.toggle('active', tab === 'shorts');
-  document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
+  document.getElementById('fyGridMovies').style.display = tab === 'movies' ? '' : 'none';
+  document.getElementById('fyGridSeries').style.display = tab === 'series' ? '' : 'none';
   document.getElementById('mpfContainer').style.display = tab === 'shorts' ? 'block' : 'none';
   if (tab === 'shorts') {
     openMoviePreviewFeed();
     return;
   }
   closeMoviePreviewFeed();
-  renderForYou();
+  if (!_fyRendered[tab]) renderForYou();
 }
 
 function fyScore(item) {
@@ -8612,13 +8614,13 @@ const FY_BATCH_SIZE = 20;
 const FY_SCROLL_THRESHOLD = 600; // px from bottom that triggers loading the next batch
 let _fyRenderState = null;
 let _fyScrollListenerAttached = false;
+let _fyRendered = { movies: false, series: false };
 
 function _fyRenderNextBatch() {
   if (!_fyRenderState) return;
-  const { scored, rendered, cardHTML } = _fyRenderState;
+  const { scored, rendered, cardHTML, grid } = _fyRenderState;
   if (rendered >= scored.length) return;
   const next = scored.slice(rendered, rendered + FY_BATCH_SIZE);
-  const grid = document.getElementById('fyGrid');
   if (!grid) return;
   grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
   _fyRenderState.rendered += next.length;
@@ -8641,13 +8643,18 @@ function _fySetupScrollListener() {
 }
 
 function renderForYou() {
-  const grid = document.getElementById('fyGrid');
+  const tab = _fyTab;
+  const grid = document.getElementById(tab === 'series' ? 'fyGridSeries' : 'fyGridMovies');
   const empty = document.getElementById('fyEmpty');
   const allCards = window._allCards || [];
-  const isTV = _fyTab === 'series';
+  const isTV = tab === 'series';
   const pool = allCards.filter(c => isTV ? c.media_type === 'tv' : c.media_type !== 'tv');
 
-  if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  // Data just changed (refresh/like/dislike) — the other tab's cached render
+  // is now stale and must rebuild next time it's opened.
+  _fyRendered[tab === 'series' ? 'movies' : 'series'] = false;
+
+  if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; _fyRendered[tab] = true; return; }
   empty.style.display = 'none';
 
   const _useJitter = _fyForceJitter;
@@ -8679,9 +8686,10 @@ function renderForYou() {
   };
 
   grid.innerHTML = '';
-  _fyRenderState = { scored, rendered: 0, cardHTML: _fyCardHTML };
+  _fyRenderState = { scored, rendered: 0, cardHTML: _fyCardHTML, grid };
   _fyRenderNextBatch();
   _fySetupScrollListener();
+  _fyRendered[tab] = true;
 
   // Cards from createCard call showInfo() directly, so we can't hook showInfoFromForYou.
   // Instead, mark the flag on any click within this grid, before showInfo runs.
