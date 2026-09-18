@@ -229,7 +229,7 @@
     .nav {
       position: fixed;
       top: 0; left: 0; right: 0;
-      z-index: 600;
+      z-index: 300;
       background: var(--bg);
       display: flex;
       align-items: center;
@@ -1784,7 +1784,7 @@
 
     /* ── BOTTOM NAV ──────────────────────────────────────────────────────── */
     .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 600;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
       background: #0a0a0a;
       border-top: 1px solid rgba(255,255,255,0.08);
       display: flex; align-items: stretch;
@@ -1795,7 +1795,7 @@
 
     /* ── APK download banner ── */
     .apk-banner {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 650;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 250;
       background: linear-gradient(135deg, #1a1a1a, #252525);
       border-top: 1px solid var(--gold);
       display: flex; align-items: center; gap: 0.8rem;
@@ -2336,6 +2336,27 @@ function saveProgress(id, pos, dur, forceSync, title) {
     }
   </script>
 
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      HOME
+    </button>
+    <button class="bn-tab" id="bn-categories" onclick="bnGo('categories')">
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/></svg>
+      CATEGORIES
+    </button>
+    <button class="bn-tab" id="bn-foryou" onclick="bnGo('foryou')">
+      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">auto_awesome</span>
+      FOR YOU
+    </button>
+    <button class="bn-tab" id="bn-saved" onclick="bnGo('saved')">
+      <svg class="icon-outline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      <svg class="icon-filled" fill="currentColor" viewBox="0 0 24 24" style="display:none"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+      SAVED
+    </button>
+  </nav>
+
+
 <!-- FOR YOU PAGE -->
 <div class="bn-page" id="bnForYouPage" style="display:none;">
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
@@ -2361,27 +2382,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
 </div>
 
 </main>
-
-<nav class="bottom-nav" id="bottomNav">
-    <button class="bn-tab active" id="bn-home" onclick="bnGo('home')">
-      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      HOME
-    </button>
-    <button class="bn-tab" id="bn-categories" onclick="bnGo('categories')">
-      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/></svg>
-      CATEGORIES
-    </button>
-    <button class="bn-tab" id="bn-foryou" onclick="bnGo('foryou')">
-      <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">auto_awesome</span>
-      FOR YOU
-    </button>
-    <button class="bn-tab" id="bn-saved" onclick="bnGo('saved')">
-      <svg class="icon-outline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-      <svg class="icon-filled" fill="currentColor" viewBox="0 0 24 24" style="display:none"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-      SAVED
-    </button>
-  </nav>
-
 
 <!-- SERIES DETAIL PAGE -->
 <div class="modal-overlay" id="seriesModal">
@@ -10544,215 +10544,6 @@ function clearStrayFocus() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
 window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
-
-// ── Swipe left/right to move through tabs with real finger-tracking, matching
-// the shorts pager's feel: Home ↔ Categories(Genre) ↔ Categories(Veejays) ↔
-// For You(Movies) ↔ For You(Series) ↔ For You(Shorts) ↔ Saved.
-// Ignores swipes starting inside horizontally-scrollable rows (so scrolling a
-// movie carousel still works normally) and while the player modal is open.
-const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved'];
-
-function _getCurrentSwipeTabKey() {
-  if (_bnActive === 'categories') {
-    const activeInner = document.querySelector('#bnCategoriesPage .bn-inner-tab.active')?.id || '';
-    return activeInner === 'bit-vj' ? 'cat:vj' : 'cat:genre';
-  }
-  if (_bnActive === 'foryou') {
-    const activeInner = document.querySelector('#bnForYouPage .bn-inner-tab.active')?.id || '';
-    if (activeInner === 'fyt-series') return 'fy:series';
-    if (activeInner === 'fyt-shorts') return 'fy:shorts';
-    return 'fy:movies';
-  }
-  return _bnActive;
-}
-
-function _goToSwipeTabKey(key) {
-  if (key === 'cat:genre') { bnGo('categories'); bnInnerTab('genre'); }
-  else if (key === 'cat:vj') { bnGo('categories'); bnInnerTab('vj'); }
-  else if (key === 'fy:movies') { bnGo('foryou'); fyTab('movies'); }
-  else if (key === 'fy:series') { bnGo('foryou'); fyTab('series'); }
-  else if (key === 'fy:shorts') { bnGo('foryou'); fyTab('shorts'); }
-  else { bnGo(key); }
-}
-
-// The single top-level element that visually represents a given slide's
-// entire on-screen content — used as the thing we physically drag/clone.
-// Sub-tabs (cat:genre/cat:vj, fy:movies/series/shorts) share their parent
-// page's container since they toggle content within it, not separate pages.
-function _getSlideContainerForKey(key) {
-  if (key === 'home') return document.getElementById('main');
-  if (key.startsWith('cat:')) return document.getElementById('bnCategoriesPage');
-  if (key.startsWith('fy:')) return document.getElementById('bnForYouPage');
-  if (key === 'saved') return document.getElementById('bnSavedPage');
-  return null;
-}
-
-let _tabSwipeStartX = 0, _tabSwipeStartY = 0, _tabSwipeStartT = 0;
-let _tabSwipeTracking = false;       // touchstart happened in a valid spot, watching for direction
-let _tabSwipeDragging = false;       // horizontal drag confirmed, actively translating content
-let _tabSwipeCurDx = 0;
-let _tabSwipeEl = null;              // the real, live container currently being dragged
-let _tabSwipeDirClamped = 0;         // 1 if a "next" exists in the drag direction, -1 same for prev, 0 if neither
-
-const TAB_SWIPE_THRESHOLD = 70;
-const TAB_SWIPE_RESIST = 0.35;       // how much drag still applies past a sequence boundary (rubber-band)
-const TAB_SWIPE_ANIM_MS = 280;
-
-function _tabSwipeEaseOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
-// Home (#main) sits behind every .bn-page as a permanent base layer — it's
-// only ever visually covered, never hidden. Dragging a page reveals empty
-// space beside it with nothing else positioned there, so Home bleeds through
-// underneath by default. This plain background cover sits just behind
-// whatever's being dragged so that reveal space is blank, not stale content.
-let _tabSwipeCoverEl = null;
-function _tabSwipeShowCover() {
-  if (_tabSwipeCoverEl) return;
-  const cover = document.createElement('div');
-  cover.style.cssText = 'position:fixed;inset:0;z-index:499;background:var(--bg);pointer-events:none;';
-  document.body.appendChild(cover);
-  _tabSwipeCoverEl = cover;
-}
-function _tabSwipeRemoveCover() {
-  if (_tabSwipeCoverEl) { _tabSwipeCoverEl.remove(); _tabSwipeCoverEl = null; }
-}
-
-document.addEventListener('touchstart', (e) => {
-  _tabSwipeDragging = false;
-  if (document.getElementById('playerModal')?.classList.contains('active')) { _tabSwipeTracking = false; return; }
-  if (e.target.closest('.scroll-row, .sb-swipe-wrap, .lang-filter')) { _tabSwipeTracking = false; return; }
-  if (e.touches.length !== 1) { _tabSwipeTracking = false; return; }
-  _tabSwipeStartX = e.touches[0].clientX;
-  _tabSwipeStartY = e.touches[0].clientY;
-  _tabSwipeStartT = Date.now();
-  _tabSwipeTracking = true;
-}, { passive: true });
-
-document.addEventListener('touchmove', (e) => {
-  if (!_tabSwipeTracking) return;
-  const touch = e.touches[0];
-  const dx = touch.clientX - _tabSwipeStartX;
-  const dy = touch.clientY - _tabSwipeStartY;
-
-  if (!_tabSwipeDragging) {
-    // Not yet committed to a horizontal drag — wait for clear horizontal intent
-    // before taking over the gesture (so vertical page scroll stays untouched).
-    if (Math.abs(dx) < 12) return;
-    if (Math.abs(dy) > Math.abs(dx)) { _tabSwipeTracking = false; return; }
-
-    const curKey = _getCurrentSwipeTabKey();
-    const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
-    if (idx === -1) { _tabSwipeTracking = false; return; }
-    const el = _getSlideContainerForKey(curKey);
-    if (!el) { _tabSwipeTracking = false; return; }
-
-    const hasNext = idx + 1 < _SWIPE_TAB_SEQUENCE.length;
-    const hasPrev = idx - 1 >= 0;
-    _tabSwipeDirClamped = dx < 0 ? (hasNext ? 1 : 0) : (hasPrev ? -1 : 0);
-
-    _tabSwipeEl = el;
-    _tabSwipeEl.style.transition = 'none';
-    _tabSwipeEl.style.willChange = 'transform';
-    _tabSwipeEl.style.zIndex = '501';
-    _tabSwipeShowCover();
-    _tabSwipeDragging = true;
-  }
-
-  if (e.cancelable) e.preventDefault();
-  let effectiveDx = dx;
-  // Rubber-band resistance at either end of the sequence
-  if ((dx < 0 && _tabSwipeDirClamped === 0 && dx < 0) || (dx > 0 && _tabSwipeDirClamped === 0)) {
-    effectiveDx = dx * TAB_SWIPE_RESIST;
-  }
-  _tabSwipeCurDx = effectiveDx;
-  if (_tabSwipeEl) _tabSwipeEl.style.transform = `translateX(${effectiveDx}px)`;
-}, { passive: false });
-
-document.addEventListener('touchend', () => {
-  _tabSwipeTracking = false;
-  if (!_tabSwipeDragging) return;
-  _tabSwipeDragging = false;
-
-  const el = _tabSwipeEl;
-  _tabSwipeEl = null;
-  if (!el) return;
-
-  const dx = _tabSwipeCurDx;
-  const committed = Math.abs(dx) >= TAB_SWIPE_THRESHOLD && _tabSwipeDirClamped !== 0;
-
-  if (!committed) {
-    // Snap back to resting position
-    const startX = dx;
-    const start = performance.now();
-    function snapBack(now) {
-      const t = Math.min((now - start) / (TAB_SWIPE_ANIM_MS * 0.7), 1);
-      const eased = _tabSwipeEaseOutCubic(t);
-      el.style.transform = `translateX(${startX * (1 - eased)}px)`;
-      if (t < 1) { requestAnimationFrame(snapBack); return; }
-      el.style.transform = '';
-      el.style.transition = '';
-      el.style.willChange = '';
-      el.style.zIndex = '';
-      _tabSwipeRemoveCover();
-    }
-    requestAnimationFrame(snapBack);
-    return;
-  }
-
-  // Committed: hand off from the live-dragged element to a clone (so we can
-  // instantly perform the real tab switch underneath without a visible jump),
-  // then finish animating both the outgoing clone and the real incoming
-  // container the rest of the way, continuing smoothly from the drag's
-  // current position rather than restarting from 100%.
-  const dir = _tabSwipeDirClamped; // 1 = moving to "next" (dragged left), -1 = "prev"
-  const viewportW = window.innerWidth;
-
-  const clone = el.cloneNode(true);
-  clone.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
-  clone.style.position = 'fixed';
-  clone.style.top = '0'; clone.style.left = '0'; clone.style.right = '0'; clone.style.bottom = '0';
-  clone.style.zIndex = '500';
-  clone.style.margin = '0';
-  clone.style.pointerEvents = 'none';
-  clone.style.transition = 'none';
-  clone.style.transform = `translateX(${dx}px)`;
-  document.body.appendChild(clone);
-
-  // Reset the real element before the real switch changes/hides it
-  el.style.transform = '';
-  el.style.transition = '';
-  el.style.willChange = '';
-  el.style.zIndex = '';
-
-  const curKey = _getCurrentSwipeTabKey();
-  const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
-  const nextKey = _SWIPE_TAB_SEQUENCE[idx + dir];
-  _goToSwipeTabKey(nextKey);
-
-  const incomingEl = _getSlideContainerForKey(nextKey);
-  const incomingStartX = dir * viewportW - dx; // continue from an equivalent remaining distance
-  if (incomingEl) {
-    incomingEl.style.transition = 'none';
-    incomingEl.style.zIndex = '501';
-    incomingEl.style.transform = `translateX(${dir * viewportW}px)`;
-    void incomingEl.offsetWidth; // force reflow so the start position registers
-  }
-
-  const cloneStartX = dx;
-  const cloneEndX = -dir * viewportW;
-  const start = performance.now();
-  function finish(now) {
-    const t = Math.min((now - start) / TAB_SWIPE_ANIM_MS, 1);
-    const eased = _tabSwipeEaseOutCubic(t);
-    clone.style.transform = `translateX(${cloneStartX + (cloneEndX - cloneStartX) * eased}px)`;
-    if (incomingEl) incomingEl.style.transform = `translateX(${dir * viewportW * (1 - eased)}px)`;
-    if (t < 1) { requestAnimationFrame(finish); return; }
-    clone.remove();
-    if (incomingEl) { incomingEl.style.transform = ''; incomingEl.style.transition = ''; incomingEl.style.zIndex = ''; }
-    _tabSwipeRemoveCover();
-  }
-  requestAnimationFrame(finish);
-});
 </script>
 
 </body>
