@@ -579,6 +579,10 @@
       contain-intrinsic-size: var(--card-w) calc(var(--card-w) * 1.5);
     }
 
+    .tab-swipe-dragging .card {
+      content-visibility: visible;
+    }
+
     .card:hover {
       transform: scale(1.08) translateY(-4px);
       z-index: 10;
@@ -10673,6 +10677,7 @@ document.addEventListener('touchmove', (e) => {
     _tabSwipeEl.style.transition = 'none';
     _tabSwipeEl.style.willChange = 'transform';
     _tabSwipeEl.style.zIndex = '501';
+    _tabSwipeEl.classList.add('tab-swipe-dragging');
     _tabSwipeShowCover();
     _tabSwipeDragging = true;
   }
@@ -10712,6 +10717,7 @@ document.addEventListener('touchend', () => {
       el.style.transition = '';
       el.style.willChange = '';
       el.style.zIndex = '';
+      el.classList.remove('tab-swipe-dragging');
       _tabSwipeRemoveCover();
     }
     requestAnimationFrame(snapBack);
@@ -10742,6 +10748,7 @@ document.addEventListener('touchend', () => {
   el.style.transition = '';
   el.style.willChange = '';
   el.style.zIndex = '';
+  el.classList.remove('tab-swipe-dragging');
 
   const curKey = _getCurrentSwipeTabKey();
   const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
