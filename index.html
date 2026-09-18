@@ -3335,7 +3335,7 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="card-btn card-btn-play" onclick="${isLockedAfrican ? 'showAfricanUpgradeToast()' : 'handleCardPlay(getItem(' + regIdx + '))'}" title="Play">
-            <span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;">play_circle</span>
+            <span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
           </button>
           <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(getItem(${regIdx}), this)" title="My List">
             ${isSaved
@@ -3973,7 +3973,7 @@ function renderSavedDownloads() {
       actionBtn = `
         <button onclick="playDownloaded(${d.id})" title="Play"
           style="flex-shrink:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
-          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;">play_circle</span>
+          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
         </button>`;
     } else if (d.failed || d.paused) {
       actionBtn = `
@@ -3994,7 +3994,7 @@ function renderSavedDownloads() {
     let statusLine = '';
     if (d.done) {
       const hasBlob = !!_dlBlobUrls[d.id];
-      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;">play_arrow</span> to play' : 'Saved to device · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;">play_arrow</span> to stream'}</div>`;
+      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;font-variation-settings:'FILL' 1">play_arrow</span> to play' : 'Saved to device · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;font-variation-settings:'FILL' 1">play_arrow</span> to stream'}</div>`;
     } else if (d.failed) {
       statusLine = `<div style="font-size:0.72rem;color:#f55;margin-top:2px;">Failed — tap ↺ to retry</div>`;
     } else if (d.paused) {
@@ -4890,7 +4890,7 @@ function resumeWatchingSeries(kvKey, epIndex) {
       <div style="font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Continue Watching</div>
       <div style="display:flex;align-items:center;gap:0.8rem;">
         <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${epIndex})">
-          <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
+          <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
         </div>
         <div style="cursor:pointer;flex:1;" onclick="playEpisode(${epIndex})">
           <div style="font-size:0.9rem;font-weight:600;color:#fff;">${epLabel}</div>
@@ -5078,21 +5078,21 @@ function _renderHistoryRow(m) {
         <div style="margin-top:4px;">
           ${m.isSeries
             ? `<span style="color:rgba(229,185,60,0.75);font-size:0.74rem;font-weight:600;white-space:nowrap;">${statusLabel}</span>`
-            : `<span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid rgba(229,185,60,0.45);color:rgba(229,185,60,0.75);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:12px;line-height:1;">play_arrow</span>${statusLabel}</span>`}
+            : `<span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid rgba(229,185,60,0.45);color:rgba(229,185,60,0.75);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:12px;line-height:1;font-variation-settings:'FILL' 1">play_arrow</span>${statusLabel}</span>`}
         </div>
         <div style="font-size:0.74rem;color:rgba(255,255,255,0.7);margin-top:4px;">${progressLabel}</div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.32);margin-top:2px;">${dateLabel} ${timeLabel}</div>
       </div>
       <button onclick="event.stopPropagation();${playFn}" title="${isFinished ? 'Replay' : 'Play'}"
         style="flex-shrink:0;background:none;border:none;color:${isFinished ? 'rgba(255,255,255,0.55)' : 'var(--gold)'};cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
-        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
+        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;font-variation-settings:'FILL' 1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
       </button>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
         <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
       </button>
       <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
-        <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
+        <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;font-variation-settings:'FILL' 1">play_circle</span>Play</button>
         <button onclick="removeHistoryItem('${removeKey}',event)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
         ${m.card ? `<button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${myList.some(x => x.id === m.card.id)
           ? '<span class="material-symbols-rounded" style="font-size:16px;">check_circle</span>Remove from Watch Later'
@@ -6207,7 +6207,7 @@ function showSeries(idx) {
     return `
     <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
       <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${i})">
-        <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
+        <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
       </div>
       <div style="flex:1;cursor:pointer;" onclick="playEpisode(${i})">
         <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
@@ -7368,7 +7368,7 @@ function _pagerSlideHTML(idx) {
       </div>
       <div id="pgPause_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
         <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;">play_arrow</span>
+          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;font-variation-settings:'FILL' 1">play_arrow</span>
         </div>
       </div>
       <div style="position:absolute;right:14px;bottom:140px;display:flex;flex-direction:column;align-items:center;gap:22px;color:#fff;text-align:center;">
@@ -8326,7 +8326,7 @@ function _shortsHeroSlideHTML(featured, idx, total) {
         <div style="font-size:0.82rem;color:#ddd;margin-bottom:9px;">${_shortMetaLabel(featured)}</div>
         ${featured.overview ? `<div style="font-size:0.83rem;color:#ccc;margin-bottom:14px;line-height:1.4;max-width:94%;">${featured.overview}</div>` : ''}
         <div onclick="showShortInfo(window._shortsHeroItems[${idx}])" style="display:inline-flex;align-items:center;gap:6px;background:#ffc107;color:#000;font-weight:700;font-size:0.85rem;padding:9px 18px;border-radius:8px;cursor:pointer;">
-          <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch now
+          <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch now
         </div>
       </div>
       ${dots}
@@ -9787,7 +9787,7 @@ function _mpfSlideHTML(idx) {
       </div>
       <div id="mpfPause_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
         <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;">play_arrow</span>
+          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;font-variation-settings:'FILL' 1">play_arrow</span>
         </div>
       </div>
       <div style="position:absolute;right:12px;bottom:210px;display:flex;flex-direction:column;align-items:center;gap:20px;color:#fff;text-align:center;z-index:5;">
@@ -9815,7 +9815,7 @@ function _mpfSlideHTML(idx) {
           </div>
         </div>
         <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--gold);color:#000;font-weight:700;font-size:0.88rem;padding:12px 18px;border-radius:100px;border:none;cursor:pointer;">
-          <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch Full Movie
+          <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full Movie
         </button>
       </div>
     </div>`;
@@ -10049,7 +10049,7 @@ async function _mpfMountSlide(idx, autoplay) {
   document.getElementById('mpfMeta_' + idx).textContent = metaParts.join(' • ');
   document.getElementById('mpfTitle_' + idx).textContent = item.title || item.name || '';
   document.getElementById('mpfDesc_' + idx).textContent = item.overview || '';
-  document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
+  document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
 
   const spinnerEl = document.getElementById('mpfSpinner_' + idx);
   const spinnerTimer = setTimeout(() => { if (spinnerEl) spinnerEl.style.display = 'flex'; }, 180);
