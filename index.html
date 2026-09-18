@@ -1845,15 +1845,12 @@
       padding-top: 60px;
       padding-bottom: 70px;
     }
-    /* TEMP DIAGNOSTIC: #main position:fixed disabled to isolate For You blanking cause
-    #main {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 62px;
-    }
-    */
+    /* #main intentionally left as normal in-flow, page-scrolled content.
+       It was briefly made position:fixed with its own scroll to fix a
+       Home-swipe-away flicker, but that also broke For You's mini-tab
+       swipe. Removing Home from the swipe sequence (see
+       _SWIPE_TAB_SEQUENCE) fixes the original flicker at its source, so
+       this restructure is no longer needed. */
     .bn-page-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 1.2rem 0.5rem;
@@ -10575,7 +10572,7 @@ window.addEventListener('focus', clearStrayFocus);
 // For You(Movies) ↔ For You(Series) ↔ For You(Shorts) ↔ Saved.
 // Ignores swipes starting inside horizontally-scrollable rows (so scrolling a
 // movie carousel still works normally) and while the player modal is open.
-const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved'];
+const _SWIPE_TAB_SEQUENCE = ['cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved']; // 'home' intentionally excluded — no swipe gestures on Home
 
 function _getCurrentSwipeTabKey() {
   if (_bnActive === 'categories') {
