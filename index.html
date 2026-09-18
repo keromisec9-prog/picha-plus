@@ -6866,6 +6866,8 @@ async function refreshForYou() {
     const res = await fetch(`${API}/stats`);
     _fyStats = await res.json();
   } catch (e) {}
+  _fyRendered.movies = false;
+  _fyRendered.series = false;
   renderForYou();
   setTimeout(() => { if (icon) icon.style.transform = 'rotate(0deg)'; }, 500);
 }
@@ -8650,10 +8652,6 @@ function renderForYou() {
   const isTV = tab === 'series';
   const pool = allCards.filter(c => isTV ? c.media_type === 'tv' : c.media_type !== 'tv');
 
-  // Data just changed (refresh/like/dislike) — the other tab's cached render
-  // is now stale and must rebuild next time it's opened.
-  _fyRendered[tab === 'series' ? 'movies' : 'series'] = false;
-
   if (!pool.length) { grid.innerHTML = ''; empty.style.display = 'block'; _fyRendered[tab] = true; return; }
   empty.style.display = 'none';
 
@@ -9036,6 +9034,8 @@ async function fyDislike(itemId) {
     }
     showToast('Got it — we\'ll show this less', '');
   }
+  _fyRendered.movies = false;
+  _fyRendered.series = false;
   renderForYou();
   _syncFyFeedbackButtons(itemId);
 }
@@ -9054,6 +9054,8 @@ async function fyLike(itemId) {
     localStorage.setItem('pichaplus_liked', JSON.stringify(liked));
     showToast('Removed', '');
   }
+  _fyRendered.movies = false;
+  _fyRendered.series = false;
   renderForYou();
   _syncFyFeedbackButtons(itemId);
   _setLikeState(itemId, wantLiked, 'movie');
