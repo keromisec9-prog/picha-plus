@@ -10590,11 +10590,16 @@ function _getCurrentSwipeTabKey() {
 }
 
 function _goToSwipeTabKey(key) {
-  if (key === 'cat:genre') { bnGo('categories'); bnInnerTab('genre'); }
-  else if (key === 'cat:vj') { bnGo('categories'); bnInnerTab('vj'); }
-  else if (key === 'fy:movies') { bnGo('foryou'); fyTab('movies'); }
-  else if (key === 'fy:series') { bnGo('foryou'); fyTab('series'); }
-  else if (key === 'fy:shorts') { bnGo('foryou'); fyTab('shorts'); }
+  // Only run bnGo() (which hides/rebuilds every bn-page) when actually
+  // switching to a different top-level page. Calling it on every mini-tab
+  // swipe within the same page forced a needless display:none -> block
+  // cycle on containers using content-visibility:auto, causing content to
+  // blank out during For You's own movies/series swipe.
+  if (key === 'cat:genre') { if (_bnActive !== 'categories') bnGo('categories'); bnInnerTab('genre'); }
+  else if (key === 'cat:vj') { if (_bnActive !== 'categories') bnGo('categories'); bnInnerTab('vj'); }
+  else if (key === 'fy:movies') { if (_bnActive !== 'foryou') bnGo('foryou'); fyTab('movies'); }
+  else if (key === 'fy:series') { if (_bnActive !== 'foryou') bnGo('foryou'); fyTab('series'); }
+  else if (key === 'fy:shorts') { if (_bnActive !== 'foryou') bnGo('foryou'); fyTab('shorts'); }
   else { bnGo(key); }
 }
 
