@@ -2573,6 +2573,19 @@ function saveProgress(id, pos, dur, forceSync, title) {
               <button class="auth-submit-btn" onclick="submitPCChangePassword()" style="margin-top:0.5rem;">Update Parental Control Password</button>
             </div>
           </div>
+
+          <div id="pcRemoveSection" style="display:none;margin-top:0.6rem;">
+            <div style="font-size:0.82rem;color:#f55;cursor:pointer;" onclick="togglePCRemoveForm()">Remove Parental Control Password</div>
+            <div id="pcRemoveForm" style="display:none;margin-top:0.6rem;">
+              <div style="font-size:0.76rem;color:#888;margin-bottom:0.5rem;">This permanently deletes your Parental Control password. You can set a new one later if needed.</div>
+              <div style="position:relative;margin-bottom:0.5rem;">
+                <input type="password" class="auth-input" id="pcRemoveCurrentPwd" placeholder="Current password" style="padding-right:2.8rem;"/>
+                <span onclick="togglePwd('pcRemoveCurrentPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
+              </div>
+              <div class="auth-error" id="pcRemoveError"></div>
+              <button class="auth-submit-btn" onclick="submitPCRemovePassword()" style="margin-top:0.5rem;background:#a33;">Remove Password</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -5690,6 +5703,8 @@ async function loadPCStatus() {
   document.getElementById('pcVerifyForm').style.display = 'none';
   document.getElementById('pcChangeSection').style.display = _pcStatus.isSetUp ? 'block' : 'none';
   document.getElementById('pcChangeForm').style.display = 'none';
+  document.getElementById('pcRemoveSection').style.display = (_pcStatus.isSetUp && !_pcStatus.enabled) ? 'block' : 'none';
+  document.getElementById('pcRemoveForm').style.display = 'none';
 }
 
 function handlePCToggleChange(checked) {
@@ -5738,6 +5753,7 @@ async function submitPCSetup() {
     document.getElementById('acctPCToggle').checked = true;
     document.getElementById('pcSetupForm').style.display = 'none';
     document.getElementById('pcChangeSection').style.display = 'block';
+    document.getElementById('pcRemoveSection').style.display = 'none';
     if (session.user) session.user.parentalControlsEnabled = true;
     loadContent();
     renderMyListRow();
@@ -5762,6 +5778,8 @@ async function submitPCVerify() {
     _pcStatus.enabled = enabling;
     document.getElementById('acctPCToggle').checked = enabling;
     document.getElementById('pcVerifyForm').style.display = 'none';
+    document.getElementById('pcRemoveSection').style.display = enabling ? 'none' : 'block';
+    document.getElementById('pcRemoveForm').style.display = 'none';
     if (session.user) session.user.parentalControlsEnabled = enabling;
     loadContent();
     renderMyListRow();
@@ -5773,6 +5791,33 @@ async function submitPCVerify() {
 function togglePCChangeForm() {
   const form = document.getElementById('pcChangeForm');
   form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function togglePCRemoveForm() {
+  const form = document.getElementById('pcRemoveForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function submitPCRemovePassword() {
+  const current = document.getElementById('pcRemoveCurrentPwd').value;
+  const errEl = document.getElementById('pcRemoveError');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch(`${API}/account/parental-controls/remove-password`, {
+      method: 'POST',
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: current })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+    _pcStatus = { isSetUp: false, enabled: false };
+    document.getElementById('pcRemoveCurrentPwd').value = '';
+    document.getElementById('pcRemoveForm').style.display = 'none';
+    document.getElementById('pcRemoveSection').style.display = 'none';
+    document.getElementById('pcChangeSection').style.display = 'none';
+    document.getElementById('acctPCToggle').checked = false;
+    toast('Parental Control password removed', 'gold');
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
 
 async function submitPCChangePassword() {
