@@ -2023,7 +2023,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=add,all_inclusive,notifications_active,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,all_inclusive,notifications_active,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="data:image/webp;base64,UklGRmwMAABXRUJQVlA4IGAMAAAwTwCdASpoAWgBPmEwl0ekIyohIxJIsUAMCWVu5VARWeCFpxIJvuIu3f6z8nfxr6w/mrwRzV56e1v+X/dfy3+avpl8wX9N/8X/V/yL7tvmF/YL9y/d39MX+A9Qj+5dS16G3l0ezJ+237k+yz//+z/6PvruXqEN5PX4MxZms+Rh9EIfpgjyJKaTvIdMEeRJTSd5DpgjyJKaTvIdMEeRJTSd5DpgjyJKaTvIdMEeRJS4CzxImGNQR69H2/MVLWJL8sillNCGweDBXnCRsAH2q3vIdMDEXQtACMVSNaqAQ6XN2/9wjluMo5H4N9IYt4ICPIkpdhed8K9KecVLKFwZp8uXkF8KA87BqDmnpuAbdVveM2Y3Loa/Nw0pTSK3N1/AQhYifVCoK5uJRGA5LAK8ipnCA5ElNJ1BABzIuHMMoqS6RWK81zKr4+jZOI75U2ScM2zTpKg3Kt7yHHiLi3/TcnNjEQ1xUNXphHpvJx+uU9bwE1uVb3jSPH8i+m2WA15VYztXub5AM6VJ00XcW95DpEanG9kHgvyN3RRis7FjlV+OJxUsNpUL095DpeLY6v4NeawCMjcTk75Qm0isGiALOw6Be57yHTBHcZI4uAqPj7XqeRbp4LRd2vAb8wPXZmKxDpgjyHsSK0fe5RSOzslnjx5/98TVjVQICPIkppJpkGEgdlazJWhb1l+VluIlF4ObeVb3kOmCO03Xkv6GeATSyQG0UiBxjKPvG6HC1zL5bPiJKaTvIcTULPvOOGq3AV5p9oJvCaTvIdMEeRJTZhJpjR0YJG3Vb3kOmCPIkppO8h0wR5ElNJ3kOmCPIkppO8h0wR5ElNJ3kOmCPIkppO8h0wR5DoAA/v/PVAAAAAAAP1jPaLlask19xN52XhgJ5UNlqqiTkVen+//AGKuYjh5Exv6uYA2epiUuaTCQuWS4pO/nLhlTfhQP9bt0E4hI296fj4GLGz1G1gC55J3FN4RZHm6CWdWqld1/gUGDZFAijgxT3OLrTu5ZAgzyCHlV28w5hK0DiuggxCnOnx8/aqOtdrjM4sLLuqo3kRTwvg70AKGiTG8Yl/23v2s5BXrHfzxYJ+lgO7h8c89+FANuxB9poX4B8RwdnrEjiq6pxHaHFePrgvSjyqy31DQZNWIf0kB0a59SerwJmD23+8J4geIQbTlQB2HDmNlHheOhTnJp6nncHYirdcW571EPYv/MIdLWb0RjELJafgtcyB2pspZEx1szQpOM1yH/H8IYkxZM9mQsdHyTelrZ7OEQf4d/L5tWsVCG1LKiaDW4LufS/FUxoo1o042k3Vo5kDmju1UkRaWfG42CRCKSnVJ011tBTn89OeCrh9Srm0IwO3ItkZijnbZTdCmVjjXFBsFZyuxFJzHAioIi8lw7UkcZYpcOKqv/CWpbb4YvVgSbSUFtUEfqEp3mz3xqpXC+n158tc20FJGALWx60sdUwF/o3YJ1RFSCBksqtOFR0F5fpv2QJYT7aKRaEPGHgIUE1VEDZmuw2w9xHZeLQEBepml2OSsGRN6YQ3zZInaaGVsBClAlfMoGhPm9fxKpFydjqL5q4S82ofsfEIKUaJpmlf8INnUdZKEtq21x4PPtie5Ie/Rr6Ptcr/XzJRuMsA2wqjbSsS5LLGIEL87tgncSQa+q1AG5oF/BcAnX+0x+a1eZrjbpYiZQNVsUhlg1bm8FgrRxs6U72bmW7jCw6bMoy3QpWrEhyfC5wde4cVSLJBAWN6+bXEvLdKWvDRGcON3lSiJnXARHVw9+xC7VwY0xNCZekQ97ReSdNzWiri06bpIVGEGMTtXiewCLlj0LLkSEriIuizQux7fDCMsd33RcwAjzUHxDGupPC3aJQECRXgNz4vRKqWGLiVBaarJazDa0axYlq6Yj1ZwX0O1LeEc8cBFkEAbV/B6RJoZZ1IApBINo+X7BgK0Y9MkuDtwUS2b/Yc8BZgIIxEBwmqr0Pn1VxFDOhJe79/XnBSPM4p71fzsdnOqvJUUcqYtd/fcVg+8gy0eHDTYgB3aLUy/CXoLhZoco0OuyjdcxPh2a4m3LzvgAUnCftm7zM/+00SlUHC5Qn6vsag6EAM3SfD7FOQ2HH0/4m4ZNdW/DUBJacOSgUBvnSxjoBGJdmtwBbiR5sOSqySyoT1SEOratAqQBsWDTl5QRwAeLs5z+SHXUM0JPE9mLkePmW6a4BlH0U3nuM7Pqv+p9algBUqORNW0GDZ6kvyKuvEbalYZ8xZ8IDh4Ruq63yPQQAD/XirIK2F8fYAlG4gOsk3GiU2b2etx1AHPeuQXWKH19q7tUimxRtWm98jDn+RWw2+lQ8SgS6Nhz8BJCu8WhSYkp9WS/RIAK8hiUyNHitpeEnXKP9ldpxe2HTTxnjlzyL1xT4dLYib30fV0TVmIXEXr8ohTD6Xbd9uAqHeowRHon9OzbTCs65bs/u4PGlR7u+9VS32NY829+B0Sz95rm9iBne/Zf/qtFxbpdAJT/KgGuJ9H/Pb1H6KNqjlFuHET9veK4G4IBqR1bf/FnNqJmh0eTxg4mQgvyTr+nSbjB14GnWQQVzyw3fRGQzxwIOLBefAsvmjYXgcSmb6pxVr0CEUr4DONxFiOfjx0TtbcwPzHR3u1qXbE+3MMq580Kfi0g07SkIqRYCUw2p3U2qPkwf/A2It/GYnLEyujGpZosCKzeNYEVchdwbvYALNdsSO1Q+ejRDHIUfD7rZRM3BPyjBvuHg6YIgLSiD185//OcBwieqSaN8pR9fCFgu+2EiVxUnbHC6OzY8MUh5Fm9KKObXUlwChDOgBOOESl6eGQwNmfAFYmsvdb3nmupDwvDNVnwQwoK2AbzbeHm1/BNVRDlx+XS4KhX3ED5D/eM/d36AoKBYG+Ji8elh+WtgHx1LexKgsYW4Ui7ZveX//IErlOfgiTU/5b8tm3H/Zw1cfvbDUSGLbh+p5+TCqRzPXKdAn6Twy8J7Y/fD0O6AIr+E6EwkFq/mO3F/F5QsYi8XilFDZd4zaBimkWq55+grj/NP2MM8vZWEHaKwlIqsb09vSDAUonzP8ZLc/k5HvrVD66xxRntMw2GMmFbMMIqnkthNQYgMXV574Qg8Rvf/4RlNxgTs4kIQAn6f+hl0bXOufrIqBU0fnTaFmWxmB8BW9CjMNwVjtmV0+99TVxtX4Xc44cboJRtJeP4SfFrlRzeR7COLfMaGVj3sl7PCko/U3w+M84z7/v8J5zQ5fseIF8zSxEi6+4s9FAZgaHUNUlHhBQlHOLO08J3yZdbOh15mZG9WrtHiz41jNW6T3TbSctym+G/FeA6Ti2FqSHSBMNPzWkxQMIfxWwMJYopHayMl8nrIAZKaetUf7pI2f/+k0+SOzMxNuVbezdc+Spwb9AJX7oVU8KkPtVMU32CRCAmVnA8nAOgNj5gxoTUdMK4xtQn3EAtcreU++sLDXB8+dyljTiTPxe9wn+UlD7oGFXfDEibYCQjzf1sL5r3rD35zpSwwuGhCXr/8QJanOVc/U2KzSGhvxHkC4gkxkmVI7IBR0lX9kWjNAaU6nVNcrAtPiysMmbuYB++ghXKlFlGX3EAAjLJC3Rcou3f6YVliLdFiLwoP1Rgoe+63NG9xEcmjpEaQxKW6kpOmUFth/eEV96iEKTethZgSecXRhJ9LqKB3H0f5WKC3HaPzdSWe6XKtsTcn4wb0ni6YTUH0hmKoQ4GVvd4ApBaeFDyl+HczMXoGkuLME6WM1O2SBQbSemga1M+4UsMsNzH9QXwAEy1fW7Qnwo3aiHRFO6oyxuxS0L/vklyM8Q36GAz+ADU74m1wsJFy7oqUxCpBqO0wm4ZflTVcPo3S09NS08l4/wZ1Gqzg4/oDvmiM8cm7d6zqvbL92Ly6cVBdC2HNWINIjLiyp4pQJ3AtrV/HDNUAfumzFkEkCuLqnUbZ/750YeeoiGr8I9PuPU35XN3qaGjbcCDqm+Q11urDzljY1zcmgjjN4SEAADXYK0WzG9c8eAtWv8419yc6s5/k7OILvqSgZGmapjoFlirIkcrDAPRUlAm/rrHKONvxQsEJVMV1NsXu6Nv6klc7xh473ufC98SNKRcWAD2sifUriaP08z3amoQOYwWCIUujtQ5q49VnIefaNdcpe3iNi4nL4LaZTdMLU9XkdzuiKr5ACG+QAAATXNPFzXQT7qzfbMGxB4NibYEbl594SxpbMCQtqedxrjg15eWDUD+YYaUAAAAAAAAAAA=" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -2571,19 +2571,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
               <div class="auth-error" id="pcChangeError"></div>
               <div id="pcChangeSuccess" style="color:#46d369;font-size:0.82rem;display:none;margin-bottom:0.5rem;"></div>
               <button class="auth-submit-btn" onclick="submitPCChangePassword()" style="margin-top:0.5rem;">Update Parental Control Password</button>
-            </div>
-          </div>
-
-          <div id="pcRemoveSection" style="display:none;margin-top:0.6rem;">
-            <div style="font-size:0.82rem;color:#f55;cursor:pointer;" onclick="togglePCRemoveForm()">Remove Parental Control Password</div>
-            <div id="pcRemoveForm" style="display:none;margin-top:0.6rem;">
-              <div style="font-size:0.76rem;color:#888;margin-bottom:0.5rem;">This permanently deletes your Parental Control password. You can set a new one later if needed.</div>
-              <div style="position:relative;margin-bottom:0.5rem;">
-                <input type="password" class="auth-input" id="pcRemoveCurrentPwd" placeholder="Current password" style="padding-right:2.8rem;"/>
-                <span onclick="togglePwd('pcRemoveCurrentPwd',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></span>
-              </div>
-              <div class="auth-error" id="pcRemoveError"></div>
-              <button class="auth-submit-btn" onclick="submitPCRemovePassword()" style="margin-top:0.5rem;background:#a33;">Remove Password</button>
             </div>
           </div>
         </div>
@@ -3348,7 +3335,7 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
         <div class="card-title">${esc(title)}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="card-btn card-btn-play" onclick="${isLockedAfrican ? 'showAfricanUpgradeToast()' : 'handleCardPlay(getItem(' + regIdx + '))'}" title="Play">
-            <span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
+            <span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;">play_circle</span>
           </button>
           <button class="card-btn card-btn-add ${isSaved ? 'saved' : ''}" onclick="toggleMyList(getItem(${regIdx}), this)" title="My List">
             ${isSaved
@@ -3765,12 +3752,6 @@ async function _doDownload(endpoint, filename, meta) {
     const dlUrl = endpoint + (endpoint.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(session.token) + '&device_id=' + encodeURIComponent(getDeviceId());
     const a = document.createElement('a');
     a.href = dlUrl; a.download = filename;
-    if (window.PichaApp && PichaApp.queueDownload) {
-      try {
-        const _r = PichaApp.queueDownload(dlUrl, filename, meta.title || '', meta.poster || '');
-        if (_r && _r !== '-1') { record.dmId = parseInt(_r); a.removeAttribute('href'); a.removeAttribute('download'); }
-      } catch (e) {}
-    }
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     record.progress = 100; record.done = true; record.failed = false;
     saveDownloads(); renderSavedDownloads();
@@ -3900,9 +3881,6 @@ async function retryDownload(dlId) {
 async function playDownloaded(dlId) {
   const rec = _dlRegistry.find(d => d.id === dlId);
   if (!rec) return;
-  if (window.PichaApp && rec.dmId && PichaApp.playDownload) {
-    try { if (PichaApp.playDownload(rec.dmId)) return; } catch (e) {}
-  }
 
   // Helper: open player with a blob/object URL
   function _openPlayerWithUrl(url) {
@@ -3995,7 +3973,7 @@ function renderSavedDownloads() {
       actionBtn = `
         <button onclick="playDownloaded(${d.id})" title="Play"
           style="flex-shrink:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
-          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
+          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;">play_circle</span>
         </button>`;
     } else if (d.failed || d.paused) {
       actionBtn = `
@@ -4016,7 +3994,7 @@ function renderSavedDownloads() {
     let statusLine = '';
     if (d.done) {
       const hasBlob = !!_dlBlobUrls[d.id];
-      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;font-variation-settings:&quot;FILL&quot; 1">play_arrow</span> to play' : 'Saved to device · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;font-variation-settings:&quot;FILL&quot; 1">play_arrow</span> to stream'}</div>`;
+      statusLine = `<div style="font-size:0.72rem;color:#46d369;margin-top:2px;">${hasBlob ? 'Ready · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;">play_arrow</span> to play' : 'Saved to device · tap <span class="material-symbols-rounded" style="font-size:0.9rem;vertical-align:middle;line-height:1;">play_arrow</span> to stream'}</div>`;
     } else if (d.failed) {
       statusLine = `<div style="font-size:0.72rem;color:#f55;margin-top:2px;">Failed — tap ↺ to retry</div>`;
     } else if (d.paused) {
@@ -4051,8 +4029,6 @@ function renderSavedDownloads() {
 }
 
 function removeDownload(id) {
-  const _rd = _dlRegistry.find(d => d.id === id);
-  if (_rd && _rd.dmId && window.PichaApp && PichaApp.removeDownload) { try { PichaApp.removeDownload(_rd.dmId); } catch (e) {} }
   const idx = _dlRegistry.findIndex(d => d.id === id);
   if (idx !== -1) {
     _dlRegistry.splice(idx, 1);
@@ -4914,7 +4890,7 @@ function resumeWatchingSeries(kvKey, epIndex) {
       <div style="font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Continue Watching</div>
       <div style="display:flex;align-items:center;gap:0.8rem;">
         <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${epIndex})">
-          <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
+          <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
         </div>
         <div style="cursor:pointer;flex:1;" onclick="playEpisode(${epIndex})">
           <div style="font-size:0.9rem;font-weight:600;color:#fff;">${epLabel}</div>
@@ -5102,21 +5078,21 @@ function _renderHistoryRow(m) {
         <div style="margin-top:4px;">
           ${m.isSeries
             ? `<span style="color:rgba(229,185,60,0.75);font-size:0.74rem;font-weight:600;white-space:nowrap;">${statusLabel}</span>`
-            : `<span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid rgba(229,185,60,0.45);color:rgba(229,185,60,0.75);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:12px;line-height:1;font-variation-settings:'FILL' 1">play_arrow</span>${statusLabel}</span>`}
+            : `<span style="display:inline-flex;align-items:center;gap:0.25rem;border:1px solid rgba(229,185,60,0.45);color:rgba(229,185,60,0.75);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.68rem;font-weight:600;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:12px;line-height:1;">play_arrow</span>${statusLabel}</span>`}
         </div>
         <div style="font-size:0.74rem;color:rgba(255,255,255,0.7);margin-top:4px;">${progressLabel}</div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.32);margin-top:2px;">${dateLabel} ${timeLabel}</div>
       </div>
       <button onclick="event.stopPropagation();${playFn}" title="${isFinished ? 'Replay' : 'Play'}"
         style="flex-shrink:0;background:none;border:none;color:${isFinished ? 'rgba(255,255,255,0.55)' : 'var(--gold)'};cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
-        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;font-variation-settings:'FILL' 1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
+        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
       </button>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
         <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
       </button>
       <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
-        <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;font-variation-settings:'FILL' 1">play_circle</span>Play</button>
+        <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;">play_circle</span>Play</button>
         <button onclick="removeHistoryItem('${removeKey}',event)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
         ${m.card ? `<button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${myList.some(x => x.id === m.card.id)
           ? '<span class="material-symbols-rounded" style="font-size:16px;">check_circle</span>Remove from Watch Later'
@@ -5714,8 +5690,6 @@ async function loadPCStatus() {
   document.getElementById('pcVerifyForm').style.display = 'none';
   document.getElementById('pcChangeSection').style.display = _pcStatus.isSetUp ? 'block' : 'none';
   document.getElementById('pcChangeForm').style.display = 'none';
-  document.getElementById('pcRemoveSection').style.display = (_pcStatus.isSetUp && !_pcStatus.enabled) ? 'block' : 'none';
-  document.getElementById('pcRemoveForm').style.display = 'none';
 }
 
 function handlePCToggleChange(checked) {
@@ -5764,7 +5738,6 @@ async function submitPCSetup() {
     document.getElementById('acctPCToggle').checked = true;
     document.getElementById('pcSetupForm').style.display = 'none';
     document.getElementById('pcChangeSection').style.display = 'block';
-    document.getElementById('pcRemoveSection').style.display = 'none';
     if (session.user) session.user.parentalControlsEnabled = true;
     loadContent();
     renderMyListRow();
@@ -5789,8 +5762,6 @@ async function submitPCVerify() {
     _pcStatus.enabled = enabling;
     document.getElementById('acctPCToggle').checked = enabling;
     document.getElementById('pcVerifyForm').style.display = 'none';
-    document.getElementById('pcRemoveSection').style.display = enabling ? 'none' : 'block';
-    document.getElementById('pcRemoveForm').style.display = 'none';
     if (session.user) session.user.parentalControlsEnabled = enabling;
     loadContent();
     renderMyListRow();
@@ -5802,33 +5773,6 @@ async function submitPCVerify() {
 function togglePCChangeForm() {
   const form = document.getElementById('pcChangeForm');
   form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-
-function togglePCRemoveForm() {
-  const form = document.getElementById('pcRemoveForm');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-
-async function submitPCRemovePassword() {
-  const current = document.getElementById('pcRemoveCurrentPwd').value;
-  const errEl = document.getElementById('pcRemoveError');
-  errEl.style.display = 'none';
-  try {
-    const res = await fetch(`${API}/account/parental-controls/remove-password`, {
-      method: 'POST',
-      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword: current })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-    _pcStatus = { isSetUp: false, enabled: false };
-    document.getElementById('pcRemoveCurrentPwd').value = '';
-    document.getElementById('pcRemoveForm').style.display = 'none';
-    document.getElementById('pcRemoveSection').style.display = 'none';
-    document.getElementById('pcChangeSection').style.display = 'none';
-    document.getElementById('acctPCToggle').checked = false;
-    toast('Parental Control password removed', 'gold');
-  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
 
 async function submitPCChangePassword() {
@@ -6263,7 +6207,7 @@ function showSeries(idx) {
     return `
     <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
       <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${i})">
-        <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
+        <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;">play_circle</span>
       </div>
       <div style="flex:1;cursor:pointer;" onclick="playEpisode(${i})">
         <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
@@ -7424,7 +7368,7 @@ function _pagerSlideHTML(idx) {
       </div>
       <div id="pgPause_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
         <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;font-variation-settings:'FILL' 1">play_arrow</span>
+          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;">play_arrow</span>
         </div>
       </div>
       <div style="position:absolute;right:14px;bottom:140px;display:flex;flex-direction:column;align-items:center;gap:22px;color:#fff;text-align:center;">
@@ -8382,7 +8326,7 @@ function _shortsHeroSlideHTML(featured, idx, total) {
         <div style="font-size:0.82rem;color:#ddd;margin-bottom:9px;">${_shortMetaLabel(featured)}</div>
         ${featured.overview ? `<div style="font-size:0.83rem;color:#ccc;margin-bottom:14px;line-height:1.4;max-width:94%;">${featured.overview}</div>` : ''}
         <div onclick="showShortInfo(window._shortsHeroItems[${idx}])" style="display:inline-flex;align-items:center;gap:6px;background:#ffc107;color:#000;font-weight:700;font-size:0.85rem;padding:9px 18px;border-radius:8px;cursor:pointer;">
-          <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch now
+          <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch now
         </div>
       </div>
       ${dots}
@@ -9843,7 +9787,7 @@ function _mpfSlideHTML(idx) {
       </div>
       <div id="mpfPause_${idx}" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
         <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;font-variation-settings:'FILL' 1">play_arrow</span>
+          <span class="material-symbols-rounded" style="font-size:38px;color:#fff;">play_arrow</span>
         </div>
       </div>
       <div style="position:absolute;right:12px;bottom:210px;display:flex;flex-direction:column;align-items:center;gap:20px;color:#fff;text-align:center;z-index:5;">
@@ -9871,7 +9815,7 @@ function _mpfSlideHTML(idx) {
           </div>
         </div>
         <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--gold);color:#000;font-weight:700;font-size:0.88rem;padding:12px 18px;border-radius:100px;border:none;cursor:pointer;">
-          <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full Movie
+          <span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch Full Movie
         </button>
       </div>
     </div>`;
@@ -10105,7 +10049,7 @@ async function _mpfMountSlide(idx, autoplay) {
   document.getElementById('mpfMeta_' + idx).textContent = metaParts.join(' • ');
   document.getElementById('mpfTitle_' + idx).textContent = item.title || item.name || '';
   document.getElementById('mpfDesc_' + idx).textContent = item.overview || '';
-  document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
+  document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
 
   const spinnerEl = document.getElementById('mpfSpinner_' + idx);
   const spinnerTimer = setTimeout(() => { if (spinnerEl) spinnerEl.style.display = 'flex'; }, 180);
@@ -10600,6 +10544,71 @@ function clearStrayFocus() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
 window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
+
+// ── Swipe left/right to move through tabs: Home → Categories(Genre) →
+// Categories(Veejays) → For You → Saved, and back the other way. Ignores
+// swipes starting inside horizontally-scrollable rows (so scrolling a movie
+// carousel still works normally) and while the player modal is open.
+const _SWIPE_TAB_SEQUENCE = ['home', 'cat:genre', 'cat:vj', 'fy:movies', 'fy:series', 'fy:shorts', 'saved'];
+
+function _getCurrentSwipeTabKey() {
+  if (_bnActive === 'categories') {
+    // Scoped to this page's own tabs — For You has a same-class button set that
+    // could otherwise falsely match here since both stay in the DOM at once.
+    const activeInner = document.querySelector('#bnCategoriesPage .bn-inner-tab.active')?.id || '';
+    return activeInner === 'bit-vj' ? 'cat:vj' : 'cat:genre';
+  }
+  if (_bnActive === 'foryou') {
+    const activeInner = document.querySelector('#bnForYouPage .bn-inner-tab.active')?.id || '';
+    if (activeInner === 'fyt-series') return 'fy:series';
+    if (activeInner === 'fyt-shorts') return 'fy:shorts';
+    return 'fy:movies';
+  }
+  return _bnActive;
+}
+
+function _goToSwipeTabKey(key) {
+  if (key === 'cat:genre') { bnGo('categories'); bnInnerTab('genre'); }
+  else if (key === 'cat:vj') { bnGo('categories'); bnInnerTab('vj'); }
+  else if (key === 'fy:movies') { bnGo('foryou'); fyTab('movies'); }
+  else if (key === 'fy:series') { bnGo('foryou'); fyTab('series'); }
+  else if (key === 'fy:shorts') { bnGo('foryou'); fyTab('shorts'); }
+  else { bnGo(key); }
+}
+
+function _handleTabSwipe(direction) {
+  const curKey = _getCurrentSwipeTabKey();
+  const idx = _SWIPE_TAB_SEQUENCE.indexOf(curKey);
+  if (idx === -1) return;
+  const nextIdx = idx + direction;
+  if (nextIdx < 0 || nextIdx >= _SWIPE_TAB_SEQUENCE.length) return;
+  _goToSwipeTabKey(_SWIPE_TAB_SEQUENCE[nextIdx]);
+}
+
+let _tabSwipeStartX = 0, _tabSwipeStartY = 0, _tabSwipeStartT = 0, _tabSwipeTracking = false;
+
+document.addEventListener('touchstart', (e) => {
+  if (document.getElementById('playerModal')?.classList.contains('active')) { _tabSwipeTracking = false; return; }
+  if (e.target.closest('.scroll-row, .sb-swipe-wrap, .lang-filter')) { _tabSwipeTracking = false; return; }
+  if (e.touches.length !== 1) { _tabSwipeTracking = false; return; }
+  _tabSwipeStartX = e.touches[0].clientX;
+  _tabSwipeStartY = e.touches[0].clientY;
+  _tabSwipeStartT = Date.now();
+  _tabSwipeTracking = true;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (!_tabSwipeTracking) return;
+  _tabSwipeTracking = false;
+  const touch = e.changedTouches[0];
+  const dx = touch.clientX - _tabSwipeStartX;
+  const dy = touch.clientY - _tabSwipeStartY;
+  const dt = Date.now() - _tabSwipeStartT;
+  if (dt > 600) return;
+  if (Math.abs(dx) < 70) return;
+  if (Math.abs(dy) > Math.abs(dx) * 0.5) return;
+  _handleTabSwipe(dx < 0 ? 1 : -1);
+}, { passive: true });
 </script>
 
 </body>

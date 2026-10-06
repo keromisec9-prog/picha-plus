@@ -1,0 +1,28 @@
+[33mcommit 772c93fd51943cbc21800f31d1e27a245cd7e787[m
+Author: keromisec9-prog <kerosoftz522@gmail.com>
+Date:   Fri Jul 24 00:03:42 2026 +0300
+
+    fix fy tab
+
+[1mdiff --git a/index.html b/index.html[m
+[1mindex 6c0b653..ea1d63a 100644[m
+[1m--- a/index.html[m
+[1m+++ b/index.html[m
+[36m@@ -531,7 +531,7 @@[m
+     }[m
+     .scroll-row::-webkit-scrollbar { display: none; }[m
+ [m
+[31m-    #fyGrid .card { width: 100%; }[m
+[32m+[m[32m    /* fyGrid cards now use the same fixed --card-w as other rows */[m
+ [m
+     /* ── CARDS ── */[m
+     .card {[m
+[36m@@ -2199,7 +2199,7 @@[m [mfunction saveProgress(id, pos, dur) {[m
+       <span class="material-symbols-rounded" id="fyRefreshIcon" style="font-size:22px;line-height:1;transition:transform 0.5s;">refresh</span>[m
+     </button>[m
+   </div>[m
+[31m-  <div id="fyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;padding:0.8rem 4vw;"></div>[m
+[32m+[m[32m  <div id="fyGrid" style="display:flex;flex-wrap:wrap;gap:0.6rem;padding:0.8rem 4vw;"></div>[m
+   <div id="fyEmpty" style="display:none;text-align:center;padding:4rem 2rem;color:var(--gray);">[m
+     <div style="font-size:3rem;margin-bottom:1rem;">✨</div>[m
+     <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Nothing here yet</div>[m
