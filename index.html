@@ -6705,30 +6705,30 @@ function showAfricanUpgradeToast() {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.2rem;';
 
   const modal = document.createElement('div');
-  modal.style.cssText = 'background:#161616;border:1px solid rgba(242,201,76,0.3);border-radius:18px;padding:1.6rem 1.3rem 1.3rem;max-width:400px;width:100%;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.6);';
+  modal.style.cssText = 'background:transparent;border:none;border-radius:18px;padding:1.6rem 1.3rem 1.3rem;max-width:400px;width:100%;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.6);';
 
   modal.innerHTML = `
-    <span class="material-symbols-rounded" onclick="this.closest('.african-modal-overlay').remove();" style="position:absolute;top:0.8rem;right:0.8rem;background:#2a2a2a;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#ccc;cursor:pointer;">close</span>
+    <button onclick="this.closest('.african-modal-overlay').remove();" aria-label="Back" style="position:absolute;top:0.8rem;left:0.8rem;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
 
     <div style="text-align:center;margin-bottom:0.3rem;margin-top:0.3rem;">
-      <div style="font-size:1.3rem;font-weight:700;color:#fff;">African Cinema</div>
+      <div style="font-size:2rem;font-weight:800;color:#fff;line-height:1.1;">African <span style="color:var(--gold);">Cinema</span></div>
       <div style="font-size:0.82rem;color:#9a9a9a;margin-top:0.4rem;line-height:1.4;">Enjoy exclusive African movies and series.<br/>Subscribe to unlock this catalog.</div>
     </div>
 
     <div style="display:flex;justify-content:center;gap:1.1rem;margin:1.2rem 0 1.3rem;">
       <div style="text-align:center;">
         <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">hd</span>
-        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">HD Quality</div>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">HD Quality</div><div style="font-size:0.6rem;color:#777;margin-top:0.1rem;">Crystal clear viewing</div>
       </div>
       <div style="width:1px;background:#333;"></div>
       <div style="text-align:center;">
         <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">all_inclusive</span>
-        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Unlimited Streaming</div>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Unlimited Streaming</div><div style="font-size:0.6rem;color:#777;margin-top:0.1rem;">Watch without limits</div>
       </div>
       <div style="width:1px;background:#333;"></div>
       <div style="text-align:center;">
         <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">check_circle</span>
-        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Cancel Anytime</div>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Cancel Anytime</div><div style="font-size:0.6rem;color:#777;margin-top:0.1rem;">No contracts, no stress</div>
       </div>
     </div>
 
@@ -6774,12 +6774,19 @@ function showAfricanUpgradeToast() {
   }).observe(document.body, { childList: true });
 
   let selectedPlan = 'monthlyplus';
+  const _upd = () => {
+    const r = modal.querySelector('.african-plan-row[data-plan="' + selectedPlan + '"]');
+    const b = document.getElementById('africanContinueBtn');
+    if (r && b) b.textContent = 'Continue \u2014 ' + r.lastElementChild.textContent.trim();
+  };
+  _upd();
   modal.querySelectorAll('.african-plan-row').forEach(row => {
     row.addEventListener('click', () => {
       selectedPlan = row.dataset.plan;
+      _upd();
       modal.querySelectorAll('.african-plan-row').forEach(r => {
         r.style.borderColor = r === row ? 'var(--gold)' : '#333';
-        r.style.background = r === row ? 'rgba(242,201,76,0.08)' : 'transparent';
+        r.style.background = r === row ? 'rgba(242,201,76,0.08)' : 'rgba(255,255,255,0.04)';
         r.querySelector('.plan-radio-dot').style.opacity = r === row ? '1' : '0';
       });
     });
@@ -6794,7 +6801,7 @@ function showAfricanUpgradeToast() {
 function africanPlanRow(planId, name, subtitle, price, isBest, icon) {
   const selected = isBest;
   return `
-    <div class="african-plan-row" data-plan="${planId}" style="display:flex;align-items:center;gap:0.8rem;border:1px solid ${selected ? 'var(--gold)' : '#333'};background:${selected ? 'rgba(242,201,76,0.08)' : 'transparent'};border-radius:12px;padding:0.7rem 0.8rem;cursor:pointer;">
+    <div class="african-plan-row" data-plan="${planId}" style="display:flex;align-items:center;gap:0.8rem;border:1px solid ${selected ? 'var(--gold)' : '#333'};background:${selected ? 'rgba(242,201,76,0.08)' : 'rgba(255,255,255,0.04)'};border-radius:12px;padding:0.7rem 0.8rem;cursor:pointer;">
       <div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <div class="plan-radio-dot" style="width:9px;height:9px;border-radius:50%;background:var(--gold);opacity:${selected ? '1' : '0'};"></div>
       </div>
