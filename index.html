@@ -2046,6 +2046,19 @@
   }
 }
 </style>
+<style id="info-recs-css">
+#infoBackBtn{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5;width:42px;height:42px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;align-items:center;justify-content:center;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+#infoRecs{padding-bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));}
+#infoRecs:empty{display:none;}
+.rec-head{font-weight:700;font-size:1.05rem;margin:1.6rem 0 .7rem;}
+.rec-row{display:flex;gap:.7rem;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:.4rem;}
+.rec-row::-webkit-scrollbar{display:none;}
+.rec-card{flex:0 0 112px;cursor:pointer;}
+.rec-card img{width:112px;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#222;display:block;}
+.rec-t{font-size:.78rem;font-weight:600;margin-top:.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-y{font-size:.7rem;color:var(--gray);}
+@media (max-width:768px){#infoBackBtn{display:flex;}.info-close-btn{display:none!important;}}
+</style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="data:image/webp;base64,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" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -2439,6 +2452,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
 
 <!-- INFO MODAL -->
 <div class="info-modal" id="infoModal">
+  <button id="infoBackBtn" onclick="closeInfo()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
   <div class="info-card" id="infoCard">
     <div style="position:relative;">
       <img class="info-backdrop" id="infoBackdrop" src="" alt="" onerror="this.style.display='none'"/>
@@ -2487,6 +2501,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
           <span id="infoRequestBtnFullLabel">I Want This</span>
         </button>
       </div>
+      <div id="infoRecs"></div>
     </div>
   </div>
 </div>
@@ -3005,9 +3020,11 @@ window.addEventListener('popstate', () => {
     // Back button navigated away from a title — close whichever modal is open
     const infoOpen = document.getElementById('infoModal')?.classList.contains('active');
     const seriesOpen = document.getElementById('seriesModal')?.classList.contains('active');
-    if (infoOpen) { document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow = ''; currentInfoItem = null; }
+    if (infoOpen) { _clearInfoRecs(); document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow = ''; currentInfoItem = null; }
     if (seriesOpen) { document.getElementById('seriesModal').classList.remove('active'); document.body.style.overflow = ''; currentSeries = null; }
   } else {
+    document.getElementById('seriesModal')?.classList.remove('active');
+    document.getElementById('infoModal')?.classList.remove('active');
     handleDeepLinkTitle();
   }
 });
@@ -3438,6 +3455,57 @@ function resetPageMeta() {
   if (ld) ld.remove();
 }
 
+function _leaveTitleEntry() {
+  const t = history.state && history.state.type;
+  if (t === 'title' || t === 'series') history.back();
+  else history.replaceState({}, '', '/picha-plus/');
+}
+function _clearInfoRecs() {
+  const r = document.getElementById('infoRecs');
+  if (r) r.innerHTML = '';
+  window._infoRecList = [];
+}
+function _recEsc(x) {
+  return String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+function _renderInfoRecs(item) {
+  const box = document.getElementById('infoRecs');
+  if (!box) return;
+  const card = document.getElementById('infoCard');
+  if (card) card.scrollTop = 0;
+  const kind = it => (it.media_type === 'tv' || it.first_air_date) ? 'tv' : 'movie';
+  const mine = new Set(item.genre_ids || []);
+  const kids = !!(session.user && session.user.parentalControlsEnabled);
+  const seen = new Set([String(item.id)]);
+  const scored = [];
+  for (const it of (window._itemRegistry || [])) {
+    if (!it || !it._isOwned) continue;
+    const key = String(it.id);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (!it.poster_path && !it._customPoster) continue;
+    if (kids && (it.is18Plus || it.adult)) continue;
+    let score = kind(it) === kind(item) ? 1 : 0;
+    for (const g of (it.genre_ids || [])) if (mine.has(g)) score += 2;
+    scored.push({ it, score });
+  }
+  scored.sort((a, b) => b.score - a.score || (b.it.vote_average || 0) - (a.it.vote_average || 0));
+  const picks = scored.slice(0, 12).map(x => x.it);
+  window._infoRecList = picks;
+  if (!picks.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="rec-head">You May Also Like</div><div class="rec-row">` + picks.map((it, i) => {
+    const img = it._customPoster || `${TMDB_IMG}w342${it.poster_path}`;
+    const yr = (it.release_date || it.first_air_date || '').slice(0, 4);
+    return `<div class="rec-card" onclick="_openRec(${i})"><img src="${_recEsc(img)}" loading="lazy" alt=""><div class="rec-t">${_recEsc(it.title || it.name)}</div><div class="rec-y">${yr}</div></div>`;
+  }).join('') + `</div>`;
+}
+function _openRec(i) {
+  const it = (window._infoRecList || [])[i];
+  if (!it) return;
+  // a series opens its own episodes page, which sits under this one, so lower this one first
+  if (it._isOwned && it.media_type === 'tv') document.getElementById('infoModal').classList.remove('active');
+  showInfo(it);
+}
 async function showInfo(item) {
   // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
   if (item._isOwned && item.media_type === 'tv') {
@@ -3507,6 +3575,7 @@ async function showInfo(item) {
   `;
 
   document.getElementById('infoDesc').textContent = item.overview || 'No description available.';
+  try { _renderInfoRecs(item); } catch (e) { console.warn(e); }
 
   // Genres
   const genreNames = (item.genre_ids || []).map(id => GENRES[id]).filter(Boolean).slice(0, 3);
@@ -3565,7 +3634,7 @@ async function showInfo(item) {
 function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
   if (window.location.pathname.includes('/title/')) {
-    history.pushState({}, '', '/picha-plus/');
+    _leaveTitleEntry();
     resetPageMeta();
   }
   // Only clear scroll lock if nothing is open behind the info modal
@@ -3576,6 +3645,7 @@ function closeInfo() {
     document.body.style.overflow = '';
   }
   currentInfoItem = null;
+  _clearInfoRecs();
   _infoOpenedFromForYou = false;
   _stopModalPreview();
   resumeGridPreviewAfterModal();
@@ -6319,7 +6389,7 @@ function showSeries(idx) {
 function closeSeries() {
   document.getElementById('seriesModal').classList.remove('active');
   if (window.location.pathname.includes('/title/')) {
-    history.pushState({}, '', '/picha-plus/');
+    _leaveTitleEntry();
     resetPageMeta();
   }
   const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
@@ -10635,5 +10705,44 @@ window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
 </script>
 
+<script id="overlay-history">
+(function () {
+  var OVL = [
+    ['accountSettingsModal', 'closeAccountSettings', 'd'],
+    ['signinModal', 'closeSignin', 'd'],
+    ['paymentModal', 'closePayment', 'd'],
+    ['paywallModal', 'closePaywall', 'd'],
+    ['categoryOverlay', 'closeCategory', 'c']
+  ];
+  var stack = [];
+  function isOpen(el, k) {
+    return k === 'c' ? el.classList.contains('active') : getComputedStyle(el).display !== 'none';
+  }
+  function sync() {
+    OVL.forEach(function (o) {
+      var el = document.getElementById(o[0]); if (!el) return;
+      var open = isOpen(el, o[2]), at = stack.indexOf(o[0]);
+      if (open && at === -1) {
+        stack.push(o[0]);
+        history.pushState({ ovl: o[0] }, '', location.href);
+      } else if (!open && at !== -1) {
+        stack.splice(at, 1);
+        if (history.state && history.state.ovl === o[0]) history.back();
+      }
+    });
+  }
+  OVL.forEach(function (o) {
+    var el = document.getElementById(o[0]);
+    if (el) new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
+  });
+  window.addEventListener('popstate', function () {
+    if (history.state && history.state.ovl) return;
+    var id = stack[stack.length - 1]; if (!id) return;
+    var o = OVL.filter(function (x) { return x[0] === id; })[0];
+    try { window[o[1]](); } catch (e) {}
+    sync();
+  });
+})();
+</script>
 </body>
 </html>
