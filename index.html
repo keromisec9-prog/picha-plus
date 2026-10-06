@@ -2023,7 +2023,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=add,all_inclusive,notifications_active,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=add,all_inclusive,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_down,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,notifications_active,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
 <style id="fullpage-modals">
 @keyframes pageUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
 @media (max-width: 768px) {
@@ -2060,18 +2060,15 @@
 @media (max-width:768px){#infoBackBtn{display:flex;}.info-close-btn{display:none!important;}}
 </style>
 <style id="picha-info-fixes">
-/* You May Also Like: same sizing rule as home cards */
-.rec-row{display:flex!important;gap:0.5rem!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x mandatory}
-.rec-row::-webkit-scrollbar{display:none}
-.rec-card{flex:0 0 var(--card-w)!important;width:var(--card-w)!important;min-width:0!important;max-width:var(--card-w)!important;scroll-snap-align:start}
-.rec-card img{width:100%!important;aspect-ratio:var(--card-ratio,2/3);object-fit:cover;display:block;border-radius:6px}
-.rec-t{display:block;width:100%;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-.rec-y{display:block;width:100%}
-/* Description: 3 lines max, fixed box, scrolls inside when expanded */
-.info-desc{line-height:1.5!important;max-height:4.5em!important;overflow:hidden;display:-webkit-box!important;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-.info-desc.expanded{display:block!important;-webkit-line-clamp:unset;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-/* Payment modal back button */
+.rec-row{--rec-gap:.5rem;--rec-w:min(var(--card-w),calc((100vw - 1.5rem - 3 * var(--rec-gap)) / 3.5));gap:var(--rec-gap);margin-right:-1.5rem;padding-right:1.5rem}
+.rec-card{flex:0 0 var(--rec-w);width:var(--rec-w);min-width:0;overflow:hidden}
+.rec-card img{width:100%;aspect-ratio:var(--card-ratio,2/3)}
+.rec-t{display:block;min-width:0}
+#infoDescWrap{position:relative;margin-bottom:1rem}
+#infoDescWrap .info-desc{margin:0;max-height:5.1em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+#infoDescWrap .info-desc.expanded{position:absolute;top:0;left:0;right:0;display:block;-webkit-line-clamp:unset;overflow-y:auto;background:#181818;z-index:3;box-shadow:0 10px 18px rgba(0,0,0,.55);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .pay-back-btn{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#paymentModal .pay-back-btn{position:static!important;inset:auto!important;transform:none!important}
 #paymentModal .modal-header{justify-content:flex-start!important;gap:12px;padding-right:64px!important}
 #paymentModal .modal-title{margin:0;flex:1;min-width:0}
 </style>
@@ -3525,15 +3522,21 @@ function _openRec(i) {
 function _setupInfoDescToggle() {
   const d = document.getElementById('infoDesc');
   if (!d) return;
-  d.classList.remove('expanded');
-  d.scrollTop = 0;
-  let b = document.getElementById('infoDescToggle');
-  if (!b) {
-    d.insertAdjacentHTML('afterend', '<button id="infoDescToggle" type="button" onclick="_toggleInfoDesc()" aria-label="Read more" style="display:none;background:none;border:none;color:#aaa;padding:0;margin:0 0 4px;cursor:pointer;width:100%;align-items:center;justify-content:center;"><span class="material-symbols-rounded" id="infoDescChev" style="font-size:24px;line-height:1;transition:transform .2s;">keyboard_arrow_down</span></button>');
-    b = document.getElementById('infoDescToggle');
+  let wrap = document.getElementById('infoDescWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'infoDescWrap';
+    d.parentNode.insertBefore(wrap, d);
+    wrap.appendChild(d);
+    wrap.insertAdjacentHTML('afterend', '<button id="infoDescToggle" type="button" onclick="_toggleInfoDesc()" aria-label="Read more" style="display:none;background:none;border:none;color:#aaa;padding:0;margin:-0.6rem 0 0.4rem;cursor:pointer;width:100%;align-items:center;justify-content:center;"><span class="material-symbols-rounded" id="infoDescChev" style="font-size:24px;line-height:1;transition:transform .2s;">keyboard_arrow_down</span></button>');
   }
-  b.style.display = 'none';
+  d.classList.remove('expanded');
+  d.style.maxHeight = '';
+  wrap.style.height = '';
+  d.scrollTop = 0;
+  const b = document.getElementById('infoDescToggle');
   const chev = document.getElementById('infoDescChev');
+  b.style.display = 'none';
   if (chev) chev.style.transform = '';
   const check = () => {
     if (d.clientHeight > 0 && !d.classList.contains('expanded')) {
@@ -3544,11 +3547,24 @@ function _setupInfoDescToggle() {
 }
 function _toggleInfoDesc() {
   const d = document.getElementById('infoDesc');
+  const wrap = document.getElementById('infoDescWrap');
   const chev = document.getElementById('infoDescChev');
-  if (!d) return;
-  const open = d.classList.toggle('expanded');
-  if (!open) d.scrollTop = 0;
-  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  if (!d || !wrap) return;
+  if (d.classList.contains('expanded')) {
+    d.classList.remove('expanded');
+    d.style.maxHeight = '';
+    wrap.style.height = '';
+    d.scrollTop = 0;
+    if (chev) chev.style.transform = '';
+    return;
+  }
+  const wr = wrap.getBoundingClientRect();
+  wrap.style.height = wr.height + 'px';
+  const head = document.querySelector('#infoModal .rec-head');
+  const room = head ? head.getBoundingClientRect().top - wr.top - 10 : window.innerHeight * 0.5;
+  d.style.maxHeight = Math.max(wr.height, room) + 'px';
+  d.classList.add('expanded');
+  if (chev) chev.style.transform = 'rotate(180deg)';
 }
 async function showInfo(item) {
   // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
