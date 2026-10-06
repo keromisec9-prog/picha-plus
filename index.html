@@ -3988,7 +3988,11 @@ function renderSavedDownloads() {
   if (!_dlRegistry.length) { container.style.display = 'none'; return; }
   container.style.display = 'block';
 
-  const html = _dlRegistry.map(d => {
+  const _inApp = !!(window.PichaApp && PichaApp.openDownloads);
+  const _cap = (_inApp || !window._dlShowAll) ? 2 : _dlRegistry.length;
+  const _shown = _dlRegistry.slice(0, _cap);
+  const _showBtn = _inApp || _dlRegistry.length > _cap;
+  const html = _shown.map(d => {
     // Determine action button
     let actionBtn = '';
     if (d.done) {
@@ -4047,7 +4051,18 @@ function renderSavedDownloads() {
       </div>`;
   }).join('');
 
-  container.querySelector('#downloadsList').innerHTML = html;
+  const _btn = _showBtn
+    ? `<div onclick="_openMyDownloads()" style="color:var(--gold);font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;padding:0.9rem 0 0.3rem;">View my downloads <span class="material-symbols-rounded" style="font-size:16px;">keyboard_arrow_right</span></div>`
+    : '';
+  container.querySelector('#downloadsList').innerHTML = html + _btn;
+}
+
+function _openMyDownloads() {
+  if (window.PichaApp && PichaApp.openDownloads) {
+    try { PichaApp.openDownloads(); return; } catch (e) {}
+  }
+  window._dlShowAll = true;
+  renderSavedDownloads();
 }
 
 function removeDownload(id) {
@@ -9483,10 +9498,6 @@ closeCategory = function() {
 
 <!-- SAVED PAGE -->
 <div class="bn-page" id="bnSavedPage" style="display:none;">
-  <div class="bn-page-header">
-    <div class="bn-page-title">Saved</div>
-  </div>
-
   <!-- Downloads section -->
   <div id="downloadsSection" style="display:none;padding:0 1rem 1rem;">
     <div style="font-size:0.75rem;font-weight:700;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;padding:1rem 0 0.5rem;">Downloads</div>
