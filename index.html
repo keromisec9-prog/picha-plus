@@ -2466,13 +2466,13 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <!-- SERIES DETAIL PAGE -->
 <div class="modal-overlay" id="seriesModal">
   <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
-    <div style="position:relative;">
+    <div style="position:relative;min-height:68px;">
       <img id="seriesBackdrop" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;" src="" alt="" onerror="this.style.display='none'"/>
       <div style="position:absolute;inset:0;background:linear-gradient(to top,#181818 0%,transparent 60%);"></div>
-      <button onclick="closeSeries()" style="position:absolute;top:0.8rem;right:0.8rem;background:rgba(0,0,0,0.6);border:none;color:#fff;width:2rem;height:2rem;border-radius:50%;cursor:pointer;font-size:1rem;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
+      <button onclick="closeSeries()" aria-label="Back" style="position:fixed;top:0.7rem;left:0.8rem;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:5;"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
     </div>
     <div style="padding:1.2rem 1.5rem 1.5rem;">
-      <h2 id="seriesTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.03em;margin-bottom:0.4rem;"></h2>
+      <h2 id="seriesTitle" style="padding-right:3.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.03em;margin-bottom:0.4rem;"></h2>
       <div id="seriesMeta" style="font-size:0.78rem;color:#808080;margin-bottom:0.6rem;"></div>
       <p id="seriesDesc" style="font-size:0.83rem;line-height:1.6;color:rgba(255,255,255,0.75);margin-bottom:1rem;"></p>
       <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#808080;margin-bottom:0.8rem;">Episodes</div>
