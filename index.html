@@ -212,20 +212,19 @@
       -webkit-backface-visibility: hidden;
       will-change: transform;
     }
-    /* Re-enable text selection for actual form fields so login, search,
-       password entry etc. still work normally */
+    
     input, textarea {
       -webkit-user-select: text;
       user-select: text;
       -webkit-touch-callout: default;
     }
 
-    /* ── SCROLLBAR ── */
+    
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-    /* ── NAV ── */
+    
     .nav {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -272,8 +271,7 @@
       font-weight: 500;
       letter-spacing: 0.04em;
       transition: color 0.2s;
-    }
-    .nav-links a:hover { color: var(--white); }
+    }@media (hover:hover){.nav-links a:hover { color: var(--white); }}
 
     .nav-right { display: flex; align-items: center; gap: 1rem; }
 
@@ -284,8 +282,7 @@
       cursor: pointer;
       padding: 0.4rem;
       transition: color 0.2s;
-    }
-    .nav-search-btn:hover { color: var(--white); }
+    }@media (hover:hover){.nav-search-btn:hover { color: var(--white); }}
 
     .btn-subscribe {
       background: none;
@@ -298,10 +295,8 @@
       justify-content: center;
       transition: color 0.2s;
       border-radius: 50%;
-    }
-    .btn-subscribe:hover { color: var(--white); background: rgba(255,255,255,0.08); }
-    .btn-subscribe .material-symbols-rounded { font-size: 24px; color: var(--gold); }
-    .btn-subscribe:hover .material-symbols-rounded { color: var(--gold2); }
+    }@media (hover:hover){.btn-subscribe:hover { color: var(--white); background: rgba(255,255,255,0.08); }}
+    .btn-subscribe .material-symbols-rounded { font-size: 24px; color: var(--gold); }@media (hover:hover){.btn-subscribe:hover .material-symbols-rounded { color: var(--gold2); }}
     .btn-subscribe svg.google-g-icon { width: 24px; height: 24px; }
 
     .nav-user {
@@ -346,9 +341,7 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-    }
-    .nav-dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
-    .nav-dropdown-item.danger:hover { color: var(--red); }
+    }@media (hover:hover){.nav-dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }}@media (hover:hover){.nav-dropdown-item.danger:hover { color: var(--red); }}
 
     .sub-pill {
       background: var(--gold);
@@ -360,7 +353,7 @@
       letter-spacing: 0.06em;
     }
 
-    /* ── HERO ── */
+    
     .hero {
       position: relative;
       height: clamp(300px, 52vh, 480px);
@@ -472,8 +465,7 @@
       border-radius: 4px;
       transition: background 0.2s;
       letter-spacing: 0.02em;
-    }
-    .btn-play:hover { background: rgba(255,255,255,0.85); }
+    }@media (hover:hover){.btn-play:hover { background: rgba(255,255,255,0.85); }}
 
     .btn-info {
       display: flex;
@@ -490,10 +482,9 @@
       border-radius: 4px;
       backdrop-filter: blur(4px);
       transition: background 0.2s;
-    }
-    .btn-info:hover { background: rgba(255,255,255,0.25); }
+    }@media (hover:hover){.btn-info:hover { background: rgba(255,255,255,0.25); }}
 
-    /* Hero dots */
+    
     .hero-dots {
       position: absolute;
       bottom: 8%;
@@ -511,7 +502,7 @@
     }
     .hero-dot.active { background: var(--gold); width: 20px; border-radius: 3px; }
 
-    /* ── CONTENT ROWS ── */
+    
     .content-section { padding: 0 0 2rem; }
 
     .row-header {
@@ -547,10 +538,9 @@
       transition: color 0.2s;
       border: none;
       background: none;
-    }
-    .row-see-all:hover { color: var(--gold2); }
+    }@media (hover:hover){.row-see-all:hover { color: var(--gold2); }}
 
-    /* Horizontal scroll row */
+    
     .scroll-row {
       display: flex;
       gap: 0.5rem;
@@ -564,7 +554,7 @@
 
     #fyGrid .card { width: 100%; }
 
-    /* ── CARDS ── */
+    
     .card {
       flex-shrink: 0;
       width: var(--card-w);
@@ -577,13 +567,11 @@
       background: #1a1a1a;
       content-visibility: auto;
       contain-intrinsic-size: var(--card-w) calc(var(--card-w) * 1.5);
-    }
-
-    .card:hover {
+    }@media (hover:hover){.card:hover {
       transform: scale(1.08) translateY(-4px);
       z-index: 10;
       transition: transform 0.3s, z-index 0s;
-    }
+    }}
 
     .card-poster {
       width: 100%;
@@ -614,8 +602,7 @@
       flex-direction: column;
       justify-content: flex-end;
       padding: 0.8rem;
-    }
-    .card:hover .card-overlay { opacity: 1; }
+    }@media (hover:hover){.card:hover .card-overlay { opacity: 1; }}
 
     .card-title {
       font-size: 0.78rem;
@@ -653,13 +640,10 @@
       font-size: 0.7rem;
     }
 
-    .card-btn-play { background: none; color: var(--gold); border: none !important; }
-    .card-btn-play:hover { background: none; opacity: 0.8; }
-    .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); }
-    .card-btn-add:hover { background: rgba(255,255,255,0.25); }
+    .card-btn-play { background: none; color: var(--gold); border: none !important; }@media (hover:hover){.card-btn-play:hover { background: none; opacity: 0.8; }}
+    .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); }@media (hover:hover){.card-btn-add:hover { background: rgba(255,255,255,0.25); }}
     .card-btn-add.saved { background: rgba(229,185,60,0.2); color: var(--gold); }
-    .card-btn-like { background: rgba(255,255,255,0.15); color: var(--white); }
-    .card-btn-like:hover { background: rgba(255,255,255,0.25); }
+    .card-btn-like { background: rgba(255,255,255,0.15); color: var(--white); }@media (hover:hover){.card-btn-like:hover { background: rgba(255,255,255,0.25); }}
     .card-btn-like.liked { background: rgba(229,80,60,0.2); color: #ff6b6b; }
 
     .card-badge {
@@ -678,7 +662,7 @@
     .card-badge.new { background: var(--red); color: #fff; }
     .card-badge.top { background: transparent; color: var(--gold); font-size: 0.65rem; border: 1px solid var(--gold); }
 
-    /* Progress bar on card */
+    
     .card-progress {
       position: absolute;
       bottom: 0; left: 0; right: 0;
@@ -691,7 +675,7 @@
       border-radius: 0 2px 2px 0;
     }
 
-    /* ── TOP 10 CARDS ── */
+    
     .top10-card {
       flex-shrink: 0;
       width: 220px;
@@ -724,10 +708,9 @@
       position: relative;
       z-index: 2;
       transition: transform 0.3s;
-    }
-    .top10-card:hover .top10-poster { transform: scale(1.06) translateY(-4px); }
+    }@media (hover:hover){.top10-card:hover .top10-poster { transform: scale(1.06) translateY(-4px); }}
 
-    /* ── SKELETON ── */
+    
     .skeleton {
       background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
       background-size: 200% 100%;
@@ -744,7 +727,7 @@
       100% { background-position: -200% 0; }
     }
 
-    /* ── SEARCH ── */
+    
     .search-overlay {
       display: none;
       position: fixed;
@@ -793,7 +776,7 @@
       gap: 0.8rem;
     }
 
-    /* ── INFO MODAL ── */
+    
     .info-modal {
       display: none;
       position: fixed;
@@ -873,8 +856,7 @@
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: border-color 0.2s;
-    }
-    .info-add-btn:hover { border-color: var(--white); }
+    }@media (hover:hover){.info-add-btn:hover { border-color: var(--white); }}
 
     .info-close-btn {
       width: 2.2rem; height: 2.2rem;
@@ -921,8 +903,8 @@
     }
     .info-genres span { color: rgba(255,255,255,0.6); }
 
-    /* ── PLAYER MODAL ── */
-    /* ── UP NEXT OVERLAY ── */
+    
+    
     .upnext-overlay {
       position: absolute;
       bottom: 80px;
@@ -1011,7 +993,7 @@
       flex-direction: column;
     }
 
-    /* Shaka fills the entire modal */
+    
     #shakaContainer {
       width: 100% !important;
       height: 100% !important;
@@ -1024,31 +1006,30 @@
       height: 100% !important;
       object-fit: contain;
     }
-    /* Shaka UI overlay sits on top correctly */
+    
     #shakaContainer .shaka-video-container {
       width: 100% !important;
       height: 100% !important;
     }
 
-    /* Shaka Player gold theme */
+    
     .shaka-video-container { width: 100%; background: #000; }
     .shaka-video-container video { width: 100%; display: block; }
     .shaka-controls-container { background: linear-gradient(transparent, rgba(0,0,0,0.7)); }
     .shaka-seek-bar-container .shaka-current-time { color: var(--gold); }
     .material-icons-round { font-size: 22px !important; }
-    /* Progress bar gold */
+    
     .shaka-seek-bar.mdc-slider .mdc-slider__track--active_fill { border-color: var(--gold) !important; }
     .shaka-seek-bar.mdc-slider .mdc-slider__thumb-knob { background: var(--gold) !important; border-color: var(--gold) !important; }
     .shaka-seek-bar.mdc-slider .mdc-slider__track--active { background: var(--gold) !important; }
-    /* Volume bar gold */
+    
     .shaka-volume-bar.mdc-slider .mdc-slider__track--active_fill { border-color: var(--gold) !important; }
     .shaka-volume-bar.mdc-slider .mdc-slider__thumb-knob { background: var(--gold) !important; border-color: var(--gold) !important; }
-    /* Overflow menu */
-    .shaka-overflow-menu, .shaka-settings-menu { background: rgba(18,18,18,0.97) !important; border: 1px solid rgba(229,185,60,0.2); border-radius: 6px; }
-    .shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }
+    
+    .shaka-overflow-menu, .shaka-settings-menu { background: rgba(18,18,18,0.97) !important; border: 1px solid rgba(229,185,60,0.2); border-radius: 6px; }@media (hover:hover){.shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }}
     .shaka-current-selection-span { color: var(--gold) !important; }
 
-    /* Nav cast button */
+    
     .nav-cast-btn {
       background: none;
       border: none;
@@ -1060,8 +1041,7 @@
       justify-content: center;
       transition: color 0.2s;
       position: relative;
-    }
-    .nav-cast-btn:hover { color: var(--white); }
+    }@media (hover:hover){.nav-cast-btn:hover { color: var(--white); }}
     .nav-cast-btn.casting { color: var(--gold); }
     .nav-cast-btn.casting svg,
     .nav-cast-btn.casting .material-symbols-rounded { filter: drop-shadow(0 0 4px rgba(229,185,60,0.8)); }
@@ -1080,13 +1060,13 @@
     #acctPCToggle:checked + #acctPCSlider { background: var(--gold); }
     #acctPCToggle:checked + #acctPCSlider::before { transform: translateX(20px); }
 
-    /* Cast button gold tint + active glow */
+    
     .shaka-cast-button { color: var(--gold) !important; }
     .shaka-cast-button[aria-pressed="true"] {
       color: var(--gold) !important;
       filter: drop-shadow(0 0 6px rgba(229,185,60,0.8));
     }
-    /* Casting banner shown inside player when active */
+    
     .cast-active-banner {
       display: none;
       position: absolute;
@@ -1106,7 +1086,7 @@
     }
     .cast-active-banner.visible { display: flex; }
 
-    /* ── SIGN IN MODAL ── */
+    
     .modal-overlay {
       display: none;
       position: fixed;
@@ -1172,8 +1152,7 @@
       width: 100%; padding: 0.75rem; border-radius: 8px;
       background: var(--gold); color: #000; font-weight: 700;
       font-size: 0.95rem; border: none; cursor: pointer; margin-top: 0.2rem;
-    }
-    .auth-submit-btn:hover { opacity: 0.9; }
+    }@media (hover:hover){.auth-submit-btn:hover { opacity: 0.9; }}
     .auth-toggle {
       text-align: center; font-size: 0.8rem; color: #888; margin-top: 0.75rem;
     }
@@ -1198,8 +1177,7 @@
       margin-bottom: 1rem;
       text-decoration: none;
       transition: background 0.2s;
-    }
-    .google-btn:hover { background: #f0f0f0; }
+    }@media (hover:hover){.google-btn:hover { background: #f0f0f0; }}
 
     .modal-note {
       font-size: 0.72rem;
@@ -1209,7 +1187,7 @@
     }
     .modal-note a { color: var(--gold); text-decoration: none; }
 
-    /* ── PAYMENT MODAL ── */
+    
     .payment-iframe {
       width: 100%;
       height: 460px;
@@ -1229,7 +1207,7 @@
       font-size: 0.85rem;
     }
 
-    /* ── PLANS SECTION ── */
+    
     .plans-section {
       padding: 4rem 4vw;
       background: linear-gradient(to bottom, transparent, #111 20%, #111 80%, transparent);
@@ -1279,8 +1257,7 @@
       cursor: pointer;
       transition: background 0.2s, color 0.2s, opacity 0.2s, border-color 0.2s;
       position: relative;
-    }
-    .plan-card:hover { border-color: rgba(242,201,76,0.4); transform: translateY(-3px); }
+    }@media (hover:hover){.plan-card:hover { border-color: rgba(242,201,76,0.4); transform: translateY(-3px); }}
     .plan-card.featured {
       border-color: var(--gold);
       background: rgba(242,201,76,0.08);
@@ -1401,7 +1378,7 @@
       color: #000;
     }
 
-    /* ── FOOTER ── */
+    
     .footer {
       padding: 3rem 4vw;
       border-top: 1px solid rgba(255,255,255,0.06);
@@ -1431,8 +1408,7 @@
       display: flex; align-items: center; justify-content: center;
       opacity: 0.6;
       transition: opacity 0.2s;
-    }
-    .footer-social:hover { opacity: 1; }
+    }@media (hover:hover){.footer-social:hover { opacity: 1; }}
     .footer-social img { width: 16px; height: 16px; }
 
     .footer-links {
@@ -1455,8 +1431,7 @@
       text-decoration: none;
       font-size: 0.82rem;
       transition: color 0.2s;
-    }
-    .footer-col ul li a:hover { color: var(--white); }
+    }@media (hover:hover){.footer-col ul li a:hover { color: var(--white); }}
 
     .footer-bottom {
       display: flex;
@@ -1470,7 +1445,7 @@
       gap: 0.5rem;
     }
 
-    /* ── TOAST ── */
+    
     .toast {
       position: fixed;
       bottom: calc(58px + env(safe-area-inset-bottom) + 0.7rem);
@@ -1496,7 +1471,7 @@
     .toast.gold { border-color: rgba(229,185,60,0.3); }
     .toast.error { border-color: rgba(229,9,20,0.4); }
 
-    /* ── SPINNER ── */
+    
     .spinner {
       width: 1.5rem; height: 1.5rem;
       border: 2px solid rgba(255,255,255,0.1);
@@ -1512,7 +1487,7 @@
       100% { transform: scale(1); opacity: 0; }
     }
 
-    /* ── STATUS BAR ── */
+    
     .status-bar {
       display: flex;
       visibility: hidden;
@@ -1573,7 +1548,7 @@
       to { transform: translateX(-100%); }
     }
 
-    /* ── LANGUAGE FILTER ── */
+    
     .lang-filter {
       display: flex;
       gap: 0.5rem;
@@ -1603,7 +1578,7 @@
       background: rgba(229,185,60,0.08);
     }
 
-    /* ── RESPONSIVE ── */
+    
     @media (max-width: 640px) {
       :root { --card-w: 110px; }
       .nav-links { display: none; }
@@ -1617,9 +1592,7 @@
       .row-header { margin-bottom: 0.4rem; }
     }
 
-    /* Fills the gap between the small-phone (640px) and desktop (1024px) breakpoints.
-       Without this, wider phones fell back to the desktop --card-w (130px), which
-       was too large to fit 3 full cards per row. */
+    
     @media (min-width: 641px) and (max-width: 1023px) {
       :root { --card-w: 110px; }
       .scroll-row { gap: 0.4rem; padding: 0.5rem 3vw 1rem; }
@@ -1632,7 +1605,7 @@
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    /* ── CATEGORY PAGE OVERLAY ── */
+    
     .category-overlay {
       position: fixed;
       inset: 0;
@@ -1682,8 +1655,7 @@
       opacity: 0.7;
       transition: opacity 0.2s;
       padding: 0;
-    }
-    .category-back-btn:hover { opacity: 1; }
+    }@media (hover:hover){.category-back-btn:hover { opacity: 1; }}
     .category-page-title {
       font-family: 'Inter', sans-serif;
       font-size: 1rem;
@@ -1712,10 +1684,7 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 0.6rem;
     }
-    /* content-visibility removed: its implicit containment clips the
-       absolutely-positioned dropdown menu to the row's own bounds. A personal
-       watch history list is small enough that this perf trick isn't worth
-       trading away a working menu for. */
+    
     @media (min-width: 500px) {
       .category-grid { grid-template-columns: repeat(4, 1fr); }
       .shorts-grid { grid-template-columns: repeat(3, 1fr); }
@@ -1731,8 +1700,7 @@
       cursor: pointer;
       background: #1a1a1a;
       transition: transform 0.25s;
-    }
-    .category-card:hover { transform: scale(1.04); }
+    }@media (hover:hover){.category-card:hover { transform: scale(1.04); }}
     .category-card img {
       width: 100%;
       aspect-ratio: 2/3;
@@ -1775,14 +1743,14 @@
       letter-spacing: 0.06em;
     }
 
-    /* row-see-all tweak */
+    
     .row-see-all {
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
     }
 
-    /* ── BOTTOM NAV ──────────────────────────────────────────────────────── */
+    
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
       background: #0a0a0a;
@@ -1793,7 +1761,7 @@
     }
     body:has(.modal-overlay.active) .bottom-nav { display: none; }
 
-    /* ── APK download banner ── */
+    
     .apk-banner {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 250;
       background: linear-gradient(135deg, #1a1a1a, #252525);
@@ -1831,7 +1799,7 @@
     .bn-tab.active svg { stroke: var(--gold); }
     body { padding-bottom: 62px; }
 
-    /* ── BROWSE / SAVED PAGES ───────────────────────────────────────────── */
+    
     .bn-page {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 190;
       background: var(--bg);
@@ -1890,7 +1858,7 @@
     .bn-list-name { font-size: 1rem; font-weight: 500; }
     .bn-list-count { margin-left: auto; font-size: 0.75rem; color: var(--gray); }
   
-    /* ── TV & DESKTOP RESPONSIVE ── */
+    
     @media (min-width: 1024px) {
       :root { --card-w: 180px; }
       body { font-size: 16px; }
@@ -1898,7 +1866,7 @@
       .nav-logo { font-size: 2rem; }
       .nav-links { display: flex; gap: 2rem; font-size: 1rem; }
 
-      /* Hero: contained like Prime Video, not full bleed */
+      
       .hero { min-height: 55vh; max-height: 60vh; }
       .hero-bg { border-radius: 12px; }
       .hero-content { max-width: 45%; }
@@ -1936,7 +1904,7 @@
       .shorts-grid { grid-template-columns: repeat(9, 1fr); }
     }
 
-    /* ── FOCUS / D-PAD NAVIGATION ── */
+    
     :focus {
       outline: 4px solid var(--gold);
       border-radius: 8px;
@@ -1953,7 +1921,7 @@
       box-shadow: 0 0 0 6px rgba(229,185,60,0.3);
     }
 
-    /* ── MOUSE HOVER IMPROVEMENTS FOR DESKTOP ── */
+    
     @media (hover: hover) {
       .card:hover { transform: scale(1.05); cursor: pointer; }
       .hero-btn:hover { transform: scale(1.03); }
@@ -1961,7 +1929,7 @@
     }
 
   
-    /* ── TV / LARGE SCREEN SCALING ── */
+    
     @media (min-width: 960px) and (min-height: 540px) {
       :root {
         --card-w: 120px;
@@ -2009,7 +1977,7 @@
       .row-header { padding: 0 8vw; }
     }
 
-    /* TV focus ring - bigger and more visible */
+    
     @media (min-width: 960px) {
       :focus-visible {
         outline: 5px solid var(--gold) !important;
@@ -2104,6 +2072,14 @@
 #bnCategoriesPage{background-image:none!important;background-color:var(--bg)!important}
 </style>
 <script id="picha-wall-url">try{document.documentElement.style.setProperty('--wall-url','url("'+new URL('assets/picha_bg.webp',document.baseURI).href+'")');}catch(e){}</script>
+<style id="picha-press">
+*{-webkit-tap-highlight-color:transparent!important}
+button,a,[role="button"],.lang-pill{transition:box-shadow .15s ease}
+button:not(:disabled):active,a:active,[role="button"]:active,.lang-pill:active{box-shadow:inset 0 0 0 100vmax rgba(255,255,255,.12)!important}
+.card,.rec-card{transition:filter .15s ease,transform .15s ease}
+.card:active,.rec-card:active{filter:brightness(.78)!important;transform:scale(.97)!important}
+.card:focus,.card:focus-visible,.rec-card:focus,.rec-card:focus-visible{outline:none}
+</style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="data:image/webp;base64,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" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -10747,7 +10723,7 @@ function _mpfWireTouch() {
 }
 </script>
 <style>
-/* --- kill all default browser touch/focus feedback --- */
+
 button, a, [tabindex], .nav-item, input, select {
   -webkit-tap-highlight-color: transparent;
   outline: none;
@@ -10759,7 +10735,7 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
   outline-offset: 2px;
 }
 
-/* --- custom Picha+ press effect (YouTube-style, but gold-themed) --- */
+
 button, a, [role="button"] {
   position: relative;
   transition: transform 0.12s ease, opacity 0.12s ease;
@@ -10783,7 +10759,7 @@ button.pz-pressed::after, a.pz-pressed::after, [role="button"].pz-pressed::after
   transition: opacity 0s;
 }
 
-/* keep your existing gold nav-selected state untouched */
+
 .nav-item.active, .nav-item.selected {
   border-color: #d4af37 !important;
 }
