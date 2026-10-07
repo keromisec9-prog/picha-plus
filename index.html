@@ -2075,13 +2075,6 @@
 <style id="picha-press">
 *{-webkit-tap-highlight-color:transparent!important}
 </style>
-<script id="picha-unfocus-js">
-(function(){
-  var unfocus=function(){try{var a=document.activeElement;if(a&&a!==document.body&&a.closest&&a.closest('.card'))a.blur();}catch(e){}};
-  document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.card'))setTimeout(unfocus,0);},true);
-  ['popstate','pageshow','focus','visibilitychange'].forEach(function(ev){window.addEventListener(ev,function(){setTimeout(unfocus,0);});});
-})();
-</script>
 <style id="picha-focusfix">
 .card:focus,.card:focus-visible,.card:focus-within{outline:none!important;box-shadow:none!important;border-color:transparent!important}
 </style>
