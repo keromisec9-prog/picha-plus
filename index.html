@@ -10968,7 +10968,8 @@ document.addEventListener('touchstart', e => {
 function clearStrayFocus() {
   const el = document.activeElement;
   if (!el || el === document.body) return;
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable) return;
+  const isField = /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable;
+  if (isField && el.closest('#accountSettingsModal')) return;
   el.blur();
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
