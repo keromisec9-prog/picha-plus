@@ -2147,47 +2147,6 @@
   },true);
 })();
 </script>
-<script id="pp-diag2">
-(function(){
-  var box,lines=[],t0=Date.now();
-  function log(m){
-    lines.push(((Date.now()-t0)/1000).toFixed(2)+' '+m);
-    if(lines.length>16)lines.shift();
-    if(box)box.textContent=lines.join('\n');
-  }
-  function d(el){return el?(el.tagName||'?')+(el.id?'#'+el.id:''):'null';}
-  function vv(){return 'ih='+innerHeight+' vv='+(window.visualViewport?Math.round(visualViewport.height):'-');}
-  function who(){return ((new Error().stack||'').split('\n')[3]||'').trim().slice(-70);}
-  document.addEventListener('DOMContentLoaded',function(){
-    box=document.createElement('div');
-    box.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#7CFC00;font:10px/1.25 monospace;padding:2px 4px;pointer-events:none;max-height:45vh;overflow:hidden;white-space:pre-wrap;word-break:break-all';
-    document.body.appendChild(box);
-    log('diag ready '+vv());
-  });
-  var ob=HTMLElement.prototype.blur,of=HTMLElement.prototype.focus;
-  HTMLElement.prototype.blur=function(){log('blur() on '+d(this)+' <- '+who());return ob.apply(this,arguments);};
-  HTMLElement.prototype.focus=function(){log('focus() on '+d(this)+' <- '+who());return of.apply(this,arguments);};
-  document.addEventListener('focusin',function(e){log('IN '+d(e.target)+' '+vv());},true);
-  document.addEventListener('focusout',function(e){
-    log('OUT '+d(e.target)+' rel='+d(e.relatedTarget));
-    [0,200,600].forEach(function(ms){setTimeout(function(){log(' +'+ms+' active='+d(document.activeElement)+' '+vv());},ms);});
-  },true);
-  document.addEventListener('input',function(e){log('INPUT '+d(e.target)+' len='+(e.target.value||'').length);},true);
-  window.addEventListener('blur',function(){log('WINDOW blur');});
-  window.addEventListener('focus',function(){log('WINDOW focus');});
-  window.addEventListener('resize',function(){log('RESIZE '+vv());});
-  if(window.visualViewport)visualViewport.addEventListener('resize',function(){log('VV resize '+vv());});
-  document.addEventListener('visibilitychange',function(){log('VIS '+document.visibilityState);});
-  window.addEventListener('error',function(e){log('ERR '+String(e.message).slice(0,60));});
-  new MutationObserver(function(ms){
-    ms.forEach(function(m){
-      [].forEach.call(m.removedNodes,function(n){
-        if(n.nodeType===1&&(n.tagName==='INPUT'||(n.querySelector&&n.querySelector('input'))))log('REMOVED input in '+d(n));
-      });
-    });
-  }).observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
 <script id="pp-stubs">
 window.validateEmailField=window.validateEmailField||function(){};
 window.updatePwHints=window.updatePwHints||function(){};
