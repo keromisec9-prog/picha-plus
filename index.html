@@ -5886,9 +5886,70 @@ function openAccountSettings() {
   document.getElementById('acctPwdSuccess').style.display = 'none';
   document.getElementById('acctPreviewSoundToggle').checked = !_fyPreviewMuted;
   _ensureAcctFooter();
+  _loadPwdState();
   loadPCStatus();
 }
 
+const _EYE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
+function _pwdField(id, ph) {
+  return `<div style="position:relative;"><input type="password" class="auth-input" id="${id}" placeholder="${ph}" style="padding-right:2.8rem;"/><span onclick="togglePwd('${id}',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;">${_EYE_SVG}</span></div>`;
+}
+async function _loadPwdState() {
+  const form = document.getElementById('acctPwdForm');
+  const note = document.getElementById('acctPwdGoogleNote');
+  if (!form) return;
+  if (note) note.style.display = 'none';
+  form.style.display = 'none';
+  let box = document.getElementById('acctPwdSetBox');
+  if (!box) {
+    form.insertAdjacentHTML('afterend', `<div id="acctPwdSetBox" style="display:none;">
+      <div style="font-size:0.8rem;color:#a0a0a0;padding:0.75rem;background:#1a1a1a;border-radius:8px;margin-bottom:0.8rem;line-height:1.5;">No password is set on this account yet. You currently sign in with Google. Add a password to also sign in with your email and password.</div>
+      ${_pwdField('acctSetNewPwd','New password (min 8 characters)')}
+      ${_pwdField('acctSetConfirmPwd','Confirm new password')}
+      <div class="auth-error" id="acctSetError"></div>
+      <button class="auth-submit-btn" id="acctSetBtn" onclick="setAccountPassword()">Set Password</button>
+    </div>`);
+    box = document.getElementById('acctPwdSetBox');
+  }
+  box.style.display = 'none';
+  ['acctSetNewPwd','acctSetConfirmPwd'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  const er = document.getElementById('acctSetError'); if (er) er.style.display = 'none';
+  let has = session.user?.authMethod === 'email';
+  try {
+    const r = await fetch(API + '/auth/password-status', { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } });
+    const d = await r.json();
+    if (r.ok && typeof d.hasPassword === 'boolean') has = d.hasPassword;
+  } catch (e) {}
+  form.style.display = has ? 'block' : 'none';
+  box.style.display = has ? 'none' : 'block';
+}
+async function setAccountPassword() {
+  const pw = document.getElementById('acctSetNewPwd').value;
+  const cf = document.getElementById('acctSetConfirmPwd').value;
+  const errEl = document.getElementById('acctSetError');
+  const btn = document.getElementById('acctSetBtn');
+  const fail = m => { errEl.textContent = m; errEl.style.display = 'block'; };
+  errEl.style.display = 'none';
+  if (!pw || !cf) return fail('Please fill in both fields.');
+  if (pw.length < 8) return fail('Password must be at least 8 characters.');
+  if (!/[A-Z]/.test(pw)) return fail('Password must contain at least one uppercase letter.');
+  if (!/[a-z]/.test(pw)) return fail('Password must contain at least one lowercase letter.');
+  if (!/[0-9]/.test(pw)) return fail('Password must contain at least one number.');
+  if (!/[^A-Za-z0-9]/.test(pw)) return fail('Password must contain at least one special character (!@#$% etc).');
+  if (pw !== cf) return fail('Passwords do not match.');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+  try {
+    const res = await fetch(API + '/auth/set-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
+      body: JSON.stringify({ newPassword: pw })
+    });
+    const data = await res.json();
+    if (!res.ok) { fail(data.error || 'Failed to set password.'); }
+    else { toast('Password added. You can now sign in with your email and password.', 'gold'); await _loadPwdState(); }
+  } catch (e) { fail('Connection error. Please try again.'); }
+  btn.textContent = 'Set Password'; btn.disabled = false;
+}
 function _ensureAcctFooter() {
   if (document.getElementById('acctFooter')) return;
   const c = document.getElementById('acctSettingsContent');
