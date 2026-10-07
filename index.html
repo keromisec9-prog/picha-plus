@@ -1995,11 +1995,11 @@
 <style id="fullpage-modals">
 @keyframes pageUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
 @media (max-width: 768px) {
-  .modal-overlay, .info-modal, .african-modal-overlay {
+  .modal-overlay:not(#signinModal), .info-modal, .african-modal-overlay {
     padding: 0 !important; align-items: stretch !important; justify-content: stretch !important;
     background: #141414 !important; backdrop-filter: none !important;
   }
-  .modal-box, .info-card {
+  .modal-box:not(#signinModal .modal-box), .info-card {
     max-width: none !important; width: 100% !important; height: 100dvh !important; max-height: none !important;
     border: none !important; border-radius: 0 !important; box-shadow: none !important;
   }
