@@ -2077,8 +2077,10 @@
 </style>
 <style id="picha-unfocus">
 @media (hover:none){
-.card:focus,.card:focus-visible,.card:focus-within{outline:none!important;transform:none!important;box-shadow:none!important;border-color:transparent!important;z-index:auto!important}
+.card:focus,.card:focus-visible,.card:focus-within{outline:none!important;box-shadow:none!important;border-color:transparent!important}
 .card:focus .card-overlay,.card:focus-visible .card-overlay,.card:focus-within .card-overlay{opacity:0!important}
+.card{transition:transform .2s ease!important}
+.card:active{transform:scale(1.08) translateY(-4px)!important;z-index:10!important}
 }
 </style>
 <script id="picha-unfocus-js">
