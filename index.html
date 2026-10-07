@@ -2000,7 +2000,7 @@
     background: #141414 !important; backdrop-filter: none !important;
   }
   .modal-box, .info-card {
-    max-width: none !important; width: 100% !important; height: 100dvh !important; max-height: none !important;
+    max-width: none !important; width: 100% !important; height: var(--pp-h, 100dvh) !important; max-height: none !important;
     border: none !important; border-radius: 0 !important; box-shadow: none !important;
     animation: pageUp .25s ease !important;
   }
@@ -2094,58 +2094,11 @@
   ['popstate','pageshow','visibilitychange'].forEach(function(n){window.addEventListener(n,function(){setTimeout(unf,0);});});
 })();
 </script>
-<script id="picha-keepfocus">
+<script id="picha-fixh">
 (function(){
-  var lastInput=0,lastTouch=0,lastEl=null;
-  document.addEventListener('touchstart',function(){lastTouch=Date.now();},true);
-  document.addEventListener('input',function(e){
-    var t=e.target;
-    if(t&&t.closest&&t.closest('#accountSettingsModal')){lastInput=Date.now();lastEl=t;}
-  },true);
-  document.addEventListener('focusout',function(e){
-    var t=e.target;
-    if(!t||t!==lastEl||e.relatedTarget)return;
-    if(Date.now()-lastInput>1500||lastTouch>lastInput)return;
-    setTimeout(function(){
-      var m=document.getElementById('accountSettingsModal');
-      if(!m||!m.classList.contains('active')||!t.isConnected)return;
-      var a=document.activeElement;
-      if(a&&a!==document.body&&a!==t)return;
-      try{t.focus({preventScroll:true});var n=t.value.length;t.setSelectionRange(n,n);}catch(x){}
-    },60);
-  },true);
-})();
-</script>
-<style id="picha-kbroom">
-.modal-body.pp-kb{padding-bottom:60vh!important}
-</style>
-<script id="picha-kbroom-js">
-(function(){
-  function isField(t){return t&&/^(INPUT|TEXTAREA)$/.test(t.tagName)&&t.closest&&t.closest('.modal-overlay .modal-body');}
-  function place(t){
-    var body=t.closest('.modal-body');
-    if(!body||!t.isConnected)return;
-    var box=body.closest('.modal-box');
-    var head=box&&box.querySelector('.modal-header');
-    var top=(head?head.getBoundingClientRect().bottom:0)+14;
-    var delta=t.getBoundingClientRect().top-top;
-    if(Math.abs(delta)>4)body.scrollTo({top:body.scrollTop+delta,behavior:'smooth'});
-  }
-  document.addEventListener('focusin',function(e){
-    var t=e.target;
-    if(!isField(t))return;
-    var body=t.closest('.modal-body');
-    body.classList.add('pp-kb');
-    [60,300,700].forEach(function(ms){setTimeout(function(){if(document.activeElement===t)place(t);},ms);});
-  },true);
-  document.addEventListener('focusout',function(e){
-    var body=e.target.closest&&e.target.closest('.modal-body');
-    if(!body)return;
-    setTimeout(function(){
-      var a=document.activeElement;
-      if(!a||!body.contains(a)||!/^(INPUT|TEXTAREA)$/.test(a.tagName))body.classList.remove('pp-kb');
-    },400);
-  },true);
+  function s(){document.documentElement.style.setProperty('--pp-h',window.innerHeight+'px');}
+  s();
+  window.addEventListener('orientationchange',function(){setTimeout(s,400);});
 })();
 </script>
 </head>
