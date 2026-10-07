@@ -2147,10 +2147,6 @@
   },true);
 })();
 </script>
-<script id="pp-stubs">
-window.validateEmailField=window.validateEmailField||function(){};
-window.updatePwHints=window.updatePwHints||function(){};
-</script>
 <script id="picha-kbflag">
 (function(){
   if(!window.PPKb)return;
@@ -2752,9 +2748,9 @@ function saveProgress(id, pos, dur, forceSync, title) {
 
       <div class="auth-divider">or</div>
       <div id="authEmailForm">
-        <input type="email" class="auth-input" id="authEmail" placeholder="Email address" oninput="validateEmailField(this.value)" onblur="validateEmailField(this.value)"/>
+        <input type="email" class="auth-input" id="authEmail" placeholder="Email address"/>
         <div style="position:relative;">
-          <input type="password" class="auth-input" id="authPassword" placeholder="Password (min 8 characters)" style="padding-right:2.8rem;" oninput="updatePwHints(this.value)" onblur="updatePwHints(this.value)"/>
+          <input type="password" class="auth-input" id="authPassword" placeholder="Password (min 8 characters)" style="padding-right:2.8rem;"/>
           <div id="emailHint" style="display:none;font-size:0.75rem;margin-top:0.3rem;"></div>
           <div id="pwHints" style="display:none;font-size:0.75rem;margin-top:0.3rem;line-height:1.8;"></div>
           <span onclick="togglePwd('authPassword',this)" id="eyePassword" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;">
