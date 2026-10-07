@@ -2076,18 +2076,36 @@
 *{-webkit-tap-highlight-color:transparent!important}
 </style>
 <style id="picha-unfocus">
-@media (hover:none){
 .card:focus,.card:focus-visible,.card:focus-within{outline:none!important;box-shadow:none!important;border-color:transparent!important}
-.card:focus .card-overlay,.card:focus-visible .card-overlay,.card:focus-within .card-overlay{opacity:0!important}
 .card{transition:transform .2s ease!important}
-.card:active{transform:scale(1.08) translateY(-4px)!important;z-index:10!important}
-}
+.card.pp-hold{transform:scale(1.08) translateY(-4px)!important;z-index:10!important}
 </style>
 <script id="picha-unfocus-js">
 (function(){
   var unfocus=function(){try{var a=document.activeElement;if(a&&a!==document.body&&a.closest&&a.closest('.card'))a.blur();}catch(e){}};
   document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.card'))setTimeout(unfocus,0);},true);
   ['popstate','pageshow','focus','visibilitychange'].forEach(function(ev){window.addEventListener(ev,function(){setTimeout(unfocus,0);});});
+})();
+</script>
+<script id="picha-hold-js">
+(function(){
+  var t=null,el=null,sx=0,sy=0;
+  function clear(){clearTimeout(t);if(el){el.classList.remove('pp-hold');el=null;}}
+  document.addEventListener('touchstart',function(e){
+    var c=e.target.closest&&e.target.closest('.card');
+    if(!c||e.touches.length!==1){clear();return;}
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;
+    clearTimeout(t);
+    t=setTimeout(function(){el=c;c.classList.add('pp-hold');},90);
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    var x=e.touches[0];
+    if(Math.abs(x.clientX-sx)>8||Math.abs(x.clientY-sy)>8)clear();
+  },{passive:true});
+  ['touchend','touchcancel'].forEach(function(n){document.addEventListener(n,clear,{passive:true});});
+  window.addEventListener('scroll',clear,true);
+  window.addEventListener('pagehide',clear);
+  window.addEventListener('popstate',clear);
 })();
 </script>
 </head>
