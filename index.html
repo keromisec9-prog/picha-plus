@@ -2094,28 +2094,26 @@
   ['popstate','pageshow','visibilitychange'].forEach(function(n){window.addEventListener(n,function(){setTimeout(unf,0);});});
 })();
 </script>
-<script id="picha-noautofill">
+<script id="picha-keepfocus">
 (function(){
-  var re=/^(acct|pc)\w*Pwd$/;
-  function fix(el){
-    if(!el||el.nodeType!==1)return;
-    var list=[];
-    if(el.tagName==='INPUT')list.push(el);
-    if(el.querySelectorAll)list=list.concat([].slice.call(el.querySelectorAll('input')));
-    list.forEach(function(i){
-      if(!re.test(i.id||'')||i.getAttribute('data-noaf'))return;
-      i.setAttribute('autocomplete','new-password');
-      i.setAttribute('autocorrect','off');
-      i.setAttribute('autocapitalize','off');
-      i.setAttribute('spellcheck','false');
-      i.setAttribute('data-lpignore','true');
-      i.setAttribute('data-1p-ignore','true');
-      i.setAttribute('data-form-type','other');
-      i.setAttribute('data-noaf','1');
-    });
-  }
-  new MutationObserver(function(ms){ms.forEach(function(m){[].forEach.call(m.addedNodes,fix);});}).observe(document.documentElement,{childList:true,subtree:true});
-  document.addEventListener('DOMContentLoaded',function(){fix(document.body);});
+  var lastInput=0,lastTouch=0,lastEl=null;
+  document.addEventListener('touchstart',function(){lastTouch=Date.now();},true);
+  document.addEventListener('input',function(e){
+    var t=e.target;
+    if(t&&t.closest&&t.closest('#accountSettingsModal')){lastInput=Date.now();lastEl=t;}
+  },true);
+  document.addEventListener('focusout',function(e){
+    var t=e.target;
+    if(!t||t!==lastEl||e.relatedTarget)return;
+    if(Date.now()-lastInput>1500||lastTouch>lastInput)return;
+    setTimeout(function(){
+      var m=document.getElementById('accountSettingsModal');
+      if(!m||!m.classList.contains('active')||!t.isConnected)return;
+      var a=document.activeElement;
+      if(a&&a!==document.body&&a!==t)return;
+      try{t.focus({preventScroll:true});var n=t.value.length;t.setSelectionRange(n,n);}catch(x){}
+    },60);
+  },true);
 })();
 </script>
 </head>
