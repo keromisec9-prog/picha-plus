@@ -2094,20 +2094,28 @@
   ['popstate','pageshow','visibilitychange'].forEach(function(n){window.addEventListener(n,function(){setTimeout(unf,0);});});
 })();
 </script>
-<script id="picha-diag">
+<script id="picha-noautofill">
 (function(){
-  function show(m){ if (typeof showPersistentDiagToast==='function') showPersistentDiagToast(m); }
-  var ob=HTMLElement.prototype.blur;
-  HTMLElement.prototype.blur=function(){
-    if(/^(INPUT|TEXTAREA)$/.test(this.tagName)) show('blur() on '+(this.id||this.className)+' :: '+((new Error().stack||'').split('\n').slice(2,5).join(' | ')));
-    return ob.apply(this,arguments);
-  };
-  document.addEventListener('focusout',function(e){
-    var t=e.target; if(!/^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
-    setTimeout(function(){
-      if(document.activeElement!==t) show('focusout '+(t.id||'?')+' connected='+t.isConnected+' active='+(document.activeElement&&(document.activeElement.id||document.activeElement.tagName)));
-    },0);
-  },true);
+  var re=/^(acct|pc)\w*Pwd$/;
+  function fix(el){
+    if(!el||el.nodeType!==1)return;
+    var list=[];
+    if(el.tagName==='INPUT')list.push(el);
+    if(el.querySelectorAll)list=list.concat([].slice.call(el.querySelectorAll('input')));
+    list.forEach(function(i){
+      if(!re.test(i.id||'')||i.getAttribute('data-noaf'))return;
+      i.setAttribute('autocomplete','new-password');
+      i.setAttribute('autocorrect','off');
+      i.setAttribute('autocapitalize','off');
+      i.setAttribute('spellcheck','false');
+      i.setAttribute('data-lpignore','true');
+      i.setAttribute('data-1p-ignore','true');
+      i.setAttribute('data-form-type','other');
+      i.setAttribute('data-noaf','1');
+    });
+  }
+  new MutationObserver(function(ms){ms.forEach(function(m){[].forEach.call(m.addedNodes,fix);});}).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){fix(document.body);});
 })();
 </script>
 </head>
@@ -10926,7 +10934,9 @@ document.addEventListener('touchstart', e => {
 // force-blur any stuck focus on resume (fingerprint unlock, app-switch, screen off/on)
 function clearStrayFocus() {
   const el = document.activeElement;
-  if (el && el !== document.body) el.blur();
+  if (!el || el === document.body) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable) return;
+  el.blur();
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
 window.addEventListener('pageshow', clearStrayFocus);
