@@ -10946,11 +10946,15 @@ function _openShareSheet(url, title) {
     img.src = t.i; img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
     addCell(img, t.l, () => { try { PichaApp.shareTo(t.p, t.c, text); } catch (e) {} _closeShareSheet(); });
   });
+  // Inline SVGs on purpose: the self-hosted icon font is a subset and lacks some glyphs.
+  const _SVG = {
+    link: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
+    more_horiz: 'M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z'
+  };
   const mkIcon = (name) => {
     const sp = document.createElement('span');
-    sp.className = 'material-symbols-rounded';
-    sp.style.cssText = 'font-size:26px;color:#fff;';
-    sp.textContent = name;
+    sp.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    sp.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="' + (_SVG[name] || '') + '"/></svg>';
     return sp;
   };
   addCell(mkIcon('link'), 'Copy link', async () => {
@@ -10959,7 +10963,9 @@ function _openShareSheet(url, title) {
   });
   addCell(mkIcon('more_horiz'), 'More', async () => {
     _closeShareSheet();
-    if (navigator.share) { try { await navigator.share({ title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url }); } catch (e) {} }
+    if (window.PichaApp && typeof PichaApp.shareMore === 'function') { try { PichaApp.shareMore(text); } catch (e) {} return; }
+    if (navigator.share) { try { await navigator.share({ title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url }); } catch (e) {} return; }
+    try { await navigator.clipboard.writeText(url); showToast('Link copied ✓', 'gold'); } catch (e) { showToast('Could not copy link', 'error'); }
   });
   box.appendChild(head); box.appendChild(row); wrap.appendChild(box);
   document.body.appendChild(wrap);
