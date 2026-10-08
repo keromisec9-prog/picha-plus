@@ -10891,6 +10891,7 @@ async function _mpfShare(idx) {
   const title = meta.item.title || meta.item.name || 'Picha+';
   const _sid = meta.item.id || meta.item.tmdbId;
   const url = _sid ? `${API}/t/${encodeURIComponent(String(_sid))}` : window.location.href;
+  if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); return; } catch (e) { /* cancelled or unsupported */ }
@@ -10901,6 +10902,65 @@ async function _mpfShare(idx) {
   } catch (e) {
     showToast('Could not copy link', 'error');
   }
+}
+
+// ── TikTok-style share sheet (needs the PichaApp.getShareTargets native bridge) ──
+let _shareTargetsCache = null;
+function _getShareTargets() {
+  if (_shareTargetsCache) return _shareTargetsCache;
+  try { _shareTargetsCache = JSON.parse(PichaApp.getShareTargets() || '[]'); } catch (e) { _shareTargetsCache = []; }
+  return _shareTargetsCache;
+}
+function _closeShareSheet() { const el = document.getElementById('ppShareSheet'); if (el) el.remove(); }
+function _openShareSheet(url, title) {
+  _closeShareSheet();
+  const text = `Watch "${title}" on Picha+ 🎬\n${url}`;
+  const wrap = document.createElement('div');
+  wrap.id = 'ppShareSheet';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;';
+  wrap.onclick = (e) => { if (e.target === wrap) _closeShareSheet(); };
+  const box = document.createElement('div');
+  box.style.cssText = 'width:100%;background:#1a1a1a;border-radius:16px 16px 0 0;padding:14px 8px calc(14px + env(safe-area-inset-bottom,0px));';
+  const head = document.createElement('div');
+  head.textContent = 'Share to';
+  head.style.cssText = 'text-align:center;font-weight:700;color:#fff;font-size:0.95rem;padding-bottom:14px;';
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:4px;overflow-x:auto;padding:0 4px 6px;-webkit-overflow-scrolling:touch;';
+  const addCell = (node, label, fn) => {
+    const b = document.createElement('div');
+    b.style.cssText = 'flex:0 0 auto;width:72px;text-align:center;cursor:pointer;color:#ddd;font-size:0.7rem;';
+    const ic = document.createElement('div');
+    ic.style.cssText = 'width:52px;height:52px;margin:0 auto 6px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#2a2a2a;';
+    ic.appendChild(node);
+    const lb = document.createElement('div');
+    lb.textContent = label;
+    lb.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    b.appendChild(ic); b.appendChild(lb);
+    b.onclick = fn;
+    row.appendChild(b);
+  };
+  _getShareTargets().forEach(t => {
+    const img = document.createElement('img');
+    img.src = t.i; img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    addCell(img, t.l, () => { try { PichaApp.shareTo(t.p, t.c, text); } catch (e) {} _closeShareSheet(); });
+  });
+  const mkIcon = (name) => {
+    const sp = document.createElement('span');
+    sp.className = 'material-symbols-rounded';
+    sp.style.cssText = 'font-size:26px;color:#fff;';
+    sp.textContent = name;
+    return sp;
+  };
+  addCell(mkIcon('link'), 'Copy link', async () => {
+    try { await navigator.clipboard.writeText(url); showToast('Link copied ✓', 'gold'); } catch (e) { showToast('Could not copy link', 'error'); }
+    _closeShareSheet();
+  });
+  addCell(mkIcon('more_horiz'), 'More', async () => {
+    _closeShareSheet();
+    if (navigator.share) { try { await navigator.share({ title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url }); } catch (e) {} }
+  });
+  box.appendChild(head); box.appendChild(row); wrap.appendChild(box);
+  document.body.appendChild(wrap);
 }
 
 function _mpfWireEdgeLongPress(idx) {
