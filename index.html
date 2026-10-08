@@ -4206,8 +4206,11 @@ async function downloadEpisode(seriesId, epIndex) {
 function renderSavedDownloads() {
   const container = document.getElementById('downloadsSection');
   if (!container) return;
-  if (!_dlRegistry.length) { container.style.display = 'none'; return; }
   container.style.display = 'block';
+  if (!_dlRegistry.length) {
+    container.querySelector('#downloadsList').innerHTML = `<div style="text-align:center;padding:1.4rem 0 1.2rem;color:var(--gray);"><span class="material-symbols-rounded" style="font-size:2rem;color:rgba(255,255,255,0.25);">download</span><div style="font-size:0.95rem;font-weight:600;margin-top:0.4rem;">No downloads yet</div><div style="font-size:0.8rem;margin-top:0.25rem;">Titles you download will show up here to watch offline.</div></div>`;
+    return;
+  }
 
   const _inApp = !!(window.PichaApp && PichaApp.openDownloads);
   const _cap = (_inApp || !window._dlShowAll) ? 2 : _dlRegistry.length;
@@ -9850,9 +9853,9 @@ closeCategory = function() {
 <!-- SAVED PAGE -->
 <div class="bn-page" id="bnSavedPage" style="display:none;">
   <!-- Downloads section -->
-  <div id="downloadsSection" style="display:none;padding:0 1rem 1rem;">
+  <div id="downloadsSection" style="display:block;padding:0 1rem 1rem;">
     <div style="font-size:0.75rem;font-weight:700;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;padding:1rem 0 0.5rem;">Downloads</div>
-    <div id="downloadsList"></div>
+    <div id="downloadsList"><div style="text-align:center;padding:1.4rem 0 1.2rem;color:var(--gray);"><span class="material-symbols-rounded" style="font-size:2rem;color:rgba(255,255,255,0.25);">download</span><div style="font-size:0.95rem;font-weight:600;margin-top:0.4rem;">No downloads yet</div><div style="font-size:0.8rem;margin-top:0.25rem;">Titles you download will show up here to watch offline.</div></div></div>
   </div>
 
   <!-- My List section -->
