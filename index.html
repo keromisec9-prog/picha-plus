@@ -2141,6 +2141,30 @@
   });
 })();
 </script>
+<style id="series-page-css">
+#serPlayBtn{display:inline-flex;align-items:center;gap:.35rem;background:var(--gold);color:#000;border:none;border-radius:30px;padding:.7rem 1.7rem;font-size:.95rem;font-weight:700;cursor:pointer;margin:.2rem 0 1.3rem;}
+.ep-bar{display:flex;align-items:center;justify-content:space-between;padding-bottom:.55rem;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:.8rem;}
+.ep-season,.ep-bar select{font-size:1.05rem;font-weight:700;color:#fff;}
+.ep-season{border-bottom:2px solid var(--gold);padding-bottom:.55rem;margin-bottom:-.6rem;}
+.ep-bar select{background:transparent;border:none;color-scheme:dark;font-family:inherit;padding:0;}
+.ep-bar select option{background:#1a1a1a;color:#fff;}
+.ep-count{font-size:.8rem;color:var(--gray);}
+#serCards{display:flex;flex-direction:column;gap:.6rem;}
+.ep-card{display:flex;align-items:center;gap:.7rem;background:#1f1f1f;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.55rem;}
+.ep-thumb{position:relative;flex:0 0 108px;aspect-ratio:16/9;border-radius:6px;background:#2a2a2a;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ep-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.ep-badge{position:absolute;top:4px;left:4px;background:var(--gold);color:#000;font-size:.65rem;font-weight:800;border-radius:4px;padding:1px 5px;}
+.ep-info{flex:1;min-width:0;cursor:pointer;}
+.ep-label{font-size:.68rem;color:var(--gray);}
+.ep-name{font-size:.88rem;font-weight:700;line-height:1.25;}
+.ep-sub{font-size:.7rem;color:var(--gray);margin-top:2px;}
+.ep-desc{font-size:.7rem;color:rgba(255,255,255,.55);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ep-actions{display:flex;flex-direction:column;align-items:center;gap:.4rem;flex:none;}
+.ep-play{width:38px;height:38px;border-radius:50%;background:var(--gold);color:#000;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.ep-dl{width:30px;height:30px;border-radius:50%;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.ep-play .material-symbols-rounded{font-size:24px;line-height:1;}
+.ep-dl .material-symbols-rounded{font-size:18px;line-height:1;}
+</style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="data:image/webp;base64,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" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -6606,36 +6630,7 @@ function showSeries(idx) {
   `;
   document.getElementById('seriesDesc').textContent = s.overview || '';
 
-  // Build episode list
-  const epList = document.getElementById('episodeList');
-  epList.innerHTML = (s.episodes || []).map((ep, i) => {
-    const restricted = ep.is18Plus && session.user?.parentalControlsEnabled;
-    if (restricted) {
-      return `
-      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;opacity:0.7;">
-        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gray);">
-          <span class="material-symbols-rounded" style="font-size:2.2rem;line-height:1;">lock</span>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}</div>
-          <div style="font-size:0.72rem;color:var(--gray);margin-top:0.1rem;">Restricted by Parental Controls</div>
-        </div>
-      </div>`;
-    }
-    return `
-    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.7rem 0.8rem;background:#222;border-radius:6px;">
-      <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--gold);" onclick="playEpisode(${i})">
-        <span class="material-symbols-rounded" style="font-size:2.5rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
-      </div>
-      <div style="flex:1;cursor:pointer;" onclick="playEpisode(${i})">
-        <div style="font-size:0.85rem;font-weight:500;">Season ${ep.season || 1} · Episode ${ep.episode || (i+1)}${ep.title && ep.title !== 'undefined' ? ' — ' + ep.title : ''}</div>
-      </div>
-      <button onclick="downloadEpisode('${s.tmdbId}', ${i})" title="Download episode"
-        style="background:none;border:1px solid rgba(229,185,60,0.4);color:rgba(229,185,60,0.8);border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
-        <span class="material-symbols-rounded" style="font-size:1.2rem;line-height:1;">download</span>
-      </button>
-    </div>`;
-  }).join('');
+  _renderSeriesPage(s);
 
   document.getElementById('seriesModal').classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -11082,6 +11077,163 @@ window.addEventListener('focus', clearStrayFocus);
     return false;
   });
 })();
+</script>
+<script id="series-page">
+function _serEsc(x) {
+  return String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+window._tmdbSeasonCache = window._tmdbSeasonCache || {};
+function _serLoadSeason(tmdbId, n) {
+  const key = tmdbId + ':' + n;
+  if (!window._tmdbSeasonCache[key]) {
+    window._tmdbSeasonCache[key] = fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${n}?api_key=${TMDB_KEY}&language=en-US`)
+      .then(r => r.ok ? r.json() : null).catch(() => null);
+  }
+  return window._tmdbSeasonCache[key];
+}
+function _serCardsHTML(s, season) {
+  const eps = s.episodes || [];
+  const fallback = s.backdrop || s.poster || '';
+  const kids = !!(session.user && session.user.parentalControlsEnabled);
+  let n = 0, out = '';
+  eps.forEach((ep, i) => {
+    if ((Number(ep.season) || 1) !== season) return;
+    n++;
+    const num = ep.episode || (i + 1);
+    if (ep.is18Plus && kids) {
+      out += `<div class="ep-card" style="opacity:.7;"><div class="ep-thumb"><span class="material-symbols-rounded" style="font-size:1.8rem;color:var(--gray);">lock</span></div><div class="ep-info" style="cursor:default;"><div class="ep-label">Episode ${num}</div><div class="ep-sub">Restricted by Parental Controls</div></div></div>`;
+      return;
+    }
+    const title = (ep.title && ep.title !== 'undefined') ? ep.title : '';
+    out += `<div class="ep-card" data-e="${num}">
+      <div class="ep-thumb" onclick="playEpisode(${i})">${fallback ? `<img src="${_serEsc(fallback)}" alt="" loading="lazy">` : ''}<span class="ep-badge">E${num}</span></div>
+      <div class="ep-info" onclick="playEpisode(${i})"><div class="ep-label">Episode ${num}</div><div class="ep-name">${_serEsc(title)}</div><div class="ep-sub"></div><div class="ep-desc"></div></div>
+      <div class="ep-actions">
+        <button class="ep-play" onclick="playEpisode(${i})" aria-label="Play"><span class="material-symbols-rounded">play_arrow</span></button>
+        <button class="ep-dl" onclick="downloadEpisode('${s.tmdbId}', ${i})" aria-label="Download"><span class="material-symbols-rounded">download</span></button>
+      </div>
+    </div>`;
+  });
+  return { html: out, count: n };
+}
+function _serFillSeason(s) {
+  const season = window._serSeason;
+  const r = _serCardsHTML(s, season);
+  const cards = document.getElementById('serCards');
+  if (!cards) return;
+  cards.innerHTML = r.html;
+  const cnt = document.getElementById('serEpCount');
+  if (cnt) cnt.textContent = r.count + (r.count === 1 ? ' Episode' : ' Episodes');
+  if (!s.tmdbId) return;
+  _serLoadSeason(s.tmdbId, season).then(d => {
+    if (!d || !d.episodes || currentSeries !== s || window._serSeason !== season) return;
+    const by = {};
+    d.episodes.forEach(e => { by[e.episode_number] = e; });
+    document.querySelectorAll('#serCards .ep-card[data-e]').forEach(card => {
+      const e = by[Number(card.dataset.e)];
+      if (!e) return;
+      if (e.still_path) {
+        let im = card.querySelector('.ep-thumb img');
+        if (!im) { im = document.createElement('img'); im.alt = ''; card.querySelector('.ep-thumb').prepend(im); }
+        im.src = TMDB_IMG + 'w300' + e.still_path;
+      }
+      const nm = card.querySelector('.ep-name');
+      if (nm && !nm.textContent.trim() && e.name) nm.textContent = e.name;
+      const sub = [e.runtime ? e.runtime + ' min' : '', e.air_date || ''].filter(Boolean).join(' · ');
+      card.querySelector('.ep-sub').textContent = sub;
+      card.querySelector('.ep-desc').textContent = e.overview || '';
+    });
+  });
+}
+function _serPickSeason(v) {
+  window._serSeason = Number(v);
+  if (currentSeries) _serFillSeason(currentSeries);
+}
+function _openSerRec(i) {
+  const it = (window._serRecList || [])[i];
+  if (it) showInfo(it);
+}
+function _serRenderRecs(s) {
+  const box = document.getElementById('serRecs');
+  if (!box) return;
+  const me = (window._itemRegistry || []).find(it => String(it.tmdbId || it.id) === String(s.tmdbId));
+  const mine = new Set((me && me.genre_ids) || s.genre_ids || []);
+  const kids = !!(session.user && session.user.parentalControlsEnabled);
+  const seen = new Set([String(s.tmdbId)]);
+  const scored = [];
+  for (const it of (window._itemRegistry || [])) {
+    if (!it || !it._isOwned) continue;
+    const key = String(it.tmdbId || it.id);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (!it.poster_path && !it._customPoster) continue;
+    if (kids && (it.is18Plus || it.adult)) continue;
+    let score = (it.media_type === 'tv' || it.first_air_date) ? 1 : 0;
+    for (const g of (it.genre_ids || [])) if (mine.has(g)) score += 2;
+    scored.push({ it, score });
+  }
+  scored.sort((a, b) => b.score - a.score || (b.it.vote_average || 0) - (a.it.vote_average || 0));
+  const picks = scored.slice(0, 12).map(x => x.it);
+  window._serRecList = picks;
+  if (!picks.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="rec-head">You May Also Like</div><div class="rec-row">` + picks.map((it, i) => {
+    const img = it._customPoster || `${TMDB_IMG}w342${it.poster_path}`;
+    const yr = (it.release_date || it.first_air_date || '').slice(0, 4);
+    return `<div class="rec-card" onclick="_openSerRec(${i})"><img src="${_serEsc(img)}" loading="lazy" alt=""><div class="rec-t">${_serEsc(it.title || it.name)}</div><div class="rec-y">${yr}</div></div>`;
+  }).join('') + `</div>`;
+}
+function _renderSeriesPage(s) {
+  const eps = s.episodes || [];
+  const seasons = [...new Set(eps.map(e => Number(e.season) || 1))].sort((a, b) => a - b);
+  if (!seasons.length) seasons.push(1);
+  window._serSeason = seasons[0];
+  const mobile = window.matchMedia('(max-width: 768px)').matches;
+  const box = document.querySelector('#seriesModal .modal-box');
+  if (box) box.scrollTop = 0;
+  const bd = document.getElementById('seriesBackdrop');
+  const body = document.getElementById('seriesTitle').parentElement;
+  let bg = box ? getComputedStyle(box).backgroundColor : '';
+  if (!bg || bg === 'rgba(0, 0, 0, 0)') bg = '#141414';
+  if (bd) {
+    bd.style.display = 'block';
+    if (mobile) {
+      bd.style.aspectRatio = 'auto';
+      bd.style.height = '50vh';
+      bd.style.objectPosition = 'center 20%';
+      const fade = bd.nextElementSibling;
+      if (fade) fade.style.background = `linear-gradient(to top, ${bg} 4%, rgba(0,0,0,0) 70%)`;
+      body.style.marginTop = '-8.5rem';
+      body.style.position = 'relative';
+    }
+    if (!s.backdrop && s.tmdbId) {
+      fetch(`https://api.themoviedb.org/3/tv/${s.tmdbId}?api_key=${TMDB_KEY}&language=en-US`)
+        .then(r => r.ok ? r.json() : null).then(d => {
+          if (!d || currentSeries !== s || !d.backdrop_path) return;
+          s.backdrop = TMDB_IMG + 'w1280' + d.backdrop_path;
+          bd.src = s.backdrop;
+          bd.style.display = 'block';
+        }).catch(() => {});
+    }
+  }
+  let pb = document.getElementById('serPlayBtn');
+  const desc = document.getElementById('seriesDesc');
+  if (!pb && desc) {
+    pb = document.createElement('button');
+    pb.id = 'serPlayBtn';
+    pb.innerHTML = '<span class="material-symbols-rounded" style="font-size:22px;line-height:1;">play_arrow</span> Play';
+    desc.insertAdjacentElement('afterend', pb);
+  }
+  if (pb) pb.onclick = () => playEpisode(0);
+  const list = document.getElementById('episodeList');
+  const lab = list.previousElementSibling;
+  if (lab && /^episodes$/i.test(lab.textContent.trim())) lab.style.display = 'none';
+  const picker = seasons.length > 1
+    ? `<select id="serSeasonSel" onchange="_serPickSeason(this.value)">${seasons.map(n => `<option value="${n}">Season ${n}</option>`).join('')}</select>`
+    : `<div class="ep-season">Season ${seasons[0]}</div>`;
+  list.innerHTML = `<div class="ep-bar">${picker}<div class="ep-count" id="serEpCount"></div></div><div id="serCards"></div><div id="serRecs"></div>`;
+  _serFillSeason(s);
+  try { _serRenderRecs(s); } catch (e) { console.warn(e); }
+}
 </script>
 </body>
 </html>
