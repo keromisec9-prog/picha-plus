@@ -2212,6 +2212,142 @@
 <style id="series-noplayicon-css">
 #serCards .ep-card[data-e] .ep-thumb::after{display:none!important;content:none!important;}
 </style>
+<style id="pp-signin-css">
+@keyframes ppSpin{to{transform:rotate(360deg)}}
+@keyframes ppShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+#signinModal{--pp-env:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E");--pp-lock:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E");--pp-chk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%233ddc84'/%3E%3Cpath d='m7.5 12.5 3 3 6-6.5' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");--pp-x:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23ff4d4d'/%3E%3Cpath d='m8.5 8.5 7 7m0-7-7 7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E")}
+#signinModal .modal-box{position:relative}
+#signinModal .modal-header,#signinModal .modal-body{position:relative;z-index:1}
+#signinModal.pp-hero-on .modal-box::before{content:"";position:absolute;top:0;left:0;right:0;height:340px;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(15,15,15,.05) 0%,rgba(15,15,15,.6) 60%,#0f0f0f 100%),url("assets/signin_hero.webp") center top/cover no-repeat}
+.pp-welcome{padding:6px 0 16px}
+#signinModal.pp-hero-on .pp-welcome{padding-top:150px}
+.pp-welcome h2{margin:0;font-size:2rem;font-weight:800;color:#fff;line-height:1.1}
+.pp-welcome p{margin:.4rem 0 0;color:#b8b8b8;font-size:.95rem}
+#signinModal #authEmail,#signinModal #authPassword,#signinModal #authConfirm{padding-left:46px!important;background-repeat:no-repeat!important;background-position:14px center!important;background-size:20px!important;transition:border-color .16s,box-shadow .16s}
+#signinModal #authEmail{background-image:var(--pp-env)!important}
+#signinModal #authPassword,#signinModal #authConfirm{background-image:var(--pp-lock)!important}
+#signinModal .auth-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(233,190,66,.18)}
+#signinModal #authEmail.pp-ok{border-color:#3ddc84!important;background-image:var(--pp-env),var(--pp-chk)!important;background-position:14px center,right 14px center!important;background-size:20px,20px!important}
+#signinModal #authEmail.pp-bad{border-color:#ff4d4d!important;box-shadow:0 0 0 3px rgba(255,77,77,.14);background-image:var(--pp-env),var(--pp-x)!important;background-position:14px center,right 14px center!important;background-size:20px,20px!important}
+#signinModal .pp-err{border-color:#ff4d4d!important;box-shadow:0 0 0 3px rgba(255,77,77,.14)}
+#signinModal #authPassword.pp-okb{border-color:#3ddc84!important}
+.pp-msg{display:none;font-size:.78rem;color:#ff6b6b;margin:-.35rem 0 .7rem .2rem}
+.pp-msg.show{display:block}
+.pp-rules{display:none;margin:.1rem 0 .8rem;padding:.7rem .9rem;border:1px solid #2a2a2a;border-radius:10px;background:rgba(0,0,0,.35);font-size:.78rem;line-height:1.9}
+.pp-rules.show{display:block}
+.pp-rule{color:#8a8a8a;transition:color .2s}
+.pp-rule::before{content:"○ "}
+.pp-rule.ok{color:#3ddc84}
+.pp-rule.ok::before{content:"✓ "}
+#signinModal .auth-error{background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.35);border-radius:10px;padding:.65rem .8rem;margin:.2rem 0 .8rem;line-height:1.35}
+.auth-submit-btn:disabled::before{content:"";display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:ppSpin .7s linear infinite}
+.pp-shake{animation:ppShake .35s}
+@media (prefers-reduced-motion:reduce){.pp-shake{animation:none}}
+</style>
+<script id="pp-signin-js">
+(function(){
+  var emailRe=/^[^ @]+@[^ @]+[.][^ @]{2,}$/;
+  var GEN="Incorrect email or password. Check your details and try again.";
+  function $(id){return document.getElementById(id);}
+  function isReg(){try{return _authMode==="register";}catch(e){return false;}}
+  function init(){
+    var modal=$("signinModal"),em=$("authEmail"),pw=$("authPassword"),cf=$("authConfirm"),
+        err=$("authError"),form=$("authEmailForm");
+    if(!modal||!em||!pw||!err||!form)return;
+    var tg=modal.querySelector(".auth-toggle");
+    var body=modal.querySelector(".modal-body");
+    var w=document.createElement("div");
+    w.className="pp-welcome";
+    w.innerHTML='<h2 id="ppWTitle">Welcome back</h2><p id="ppWSub">Your next favourite story awaits.</p>';
+    body.insertBefore(w,body.firstChild);
+    var emsg=document.createElement("div");
+    emsg.className="pp-msg";
+    em.insertAdjacentElement("afterend",emsg);
+    var rules=document.createElement("div");
+    rules.className="pp-rules";
+    rules.innerHTML='<div class="pp-rule" data-r="len">At least 8 characters</div><div class="pp-rule" data-r="up">One uppercase letter</div><div class="pp-rule" data-r="lo">One lowercase letter</div><div class="pp-rule" data-r="num">One number</div><div class="pp-rule" data-r="sp">One special character</div>';
+    pw.parentElement.insertAdjacentElement("afterend",rules);
+    var img=new Image();
+    img.onload=function(){modal.classList.add("pp-hero-on");};
+    img.src="assets/signin_hero.webp";
+    var R=[["len",function(v){return v.length>=8;}],["up",/[A-Z]/],["lo",/[a-z]/],["num",/[0-9]/],["sp",/[^A-Za-z0-9]/]];
+    function checkPw(){
+      var v=pw.value,all=true;
+      R.forEach(function(r){
+        var ok=typeof r[1]==="function"?r[1](v):r[1].test(v);
+        rules.querySelector('[data-r="'+r[0]+'"]').classList.toggle("ok",ok);
+        if(!ok)all=false;
+      });
+      rules.classList.toggle("show",isReg()&&v.length>0);
+      pw.classList.toggle("pp-okb",isReg()&&all);
+    }
+    function checkEmail(){
+      var v=em.value.trim();
+      em.classList.remove("pp-ok","pp-bad");
+      emsg.classList.remove("show");
+      if(!v)return;
+      if(emailRe.test(v)){em.classList.add("pp-ok");}
+      else{em.classList.add("pp-bad");emsg.textContent="Enter a valid email address.";emsg.classList.add("show");}
+    }
+    function clearErr(){
+      [em,pw,cf].forEach(function(x){if(x)x.classList.remove("pp-err");});
+      if(err.style.display!=="none")err.style.display="none";
+    }
+    var t=null;
+    em.addEventListener("input",function(){
+      clearErr();
+      em.classList.remove("pp-ok","pp-bad");
+      emsg.classList.remove("show");
+      clearTimeout(t);
+      t=setTimeout(checkEmail,700);
+    });
+    em.addEventListener("blur",function(){clearTimeout(t);checkEmail();});
+    pw.addEventListener("input",function(){clearErr();checkPw();});
+    if(cf)cf.addEventListener("input",clearErr);
+    if(tg)tg.addEventListener("click",function(){
+      setTimeout(function(){
+        var r=isReg();
+        $("ppWTitle").textContent=r?"Create your account":"Welcome back";
+        $("ppWSub").textContent=r?"Join Picha+ and start watching.":"Your next favourite story awaits.";
+        clearErr();
+        checkPw();
+      },150);
+    });
+    var last="";
+    function fail(){
+      form.classList.remove("pp-shake");
+      void form.offsetWidth;
+      form.classList.add("pp-shake");
+      try{if(navigator.vibrate)navigator.vibrate(40);}catch(e){}
+    }
+    new MutationObserver(function(){
+      var txt=(err.textContent||"").trim();
+      if(err.style.display==="none"||!txt){last="";return;}
+      if(txt===last)return;
+      var local=/please fill|must be at least|must contain|do not match/i.test(txt);
+      if(local){
+        if(!em.value.trim())em.classList.add("pp-err");
+        if(!pw.value)pw.classList.add("pp-err");
+        if(/do not match/i.test(txt)&&cf)cf.classList.add("pp-err");
+        if(/must (be at least|contain)/i.test(txt))pw.classList.add("pp-err");
+        last=txt;
+        return;
+      }
+      if(!isReg()&&/invalid|incorrect|wrong|not found|no account|no user|credential|unauthori/i.test(txt)){
+        err.textContent=GEN;
+        txt=GEN;
+        em.classList.add("pp-err");
+        pw.classList.add("pp-err");
+      }
+      last=txt;
+      fail();
+    }).observe(err,{attributes:true,attributeFilter:["style"],childList:true,characterData:true,subtree:true});
+    checkPw();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
+
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="data:image/webp;base64,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" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -6439,10 +6575,10 @@ async function handleEmailAuth() {
   errEl.style.display = 'none';
   if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
   if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  if (!/[A-Z]/.test(password)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; return; }
-  if (!/[a-z]/.test(password)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; return; }
-  if (!/[0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; return; }
-  if (!/[^A-Za-z0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; return; }
+  if (_authMode === 'register' && !/[A-Z]/.test(password)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; return; }
+  if (_authMode === 'register' && !/[a-z]/.test(password)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; return; }
+  if (_authMode === 'register' && !/[0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; return; }
+  if (_authMode === 'register' && !/[^A-Za-z0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; return; }
   if (_authMode === 'register') {
     const confirm = document.getElementById('authConfirm')?.value;
     if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
