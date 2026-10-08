@@ -10856,7 +10856,8 @@ async function _mpfShare(idx) {
   const meta = _mpfSlideMeta[idx];
   if (!meta) return;
   const title = meta.item.title || meta.item.name || 'Picha+';
-  const url = window.location.href;
+  const _sid = meta.item.id || meta.item.tmdbId;
+  const url = _sid ? `${API}/t/${encodeURIComponent(String(_sid))}` : window.location.href;
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); return; } catch (e) { /* cancelled or unsupported */ }
