@@ -212,19 +212,20 @@
       -webkit-backface-visibility: hidden;
       will-change: transform;
     }
-    
+    /* Re-enable text selection for actual form fields so login, search,
+       password entry etc. still work normally */
     input, textarea {
       -webkit-user-select: text;
       user-select: text;
       -webkit-touch-callout: default;
     }
 
-    
+    /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-    
+    /* ── NAV ── */
     .nav {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -271,7 +272,8 @@
       font-weight: 500;
       letter-spacing: 0.04em;
       transition: color 0.2s;
-    }.nav-links a:hover { color: var(--white); }
+    }
+    .nav-links a:hover { color: var(--white); }
 
     .nav-right { display: flex; align-items: center; gap: 1rem; }
 
@@ -282,7 +284,8 @@
       cursor: pointer;
       padding: 0.4rem;
       transition: color 0.2s;
-    }.nav-search-btn:hover { color: var(--white); }
+    }
+    .nav-search-btn:hover { color: var(--white); }
 
     .btn-subscribe {
       background: none;
@@ -295,8 +298,10 @@
       justify-content: center;
       transition: color 0.2s;
       border-radius: 50%;
-    }.btn-subscribe:hover { color: var(--white); background: rgba(255,255,255,0.08); }
-    .btn-subscribe .material-symbols-rounded { font-size: 24px; color: var(--gold); }.btn-subscribe:hover .material-symbols-rounded { color: var(--gold2); }
+    }
+    .btn-subscribe:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+    .btn-subscribe .material-symbols-rounded { font-size: 24px; color: var(--gold); }
+    .btn-subscribe:hover .material-symbols-rounded { color: var(--gold2); }
     .btn-subscribe svg.google-g-icon { width: 24px; height: 24px; }
 
     .nav-user {
@@ -341,7 +346,9 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-    }.nav-dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }.nav-dropdown-item.danger:hover { color: var(--red); }
+    }
+    .nav-dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
+    .nav-dropdown-item.danger:hover { color: var(--red); }
 
     .sub-pill {
       background: var(--gold);
@@ -353,7 +360,7 @@
       letter-spacing: 0.06em;
     }
 
-    
+    /* ── HERO ── */
     .hero {
       position: relative;
       height: clamp(300px, 52vh, 480px);
@@ -465,7 +472,8 @@
       border-radius: 4px;
       transition: background 0.2s;
       letter-spacing: 0.02em;
-    }.btn-play:hover { background: rgba(255,255,255,0.85); }
+    }
+    .btn-play:hover { background: rgba(255,255,255,0.85); }
 
     .btn-info {
       display: flex;
@@ -482,9 +490,10 @@
       border-radius: 4px;
       backdrop-filter: blur(4px);
       transition: background 0.2s;
-    }.btn-info:hover { background: rgba(255,255,255,0.25); }
+    }
+    .btn-info:hover { background: rgba(255,255,255,0.25); }
 
-    
+    /* Hero dots */
     .hero-dots {
       position: absolute;
       bottom: 8%;
@@ -502,7 +511,7 @@
     }
     .hero-dot.active { background: var(--gold); width: 20px; border-radius: 3px; }
 
-    
+    /* ── CONTENT ROWS ── */
     .content-section { padding: 0 0 2rem; }
 
     .row-header {
@@ -538,9 +547,10 @@
       transition: color 0.2s;
       border: none;
       background: none;
-    }.row-see-all:hover { color: var(--gold2); }
+    }
+    .row-see-all:hover { color: var(--gold2); }
 
-    
+    /* Horizontal scroll row */
     .scroll-row {
       display: flex;
       gap: 0.5rem;
@@ -554,7 +564,7 @@
 
     #fyGrid .card { width: 100%; }
 
-    
+    /* ── CARDS ── */
     .card {
       flex-shrink: 0;
       width: var(--card-w);
@@ -567,7 +577,9 @@
       background: #1a1a1a;
       content-visibility: auto;
       contain-intrinsic-size: var(--card-w) calc(var(--card-w) * 1.5);
-    }.card:hover {
+    }
+
+    .card:hover {
       transform: scale(1.08) translateY(-4px);
       z-index: 10;
       transition: transform 0.3s, z-index 0s;
@@ -602,7 +614,8 @@
       flex-direction: column;
       justify-content: flex-end;
       padding: 0.8rem;
-    }.card:hover .card-overlay { opacity: 1; }
+    }
+    .card:hover .card-overlay { opacity: 1; }
 
     .card-title {
       font-size: 0.78rem;
@@ -640,10 +653,13 @@
       font-size: 0.7rem;
     }
 
-    .card-btn-play { background: none; color: var(--gold); border: none !important; }.card-btn-play:hover { background: none; opacity: 0.8; }
-    .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); }.card-btn-add:hover { background: rgba(255,255,255,0.25); }
+    .card-btn-play { background: none; color: var(--gold); border: none !important; }
+    .card-btn-play:hover { background: none; opacity: 0.8; }
+    .card-btn-add { background: rgba(255,255,255,0.15); color: var(--white); }
+    .card-btn-add:hover { background: rgba(255,255,255,0.25); }
     .card-btn-add.saved { background: rgba(229,185,60,0.2); color: var(--gold); }
-    .card-btn-like { background: rgba(255,255,255,0.15); color: var(--white); }.card-btn-like:hover { background: rgba(255,255,255,0.25); }
+    .card-btn-like { background: rgba(255,255,255,0.15); color: var(--white); }
+    .card-btn-like:hover { background: rgba(255,255,255,0.25); }
     .card-btn-like.liked { background: rgba(229,80,60,0.2); color: #ff6b6b; }
 
     .card-badge {
@@ -662,7 +678,7 @@
     .card-badge.new { background: var(--red); color: #fff; }
     .card-badge.top { background: transparent; color: var(--gold); font-size: 0.65rem; border: 1px solid var(--gold); }
 
-    
+    /* Progress bar on card */
     .card-progress {
       position: absolute;
       bottom: 0; left: 0; right: 0;
@@ -675,7 +691,7 @@
       border-radius: 0 2px 2px 0;
     }
 
-    
+    /* ── TOP 10 CARDS ── */
     .top10-card {
       flex-shrink: 0;
       width: 220px;
@@ -708,9 +724,10 @@
       position: relative;
       z-index: 2;
       transition: transform 0.3s;
-    }.top10-card:hover .top10-poster { transform: scale(1.06) translateY(-4px); }
+    }
+    .top10-card:hover .top10-poster { transform: scale(1.06) translateY(-4px); }
 
-    
+    /* ── SKELETON ── */
     .skeleton {
       background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
       background-size: 200% 100%;
@@ -727,7 +744,7 @@
       100% { background-position: -200% 0; }
     }
 
-    
+    /* ── SEARCH ── */
     .search-overlay {
       display: none;
       position: fixed;
@@ -776,7 +793,7 @@
       gap: 0.8rem;
     }
 
-    
+    /* ── INFO MODAL ── */
     .info-modal {
       display: none;
       position: fixed;
@@ -856,7 +873,8 @@
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: border-color 0.2s;
-    }.info-add-btn:hover { border-color: var(--white); }
+    }
+    .info-add-btn:hover { border-color: var(--white); }
 
     .info-close-btn {
       width: 2.2rem; height: 2.2rem;
@@ -903,8 +921,8 @@
     }
     .info-genres span { color: rgba(255,255,255,0.6); }
 
-    
-    
+    /* ── PLAYER MODAL ── */
+    /* ── UP NEXT OVERLAY ── */
     .upnext-overlay {
       position: absolute;
       bottom: 80px;
@@ -993,7 +1011,7 @@
       flex-direction: column;
     }
 
-    
+    /* Shaka fills the entire modal */
     #shakaContainer {
       width: 100% !important;
       height: 100% !important;
@@ -1006,30 +1024,31 @@
       height: 100% !important;
       object-fit: contain;
     }
-    
+    /* Shaka UI overlay sits on top correctly */
     #shakaContainer .shaka-video-container {
       width: 100% !important;
       height: 100% !important;
     }
 
-    
+    /* Shaka Player gold theme */
     .shaka-video-container { width: 100%; background: #000; }
     .shaka-video-container video { width: 100%; display: block; }
     .shaka-controls-container { background: linear-gradient(transparent, rgba(0,0,0,0.7)); }
     .shaka-seek-bar-container .shaka-current-time { color: var(--gold); }
     .material-icons-round { font-size: 22px !important; }
-    
+    /* Progress bar gold */
     .shaka-seek-bar.mdc-slider .mdc-slider__track--active_fill { border-color: var(--gold) !important; }
     .shaka-seek-bar.mdc-slider .mdc-slider__thumb-knob { background: var(--gold) !important; border-color: var(--gold) !important; }
     .shaka-seek-bar.mdc-slider .mdc-slider__track--active { background: var(--gold) !important; }
-    
+    /* Volume bar gold */
     .shaka-volume-bar.mdc-slider .mdc-slider__track--active_fill { border-color: var(--gold) !important; }
     .shaka-volume-bar.mdc-slider .mdc-slider__thumb-knob { background: var(--gold) !important; border-color: var(--gold) !important; }
-    
-    .shaka-overflow-menu, .shaka-settings-menu { background: rgba(18,18,18,0.97) !important; border: 1px solid rgba(229,185,60,0.2); border-radius: 6px; }.shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }
+    /* Overflow menu */
+    .shaka-overflow-menu, .shaka-settings-menu { background: rgba(18,18,18,0.97) !important; border: 1px solid rgba(229,185,60,0.2); border-radius: 6px; }
+    .shaka-overflow-menu button:hover, .shaka-settings-menu button:hover { background: rgba(229,185,60,0.1) !important; color: var(--gold); }
     .shaka-current-selection-span { color: var(--gold) !important; }
 
-    
+    /* Nav cast button */
     .nav-cast-btn {
       background: none;
       border: none;
@@ -1041,7 +1060,8 @@
       justify-content: center;
       transition: color 0.2s;
       position: relative;
-    }.nav-cast-btn:hover { color: var(--white); }
+    }
+    .nav-cast-btn:hover { color: var(--white); }
     .nav-cast-btn.casting { color: var(--gold); }
     .nav-cast-btn.casting svg,
     .nav-cast-btn.casting .material-symbols-rounded { filter: drop-shadow(0 0 4px rgba(229,185,60,0.8)); }
@@ -1060,13 +1080,13 @@
     #acctPCToggle:checked + #acctPCSlider { background: var(--gold); }
     #acctPCToggle:checked + #acctPCSlider::before { transform: translateX(20px); }
 
-    
+    /* Cast button gold tint + active glow */
     .shaka-cast-button { color: var(--gold) !important; }
     .shaka-cast-button[aria-pressed="true"] {
       color: var(--gold) !important;
       filter: drop-shadow(0 0 6px rgba(229,185,60,0.8));
     }
-    
+    /* Casting banner shown inside player when active */
     .cast-active-banner {
       display: none;
       position: absolute;
@@ -1086,7 +1106,7 @@
     }
     .cast-active-banner.visible { display: flex; }
 
-    
+    /* ── SIGN IN MODAL ── */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -1152,7 +1172,8 @@
       width: 100%; padding: 0.75rem; border-radius: 8px;
       background: var(--gold); color: #000; font-weight: 700;
       font-size: 0.95rem; border: none; cursor: pointer; margin-top: 0.2rem;
-    }.auth-submit-btn:hover { opacity: 0.9; }
+    }
+    .auth-submit-btn:hover { opacity: 0.9; }
     .auth-toggle {
       text-align: center; font-size: 0.8rem; color: #888; margin-top: 0.75rem;
     }
@@ -1177,7 +1198,8 @@
       margin-bottom: 1rem;
       text-decoration: none;
       transition: background 0.2s;
-    }.google-btn:hover { background: #f0f0f0; }
+    }
+    .google-btn:hover { background: #f0f0f0; }
 
     .modal-note {
       font-size: 0.72rem;
@@ -1187,7 +1209,7 @@
     }
     .modal-note a { color: var(--gold); text-decoration: none; }
 
-    
+    /* ── PAYMENT MODAL ── */
     .payment-iframe {
       width: 100%;
       height: 460px;
@@ -1207,7 +1229,7 @@
       font-size: 0.85rem;
     }
 
-    
+    /* ── PLANS SECTION ── */
     .plans-section {
       padding: 4rem 4vw;
       background: linear-gradient(to bottom, transparent, #111 20%, #111 80%, transparent);
@@ -1257,7 +1279,8 @@
       cursor: pointer;
       transition: background 0.2s, color 0.2s, opacity 0.2s, border-color 0.2s;
       position: relative;
-    }.plan-card:hover { border-color: rgba(242,201,76,0.4); transform: translateY(-3px); }
+    }
+    .plan-card:hover { border-color: rgba(242,201,76,0.4); transform: translateY(-3px); }
     .plan-card.featured {
       border-color: var(--gold);
       background: rgba(242,201,76,0.08);
@@ -1378,7 +1401,7 @@
       color: #000;
     }
 
-    
+    /* ── FOOTER ── */
     .footer {
       padding: 3rem 4vw;
       border-top: 1px solid rgba(255,255,255,0.06);
@@ -1408,7 +1431,8 @@
       display: flex; align-items: center; justify-content: center;
       opacity: 0.6;
       transition: opacity 0.2s;
-    }.footer-social:hover { opacity: 1; }
+    }
+    .footer-social:hover { opacity: 1; }
     .footer-social img { width: 16px; height: 16px; }
 
     .footer-links {
@@ -1431,7 +1455,8 @@
       text-decoration: none;
       font-size: 0.82rem;
       transition: color 0.2s;
-    }.footer-col ul li a:hover { color: var(--white); }
+    }
+    .footer-col ul li a:hover { color: var(--white); }
 
     .footer-bottom {
       display: flex;
@@ -1445,7 +1470,7 @@
       gap: 0.5rem;
     }
 
-    
+    /* ── TOAST ── */
     .toast {
       position: fixed;
       bottom: calc(58px + env(safe-area-inset-bottom) + 0.7rem);
@@ -1471,7 +1496,7 @@
     .toast.gold { border-color: rgba(229,185,60,0.3); }
     .toast.error { border-color: rgba(229,9,20,0.4); }
 
-    
+    /* ── SPINNER ── */
     .spinner {
       width: 1.5rem; height: 1.5rem;
       border: 2px solid rgba(255,255,255,0.1);
@@ -1487,7 +1512,7 @@
       100% { transform: scale(1); opacity: 0; }
     }
 
-    
+    /* ── STATUS BAR ── */
     .status-bar {
       display: flex;
       visibility: hidden;
@@ -1548,7 +1573,7 @@
       to { transform: translateX(-100%); }
     }
 
-    
+    /* ── LANGUAGE FILTER ── */
     .lang-filter {
       display: flex;
       gap: 0.5rem;
@@ -1578,7 +1603,7 @@
       background: rgba(229,185,60,0.08);
     }
 
-    
+    /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       :root { --card-w: 110px; }
       .nav-links { display: none; }
@@ -1592,7 +1617,9 @@
       .row-header { margin-bottom: 0.4rem; }
     }
 
-    
+    /* Fills the gap between the small-phone (640px) and desktop (1024px) breakpoints.
+       Without this, wider phones fell back to the desktop --card-w (130px), which
+       was too large to fit 3 full cards per row. */
     @media (min-width: 641px) and (max-width: 1023px) {
       :root { --card-w: 110px; }
       .scroll-row { gap: 0.4rem; padding: 0.5rem 3vw 1rem; }
@@ -1605,7 +1632,7 @@
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    
+    /* ── CATEGORY PAGE OVERLAY ── */
     .category-overlay {
       position: fixed;
       inset: 0;
@@ -1655,7 +1682,8 @@
       opacity: 0.7;
       transition: opacity 0.2s;
       padding: 0;
-    }.category-back-btn:hover { opacity: 1; }
+    }
+    .category-back-btn:hover { opacity: 1; }
     .category-page-title {
       font-family: 'Inter', sans-serif;
       font-size: 1rem;
@@ -1684,7 +1712,10 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 0.6rem;
     }
-    
+    /* content-visibility removed: its implicit containment clips the
+       absolutely-positioned dropdown menu to the row's own bounds. A personal
+       watch history list is small enough that this perf trick isn't worth
+       trading away a working menu for. */
     @media (min-width: 500px) {
       .category-grid { grid-template-columns: repeat(4, 1fr); }
       .shorts-grid { grid-template-columns: repeat(3, 1fr); }
@@ -1700,7 +1731,8 @@
       cursor: pointer;
       background: #1a1a1a;
       transition: transform 0.25s;
-    }.category-card:hover { transform: scale(1.04); }
+    }
+    .category-card:hover { transform: scale(1.04); }
     .category-card img {
       width: 100%;
       aspect-ratio: 2/3;
@@ -1743,14 +1775,14 @@
       letter-spacing: 0.06em;
     }
 
-    
+    /* row-see-all tweak */
     .row-see-all {
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
     }
 
-    
+    /* ── BOTTOM NAV ──────────────────────────────────────────────────────── */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
       background: #0a0a0a;
@@ -1761,7 +1793,7 @@
     }
     body:has(.modal-overlay.active) .bottom-nav { display: none; }
 
-    
+    /* ── APK download banner ── */
     .apk-banner {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 250;
       background: linear-gradient(135deg, #1a1a1a, #252525);
@@ -1799,7 +1831,7 @@
     .bn-tab.active svg { stroke: var(--gold); }
     body { padding-bottom: 62px; }
 
-    
+    /* ── BROWSE / SAVED PAGES ───────────────────────────────────────────── */
     .bn-page {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 190;
       background: var(--bg);
@@ -1858,7 +1890,7 @@
     .bn-list-name { font-size: 1rem; font-weight: 500; }
     .bn-list-count { margin-left: auto; font-size: 0.75rem; color: var(--gray); }
   
-    
+    /* ── TV & DESKTOP RESPONSIVE ── */
     @media (min-width: 1024px) {
       :root { --card-w: 180px; }
       body { font-size: 16px; }
@@ -1866,7 +1898,7 @@
       .nav-logo { font-size: 2rem; }
       .nav-links { display: flex; gap: 2rem; font-size: 1rem; }
 
-      
+      /* Hero: contained like Prime Video, not full bleed */
       .hero { min-height: 55vh; max-height: 60vh; }
       .hero-bg { border-radius: 12px; }
       .hero-content { max-width: 45%; }
@@ -1904,7 +1936,7 @@
       .shorts-grid { grid-template-columns: repeat(9, 1fr); }
     }
 
-    
+    /* ── FOCUS / D-PAD NAVIGATION ── */
     :focus {
       outline: 4px solid var(--gold);
       border-radius: 8px;
@@ -1921,7 +1953,7 @@
       box-shadow: 0 0 0 6px rgba(229,185,60,0.3);
     }
 
-    
+    /* ── MOUSE HOVER IMPROVEMENTS FOR DESKTOP ── */
     @media (hover: hover) {
       .card:hover { transform: scale(1.05); cursor: pointer; }
       .hero-btn:hover { transform: scale(1.03); }
@@ -1929,7 +1961,7 @@
     }
 
   
-    
+    /* ── TV / LARGE SCREEN SCALING ── */
     @media (min-width: 960px) and (min-height: 540px) {
       :root {
         --card-w: 120px;
@@ -1977,7 +2009,7 @@
       .row-header { padding: 0 8vw; }
     }
 
-    
+    /* TV focus ring - bigger and more visible */
     @media (min-width: 960px) {
       :focus-visible {
         outline: 5px solid var(--gold) !important;
@@ -1991,120 +2023,7 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=add,all_inclusive,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_down,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,notifications_active,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
-<style id="fullpage-modals">
-@keyframes pageUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
-@media (max-width: 768px) {
-  .modal-overlay, .info-modal, .african-modal-overlay {
-    padding: 0 !important; align-items: stretch !important; justify-content: stretch !important;
-    background: #141414 !important; backdrop-filter: none !important;
-  }
-  .modal-box, .info-card {
-    max-width: none !important; width: 100% !important; height: 100dvh !important; max-height: none !important;
-    border: none !important; border-radius: 0 !important; box-shadow: none !important;
-  }
-  .info-card { overflow-y: auto !important; padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .modal-body { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
-  .african-modal-overlay > div {
-    max-width: none !important; width: 100% !important; min-height: 100dvh; box-sizing: border-box;
-    border: none !important; border-radius: 0 !important; box-shadow: none !important;
-    display: flex !important; flex-direction: column; justify-content: center; overflow-y: auto;
-    padding: 3.5rem 1.3rem 2rem !important;
-  }
-}
-</style>
-<style id="info-recs-css">
-#infoBackBtn{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5;width:42px;height:42px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;align-items:center;justify-content:center;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
-#infoRecs{padding-bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));}
-#infoRecs:empty{display:none;}
-.rec-head{font-weight:700;font-size:1.05rem;margin:1.6rem 0 .7rem;}
-.rec-row{display:flex;gap:.7rem;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:.4rem;}
-.rec-row::-webkit-scrollbar{display:none;}
-.rec-card{flex:0 0 112px;cursor:pointer;}
-.rec-card img{width:112px;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#222;display:block;}
-.rec-t{font-size:.78rem;font-weight:600;margin-top:.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.rec-y{font-size:.7rem;color:var(--gray);}
-@media (max-width:768px){#infoBackBtn{display:flex;}.info-close-btn{display:none!important;}}
-</style>
-<style id="picha-info-fixes">
-.rec-row{--rec-gap:.5rem;--rec-w:min(var(--card-w),calc((100vw - 1.5rem - 3 * var(--rec-gap)) / 3.5));gap:var(--rec-gap);margin-right:-1.5rem;padding-right:1.5rem}
-.rec-card{flex:0 0 var(--rec-w);width:var(--rec-w);min-width:0;overflow:hidden}
-.rec-card img{width:100%;aspect-ratio:var(--card-ratio,2/3)}
-.rec-t{display:block;min-width:0}
-#infoDescWrap{position:relative;margin-bottom:1rem}
-#infoDescWrap .info-desc{margin:0;max-height:5.1em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-#infoDescWrap .info-desc.expanded{position:absolute;top:0;left:0;right:0;display:block;-webkit-line-clamp:unset;overflow-y:auto;background:#181818;z-index:3;box-shadow:0 10px 18px rgba(0,0,0,.55);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.pay-back-btn{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
-#paymentModal .pay-back-btn{position:static!important;inset:auto!important;transform:none!important}
-#paymentModal .modal-header{justify-content:flex-start!important;gap:12px;padding-right:64px!important}
-#paymentModal .modal-title{margin:0;flex:1;min-width:0}
-</style>
-<style id="picha-acct">
-#accountSettingsModal .modal-header{justify-content:flex-start!important;gap:12px;padding-right:64px!important}
-#accountSettingsModal .modal-title{margin:0;flex:1;min-width:0}
-.acct-back{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
-.acct-id{display:flex;align-items:center;gap:.9rem;padding:1rem;border:1px solid #2a2a2a;border-left:3px solid var(--gold);border-radius:12px;background:linear-gradient(90deg,rgba(233,190,66,.12),#1c1c1c 45%)}
-.acct-avatar{width:48px;height:48px;flex:0 0 auto;border-radius:50%;border:1px solid rgba(233,190,66,.45);display:flex;align-items:center;justify-content:center;color:var(--gold);background:rgba(0,0,0,.35)}
-.acct-email{font-size:.95rem;font-weight:700;color:#fff;word-break:break-all}
-.acct-sub{font-size:.76rem;color:#a0a0a0;margin-top:.2rem}
-.acct-label{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:1.5rem 0 .6rem .2rem}
-.acct-card{background:#1c1c1c;border:1px solid #2a2a2a;border-radius:12px;padding:1rem}
-.acct-row{display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.acct-h{font-size:.9rem;font-weight:600;margin-bottom:.8rem}
-.acct-footer{margin-top:1.8rem;padding-top:1.2rem;border-top:1px solid #2a2a2a;display:flex;flex-direction:column;align-items:center;gap:1rem}
-.acct-footer a{font-size:.8rem;color:#a0a0a0;text-decoration:none}
-.acct-signout{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;max-width:260px;padding:.75rem;border-radius:999px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-weight:600;font-size:.9rem;cursor:pointer}
-</style>
-<style id="picha-wall">
-:root{--wall-dim:0.80}
-.african-modal-overlay{--wall-dim:0.80}
-.bn-page,.category-overlay,.search-overlay,.modal-overlay,.african-modal-overlay{
-  background-color:#0f0f0f!important;
-  background-image:linear-gradient(rgba(15,15,15,var(--wall-dim)),rgba(15,15,15,var(--wall-dim))),var(--wall-url,url('assets/picha_bg.webp'))!important;
-  background-repeat:no-repeat!important;
-  background-position:top center!important;
-  background-size:cover!important;
-  backdrop-filter:none!important;
-}
-.modal-box{background:transparent!important}
-.bn-page,.category-overlay,.search-overlay,.modal-overlay,.african-modal-overlay{background-blend-mode:normal,luminosity!important}
-#bnCategoriesPage{background-image:none!important;background-color:var(--bg)!important}
-</style>
-<script id="picha-wall-url">try{document.documentElement.style.setProperty('--wall-url','url("'+new URL('assets/picha_bg.webp',document.baseURI).href+'")');}catch(e){}</script>
-<style id="picha-press">
-*{-webkit-tap-highlight-color:transparent!important}
-</style>
-<style id="picha-focusfix">
-.card:focus,.card:focus-visible,.card:focus-within{outline:none!important;box-shadow:none!important;border-color:transparent!important}
-</style>
-<style id="picha-nofocus">
-.acct-sub{display:flex;align-items:center;gap:.45rem}
-.g-badge{width:20px;height:20px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
-@media (hover:none),(pointer:coarse){
-*:focus,*:focus-visible,*:focus-within,.card,.card *{outline:none!important}
-.card:focus,.card:focus-visible{box-shadow:none!important;border-color:transparent!important}
-}
-</style>
-<script id="picha-nofocus-js">
-(function(){
-  var mq=window.matchMedia('(hover:none)');
-  document.addEventListener('focusin',function(e){if(mq.matches&&e.target&&e.target.style)e.target.style.setProperty('outline','none','important');},true);
-  function unf(){var a=document.activeElement;if(a&&a!==document.body&&a.closest&&a.closest('.card'))a.blur();}
-  ['popstate','pageshow','visibilitychange'].forEach(function(n){window.addEventListener(n,function(){setTimeout(unf,0);});});
-})();
-</script>
-<script id="picha-kbflag">
-(function(){
-  if(!window.PPKb)return;
-  var re=/^(acct|pc)\w*Pwd$/;
-  document.addEventListener('focusin',function(e){if(re.test(e.target.id||''))PPKb.want(true);},true);
-  document.addEventListener('pointerdown',function(e){
-    var t=e.target;
-    if(t&&t.closest&&t.closest('input,textarea'))return;
-    PPKb.want(false);
-  },true);
-})();
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=add,all_inclusive,notifications_active,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
 <script id="picha-afsw">
 (function(){
   if(!window.PPAutofill)return;
@@ -2503,13 +2422,13 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <!-- SERIES DETAIL PAGE -->
 <div class="modal-overlay" id="seriesModal">
   <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
-    <div style="position:relative;min-height:68px;">
+    <div style="position:relative;">
       <img id="seriesBackdrop" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;" src="" alt="" onerror="this.style.display='none'"/>
       <div style="position:absolute;inset:0;background:linear-gradient(to top,#181818 0%,transparent 60%);"></div>
-      <button onclick="closeSeries()" aria-label="Back" style="position:fixed;top:0.7rem;left:0.8rem;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:5;"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
+      <button onclick="closeSeries()" style="position:absolute;top:0.8rem;right:0.8rem;background:rgba(0,0,0,0.6);border:none;color:#fff;width:2rem;height:2rem;border-radius:50%;cursor:pointer;font-size:1rem;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
     </div>
     <div style="padding:1.2rem 1.5rem 1.5rem;">
-      <h2 id="seriesTitle" style="padding-right:3.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.03em;margin-bottom:0.4rem;"></h2>
+      <h2 id="seriesTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.03em;margin-bottom:0.4rem;"></h2>
       <div id="seriesMeta" style="font-size:0.78rem;color:#808080;margin-bottom:0.6rem;"></div>
       <p id="seriesDesc" style="font-size:0.83rem;line-height:1.6;color:rgba(255,255,255,0.75);margin-bottom:1rem;"></p>
       <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#808080;margin-bottom:0.8rem;">Episodes</div>
@@ -2534,7 +2453,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
 
 <!-- INFO MODAL -->
 <div class="info-modal" id="infoModal">
-  <button id="infoBackBtn" onclick="closeInfo()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
   <div class="info-card" id="infoCard">
     <div style="position:relative;">
       <img class="info-backdrop" id="infoBackdrop" src="" alt="" onerror="this.style.display='none'"/>
@@ -2583,7 +2501,6 @@ function saveProgress(id, pos, dur, forceSync, title) {
           <span id="infoRequestBtnFullLabel">I Want This</span>
         </button>
       </div>
-      <div id="infoRecs"></div>
     </div>
   </div>
 </div>
@@ -2592,14 +2509,16 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <div class="modal-overlay" id="accountSettingsModal">
   <div class="modal-box">
     <div class="modal-header">
-      <button class="acct-back" onclick="closeAccountSettings()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
       <h3 class="modal-title">Account Settings</h3>
+      <button class="modal-close" onclick="closeAccountSettings()"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
     </div>
     <div class="modal-body">
       <div id="acctSettingsContent">
-        <div class="acct-id"><div class="acct-avatar"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div style="min-width:0;"><div id="acctEmail" class="acct-email"></div><div class="acct-sub" id="acctAuthLabel">Signed in with Google</div></div></div>
-        <div class="acct-label">Playback</div>
-        <div class="acct-card acct-row">
+        <div style="margin-bottom:1.2rem;">
+          <div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">Email</div>
+          <div id="acctEmail" style="font-size:0.95rem;color:#fff;"></div>
+        </div>
+        <div style="border-top:1px solid #222;padding:1.2rem 0;display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:0.9rem;font-weight:600;">For You preview sound</div>
             <div style="font-size:0.78rem;color:#888;margin-top:0.15rem;">Play video previews with sound</div>
@@ -2609,9 +2528,8 @@ function saveProgress(id, pos, dur, forceSync, title) {
             <span id="acctPreviewSoundSlider" style="position:absolute;cursor:pointer;inset:0;background:#333;border-radius:24px;transition:0.2s;"></span>
           </label>
         </div>
-        <div class="acct-label">Security &amp; Privacy</div>
-        <div class="acct-card">
-          <div class="acct-h">Sign-in &amp; password</div>
+        <div style="border-top:1px solid #222;padding-top:1.2rem;">
+          <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.8rem;">Change Password</div>
           <div id="acctPwdGoogleNote" style="display:none;font-size:0.8rem;color:#888;padding:0.75rem;background:#1a1a1a;border-radius:8px;">
             Your account uses Google Sign-In. Password change is not available.
           </div>
@@ -2633,7 +2551,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
             <button class="auth-submit-btn" onclick="changePassword()">Update Password</button>
           </div>
         </div>
-        <div class="acct-card" style="margin-top:.75rem;">
+        <div style="border-top:1px solid #222;padding-top:1.2rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
             <div style="display:flex;align-items:center;gap:0.5rem;">
               <span class="material-symbols-rounded" style="font-size:20px;">supervisor_account</span>
@@ -2730,9 +2648,9 @@ function saveProgress(id, pos, dur, forceSync, title) {
 
       <div class="auth-divider">or</div>
       <div id="authEmailForm">
-        <input type="email" class="auth-input" id="authEmail" placeholder="Email address"/>
+        <input type="email" class="auth-input" id="authEmail" placeholder="Email address" oninput="validateEmailField(this.value)" onblur="validateEmailField(this.value)"/>
         <div style="position:relative;">
-          <input type="password" class="auth-input" id="authPassword" placeholder="Password (min 8 characters)" style="padding-right:2.8rem;"/>
+          <input type="password" class="auth-input" id="authPassword" placeholder="Password (min 8 characters)" style="padding-right:2.8rem;" oninput="updatePwHints(this.value)" onblur="updatePwHints(this.value)"/>
           <div id="emailHint" style="display:none;font-size:0.75rem;margin-top:0.3rem;"></div>
           <div id="pwHints" style="display:none;font-size:0.75rem;margin-top:0.3rem;line-height:1.8;"></div>
           <span onclick="togglePwd('authPassword',this)" id="eyePassword" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;">
@@ -2768,8 +2686,8 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <div class="modal-overlay" id="paymentModal">
   <div class="modal-box" style="max-width:500px;">
     <div class="modal-header">
-      <button class="pay-back-btn" onclick="closePayment()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
       <h3 class="modal-title" id="paymentTitle">Subscribe</h3>
+      <button class="modal-close" onclick="closePayment()"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
     </div>
     <div class="modal-body" style="padding:1rem;">
       <div class="payment-loading" id="paymentLoading">
@@ -3101,11 +3019,9 @@ window.addEventListener('popstate', () => {
     // Back button navigated away from a title — close whichever modal is open
     const infoOpen = document.getElementById('infoModal')?.classList.contains('active');
     const seriesOpen = document.getElementById('seriesModal')?.classList.contains('active');
-    if (infoOpen) { _clearInfoRecs(); document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow = ''; currentInfoItem = null; }
+    if (infoOpen) { document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow = ''; currentInfoItem = null; }
     if (seriesOpen) { document.getElementById('seriesModal').classList.remove('active'); document.body.style.overflow = ''; currentSeries = null; }
   } else {
-    document.getElementById('seriesModal')?.classList.remove('active');
-    document.getElementById('infoModal')?.classList.remove('active');
     handleDeepLinkTitle();
   }
 });
@@ -3536,104 +3452,6 @@ function resetPageMeta() {
   if (ld) ld.remove();
 }
 
-function _leaveTitleEntry() {
-  const t = history.state && history.state.type;
-  if (t === 'title' || t === 'series') history.back();
-  else history.replaceState({}, '', '/picha-plus/');
-}
-function _clearInfoRecs() {
-  const r = document.getElementById('infoRecs');
-  if (r) r.innerHTML = '';
-  window._infoRecList = [];
-}
-function _recEsc(x) {
-  return String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
-function _renderInfoRecs(item) {
-  const box = document.getElementById('infoRecs');
-  if (!box) return;
-  const card = document.getElementById('infoCard');
-  if (card) card.scrollTop = 0;
-  const kind = it => (it.media_type === 'tv' || it.first_air_date) ? 'tv' : 'movie';
-  const mine = new Set(item.genre_ids || []);
-  const kids = !!(session.user && session.user.parentalControlsEnabled);
-  const seen = new Set([String(item.id)]);
-  const scored = [];
-  for (const it of (window._itemRegistry || [])) {
-    if (!it || !it._isOwned) continue;
-    const key = String(it.id);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    if (!it.poster_path && !it._customPoster) continue;
-    if (kids && (it.is18Plus || it.adult)) continue;
-    let score = kind(it) === kind(item) ? 1 : 0;
-    for (const g of (it.genre_ids || [])) if (mine.has(g)) score += 2;
-    scored.push({ it, score });
-  }
-  scored.sort((a, b) => b.score - a.score || (b.it.vote_average || 0) - (a.it.vote_average || 0));
-  const picks = scored.slice(0, 12).map(x => x.it);
-  window._infoRecList = picks;
-  if (!picks.length) { box.innerHTML = ''; return; }
-  box.innerHTML = `<div class="rec-head">You May Also Like</div><div class="rec-row">` + picks.map((it, i) => {
-    const img = it._customPoster || `${TMDB_IMG}w342${it.poster_path}`;
-    const yr = (it.release_date || it.first_air_date || '').slice(0, 4);
-    return `<div class="rec-card" onclick="_openRec(${i})"><img src="${_recEsc(img)}" loading="lazy" alt=""><div class="rec-t">${_recEsc(it.title || it.name)}</div><div class="rec-y">${yr}</div></div>`;
-  }).join('') + `</div>`;
-}
-function _openRec(i) {
-  const it = (window._infoRecList || [])[i];
-  if (!it) return;
-  // a series opens its own episodes page, which sits under this one, so lower this one first
-  if (it._isOwned && it.media_type === 'tv') document.getElementById('infoModal').classList.remove('active');
-  showInfo(it);
-}
-function _setupInfoDescToggle() {
-  const d = document.getElementById('infoDesc');
-  if (!d) return;
-  let wrap = document.getElementById('infoDescWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'infoDescWrap';
-    d.parentNode.insertBefore(wrap, d);
-    wrap.appendChild(d);
-    wrap.insertAdjacentHTML('afterend', '<button id="infoDescToggle" type="button" onclick="_toggleInfoDesc()" aria-label="Read more" style="display:none;background:none;border:none;color:#aaa;padding:0;margin:-0.6rem 0 0.4rem;cursor:pointer;width:100%;align-items:center;justify-content:center;"><span class="material-symbols-rounded" id="infoDescChev" style="font-size:24px;line-height:1;transition:transform .2s;">keyboard_arrow_down</span></button>');
-  }
-  d.classList.remove('expanded');
-  d.style.maxHeight = '';
-  wrap.style.height = '';
-  d.scrollTop = 0;
-  const b = document.getElementById('infoDescToggle');
-  const chev = document.getElementById('infoDescChev');
-  b.style.display = 'none';
-  if (chev) chev.style.transform = '';
-  const check = () => {
-    if (d.clientHeight > 0 && !d.classList.contains('expanded')) {
-      b.style.display = (d.scrollHeight > d.clientHeight + 2) ? 'flex' : 'none';
-    }
-  };
-  [80, 350, 900].forEach(t => setTimeout(check, t));
-}
-function _toggleInfoDesc() {
-  const d = document.getElementById('infoDesc');
-  const wrap = document.getElementById('infoDescWrap');
-  const chev = document.getElementById('infoDescChev');
-  if (!d || !wrap) return;
-  if (d.classList.contains('expanded')) {
-    d.classList.remove('expanded');
-    d.style.maxHeight = '';
-    wrap.style.height = '';
-    d.scrollTop = 0;
-    if (chev) chev.style.transform = '';
-    return;
-  }
-  const wr = wrap.getBoundingClientRect();
-  wrap.style.height = wr.height + 'px';
-  const head = document.querySelector('#infoModal .rec-head');
-  const room = head ? head.getBoundingClientRect().top - wr.top - 10 : window.innerHeight * 0.5;
-  d.style.maxHeight = Math.max(wr.height, room) + 'px';
-  d.classList.add('expanded');
-  if (chev) chev.style.transform = 'rotate(180deg)';
-}
 async function showInfo(item) {
   // If this is one of our own series (not a TMDB-only result), show the series modal with episodes
   if (item._isOwned && item.media_type === 'tv') {
@@ -3703,8 +3521,6 @@ async function showInfo(item) {
   `;
 
   document.getElementById('infoDesc').textContent = item.overview || 'No description available.';
-  _setupInfoDescToggle();
-  try { _renderInfoRecs(item); } catch (e) { console.warn(e); }
 
   // Genres
   const genreNames = (item.genre_ids || []).map(id => GENRES[id]).filter(Boolean).slice(0, 3);
@@ -3763,7 +3579,7 @@ async function showInfo(item) {
 function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
   if (window.location.pathname.includes('/title/')) {
-    _leaveTitleEntry();
+    history.pushState({}, '', '/picha-plus/');
     resetPageMeta();
   }
   // Only clear scroll lock if nothing is open behind the info modal
@@ -3774,7 +3590,6 @@ function closeInfo() {
     document.body.style.overflow = '';
   }
   currentInfoItem = null;
-  _clearInfoRecs();
   _infoOpenedFromForYou = false;
   _stopModalPreview();
   resumeGridPreviewAfterModal();
@@ -5912,7 +5727,6 @@ function openAccountSettings() {
   // Show email from session.user
   const emailEl = document.getElementById('acctEmail');
   emailEl.textContent = session.user?.email || session.user?.name || 'Unknown';
-  const _al = document.getElementById('acctAuthLabel'); if (_al) _al.textContent = '';
   // Hide password form for Google users (email users have authMethod === 'email')
   const isEmailUser = session.user?.authMethod === 'email';
   document.getElementById('acctPwdGoogleNote').style.display = isEmailUser ? 'none' : 'block';
@@ -5925,131 +5739,9 @@ function openAccountSettings() {
   document.getElementById('acctPwdError').style.display = 'none';
   document.getElementById('acctPwdSuccess').style.display = 'none';
   document.getElementById('acctPreviewSoundToggle').checked = !_fyPreviewMuted;
-  _ensureAcctFooter();
-  _loadPwdState();
   loadPCStatus();
 }
 
-const _EYE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
-function _pwdField(id, ph) {
-  return `<div style="position:relative;"><input type="password" class="auth-input" id="${id}" placeholder="${ph}" style="padding-right:2.8rem;"/><span onclick="togglePwd('${id}',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;display:flex;align-items:center;">${_EYE_SVG}</span></div>`;
-}
-function _renderPwdState(has, justSet) {
-  const form = document.getElementById('acctPwdForm');
-  const note = document.getElementById('acctPwdGoogleNote');
-  if (!form) return;
-  if (note) note.style.display = 'none';
-  let setBox = document.getElementById('acctPwdSetBox');
-  if (!setBox) {
-    form.insertAdjacentHTML('afterend', `<div id="acctPwdSetBox" style="display:none;">
-      <div style="font-size:0.8rem;color:#a0a0a0;padding:0.75rem;background:#1a1a1a;border-radius:8px;margin-bottom:0.8rem;line-height:1.5;">No password is set on this account yet. You currently sign in with Google. Add a password to also sign in with your email and password.</div>
-      ${_pwdField('acctSetNewPwd','New password (min 8 characters)')}
-      ${_pwdField('acctSetConfirmPwd','Confirm new password')}
-      <div class="auth-error" id="acctSetError"></div>
-      <button class="auth-submit-btn" id="acctSetBtn" onclick="setAccountPassword()">Set Password</button>
-    </div>`);
-    setBox = document.getElementById('acctPwdSetBox');
-  }
-  let hasBox = document.getElementById('acctPwdHasBox');
-  if (!hasBox) {
-    form.insertAdjacentHTML('beforebegin', `<div id="acctPwdHasBox" style="display:none;">
-      <div id="acctPwdHasMsg" style="font-size:0.85rem;color:#46d369;padding:0.75rem;background:#1a1a1a;border-radius:8px;margin-bottom:0.8rem;line-height:1.5;"></div>
-      <button class="auth-submit-btn" id="acctResetBtn" onclick="_revealResetForm()" style="background:#2a2a2a;color:#fff;">Reset my password</button>
-    </div>`);
-    hasBox = document.getElementById('acctPwdHasBox');
-  }
-  ['acctSetNewPwd','acctSetConfirmPwd','acctCurrentPwd','acctNewPwd','acctConfirmPwd'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-  ['acctSetError','acctPwdError','acctPwdSuccess'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
-  form.style.display = 'none';
-  setBox.style.display = 'none';
-  hasBox.style.display = 'none';
-  if (has === null) return;
-  if (has) {
-    document.getElementById('acctPwdHasMsg').textContent = justSet
-      ? '\u2713 Password saved successfully. You can now sign in with your email and password, and you can reset your password any time.'
-      : 'Your account has a password. You can reset it any time.';
-    document.getElementById('acctResetBtn').style.display = 'block';
-    hasBox.style.display = 'block';
-  } else {
-    setBox.style.display = 'block';
-  }
-}
-function _revealResetForm() {
-  const form = document.getElementById('acctPwdForm');
-  const btn = document.getElementById('acctResetBtn');
-  if (form) form.style.display = 'block';
-  if (btn) btn.style.display = 'none';
-}
-function _setAuthLabel(m) {
-  const el = document.getElementById('acctAuthLabel');
-  if (!el) return;
-  if (m === 'google') el.innerHTML = '<span class="g-badge"><svg width="13" height="13" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Signed in with Google';
-  else if (m === 'email') el.textContent = 'Signed in with email';
-  else el.textContent = '';
-}
-async function _loadPwdState() {
-  _renderPwdState(null);
-  _setAuthLabel(session.user?.authMethod === 'email' ? 'email' : null);
-  let has = session.user?.authMethod === 'email';
-  try {
-    const r = await fetch(API + '/auth/password-status', { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } });
-    const d = await r.json();
-    if (r.ok && typeof d.hasPassword === 'boolean') has = d.hasPassword;
-    if (r.ok && d.signInMethod) _setAuthLabel(d.signInMethod);
-  } catch (e) {}
-  _renderPwdState(has, false);
-}
-async function _serverHasPassword() {
-  try {
-    const r = await fetch(API + '/auth/password-status', { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } });
-    const d = await r.json();
-    return r.ok && d.hasPassword === true;
-  } catch (e) { return false; }
-}
-async function setAccountPassword() {
-  const pw = document.getElementById('acctSetNewPwd').value;
-  const cf = document.getElementById('acctSetConfirmPwd').value;
-  const errEl = document.getElementById('acctSetError');
-  const btn = document.getElementById('acctSetBtn');
-  const fail = m => { errEl.textContent = m; errEl.style.display = 'block'; };
-  errEl.style.display = 'none';
-  if (!pw || !cf) return fail('Please fill in both fields.');
-  if (pw.length < 8) return fail('Password must be at least 8 characters.');
-  if (!/[A-Z]/.test(pw)) return fail('Password must contain at least one uppercase letter.');
-  if (!/[a-z]/.test(pw)) return fail('Password must contain at least one lowercase letter.');
-  if (!/[0-9]/.test(pw)) return fail('Password must contain at least one number.');
-  if (!/[^A-Za-z0-9]/.test(pw)) return fail('Password must contain at least one special character (!@#$% etc).');
-  if (pw !== cf) return fail('Passwords do not match.');
-  btn.textContent = 'Saving...'; btn.disabled = true;
-  let ok = false, already = false, msg = '';
-  try {
-    const res = await fetch(API + '/auth/set-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
-      body: JSON.stringify({ newPassword: pw })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) ok = true;
-    else if (/already has a password/i.test(data.error || '')) already = true;
-    else msg = data.error || 'Failed to set password.';
-  } catch (e) {
-    already = await _serverHasPassword();
-    if (!already) msg = 'Connection error. Please try again.';
-  }
-  btn.textContent = 'Set Password'; btn.disabled = false;
-  if (ok || already) {
-    _renderPwdState(true, true);
-    try { toast('Password saved', 'gold'); } catch (e) {}
-  } else {
-    fail(msg);
-  }
-}
-function _ensureAcctFooter() {
-  if (document.getElementById('acctFooter')) return;
-  const c = document.getElementById('acctSettingsContent');
-  if (!c) return;
-  c.insertAdjacentHTML('beforeend', '<div id="acctFooter" class="acct-footer"><a href="https://keromisec9-prog.github.io/Privacy-Policy-/" target="_blank">Privacy Policy</a><button type="button" class="acct-signout" onclick="closeAccountSettings();setTimeout(signOut,60)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg> Sign Out</button></div>');
-}
 function closeAccountSettings() {
   _blurThenRun(() => {
     document.getElementById('accountSettingsModal').classList.remove('active');
@@ -6641,7 +6333,7 @@ function showSeries(idx) {
 function closeSeries() {
   document.getElementById('seriesModal').classList.remove('active');
   if (window.location.pathname.includes('/title/')) {
-    _leaveTitleEntry();
+    history.pushState({}, '', '/picha-plus/');
     resetPageMeta();
   }
   const bnCatOpen = document.getElementById('bnCategoriesPage')?.style.display !== 'none';
@@ -6861,35 +6553,35 @@ function showAfricanUpgradeToast() {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.2rem;';
 
   const modal = document.createElement('div');
-  modal.style.cssText = 'background:transparent;border:none;border-radius:18px;padding:1.6rem 1.3rem 1.3rem;max-width:400px;width:100%;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.6);';
+  modal.style.cssText = 'background:#161616;border:1px solid rgba(242,201,76,0.3);border-radius:18px;padding:1.6rem 1.3rem 1.3rem;max-width:400px;width:100%;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.6);';
 
   modal.innerHTML = `
-    <button onclick="this.closest('.african-modal-overlay').remove();" aria-label="Back" style="position:absolute;top:0.8rem;left:0.8rem;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
+    <span class="material-symbols-rounded" onclick="this.closest('.african-modal-overlay').remove();" style="position:absolute;top:0.8rem;right:0.8rem;background:#2a2a2a;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#ccc;cursor:pointer;">close</span>
 
     <div style="text-align:center;margin-bottom:0.3rem;margin-top:0.3rem;">
-      <div style="font-size:2rem;font-weight:800;color:#fff;line-height:1.1;">African <span style="color:var(--gold);">Cinema</span></div>
+      <div style="font-size:1.3rem;font-weight:700;color:#fff;">African Cinema</div>
       <div style="font-size:0.82rem;color:#9a9a9a;margin-top:0.4rem;line-height:1.4;">Enjoy exclusive African movies and series.<br/>Subscribe to unlock this catalog.</div>
     </div>
 
     <div style="display:flex;justify-content:center;gap:1.1rem;margin:1.2rem 0 1.3rem;">
       <div style="text-align:center;">
         <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">hd</span>
-        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">HD Quality</div><div style="font-size:0.6rem;color:#777;margin-top:0.1rem;">Crystal clear viewing</div>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">HD Quality</div>
       </div>
       <div style="width:1px;background:#333;"></div>
       <div style="text-align:center;">
         <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">all_inclusive</span>
-        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Unlimited Streaming</div><div style="font-size:0.6rem;color:#777;margin-top:0.1rem;">Watch without limits</div>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Unlimited Streaming</div>
       </div>
       <div style="width:1px;background:#333;"></div>
       <div style="text-align:center;">
         <span class="material-symbols-rounded" style="font-size:22px;color:var(--gold);">check_circle</span>
-        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Cancel Anytime</div><div style="font-size:0.6rem;color:#777;margin-top:0.1rem;">No contracts, no stress</div>
+        <div style="font-size:0.68rem;color:#999;margin-top:0.2rem;">Cancel Anytime</div>
       </div>
     </div>
 
     ${session.isSubscribed() ? `<div style="background:rgba(242,201,76,0.08);border:1px solid rgba(242,201,76,0.25);border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:1rem;font-size:0.76rem;color:#e0c060;line-height:1.4;text-align:center;">
-      <span class="material-symbols-rounded" style="font-size:14px;vertical-align:middle;margin-right:0.2rem;">check_circle</span>
+      <span class="material-symbols-rounded" style="font-size:14px;vertical-align:middle;margin-right:0.2rem;">verified</span>
       Your current ${session.user.subscriptionPlan} plan won't be lost. It resumes automatically once this one ends.
     </div>` : ''}
 
@@ -6930,19 +6622,12 @@ function showAfricanUpgradeToast() {
   }).observe(document.body, { childList: true });
 
   let selectedPlan = 'monthlyplus';
-  const _upd = () => {
-    const r = modal.querySelector('.african-plan-row[data-plan="' + selectedPlan + '"]');
-    const b = document.getElementById('africanContinueBtn');
-    if (r && b) b.textContent = 'Continue \u2014 ' + r.lastElementChild.textContent.trim();
-  };
-  _upd();
   modal.querySelectorAll('.african-plan-row').forEach(row => {
     row.addEventListener('click', () => {
       selectedPlan = row.dataset.plan;
-      _upd();
       modal.querySelectorAll('.african-plan-row').forEach(r => {
         r.style.borderColor = r === row ? 'var(--gold)' : '#333';
-        r.style.background = r === row ? 'rgba(242,201,76,0.08)' : 'rgba(255,255,255,0.04)';
+        r.style.background = r === row ? 'rgba(242,201,76,0.08)' : 'transparent';
         r.querySelector('.plan-radio-dot').style.opacity = r === row ? '1' : '0';
       });
     });
@@ -6957,7 +6642,7 @@ function showAfricanUpgradeToast() {
 function africanPlanRow(planId, name, subtitle, price, isBest, icon) {
   const selected = isBest;
   return `
-    <div class="african-plan-row" data-plan="${planId}" style="display:flex;align-items:center;gap:0.8rem;border:1px solid ${selected ? 'var(--gold)' : '#333'};background:${selected ? 'rgba(242,201,76,0.08)' : 'rgba(255,255,255,0.04)'};border-radius:12px;padding:0.7rem 0.8rem;cursor:pointer;">
+    <div class="african-plan-row" data-plan="${planId}" style="display:flex;align-items:center;gap:0.8rem;border:1px solid ${selected ? 'var(--gold)' : '#333'};background:${selected ? 'rgba(242,201,76,0.08)' : 'transparent'};border-radius:12px;padding:0.7rem 0.8rem;cursor:pointer;">
       <div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <div class="plan-radio-dot" style="width:9px;height:9px;border-radius:50%;background:var(--gold);opacity:${selected ? '1' : '0'};"></div>
       </div>
@@ -9688,7 +9373,7 @@ closeCategory = function() {
 <!-- PAYWALL OVERLAY -->
 <div class="modal-overlay" id="paywallModal" style="display:none;align-items:flex-start;overflow-y:auto;padding:2rem 0;">
   <div class="plans-section" id="plans-section" style="position:relative;width:100%;max-width:700px;margin:auto;">
-    <button onclick="closePaywall()" aria-label="Back" style="position:absolute;top:1rem;left:1rem;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2;"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
+    <button onclick="closePaywall()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.1);border:none;color:#fff;width:2rem;height:2rem;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
     <div class="plans-header">
       <p class="plans-eyebrow">Choose Your Plan</p>
       <h2 class="plans-title">Unlimited Entertainment</h2>
@@ -10899,7 +10584,7 @@ function _mpfWireTouch() {
 }
 </script>
 <style>
-
+/* --- kill all default browser touch/focus feedback --- */
 button, a, [tabindex], .nav-item, input, select {
   -webkit-tap-highlight-color: transparent;
   outline: none;
@@ -10911,7 +10596,7 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
   outline-offset: 2px;
 }
 
-
+/* --- custom Picha+ press effect (YouTube-style, but gold-themed) --- */
 button, a, [role="button"] {
   position: relative;
   transition: transform 0.12s ease, opacity 0.12s ease;
@@ -10935,7 +10620,7 @@ button.pz-pressed::after, a.pz-pressed::after, [role="button"].pz-pressed::after
   transition: opacity 0s;
 }
 
-
+/* keep your existing gold nav-selected state untouched */
 .nav-item.active, .nav-item.selected {
   border-color: #d4af37 !important;
 }
@@ -10957,54 +10642,12 @@ document.addEventListener('touchstart', e => {
 // force-blur any stuck focus on resume (fingerprint unlock, app-switch, screen off/on)
 function clearStrayFocus() {
   const el = document.activeElement;
-  if (!el || el === document.body) return;
-  const isField = /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable;
-  if (isField && el.closest('#accountSettingsModal')) return;
-  el.blur();
+  if (el && el !== document.body) el.blur();
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) clearStrayFocus(); });
 window.addEventListener('pageshow', clearStrayFocus);
 window.addEventListener('focus', clearStrayFocus);
 </script>
 
-<script id="overlay-history">
-(function () {
-  var OVL = [
-    ['accountSettingsModal', 'closeAccountSettings', 'd'],
-    ['signinModal', 'closeSignin', 'd'],
-    ['paymentModal', 'closePayment', 'd'],
-    ['paywallModal', 'closePaywall', 'd'],
-    ['categoryOverlay', 'closeCategory', 'c']
-  ];
-  var stack = [];
-  function isOpen(el, k) {
-    return k === 'c' ? el.classList.contains('active') : getComputedStyle(el).display !== 'none';
-  }
-  function sync() {
-    OVL.forEach(function (o) {
-      var el = document.getElementById(o[0]); if (!el) return;
-      var open = isOpen(el, o[2]), at = stack.indexOf(o[0]);
-      if (open && at === -1) {
-        stack.push(o[0]);
-        history.pushState({ ovl: o[0] }, '', location.href);
-      } else if (!open && at !== -1) {
-        stack.splice(at, 1);
-        if (history.state && history.state.ovl === o[0]) history.back();
-      }
-    });
-  }
-  OVL.forEach(function (o) {
-    var el = document.getElementById(o[0]);
-    if (el) new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
-  });
-  window.addEventListener('popstate', function () {
-    if (history.state && history.state.ovl) return;
-    var id = stack[stack.length - 1]; if (!id) return;
-    var o = OVL.filter(function (x) { return x[0] === id; })[0];
-    try { window[o[1]](); } catch (e) {}
-    sync();
-  });
-})();
-</script>
 </body>
 </html>
