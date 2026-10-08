@@ -11050,5 +11050,35 @@ window.addEventListener('focus', clearStrayFocus);
   });
 })();
 </script>
+<script id="back-layers">
+(function () {
+  if (!window.addBackFallback) return;
+  function on(id, cls) { var e = document.getElementById(id); return !!(e && e.classList.contains(cls || 'active')); }
+  function shown(id) { var e = document.getElementById(id); return !!(e && getComputedStyle(e).display !== 'none'); }
+  function call(n) {
+    try { if (typeof window[n] === 'function') { window[n].apply(null, [].slice.call(arguments, 1)); return true; } } catch (e) {}
+    return false;
+  }
+  var add = window.addBackFallback;
+  add(function () { return on('playerModal') && call('closePlayer'); });
+  add(function () {
+    var a = document.querySelector('.african-modal-overlay');
+    if (a) { a.remove(); return true; }
+    return false;
+  });
+  add(function () { return on('searchOverlay') && call('closeSearch'); });
+  add(function () { return on('userDropdown', 'open') && call('toggleUserMenu', true); });
+  add(function () { return on('accountSettingsModal') && call('closeAccountSettings'); });
+  add(function () { return on('signinModal') && call('closeSignin'); });
+  add(function () { return on('paymentModal') && call('closePayment'); });
+  add(function () { return shown('paywallModal') && call('closePaywall'); });
+  add(function () { return on('categoryOverlay') && call('closeCategory'); });
+  add(function () {
+    var t = document.querySelector('.bn-tab.active');
+    if (t && t.id !== 'bn-home') return call('bnGo', 'home');
+    return false;
+  });
+})();
+</script>
 </body>
 </html>
