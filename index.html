@@ -11006,5 +11006,49 @@ window.addEventListener('focus', clearStrayFocus);
   });
 })();
 </script>
+<script id="back-guard">
+(function () {
+  var armedAt = 0, fallbacks = [];
+  window.addBackFallback = function (fn) { fallbacks.push(fn); };
+  try {
+    history.replaceState({ root: 1 }, '', location.href);
+    history.pushState({ home: 1 }, '', location.href);
+  } catch (e) {}
+  function note(m) {
+    if (window.PichaApp && PichaApp.toast) { try { PichaApp.toast(m); return; } catch (e) {} }
+    if (typeof showToast === 'function') showToast(m);
+  }
+  function exitNow() {
+    if (window.PichaApp && PichaApp.exitApp) { try { PichaApp.exitApp(); return; } catch (e) {} }
+    history.back();
+  }
+  window.addEventListener('popstate', function () {
+    var st = history.state || {};
+    if (!st.root) return;
+    var info = document.getElementById('infoModal');
+    var ser = document.getElementById('seriesModal');
+    if (info && info.classList.contains('active')) {
+      closeInfo();
+    } else if (ser && ser.classList.contains('active')) {
+      closeSeries();
+    } else {
+      var used = false;
+      for (var i = 0; i < fallbacks.length; i++) {
+        try { if (fallbacks[i]()) { used = true; break; } } catch (e) {}
+      }
+      if (!used) {
+        var now = Date.now();
+        if (now - armedAt < 2000) { exitNow(); return; }
+        armedAt = now;
+        note('Press again to exit');
+      }
+    }
+    try {
+      history.replaceState({ root: 1 }, '', location.href);
+      history.pushState({ home: 1 }, '', location.href);
+    } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>
