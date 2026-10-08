@@ -3903,7 +3903,9 @@ async function shareCurrentTitle() {
   const item = currentInfoItem;
   const s = currentSeries;
   const title = item ? (item.title || item.name) : (s ? s.title : 'Picha+');
-  const url = window.location.href;
+  const _tm = window.location.pathname.match(/\/title\/([^/]+)/);
+  const url = _tm ? `${API}/t/${_tm[1]}?to=title` : window.location.href;
+  if (_tm && window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); return; } catch (e) { /* user cancelled or unsupported, fall through */ }
