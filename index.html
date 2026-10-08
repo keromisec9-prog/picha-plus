@@ -7843,7 +7843,7 @@ function _pagerSlideHTML(idx) {
           <span id="pgLikeIcon_${idx}" class="material-symbols-rounded" style="font-size:30px;">favorite</span>
           <span id="pgLikeCount_${idx}" style="font-size:0.72rem;font-weight:600;">Like</span>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" onclick="shareCurrentTitle && shareCurrentTitle()">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" onclick="_pagerShare()">
           <span class="material-symbols-rounded" style="font-size:28px;">share</span>
           <span style="font-size:0.72rem;font-weight:600;">Share</span>
         </div>
@@ -10809,6 +10809,25 @@ async function _mpfToggleLike(idx) {
     if (wantLiked) { const i = liked.indexOf(itemId); if (i > -1) liked.splice(i, 1); if (icon) { icon.style.color = '#fff'; icon.style.fontVariationSettings = "'FILL' 0"; } }
     else { liked.push(itemId); if (icon) { icon.style.color = '#ff3b5c'; icon.style.fontVariationSettings = "'FILL' 1"; } }
     saveLiked();
+  }
+}
+
+async function _pagerShare() {
+  const it = (typeof _pagerItem === 'function') ? _pagerItem(_pagerIdx) : null;
+  const short = it && it.short;
+  if (!short) { showToast('Could not share', 'error'); return; }
+  const key = _shortKeyOf(short);
+  const title = short.title || 'Picha+';
+  const url = `${API}/s/${encodeURIComponent(key)}`;
+  const shareData = { title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url };
+  if (navigator.share) {
+    try { await navigator.share(shareData); return; } catch (e) { /* cancelled or unsupported */ }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link copied ✓', 'gold');
+  } catch (e) {
+    showToast('Could not copy link', 'error');
   }
 }
 
