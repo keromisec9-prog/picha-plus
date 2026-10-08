@@ -3139,6 +3139,7 @@ window.addEventListener('load', async () => {
   updateUI();
   await loadContent();
   handleDeepLinkTitle();
+  handleDeepLinkShort();
   if (session.token) {
     refreshUser(true);
   }
@@ -3165,6 +3166,38 @@ window.addEventListener('load', async () => {
 });
 
 // ── DEEP LINKS (/title/<id>-<slug>) ────────────────────────────────────────────
+// [SHORTS SUB-TAB previews] Opens For You → Shorts on a shared title.
+// Link format: /picha-plus/shorts/<id>/<slug>. Logged-out visitors are sent to
+// sign-in first; the title id is remembered (1h) and opened after they return.
+async function handleDeepLinkShort() {
+  const PEND = 'pichaplus_pending_short';
+  let id = null;
+  const m = window.location.pathname.match(/\/shorts\/([^/]+)/);
+  if (m) {
+    id = decodeURIComponent(m[1]);
+  } else if (session.isLoggedIn()) {
+    try {
+      const p = JSON.parse(localStorage.getItem(PEND) || 'null');
+      if (p && p.id && Date.now() - p.t < 3600000) id = p.id;
+    } catch (e) {}
+  }
+  if (!id) return;
+  if (!session.isLoggedIn()) {
+    try { localStorage.setItem(PEND, JSON.stringify({ id, t: Date.now() })); } catch (e) {}
+    history.replaceState({}, '', '/picha-plus/');
+    openSignin();
+    return;
+  }
+  try { localStorage.removeItem(PEND); } catch (e) {}
+  history.replaceState({}, '', '/picha-plus/');
+  const pool = window._allCards || [];
+  const item = pool.find(c => String(c.id) === id) || pool.find(c => String(c.tmdbId) === id);
+  if (!item) { showToast('That title is no longer available', 'error'); return; }
+  await bnOpenForYou();
+  _mpfList = [item].concat(_mpfBuildList().filter(c => c.id !== item.id));
+  fyTab('shorts');
+}
+
 function handleDeepLinkTitle() {
   const m = window.location.pathname.match(/\/title\/([^/]+)/);
   if (!m) return;
