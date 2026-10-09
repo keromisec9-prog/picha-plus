@@ -12389,5 +12389,35 @@ function _serHeroPolish(s) {
   };
 })();
 </script>
+<script id="pp-return3">
+(function () {
+  var orig = window._ppPlayerBack;
+  if (typeof orig !== "function" || orig._p3) return;
+  var w = function () {
+    var r = orig.apply(this, arguments);
+    setTimeout(function () {
+      try {
+        var st = history.state || {};
+        if (st.type === "title" || st.type === "series") return;
+        var info = document.getElementById("infoModal");
+        var ser = document.getElementById("seriesModal");
+        if (info && info.classList.contains("active") && typeof currentInfoItem !== "undefined" && currentInfoItem) {
+          var it = currentInfoItem;
+          var t = it.title || it.name || "";
+          history.pushState({ type: "title", id: it.id }, "", "/picha-plus/title/" + encodeURIComponent(String(it.id || it.tmdbId)) + "/" + slugify(t));
+        } else if (ser && ser.classList.contains("active") && typeof currentSeries !== "undefined" && currentSeries) {
+          var sr = currentSeries;
+          var idx = (window._seriesList || []).indexOf(sr);
+          var rd = slugify(sr.title) + (sr.vj ? "-" + slugify(sr.vj) : "");
+          history.pushState({ type: "series", idx: idx }, "", "/picha-plus/title/" + encodeURIComponent(String(sr.tmdbId)) + "/" + rd);
+        }
+      } catch (e) { console.warn(e); }
+    }, 60);
+    return r;
+  };
+  w._p3 = 1;
+  window._ppPlayerBack = w;
+})();
+</script>
 </body>
 </html>
