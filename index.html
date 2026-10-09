@@ -3172,7 +3172,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <!-- PLAYER MODAL -->
 <div class="player-modal" id="playerModal">
   <div class="player-header">
-    <button class="player-back" onclick="closePlayer()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
+    <button class="player-back" onclick="_ppPlayerBack()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
     <span class="player-title-text" id="playerTitle"></span>
     <div style="width:60px;"></div>
   </div>
@@ -11547,7 +11547,7 @@ window.addEventListener('focus', clearStrayFocus);
     return false;
   }
   var add = window.addBackFallback;
-  add(function () { return on('playerModal') && call('closePlayer'); });
+  add(function () { return on('playerModal') && call('_ppPlayerBack'); });
   add(function () {
     var a = document.querySelector('.african-modal-overlay');
     if (a) { a.remove(); return true; }
@@ -12302,6 +12302,56 @@ function _serHeroPolish(s) {
     window.showInfo = w;
   }
   try { wire(); } catch (e) {}
+})();
+</script>
+<script id="pp-return">
+(function () {
+  var pending = null, current = null, wasActive = false;
+  function mark(o) { pending = { o: o, t: Date.now() }; }
+  function wrap(name, make) {
+    var f = window[name];
+    if (typeof f !== "function" || f._ppr) return;
+    var w = function () {
+      try { var o = make.apply(this, arguments); if (o) mark(o); } catch (e) {}
+      return f.apply(this, arguments);
+    };
+    w._ppr = 1;
+    window[name] = w;
+  }
+  wrap("playFromInfo", function () {
+    var it = typeof currentInfoItem !== "undefined" ? currentInfoItem : null;
+    return it ? { type: "info", item: it } : null;
+  });
+  wrap("playEpisode", function () {
+    var sr = typeof currentSeries !== "undefined" ? currentSeries : null;
+    return sr ? { type: "series", s: sr } : null;
+  });
+  var pm = document.getElementById("playerModal");
+  if (pm) {
+    new MutationObserver(function () {
+      var a = pm.classList.contains("active");
+      if (a && !wasActive) {
+        if (pending && Date.now() - pending.t < 5000) current = { o: pending.o, t: Date.now() };
+        else if (current && Date.now() - current.t < 45000) current.t = Date.now();
+        else current = null;
+        pending = null;
+      }
+      wasActive = a;
+    }).observe(pm, { attributes: true, attributeFilter: ["class"] });
+  }
+  function restore(o) {
+    if (o.type === "info") { if (typeof showInfo === "function") showInfo(o.item); }
+    else if (o.type === "series") {
+      var i = (window._seriesList || []).indexOf(o.s);
+      if (i > -1 && typeof showSeries === "function") showSeries(i);
+    }
+  }
+  window._ppPlayerBack = function () {
+    var c = current; current = null;
+    closePlayer();
+    if (!c) return;
+    setTimeout(function () { try { restore(c.o); } catch (e) { console.warn(e); } }, 80);
+  };
 })();
 </script>
 </body>
