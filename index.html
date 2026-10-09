@@ -2495,8 +2495,6 @@
 <style id="pp-info5-css">
 #ppHeroContent #infoDesc{display:block!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;-webkit-box-orient:unset!important;max-height:4.4em!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:none;background:none!important;box-shadow:none!important;border:0!important;padding:0!important;margin:0!important;position:static!important;inset:auto!important;width:auto!important;transform:none!important;}
 #ppHeroContent #infoDesc::-webkit-scrollbar{display:none;}
-#ppHeroContent #infoDesc *{display:none!important;}
-#ppHeroContent>*:not(#infoTitle):not(#ppMeta):not(#infoMeta):not(#infoDesc):not(#ppActions){display:none!important;}
 #ppBody[data-tab="seeall"] #ppDetails,#ppBody[data-tab="seeall"] #ppCast{display:none!important;}
 #ppBody:not([data-tab="seeall"]) #ppAll{display:none;}
 #infoCard[data-view="seeall"] #ppHero,#infoCard[data-view="seeall"] #ppTabs{display:none!important;}
@@ -2506,6 +2504,10 @@
 @media (min-width:700px){.pp-grid{grid-template-columns:repeat(5,minmax(0,1fr));}}
 .pp-gcard{cursor:pointer;min-width:0;}
 .pp-gcard img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#222;display:block;}
+</style>
+<style id="pp-info6-css">
+#ppHeroContent #infoDesc,#ppHeroContent #infoDesc[class]{background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
+#ppHeroContent #infoDesc.pp-open{max-height:11em!important;}
 </style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
@@ -3510,7 +3512,8 @@ function handleDeepLinkTitle() {
   history.replaceState({}, '', '/');
 }
 
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', (_pe) => {
+  if (window._ppKeep && window._ppKeep(_pe)) return;
   if (!window.location.pathname.includes('/title/')) {
     // Back button navigated away from a title — close whichever modal is open
     const infoOpen = document.getElementById('infoModal')?.classList.contains('active');
@@ -12131,11 +12134,19 @@ function _serHeroPolish(s) {
   var view = "details", pending = null, pendTimer = 0;
 
   function apply(v) {
+    var prev = view;
     view = v;
     var card = $("infoCard"), b = $("ppBody");
-    if (card) { card.dataset.view = v; card.scrollTop = 0; }
+    if (card && prev === "details" && v !== "details") window._ppSavedScroll = card.scrollTop;
+    if (card) card.dataset.view = v;
     if (b) b.dataset.tab = v;
     [].forEach.call(document.querySelectorAll("#ppTabs button"), function (x) { x.classList.toggle("on", x.dataset.t === v); });
+    if (card) {
+      var tb = $("ppTabs");
+      if (v === "details") card.scrollTop = window._ppSavedScroll || 0;
+      else if (v === "seeall") card.scrollTop = 0;
+      else card.scrollTop = Math.min(card.scrollTop, tb ? tb.offsetTop : 0);
+    }
   }
   function go(t) {
     if (t === view) return;
@@ -12244,6 +12255,51 @@ function _serHeroPolish(s) {
     w._pp5 = 1;
     window.showInfo = w;
   }
+})();
+</script>
+<script id="pp-info6">
+(function () {
+  function $(i) { return document.getElementById(i); }
+  window._ppKeep = function (ev) {
+    var st = ev && ev.state;
+    if (st && st.ppview) return true;
+    var b = $("ppBody");
+    return !!(b && b.dataset.tab && b.dataset.tab !== "details");
+  };
+  function wire() {
+    var hc = $("ppHeroContent"), d = $("infoDesc");
+    if (!hc || !d || hc.dataset.p6) return;
+    hc.dataset.p6 = "1";
+    hc.addEventListener("click", function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest || t === hc) return;
+      if (t.closest("#ppActions") || t.closest("#infoTitle") || t.closest("#ppMeta")) return;
+      var inDesc = !!t.closest("#infoDesc");
+      var ctl = t.closest("button,svg,.material-symbols-rounded,[class*=chev],[class*=more],[class*=toggle],[class*=expand]");
+      var isChev = inDesc ? (!!ctl && ctl !== d) : true;
+      ev.stopPropagation();
+      ev.preventDefault();
+      if (isChev) {
+        var open = d.classList.toggle("pp-open");
+        var m = ctl || t;
+        m.style.transform = open ? "rotate(180deg)" : "";
+      }
+    }, true);
+  }
+  var o = window.showInfo;
+  if (typeof o === "function" && !o._pp6) {
+    var w = function () {
+      window._ppSavedScroll = 0;
+      var d = $("infoDesc");
+      if (d) { d.classList.remove("pp-open"); d.scrollTop = 0; }
+      [].forEach.call(document.querySelectorAll('#ppHeroContent [style*="rotate"]'), function (x) { x.style.transform = ""; });
+      try { wire(); } catch (e) {}
+      return o.apply(this, arguments);
+    };
+    w._pp6 = 1;
+    window.showInfo = w;
+  }
+  try { wire(); } catch (e) {}
 })();
 </script>
 </body>
