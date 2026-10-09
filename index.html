@@ -12304,7 +12304,7 @@ function _serHeroPolish(s) {
   try { wire(); } catch (e) {}
 })();
 </script>
-<script id="pp-return">
+<script id="pp-return2">
 (function () {
   var pending = null, current = null, wasActive = false;
   function mark(o) { pending = { o: o, t: Date.now() }; }
@@ -12326,6 +12326,10 @@ function _serHeroPolish(s) {
     var sr = typeof currentSeries !== "undefined" ? currentSeries : null;
     return sr ? { type: "series", s: sr } : null;
   });
+  wrap("_mpfWatchFull", function (idx) {
+    var m = (typeof _mpfSlideMeta !== "undefined") ? _mpfSlideMeta[idx] : null;
+    return m && m.item ? { type: "shorts", item: m.item } : null;
+  });
   var pm = document.getElementById("playerModal");
   if (pm) {
     new MutationObserver(function () {
@@ -12339,18 +12343,49 @@ function _serHeroPolish(s) {
       wasActive = a;
     }).observe(pm, { attributes: true, attributeFilter: ["class"] });
   }
-  function restore(o) {
-    if (o.type === "info") { if (typeof showInfo === "function") showInfo(o.item); }
-    else if (o.type === "series") {
-      var i = (window._seriesList || []).indexOf(o.s);
-      if (i > -1 && typeof showSeries === "function") showSeries(i);
+  function noPush(fn) {
+    var ps = history.pushState;
+    history.pushState = function () {};
+    try { fn(); } finally { history.pushState = ps; }
+  }
+  function showOrigin(o) {
+    if (o.type === "info" && typeof showInfo === "function") {
+      noPush(function () { Promise.resolve(showInfo(o.item)).catch(function () {}); });
+      return true;
     }
+    if (o.type === "series" && typeof showSeries === "function") {
+      var i = (window._seriesList || []).indexOf(o.s);
+      if (i > -1) { noPush(function () { showSeries(i); }); return true; }
+    }
+    return false;
+  }
+  function restoreShorts(item) {
+    var pl = document.getElementById("player");
+    try { if (pl) pl.pause(); } catch (e) {}
+    var root = document.getElementById("mpfRoot");
+    var visible = !!(root && root.offsetHeight > 0);
+    function build() {
+      try {
+        var all = (window._allCards || []).filter(function (c) { return c.id !== item.id; });
+        _mpfList = [item].concat(_mpfQuickShuffle(all));
+        return Promise.resolve(openMoviePreviewFeed());
+      } catch (e) { return Promise.resolve(); }
+    }
+    if (visible) {
+      return build().then(function () { closePlayer(); }, function () { closePlayer(); });
+    }
+    closePlayer();
+    return new Promise(function (r) { setTimeout(r, 60); }).then(build);
   }
   window._ppPlayerBack = function () {
     var c = current; current = null;
+    if (!c) { closePlayer(); return; }
+    var o = c.o;
+    if (o.type === "shorts") { restoreShorts(o.item); return; }
+    var shown = false;
+    try { shown = showOrigin(o); } catch (e) { console.warn(e); }
     closePlayer();
-    if (!c) return;
-    setTimeout(function () { try { restore(c.o); } catch (e) { console.warn(e); } }, 80);
+    if (shown) document.body.style.overflow = "hidden";
   };
 })();
 </script>
