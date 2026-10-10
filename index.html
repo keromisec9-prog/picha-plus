@@ -4382,6 +4382,11 @@ function _dlGuard() {
     setTimeout(() => showPaywall(), 1800);
     return false;
   }
+  // Plain Weekly = in-app downloads only; external downloads start at Weekly+
+  if (!window.PichaApp && session.user && session.user.subscriptionPlan === 'weekly') {
+    showToast('📲 Weekly downloads work in the Picha+ app. Upgrade to Weekly+ to download from your browser.', 'error');
+    return false;
+  }
   return true;
 }
 
