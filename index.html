@@ -10713,7 +10713,7 @@ function _mpfSlideHTML(idx) {
         <button id="mpfDescBtn_${idx}" onclick="event.stopPropagation();_mpfToggleDesc(${idx})" style="display:none;align-items:center;gap:2px;background:none;border:none;color:var(--gold);font-size:0.8rem;font-weight:600;padding:2px 0 0;cursor:pointer;">Read more <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="flex:none;"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>
         <img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="_mpfWatchDesc(${idx});this.remove()" style="display:none">
         <div style="width:90%;margin-top:8px;">
-          <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#fff;color:#000;font-weight:700;font-size:0.88rem;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;">
+          <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:rgba(255,255,255,0.22);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;font-weight:700;font-size:0.88rem;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;">
           <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full Movie
         </button>
           <div id="mpfSeekWrap_${idx}" style="position:relative;width:100%;height:14px;display:flex;align-items:center;touch-action:none;margin-top:4px;">
@@ -11118,6 +11118,7 @@ const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <vi
 function _mpfOnCommitted(prevIdx, newIdx) {
   const prevVideo = document.getElementById('mpfVid_' + prevIdx);
   if (prevVideo) prevVideo.pause();
+  [prevIdx, newIdx].forEach(i => { const ind = document.getElementById('mpfPause_' + i); if (ind) ind.style.display = 'none'; });
   _mpfIdx = newIdx;
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
   const newVideo = document.getElementById('mpfVid_' + newIdx);
@@ -11191,16 +11192,44 @@ function _mpfSnapBack(fromOffset) {
 let _mpfTapTimer = null;
 let _mpfTapCount = 0;
 
+// Whenever a pager video starts playing (by ANY path: tap, swipe-back autoplay, resume),
+// its pause icon must go away. 'play' doesn't bubble, so listen in the capture phase.
+if (!window._mpfPlayHideWired) {
+  window._mpfPlayHideWired = true;
+  document.addEventListener('play', function (e) {
+    const v = e.target;
+    if (v && v.id && v.id.indexOf('mpfVid_') === 0) {
+      const ind = document.getElementById('mpfPause_' + v.id.slice(7));
+      if (ind) ind.style.display = 'none';
+    }
+  }, true);
+}
 function _mpfHandleVideoTap(slideEl) {
   _mpfTapCount++;
+  const idx = Number(slideEl.dataset.idx);
+  const video = document.getElementById('mpfVid_' + idx);
+  const indicator = document.getElementById('mpfPause_' + idx);
   if (_mpfTapCount === 1) {
-    _mpfTapTimer = setTimeout(() => {
-      _mpfTogglePlayPause(slideEl);
-      _mpfTapCount = 0;
-    }, 260);
+    // react immediately; remember whether this tap actually toggled anything
+    const before = video ? video.paused : null;
+    _mpfTogglePlayPause(slideEl);
+    window._mpfTapToggled = !!video && video.paused !== before;
+    window._mpfTapWasPaused = before;
+    _mpfTapTimer = setTimeout(() => { _mpfTapCount = 0; }, 260);
   } else {
     clearTimeout(_mpfTapTimer);
     _mpfTapCount = 0;
+    // second tap = like, not pause: put the video back exactly how it was
+    if (video && window._mpfTapToggled) {
+      if (window._mpfTapWasPaused) {
+        video.pause();
+        if (indicator) indicator.style.display = 'flex';
+      } else {
+        video.play().catch(() => {});
+        if (indicator) indicator.style.display = 'none';
+      }
+    }
+    window._mpfTapToggled = false;
     _mpfDoubleTapLike(slideEl);
   }
 }
