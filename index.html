@@ -9377,7 +9377,7 @@ function fyScore(item) {
   score += completionRate * 0.25; // up to +25 for a 100% completion rate
 
   // Liked — strong explicit signal, should reliably float items to the top
-  if (liked.includes(item.id)) score += 10;
+  if (liked.includes(item.id)) score -= 4; // a like means 'more LIKE this' (via genre/VJ below), not 'show this exact title again'
 
   // Personal progress/completion on this specific title (local device or any other device)
   const crossMatch = (_crossDeviceMatched || []).find(m => !m.isSeries && m.card && String(m.card.id) === id);
@@ -9391,7 +9391,7 @@ function fyScore(item) {
   // Genre preference — scales with how many liked/watched titles share each genre,
   // so watching more of a genre keeps pushing similar titles higher (not just a flat bonus)
   const crossDeviceCards = (_crossDeviceMatched || []).filter(m => !m.isSeries && m.card).map(m => m.card);
-  const engagedCards = (window._allCards || []).filter(c => liked.includes(c.id) || progress[c.id])
+  const engagedCards = (window._allCards || []).filter(c => c.id !== item.id && (liked.includes(c.id) || progress[c.id]))
     .concat(crossDeviceCards);
   const engagedGenres = engagedCards.flatMap(c => c.genre_ids || []);
   let genreScore = 0;
@@ -9479,9 +9479,7 @@ function renderForYou() {
     .sort((a, b) => {
       // Liked items always sort above everything else; disliked items always sort
       // below everything else. The weighted score only breaks ties within each tier.
-      const aLiked = liked.includes(a.item.id) ? 1 : 0;
-      const bLiked = liked.includes(b.item.id) ? 1 : 0;
-      if (aLiked !== bLiked) return bLiked - aLiked;
+      // (liked-first tier removed: a like boosts SIMILAR titles via fyScore, not the liked title itself)
       const aDisliked = _disliked.includes(a.item.id) ? 1 : 0;
       const bDisliked = _disliked.includes(b.item.id) ? 1 : 0;
       if (aDisliked !== bDisliked) return aDisliked - bDisliked;
@@ -10569,12 +10567,11 @@ function _mpfBuildList() {
 // ahead of wherever the user hasn't scrolled to yet (see _mpfRefineListInBackground).
 function _mpfBuildRankedList() {
   const allCards = window._allCards || [];
-  const likedFirst = allCards.filter(c => liked.includes(c.id));
-  const disliked = allCards.filter(c => _disliked.includes(c.id) && !liked.includes(c.id));
-  const rest = allCards.filter(c => !liked.includes(c.id) && !_disliked.includes(c.id));
+  const disliked = allCards.filter(c => _disliked.includes(c.id));
+  const rest = allCards.filter(c => !_disliked.includes(c.id));
 
-  const movies = _mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type !== 'tv'), 80));
-  const series = _mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type === 'tv'), 40));
+  const movies = _mpfDemoteSeen(_mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type !== 'tv'), 80)));
+  const series = _mpfDemoteSeen(_mpfWeightedShuffle(_mpfTopCandidates(rest.filter(c => c.media_type === 'tv'), 40)));
 
   const interleaved = [];
   let mi = 0, si = 0;
@@ -10583,8 +10580,37 @@ function _mpfBuildRankedList() {
     if (si < series.length) interleaved.push(series[si++]);
   }
 
-  return [..._mpfWeightedShuffle(likedFirst), ...interleaved, ..._mpfWeightedShuffle(disliked)];
+  return [...interleaved, ..._mpfWeightedShuffle(disliked)];
 }
+
+// Recently-seen history (ids), oldest first, capped. Titles seen lately sink to the
+// back of the next feed so users don't get the same videos every time they open it.
+function _mpfSeenList() {
+  try { return JSON.parse(localStorage.getItem('pichaplus_mpf_seen') || '[]'); } catch (e) { return []; }
+}
+function _mpfMarkSeen(id) {
+  if (id == null) return;
+  try {
+    const a = _mpfSeenList().filter(x => x !== id);
+    a.push(id);
+    while (a.length > 150) a.shift();
+    localStorage.setItem('pichaplus_mpf_seen', JSON.stringify(a));
+  } catch (e) {}
+}
+function _mpfDemoteSeen(arr) {
+  const seen = _mpfSeenList();
+  const pos = new Map(seen.map((id, i) => [id, i]));
+  const fresh = arr.filter(c => !pos.has(c.id));
+  const old = arr.filter(c => pos.has(c.id)).sort((a, b) => pos.get(a.id) - pos.get(b.id));
+  return fresh.concat(old);
+}
+(function () {
+  const _orig = _mpfOnCommitted;
+  _mpfOnCommitted = function (prevIdx, newIdx) {
+    try { const it = _mpfList[newIdx]; if (it) _mpfMarkSeen(it.id); } catch (e) {}
+    return _orig.apply(this, arguments);
+  };
+})();
 
 // Runs after the feed is already open and slide 0 is mounted — computes the proper
 // ranked order off the critical path, then replaces only the not-yet-reached tail of
@@ -10672,7 +10698,7 @@ function _mpfSlideHTML(idx) {
         <button id="mpfDescBtn_${idx}" onclick="event.stopPropagation();_mpfToggleDesc(${idx})" style="display:none;align-items:center;gap:2px;background:none;border:none;color:var(--gold);font-size:0.8rem;font-weight:600;padding:2px 0 0;cursor:pointer;">Read more <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="flex:none;"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>
         <img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="_mpfWatchDesc(${idx});this.remove()" style="display:none">
         <div style="width:90%;margin-top:8px;">
-          <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--gold);color:#000;font-weight:700;font-size:0.88rem;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;">
+          <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#fff;color:#000;font-weight:700;font-size:0.88rem;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;">
           <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full Movie
         </button>
           <div id="mpfSeekWrap_${idx}" style="position:relative;width:100%;height:14px;display:flex;align-items:center;touch-action:none;margin-top:4px;">
