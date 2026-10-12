@@ -11206,30 +11206,14 @@ if (!window._mpfPlayHideWired) {
 }
 function _mpfHandleVideoTap(slideEl) {
   _mpfTapCount++;
-  const idx = Number(slideEl.dataset.idx);
-  const video = document.getElementById('mpfVid_' + idx);
-  const indicator = document.getElementById('mpfPause_' + idx);
   if (_mpfTapCount === 1) {
-    // react immediately; remember whether this tap actually toggled anything
-    const before = video ? video.paused : null;
-    _mpfTogglePlayPause(slideEl);
-    window._mpfTapToggled = !!video && video.paused !== before;
-    window._mpfTapWasPaused = before;
-    _mpfTapTimer = setTimeout(() => { _mpfTapCount = 0; }, 260);
+    _mpfTapTimer = setTimeout(() => {
+      _mpfTogglePlayPause(slideEl);
+      _mpfTapCount = 0;
+    }, 260);
   } else {
     clearTimeout(_mpfTapTimer);
     _mpfTapCount = 0;
-    // second tap = like, not pause: put the video back exactly how it was
-    if (video && window._mpfTapToggled) {
-      if (window._mpfTapWasPaused) {
-        video.pause();
-        if (indicator) indicator.style.display = 'flex';
-      } else {
-        video.play().catch(() => {});
-        if (indicator) indicator.style.display = 'none';
-      }
-    }
-    window._mpfTapToggled = false;
     _mpfDoubleTapLike(slideEl);
   }
 }
