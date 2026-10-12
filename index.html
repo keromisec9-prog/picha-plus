@@ -9373,8 +9373,8 @@ function fyScore(item) {
   const stat = statKey ? _fyStats[statKey] : null;
   const plays = stat?.plays || 0;
   const completionRate = stat?.completionRate || 0; // 0-100
-  score += Math.min(plays * 1, 10); // popularity, capped low
-  score += completionRate * 0.25; // up to +25 for a 100% completion rate
+  score += Math.min(plays, 10) * 0.5; // popularity, capped low
+  score += completionRate * 0.15 * Math.min(plays / 20, 1); // up to +25 for a 100% completion rate
 
   // Liked — strong explicit signal, should reliably float items to the top
   if (liked.includes(item.id)) score -= 4; // a like means 'more LIKE this' (via genre/VJ below), not 'show this exact title again'
@@ -9462,6 +9462,21 @@ function _fySetupScrollListener() {
   _fyScrollListenerAttached = true;
 }
 
+window._fySessJit = window._fySessJit || {};
+window.addEventListener('load', function () {
+  if (typeof fyTab !== 'function' || window._fyTabWrapped) return;
+  window._fyTabWrapped = true;
+  const _origFyTab = fyTab;
+  window.fyTab = function () {
+    window._fySessJit = {}; // new random offsets on every sub-tab switch
+    return _origFyTab.apply(this, arguments);
+  };
+});
+function _fyJit(id) {
+  const k = String(id);
+  if (!(k in window._fySessJit)) window._fySessJit[k] = Math.random() * 10 - 5;
+  return window._fySessJit[k];
+}
 function renderForYou() {
   const grid = document.getElementById('fyGrid');
   const empty = document.getElementById('fyEmpty');
@@ -9475,7 +9490,7 @@ function renderForYou() {
   const _useJitter = _fyForceJitter;
   _fyForceJitter = false; // single-shot: only apply randomness for the render right after a manual refresh
 
-  const scored = pool.map(item => ({ item, score: fyScore(item) + (_useJitter ? (Math.random() * 6 - 3) : 0) }))
+  const scored = pool.map(item => ({ item, score: fyScore(item) + _fyJit(item.id) + (_useJitter ? (Math.random() * 6 - 3) : 0) }))
     .sort((a, b) => {
       // Liked items always sort above everything else; disliked items always sort
       // below everything else. The weighted score only breaks ties within each tier.
