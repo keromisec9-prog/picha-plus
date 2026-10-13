@@ -10089,7 +10089,9 @@ function _bnRenderVJCards() {
   const cards = (window._allCards || []).filter(c => !c.isUgandan);
   const vjMap = {};
   cards.forEach(c => { if (c._vj) { vjMap[c._vj] = (vjMap[c._vj] || 0) + 1; } });
-  const vjs = Object.keys(vjMap).sort((x, y) => (vjMap[y] - vjMap[x]) || x.localeCompare(y));
+  const _rk = (window._vjRank || []).map(n => String(n).toLowerCase());
+  const _ri = n => { const i = _rk.indexOf(n.toLowerCase()); return i < 0 ? 9999 : i; };
+  const vjs = Object.keys(vjMap).sort((x, y) => (_ri(x) - _ri(y)) || (vjMap[y] - vjMap[x]) || x.localeCompare(y));
   if (!vjs.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">No VJs yet</div>'; return; }
   const profiles = window._vjProfiles || {};
   const MIC = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>';
@@ -10112,6 +10114,9 @@ function bnBuildVJList() {
   _bnRenderVJCards();
   if (!window._vjProfLoading) {
     window._vjProfLoading = true;
+    fetch(API + '/vj-ranking').then(r => r.json())
+      .then(d => { window._vjRank = d.order || []; _bnRenderVJCards(); })
+      .catch(() => {});
     fetch(API + '/vj-profiles')
       .then(r => r.json())
       .then(d => { window._vjProfiles = d.profiles || {}; _bnRenderVJCards(); })
