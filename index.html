@@ -21,7 +21,8 @@
     } catch (e) { return '?'; }
   }
   function log(m) {
-    L.push(((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + ' |len' + history.length + ' ' + sh(history.state));
+    var ni = ''; try { if (window.navigation) ni = ' i' + navigation.currentEntry.index + '/' + navigation.entries().length; } catch (e) {}
+    L.push(((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + ' |len' + history.length + ni + ' ' + sh(history.state));
     save(); show();
   }
   // previous session (what happened right before the app closed)
@@ -72,6 +73,14 @@
       }).observe(el, { attributes: true, attributeFilter: ['class'] });
     });
   }, 800);
+  try {
+    if (window.navigation) {
+      navigation.addEventListener('navigate', function (e) {
+        var d = e.destination || {};
+        log('NAV ' + e.navigationType + ' ->' + d.index + (d.sameDocument ? '' : ' EXTERNAL'));
+      });
+    } else { log('NO NAVIGATION API'); }
+  } catch (e) {}
   log('START');
 })();
 </script>
