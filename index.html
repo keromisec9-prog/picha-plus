@@ -3,32 +3,62 @@
 <head>
     <script id="hist-debug">
 (function () {
-  var L = [], t0 = Date.now(), box = null;
+  var KEY = 'histdbg2', L = [], t0 = Date.now(), box = null, prevBox = null;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(L.slice(-40))); } catch (e) {} }
   function show() {
+    if (!document.body) return;
     if (!box) {
-      if (!document.body) return;
       box = document.createElement('div');
       box.style.cssText = 'position:fixed;left:0;top:70px;z-index:2147483647;background:rgba(0,0,0,.8);color:#0f0;font:10px/1.25 monospace;padding:3px 5px;pointer-events:none;max-width:100vw;white-space:pre;';
       document.body.appendChild(box);
     }
-    box.textContent = L.slice(-14).join('\n');
+    box.textContent = L.slice(-12).join('\n');
   }
   function sh(st) {
     try {
       if (!st) return 'null';
-      return String(st.type || st.ovl || st.ppview || st.serview || (st.root ? 'root' : '') || (st.home ? 'home' : '') || JSON.stringify(st)).slice(0, 14);
+      return String(st.type || st.ovl || st.ppview || st.serview || (st.root ? 'root' : '') || (st.home ? 'home' : '') || JSON.stringify(st)).slice(0, 12);
     } catch (e) { return '?'; }
   }
   function log(m) {
-    L.push(((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + ' |len' + history.length + ' ' + sh(history.state) + ' ' + location.pathname.slice(-16));
-    show();
+    L.push(((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + ' |len' + history.length + ' ' + sh(history.state));
+    save(); show();
   }
-  var ps = history.pushState, rs = history.replaceState, bk = history.back;
+  // previous session (what happened right before the app closed)
+  try {
+    var prev = JSON.parse(localStorage.getItem(KEY) || '[]');
+    if (prev.length) {
+      document.addEventListener('DOMContentLoaded', function () {
+        prevBox = document.createElement('div');
+        prevBox.style.cssText = 'position:fixed;left:0;bottom:90px;z-index:2147483647;background:rgba(0,0,0,.85);color:#ff0;font:10px/1.25 monospace;padding:3px 5px;max-width:100vw;white-space:pre;';
+        prevBox.textContent = 'PREVIOUS SESSION (tap to hide)\n' + prev.slice(-14).join('\n');
+        prevBox.onclick = function () { prevBox.remove(); };
+        document.body.appendChild(prevBox);
+      });
+    }
+  } catch (e) {}
+  var ps = history.pushState, rs = history.replaceState, bk = history.back, go = history.go;
   history.pushState = function (st) { var r = ps.apply(this, arguments); log('PUSH ' + sh(st)); return r; };
   history.replaceState = function (st) { var r = rs.apply(this, arguments); log('REPL ' + sh(st)); return r; };
   history.back = function () { log('BACK()'); return bk.apply(this, arguments); };
+  history.go = function (n) { log('GO(' + n + ')'); return go.apply(this, arguments); };
   window.addEventListener('popstate', function (e) { log('POP ' + sh(e.state)); }, true);
+  window.addEventListener('pagehide', function () { log('PAGEHIDE'); });
+  document.addEventListener('visibilitychange', function () { log('VIS ' + document.visibilityState); });
   document.addEventListener('DOMContentLoaded', show);
+  // native bridge calls
+  var wrapT = setInterval(function () {
+    var A = window.PichaApp; if (!A) return;
+    ['exitApp', 'toast'].forEach(function (n) {
+      if (typeof A[n] === 'function' && !A[n]._d) {
+        var o = A[n];
+        A[n] = function () { log('NATIVE ' + n + ' ' + String(arguments[0] || '').slice(0, 20)); return o.apply(this, arguments); };
+        A[n]._d = 1;
+      }
+    });
+  }, 500);
+  setTimeout(function () { clearInterval(wrapT); }, 20000);
+  // overlay on/off
   var ids = ['playerModal', 'infoModal', 'seriesModal'], seen = {};
   setInterval(function () {
     ids.forEach(function (id) {
@@ -42,6 +72,7 @@
       }).observe(el, { attributes: true, attributeFilter: ['class'] });
     });
   }, 800);
+  log('START');
 })();
 </script>
 <script>
