@@ -12158,6 +12158,22 @@ function _serHeroPolish(s) {
     if (t === 'cast' && c && currentSeries && c.dataset.for !== String(currentSeries.tmdbId || '')) fillCast(currentSeries);
   }
 
+  var view = 'eps';
+  function apply(t) { view = t; tab(t); }
+  function go(t) {
+    if (t === view) return;
+    if (t === 'eps') { history.back(); return; }
+    try { history.pushState({ serview: t }, '', location.href); } catch (e) {}
+    apply(t);
+  }
+  window.addEventListener('popstate', function (e) {
+    var sm = document.getElementById('seriesModal');
+    if (!sm || !sm.classList.contains('active')) { view = 'eps'; return; }
+    var st = e.state || {};
+    if (st.serview) { apply(st.serview); e.stopImmediatePropagation(); return; }
+    if (view !== 'eps') { apply('eps'); e.stopImmediatePropagation(); }
+  }, true);
+
   function build(s) {
     var row = $('serActions');
     if (row && !$('serShareBtn')) {
@@ -12169,7 +12185,7 @@ function _serHeroPolish(s) {
       tabs = document.createElement('div'); tabs.id = 'serTabs';
       tabs.innerHTML = '<button type="button" data-t="eps" class="on">Episodes</button><button type="button" data-t="cast">Cast &amp; Crew</button>';
       list.parentElement.insertBefore(tabs, list);
-      tabs.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) tab(b.dataset.t); });
+      tabs.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) go(b.dataset.t); });
     }
     var cast = $('serCast');
     if (!cast) {
@@ -12177,7 +12193,17 @@ function _serHeroPolish(s) {
       list.parentElement.insertBefore(cast, list.nextSibling);
     }
     cast.dataset.for = '';
+    view = 'eps';
     tab('eps');
+    var bb = document.querySelector('#seriesModal button[aria-label="Back"]');
+    if (bb && !bb.dataset.sv) {
+      bb.dataset.sv = '1';
+      bb.removeAttribute('onclick');
+      bb.onclick = function (ev) {
+        if (ev) ev.preventDefault();
+        if (view !== 'eps') history.back(); else closeSeries();
+      };
+    }
   }
 
   var r0 = window._renderSeriesPage;
