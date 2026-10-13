@@ -12767,12 +12767,12 @@ function _serHeroPolish(s) {
         if (info && info.classList.contains("active") && typeof currentInfoItem !== "undefined" && currentInfoItem) {
           var it = currentInfoItem;
           var t = it.title || it.name || "";
-          history.pushState({ type: "title", id: it.id }, "", "/picha-plus/title/" + encodeURIComponent(String(it.id || it.tmdbId)) + "/" + slugify(t));
+          /* RETPUSH_REMOVED */ void 0;
         } else if (ser && ser.classList.contains("active") && typeof currentSeries !== "undefined" && currentSeries) {
           var sr = currentSeries;
           var idx = (window._seriesList || []).indexOf(sr);
           var rd = slugify(sr.title) + (sr.vj ? "-" + slugify(sr.vj) : "");
-          history.pushState({ type: "series", idx: idx }, "", "/picha-plus/title/" + encodeURIComponent(String(sr.tmdbId)) + "/" + rd);
+          /* RETPUSH_REMOVED */ void 0;
         }
       } catch (e) { console.warn(e); }
     }, 60);
