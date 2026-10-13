@@ -12771,5 +12771,74 @@ function _serHeroPolish(s) {
   }, true);
 })();
 </script>
+<script id="nav-trace">
+(function () {
+  var KEY = 'navtrace1', L = [], t0 = Date.now();
+  function ni() { try { return navigation.currentEntry.index + '/' + navigation.entries().length; } catch (e) { return '?'; } }
+  function sh(st) {
+    try { if (!st) return 'null'; return String(st.type || st.ovl || st.ppview || st.serview || (st.ppplayer ? 'player' : '') || (st.root ? 'root' : '') || (st.home ? 'home' : '') || '?').slice(0, 10); } catch (e) { return '?'; }
+  }
+  function log(m) {
+    L.push(((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + ' i' + ni() + ' ' + sh(history.state));
+    if (L.length > 60) L.shift();
+    try { localStorage.setItem(KEY, JSON.stringify(L)); } catch (e) {}
+  }
+  try {
+    var prev = JSON.parse(localStorage.getItem(KEY) || '[]');
+    var tail = prev.slice(-16);
+    var endedHidden = /VIS hidden/.test(tail[tail.length - 1] || '');
+    var usedPlayer = tail.some(function (x) { return /PLAYER OFF/.test(x); });
+    var nativeExit = tail.some(function (x) { return /NATIVE exitApp/.test(x); });
+    if (endedHidden && usedPlayer && !nativeExit) {
+      document.addEventListener('DOMContentLoaded', function () {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;left:0;bottom:90px;z-index:2147483647;background:rgba(0,0,0,.88);color:#ff0;font:10px/1.25 monospace;padding:3px 5px;max-width:100vw;white-space:pre;';
+        d.textContent = 'LAST SESSION ENDED AFTER PLAYER (tap to hide)\n' + tail.join('\n');
+        d.onclick = function () { d.remove(); };
+        document.body.appendChild(d);
+        setTimeout(function () { d.remove(); }, 40000);
+      });
+    }
+  } catch (e) {}
+  var ps = history.pushState, rs = history.replaceState, bk = history.back;
+  history.pushState = function (st) { var r = ps.apply(this, arguments); log('PUSH ' + sh(st)); return r; };
+  history.replaceState = function (st) { var r = rs.apply(this, arguments); log('REPL ' + sh(st)); return r; };
+  history.back = function () { log('BACK()'); return bk.apply(this, arguments); };
+  window.addEventListener('popstate', function (e) { log('POP ' + sh(e.state)); }, true);
+  window.addEventListener('pagehide', function () { log('PAGEHIDE'); });
+  document.addEventListener('visibilitychange', function () { log('VIS ' + document.visibilityState); });
+  try {
+    if (window.navigation) navigation.addEventListener('navigate', function (e) {
+      var d = e.destination || {};
+      log('NAV ' + e.navigationType + ' ->' + d.index + (d.sameDocument === false ? ' EXT' : ''));
+    });
+  } catch (e) {}
+  var wt = setInterval(function () {
+    var A = window.PichaApp; if (!A) return;
+    ['exitApp'].forEach(function (n) {
+      if (typeof A[n] === 'function' && !A[n]._d) {
+        var o = A[n];
+        A[n] = function () { log('NATIVE ' + n); return o.apply(this, arguments); };
+        A[n]._d = 1;
+      }
+    });
+  }, 500);
+  setTimeout(function () { clearInterval(wt); }, 20000);
+  var ids = ['playerModal', 'infoModal', 'seriesModal'], seen = {};
+  setInterval(function () {
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el || seen[id]) return;
+      seen[id] = 1;
+      var was = el.classList.contains('active');
+      new MutationObserver(function () {
+        var on = el.classList.contains('active');
+        if (on !== was) { was = on; log(id.replace('Modal', '').toUpperCase() + (on ? ' ON' : ' OFF')); }
+      }).observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+  }, 800);
+  log('START');
+})();
+</script>
 </body>
 </html>
