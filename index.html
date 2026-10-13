@@ -2522,6 +2522,18 @@
 #bnForYouPage .bn-tabs-row{padding-top:.3rem !important;}
 #bnForYouPage .bn-inner-tab{padding-top:.4rem !important;padding-bottom:.4rem !important;}
 </style>
+<style id="genreCards">
+.gc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 4vw 16px;}
+.gc-card{position:relative;aspect-ratio:1.45/1;border-radius:14px;overflow:hidden;background:#161616;border:1px solid rgba(255,255,255,0.08);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s;}
+.gc-card:active{transform:scale(0.97);}
+.gc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.gc-poster{object-position:center 22%;}
+.gc-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.25) 55%,rgba(0,0,0,0.05) 100%);}
+.gc-txt{position:absolute;left:11px;bottom:9px;right:40px;color:#fff;}
+.gc-name{font-weight:800;font-size:1.02rem;line-height:1.15;text-shadow:0 2px 6px rgba(0,0,0,0.6);}
+.gc-count{font-size:0.74rem;opacity:0.75;margin-top:2px;}
+.gc-ico{position:absolute;right:10px;bottom:9px;color:var(--gold);display:flex;}
+</style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body><div id="appBgLayer"></div><div id="app-splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease"><img src="data:image/webp;base64,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" style="width:180px;height:180px;border-radius:24px"/></div>
@@ -9999,8 +10011,6 @@ function bnInnerTab(tab) {
 
 function bnBuildGenreList() {
   const genreMap = window._genreMap || {};
-  // Complete official TMDB genre ID list (movie + TV) — hardcoded rather than
-  // fetched live so a category label never falls back to a raw numeric ID.
   const GENRE_NAMES = {
     28:'Action', 12:'Adventure', 16:'Animation', 35:'Comedy', 80:'Crime',
     99:'Documentary', 18:'Drama', 10751:'Family', 14:'Fantasy', 36:'History',
@@ -10009,40 +10019,64 @@ function bnBuildGenreList() {
     10759:'Action & Adventure', 10762:'Kids', 10763:'News', 10764:'Reality',
     10765:'Sci-Fi & Fantasy', 10766:'Soap', 10767:'Talk', 10768:'War & Politics'
   };
-  const usedGenres = Object.keys(genreMap).filter(g => genreMap[g]?.length > 0);
   const el = document.getElementById('bnGenreList');
+  const usedGenres = Object.keys(genreMap).filter(g => genreMap[g]?.length > 0);
   if (!usedGenres.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">No genres yet</div>'; return; }
-  // Series virtual genre
-  const seriesItems = (window._allCards || []).filter(c => c.media_type === 'tv');
-  const seriesEntry = seriesItems.length ? `<div class="bn-list-item" onclick="bnOpenSeriesGenre()">
-      <div class="bn-list-icon">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
-      </div>
-      <span class="bn-list-name">Series</span>
-      <span class="bn-list-count">${seriesItems.length >= 30 ? seriesItems.length + ' titles' : ''}</span>
 
-    </div>` : '';
-  const ugandanCards = (window._allCards || []).filter(c => c.isUgandan);
-  const ugandanEntry = ugandanCards.length ? `<div class="bn-list-item" onclick="bnOpenUgandan()">
-      <div class="bn-list-icon">
-        <span class="material-symbols-rounded" style="font-size:18px;">public</span>
-      </div>
-      <span class="bn-list-name">African Cinema</span>
-      <span class="bn-list-count">${ugandanCards.length >= 30 ? ugandanCards.length + ' titles' : ''}</span>
+  // inline SVG icons (bundled, work offline)
+  const svgF = d => '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="' + d + '"/></svg>';
+  const ICON_DEFAULT = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>';
+  const ICONS = {
+    28: svgF('M7 2v11h3v9l7-12h-4l4-8z'),
+    12: svgF('M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z'),
+    35: svgF('M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-10c.83 0 1.5-.67 1.5-1.5S16.33 7 15.5 7 14 7.67 14 8.5s.67 1.5 1.5 1.5zm-7 0C9.33 10 10 9.33 10 8.5S9.33 7 8.5 7 7 7.67 7 8.5 7.67 10 8.5 10zm3.5 7.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z'),
+    10749: svgF('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z')
+  };
+  const ICON_TV = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/></svg>';
+  const ICON_GLOBE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>';
 
-    </div>` : '';
-  el.innerHTML = seriesEntry + ugandanEntry + usedGenres.map(gid => {
-    const name = GENRE_NAMES[gid] || `Genre ${gid}`;
-    const count = genreMap[gid].length;
-    return `<div class="bn-list-item" onclick="bnOpenGenre('${gid}','${name}')">
-      <div class="bn-list-icon">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
-      </div>
-      <span class="bn-list-name">${name}</span>
-      <span class="bn-list-count">${count >= 30 ? count + ' titles' : ''}</span>
+  // artwork picked from the catalog itself; rotates daily, no title reused across cards
+  const day = Math.floor(Date.now() / 86400000);
+  const hash = str => { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; };
+  const imgOf = (c, poster) => {
+    const bd = c._customBackdrop || (c.backdrop_path ? TMDB_IMG + 'w780' + c.backdrop_path : '');
+    const po = c._customPoster || (c.poster_path ? TMDB_IMG + 'w342' + c.poster_path : '');
+    return poster ? (po || bd) : (bd || po);
+  };
+  const used = new Set();
+  const pick = (items, key, poster) => {
+    const pool = (items || []).filter(c => imgOf(c, poster));
+    if (!pool.length) return '';
+    const start = (day * 7 + hash(key)) % pool.length;
+    for (let k = 0; k < pool.length; k++) {
+      const c = pool[(start + k) % pool.length];
+      if (!used.has(c.id)) { used.add(c.id); return imgOf(c, poster); }
+    }
+    return imgOf(pool[start], poster);
+  };
+  const card = (name, count, img, icon, onclick, poster) =>
+    '<div class="gc-card" onclick="' + onclick + '">' +
+      (img ? '<img class="gc-img' + (poster ? ' gc-poster' : '') + '" src="' + img + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : '') +
+      '<div class="gc-shade"></div>' +
+      '<div class="gc-txt"><div class="gc-name">' + name + '</div>' +
+      (count >= 30 ? '<div class="gc-count">' + count + ' titles</div>' : '') + '</div>' +
+      '<div class="gc-ico">' + icon + '</div></div>';
 
-    </div>`;
-  }).join('');
+  const all = window._allCards || [];
+  const seriesItems = all.filter(c => c.media_type === 'tv');
+  const ugandanCards = all.filter(c => c.isUgandan);
+  let html = '';
+  if (seriesItems.length) html += card('Series', seriesItems.length, pick(seriesItems, 'series', true), ICON_TV, 'bnOpenSeriesGenre()', true);
+  if (ugandanCards.length) html += card('African Cinema', ugandanCards.length, pick(ugandanCards, 'african', false), ICON_GLOBE, 'bnOpenUgandan()', false);
+  usedGenres
+    .sort((x, y) => genreMap[y].length - genreMap[x].length)
+    .forEach(gid => {
+      const name = GENRE_NAMES[gid] || ('Genre ' + gid);
+      const items = genreMap[gid];
+      html += card(name, items.length, pick(items, 'g' + gid, false), ICONS[gid] || ICON_DEFAULT,
+                   "bnOpenGenre('" + gid + "','" + name.replace(/'/g, "\\'") + "')", false);
+    });
+  el.innerHTML = '<div class="gc-grid">' + html + '</div>';
 }
 
 function bnBuildVJList() {
