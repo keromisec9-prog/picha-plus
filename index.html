@@ -12789,7 +12789,10 @@ function _serHeroPolish(s) {
     var endedHidden = /VIS hidden/.test(tail[tail.length - 1] || '');
     var usedPlayer = tail.some(function (x) { return /PLAYER OFF/.test(x); });
     var nativeExit = tail.some(function (x) { return /NATIVE exitApp/.test(x); });
-    if (endedHidden && usedPlayer && !nativeExit) {
+    var stt = {};
+    prev.forEach(function (x) { var m = x.match(/(PLAYER|INFO|SERIES) (ON|OFF)/); if (m) stt[m[1]] = m[2]; });
+    var openAtEnd = stt.PLAYER === 'ON' || stt.INFO === 'ON' || stt.SERIES === 'ON';
+    if (endedHidden && usedPlayer && !nativeExit && openAtEnd) {
       document.addEventListener('DOMContentLoaded', function () {
         var d = document.createElement('div');
         d.style.cssText = 'position:fixed;left:0;bottom:90px;z-index:2147483647;background:rgba(0,0,0,.88);color:#ff0;font:10px/1.25 monospace;padding:3px 5px;max-width:100vw;white-space:pre;';
