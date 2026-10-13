@@ -12767,12 +12767,12 @@ function _serHeroPolish(s) {
         if (info && info.classList.contains("active") && typeof currentInfoItem !== "undefined" && currentInfoItem) {
           var it = currentInfoItem;
           var t = it.title || it.name || "";
-          history.pushState({ type: "title", id: it.id }, "", "/picha-plus/title/" + encodeURIComponent(String(it.id || it.tmdbId)) + "/" + slugify(t));
+          void 0;
         } else if (ser && ser.classList.contains("active") && typeof currentSeries !== "undefined" && currentSeries) {
           var sr = currentSeries;
           var idx = (window._seriesList || []).indexOf(sr);
           var rd = slugify(sr.title) + (sr.vj ? "-" + slugify(sr.vj) : "");
-          history.pushState({ type: "series", idx: idx }, "", "/picha-plus/title/" + encodeURIComponent(String(sr.tmdbId)) + "/" + rd);
+          void 0;
         }
       } catch (e) { console.warn(e); }
     }, 60);
@@ -12780,6 +12780,78 @@ function _serHeroPolish(s) {
   };
   w._p3 = 1;
   window._ppPlayerBack = w;
+})();
+</script>
+<script id="player-entry">
+(function () {
+  var wasA = false;
+  function pm() { return document.getElementById('playerModal'); }
+  function playerOn() { var e = pm(); return !!(e && e.classList.contains('active')); }
+
+  // keep the title's history entry when Play closes the title screen
+  var lte = window._leaveTitleEntry;
+  if (typeof lte === 'function' && !lte._pe) {
+    var nl = function () {
+      if (window._peKeep) { window._peKept = true; return; }
+      return lte.apply(this, arguments);
+    };
+    nl._pe = 1;
+    window._leaveTitleEntry = nl;
+  }
+  function wrapPlay(name) {
+    var f = window[name];
+    if (typeof f !== 'function' || f._pe) return;
+    var w = function () {
+      window._peKeep = true; window._peKept = false;
+      var r;
+      try { r = f.apply(this, arguments); } finally { window._peKeep = false; }
+      try { if (window._peKept && !playerOn() && lte) lte(); } catch (e) {}
+      return r;
+    };
+    w._pe = 1;
+    window[name] = w;
+  }
+  wrapPlay('playFromInfo');
+  wrapPlay('playEpisode');
+
+  function pushP() {
+    if (window._peEntry) return;
+    try { history.pushState({ ppplayer: 1 }, '', location.href); window._peEntry = true; } catch (e) {}
+  }
+
+  var el = pm();
+  if (el) {
+    wasA = playerOn();
+    new MutationObserver(function () {
+      var a = playerOn();
+      if (a === wasA) return;
+      wasA = a;
+      if (a) {
+        if (window._peExpectBack) window._pePushAfter = true; else pushP();
+      } else if (window._peEntry) {
+        window._peEntry = false;
+        if (history.state && history.state.ppplayer) {
+          window._peExpectBack = true;
+          setTimeout(function () { window._peExpectBack = false; }, 800);
+          try { history.back(); } catch (e) { window._peExpectBack = false; }
+        }
+      }
+    }).observe(el, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  window.addEventListener('popstate', function (e) {
+    if (window._peExpectBack) {
+      window._peExpectBack = false;
+      e.stopImmediatePropagation();
+      if (window._pePushAfter) { window._pePushAfter = false; pushP(); }
+      return;
+    }
+    if (window._peEntry && playerOn()) {
+      window._peEntry = false;
+      e.stopImmediatePropagation();
+      if (typeof window._ppPlayerBack === 'function') window._ppPlayerBack(); else closePlayer();
+    }
+  }, true);
 })();
 </script>
 </body>
