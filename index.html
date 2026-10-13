@@ -1,7 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
+    <script id="hist-debug">
+(function () {
+  var L = [], t0 = Date.now(), box = null;
+  function show() {
+    if (!box) {
+      if (!document.body) return;
+      box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:0;top:70px;z-index:2147483647;background:rgba(0,0,0,.8);color:#0f0;font:10px/1.25 monospace;padding:3px 5px;pointer-events:none;max-width:100vw;white-space:pre;';
+      document.body.appendChild(box);
+    }
+    box.textContent = L.slice(-14).join('\n');
+  }
+  function sh(st) {
+    try {
+      if (!st) return 'null';
+      return String(st.type || st.ovl || st.ppview || st.serview || (st.root ? 'root' : '') || (st.home ? 'home' : '') || JSON.stringify(st)).slice(0, 14);
+    } catch (e) { return '?'; }
+  }
+  function log(m) {
+    L.push(((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + ' |len' + history.length + ' ' + sh(history.state) + ' ' + location.pathname.slice(-16));
+    show();
+  }
+  var ps = history.pushState, rs = history.replaceState, bk = history.back;
+  history.pushState = function (st) { var r = ps.apply(this, arguments); log('PUSH ' + sh(st)); return r; };
+  history.replaceState = function (st) { var r = rs.apply(this, arguments); log('REPL ' + sh(st)); return r; };
+  history.back = function () { log('BACK()'); return bk.apply(this, arguments); };
+  window.addEventListener('popstate', function (e) { log('POP ' + sh(e.state)); }, true);
+  document.addEventListener('DOMContentLoaded', show);
+  var ids = ['playerModal', 'infoModal', 'seriesModal'], seen = {};
+  setInterval(function () {
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el || seen[id]) return;
+      seen[id] = 1;
+      var was = el.classList.contains('active');
+      new MutationObserver(function () {
+        var a = el.classList.contains('active');
+        if (a !== was) { was = a; log(id.replace('Modal', '').toUpperCase() + (a ? ' ON' : ' OFF')); }
+      }).observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+  }, 800);
+})();
+</script>
+<script>
       // Single Page Apps for GitHub Pages — decode the redirect from 404.html
       // back into a real pathname via history.replaceState, before anything else runs.
       (function(l) {
