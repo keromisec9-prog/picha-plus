@@ -13,6 +13,7 @@
     if (ok) closeSheet();
   };
   window.castToTV = function (url, title) {
+  window.openCastChooser = function () { if (window._tvCast) chooser(); else if (window.PichaChromecast) PichaChromecast.open(); };
     closeSheet();
     sheet = el('div', 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:flex-end');
     sheet.onclick = function (e) { if (e.target === sheet) closeSheet(); };
@@ -61,6 +62,6 @@
     if (m) m.appendChild(btn);
     return btn;
   }
-  window.showTvCastBtn = function () { var b = make(); if (b) b.style.display = 'block'; };
+  window.showTvCastBtn = function () { var b = null; if (b) b.style.display = 'block'; };
   window.hideTvCastBtn = function () { if (btn) btn.style.display = 'none'; };
 })();
