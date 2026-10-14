@@ -4859,6 +4859,8 @@ async function initPlayer(data, item) {
   // was unreliable (Cloudflare's internal fetch path to B2 could silently ignore
   // Range headers), so every consumer now gets a direct signed URL instead.
   const url = typeof data === 'string' ? data : data.url;
+  window._tvCast = { url: url, title: (item && (item.title || item.name)) || '' };
+  if (window.showTvCastBtn) window.showTvCastBtn();
 
   // Diagnostic: catch stale shorts-pager state bleeding into a fresh movie/episode
   // load. Should never be true here — if it is, that's the actual bug to chase.
@@ -5276,6 +5278,7 @@ function closePlayer() {
   document.getElementById('upnextOverlay')?.classList.remove('active');
   if (window._controlsObserver) { window._controlsObserver.disconnect(); window._controlsObserver = null; }
   if (window.PichaApp) window.PichaApp.showCastButton(true);
+  window._tvCast = null; if (window.hideTvCastBtn) window.hideTvCastBtn();
 
   if (window._shortPagerActive) {
     Object.keys(_pagerSlideMeta).forEach(k => {
@@ -12772,5 +12775,6 @@ function _serHeroPolish(s) {
   }, true);
 })();
 </script>
+<script src="dlna.js" defer></script>
 </body>
 </html>
