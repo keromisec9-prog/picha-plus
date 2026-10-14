@@ -4860,6 +4860,7 @@ async function initPlayer(data, item) {
   // Range headers), so every consumer now gets a direct signed URL instead.
   const url = typeof data === 'string' ? data : data.url;
   window._tvCast = { url: url, title: (item && (item.title || item.name)) || '' };
+  try { if (window.PichaChromecast) PichaChromecast.setMedia(window._tvCast.url, window._tvCast.title); } catch (e) {}
   if (window.showTvCastBtn) window.showTvCastBtn();
 
   // Diagnostic: catch stale shorts-pager state bleeding into a fresh movie/episode
@@ -5279,6 +5280,7 @@ function closePlayer() {
   if (window._controlsObserver) { window._controlsObserver.disconnect(); window._controlsObserver = null; }
   if (window.PichaApp) window.PichaApp.showCastButton(true);
   window._tvCast = null; if (window.hideTvCastBtn) window.hideTvCastBtn();
+  try { if (window.PichaChromecast) PichaChromecast.setMedia("", ""); } catch (e) {}
 
   if (window._shortPagerActive) {
     Object.keys(_pagerSlideMeta).forEach(k => {
