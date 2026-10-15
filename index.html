@@ -11192,6 +11192,19 @@ const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <vi
                           // element (and whatever the browser already buffered) alive —
                           // only truly evicted once they fall further out than this.
 
+(function () {
+  function _sendDur(e) {
+    try {
+      var v = e.target;
+      if (!v || v.tagName !== 'VIDEO' || !window.PichaChromecast || !PichaChromecast.setDuration) return;
+      var d = v.duration;
+      if (isFinite(d) && d > 0) PichaChromecast.setDuration(Math.round(d));
+    } catch (err) {}
+  }
+  document.addEventListener('loadedmetadata', _sendDur, true);
+  document.addEventListener('durationchange', _sendDur, true);
+})();
+
 function _tvArt(item) {
   try {
     var s = null;
