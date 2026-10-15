@@ -4861,6 +4861,7 @@ async function initPlayer(data, item) {
   const url = typeof data === 'string' ? data : data.url;
   window._tvCast = { url: url, title: (item && (item.title || item.name)) || '' };
   try { if (window.PichaChromecast) PichaChromecast.setMedia(window._tvCast.url, window._tvCast.title); } catch (e) {}
+  try { if (window.PichaChromecast) { var _a = _tvArt(item); PichaChromecast.setArt(_a[0], _a[1]); } } catch (e) {}
   if (window.showTvCastBtn) window.showTvCastBtn();
 
   // Diagnostic: catch stale shorts-pager state bleeding into a fresh movie/episode
@@ -11209,6 +11210,18 @@ const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <vi
 function _mpfCastActive() {
   try { return !!(window.PichaChromecast && PichaChromecast.isCasting && PichaChromecast.isCasting()); } catch (e) { return false; }
 }
+function _tvArt(item) {
+  try {
+    var s = (item && item._seriesKvKey && typeof currentSeries !== 'undefined') ? currentSeries : null;
+    var b = (item && item.backdrop_path) ? TMDB_IMG + 'w780' + item.backdrop_path : ((item && item.backdrop) || (s && (s.backdrop || s.poster)) || '');
+    var p = (item && item.poster_path) ? TMDB_IMG + 'w342' + item.poster_path : ((item && item.poster) || (s && (s.poster || s.backdrop)) || '');
+    return [b, p];
+  } catch (e) { return ['', '']; }
+}
+function _mpfClipStartFor(idx) {
+  try { if (typeof _mpfClipFixedStart !== 'undefined' && _mpfClipFixedStart[idx] != null) return Math.floor(_mpfClipFixedStart[idx]); } catch (e) {}
+  return -1;
+}
 function _mpfClipSecsForTv() {
   try { return Math.max(3, Math.round(typeof MPF_CLIP_SECS !== 'undefined' ? MPF_CLIP_SECS : 15)); } catch (e) { return 15; }
 }
@@ -11218,7 +11231,7 @@ async function _mpfCast(idx) {
     if (!item || !window.PichaChromecast) return;
     const url = await _mpfResolvePreviewUrl(item);
     if (!url) { showToast('Not available to cast', 'error'); return; }
-    PichaChromecast.castClip(url, item.title || item.name || '', _mpfClipSecsForTv());
+    { const _a = _tvArt(item); PichaChromecast.setArt(_a[0], _a[1]); PichaChromecast.castClip(url, item.title || item.name || '', _mpfClipSecsForTv(), _mpfClipStartFor(idx)); }
   } catch (e) { showToast('Could not start casting', 'error'); }
 }
 async function _mpfSendToTv(idx) {
@@ -11226,7 +11239,7 @@ async function _mpfSendToTv(idx) {
     const item = _mpfList[idx];
     if (!item) return;
     const url = await _mpfResolvePreviewUrl(item);
-    if (url && idx === _mpfIdx) PichaChromecast.sendClip(url, item.title || item.name || '', _mpfClipSecsForTv());
+    if (url && idx === _mpfIdx) { const _a = _tvArt(item); PichaChromecast.setArt(_a[0], _a[1]); PichaChromecast.sendClip(url, item.title || item.name || '', _mpfClipSecsForTv(), _mpfClipStartFor(idx)); }
   } catch (e) {}
 }
 
