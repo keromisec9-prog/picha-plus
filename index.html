@@ -10777,6 +10777,10 @@ function _mpfSlideHTML(idx) {
           <span class="material-symbols-rounded" style="font-size:26px;">share</span>
           <span style="font-size:0.68rem;font-weight:600;">Share</span>
         </div>
+        <div onclick="_mpfCast(${idx})" style="display:${window.PichaChromecast ? 'flex' : 'none'};flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+          <span class="material-symbols-rounded" style="font-size:26px;">cast</span>
+          <span style="font-size:0.68rem;font-weight:600;">Cast</span>
+        </div>
         <div onclick="_mpfToggleAutoScroll()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span class="mpf-auto-icon" style="display:inline-flex;">${window._mpfAutoScroll !== false ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`}</span>
           <span style="font-size:0.68rem;font-weight:600;">Auto</span>
@@ -11191,12 +11195,45 @@ const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <vi
                           // element (and whatever the browser already buffered) alive —
                           // only truly evicted once they fall further out than this.
 
+// TV casting from the For You Shorts pager (app only)
+(function () {
+  var _origPlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function () {
+    if (this.id && this.id.indexOf('mpfVid_') === 0 && _mpfCastActive()) {
+      try { this.pause(); } catch (e) {}
+      return Promise.resolve();
+    }
+    return _origPlay.apply(this, arguments);
+  };
+})();
+function _mpfCastActive() {
+  try { return !!(window.PichaChromecast && PichaChromecast.isCasting && PichaChromecast.isCasting()); } catch (e) { return false; }
+}
+async function _mpfCast(idx) {
+  try {
+    const item = _mpfList[idx];
+    if (!item || !window.PichaChromecast) return;
+    const url = await _mpfResolvePreviewUrl(item);
+    if (!url) { showToast('Not available to cast', 'error'); return; }
+    PichaChromecast.castNow(url, item.title || item.name || '');
+  } catch (e) { showToast('Could not start casting', 'error'); }
+}
+async function _mpfSendToTv(idx) {
+  try {
+    const item = _mpfList[idx];
+    if (!item) return;
+    const url = await _mpfResolvePreviewUrl(item);
+    if (url && idx === _mpfIdx) PichaChromecast.sendNext(url, item.title || item.name || '');
+  } catch (e) {}
+}
+
 function _mpfOnCommitted(prevIdx, newIdx) {
   const prevVideo = document.getElementById('mpfVid_' + prevIdx);
   if (prevVideo) prevVideo.pause();
   [prevIdx, newIdx].forEach(i => { const ind = document.getElementById('mpfPause_' + i); if (ind) ind.style.display = 'none'; });
   _mpfIdx = newIdx;
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
+  if (_mpfCastActive()) _mpfSendToTv(newIdx);
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) {
     if (_mpfPlayedIndices.has(newIdx) && _mpfClipFixedStart[newIdx] != null) {
