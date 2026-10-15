@@ -4859,6 +4859,19 @@ window.__playInApp = function (pos) {
   if (!p) return;
   window._pendingInApp = null;
   window._resumeAt = pos > 0 ? pos : 0;
+  try {
+    _playerReturnState = {
+      catOverlay: document.getElementById('categoryOverlay')?.classList.contains('active') || false,
+      bnCatOpen:  document.getElementById('bnCategoriesPage')?.style.display !== 'none',
+      bnSavedOpen: document.getElementById('bnSavedPage')?.style.display !== 'none',
+      bnForYouOpen: document.getElementById('bnForYouPage')?.style.display !== 'none',
+    };
+    pauseGridPreviewForModal();
+    _stopModalPreview();
+    document.getElementById('playerTitle').textContent = (p.item && (p.item.title || p.item.name)) || '';
+    document.getElementById('playerModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  } catch (e) {}
   initPlayer(p.data, p.item, true);
 };
 
