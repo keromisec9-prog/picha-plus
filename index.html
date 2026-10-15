@@ -11194,10 +11194,17 @@ const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <vi
 
 function _tvArt(item) {
   try {
-    var s = (item && item._seriesKvKey && typeof currentSeries !== 'undefined') ? currentSeries : null;
-    var b = (item && item.backdrop_path) ? TMDB_IMG + 'w780' + item.backdrop_path : ((item && item.backdrop) || (s && (s.backdrop || s.poster)) || '');
-    var p = (item && item.poster_path) ? TMDB_IMG + 'w342' + item.poster_path : ((item && item.poster) || (s && (s.poster || s.backdrop)) || '');
-    return [b, p];
+    var s = null;
+    if (item && item._seriesKvKey != null) {
+      if (typeof currentSeries !== 'undefined' && currentSeries && currentSeries._kvKey === item._seriesKvKey) s = currentSeries;
+      if (!s) s = (window._seriesList || []).find(function (x) { return x._kvKey === item._seriesKvKey; }) || null;
+      if (!s && typeof currentSeries !== 'undefined') s = currentSeries;
+    }
+    var sB = s ? (s.backdrop || (s.backdrop_path ? TMDB_IMG + 'w780' + s.backdrop_path : '') || s.poster || '') : '';
+    var sP = s ? (s.poster || (s.poster_path ? TMDB_IMG + 'w342' + s.poster_path : '') || s.backdrop || '') : '';
+    var b = (item && item.backdrop_path) ? TMDB_IMG + 'w780' + item.backdrop_path : ((item && (item.backdrop || item.still)) || sB);
+    var p = (item && item.poster_path) ? TMDB_IMG + 'w342' + item.poster_path : ((item && item.poster) || sP);
+    return [b || p || '', p || b || ''];
   } catch (e) { return ['', '']; }
 }
 
