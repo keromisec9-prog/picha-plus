@@ -10545,7 +10545,7 @@ window.addEventListener("load", () => setTimeout(registerPush, 3000));
 // and series (not short films), ranked by the same fyScore used in For You,
 // with a Watch Full Movie/Series CTA that hands off to the normal player.
 let _mpfList = [];
-window._mpfAutoScroll = localStorage.getItem('pichaplus_mpf_autoscroll') !== 'off';
+window._mpfAutoScroll = localStorage.getItem('pichaplus_mpf_autoscroll') === 'on';
 const _mpfClipStarts = {};
 const _mpfClipFixedStart = {}; // the ORIGINAL clip start (27% mark) — never changes, so a revisit can always rewind back to it instead of drifting forward
 const MPF_CLIP_SECS = 30;
