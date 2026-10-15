@@ -4855,7 +4855,7 @@ async function handleCardPlay(item) {
 }
 
 window.__playInApp = function (pos) {
-  var p = window._pendingInApp;
+  var p = window._pendingInApp || window._lastPlay;
   if (!p) return;
   window._pendingInApp = null;
   window._resumeAt = pos > 0 ? pos : 0;
@@ -4876,6 +4876,7 @@ window.__playInApp = function (pos) {
 };
 
 async function initPlayer(data, item, force) {
+  window._lastPlay = { data: data, item: item };
   // Always use the direct presigned B2 URL — the Worker's own /stream proxy path
   // was unreliable (Cloudflare's internal fetch path to B2 could silently ignore
   // Range headers), so every consumer now gets a direct signed URL instead.
