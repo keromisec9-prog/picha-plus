@@ -11209,13 +11209,16 @@ const MPF_KEEPALIVE = 8; // visited slides within this range keep their real <vi
 function _mpfCastActive() {
   try { return !!(window.PichaChromecast && PichaChromecast.isCasting && PichaChromecast.isCasting()); } catch (e) { return false; }
 }
+function _mpfClipSecsForTv() {
+  try { return Math.max(3, Math.round(typeof MPF_CLIP_SECS !== 'undefined' ? MPF_CLIP_SECS : 15)); } catch (e) { return 15; }
+}
 async function _mpfCast(idx) {
   try {
     const item = _mpfList[idx];
     if (!item || !window.PichaChromecast) return;
     const url = await _mpfResolvePreviewUrl(item);
     if (!url) { showToast('Not available to cast', 'error'); return; }
-    PichaChromecast.castNow(url, item.title || item.name || '');
+    PichaChromecast.castClip(url, item.title || item.name || '', _mpfClipSecsForTv());
   } catch (e) { showToast('Could not start casting', 'error'); }
 }
 async function _mpfSendToTv(idx) {
@@ -11223,7 +11226,7 @@ async function _mpfSendToTv(idx) {
     const item = _mpfList[idx];
     if (!item) return;
     const url = await _mpfResolvePreviewUrl(item);
-    if (url && idx === _mpfIdx) PichaChromecast.sendNext(url, item.title || item.name || '');
+    if (url && idx === _mpfIdx) PichaChromecast.sendClip(url, item.title || item.name || '', _mpfClipSecsForTv());
   } catch (e) {}
 }
 
