@@ -4854,7 +4854,15 @@ async function handleCardPlay(item) {
   }
 }
 
-async function initPlayer(data, item) {
+window.__playInApp = function (pos) {
+  var p = window._pendingInApp;
+  if (!p) return;
+  window._pendingInApp = null;
+  window._resumeAt = pos > 0 ? pos : 0;
+  initPlayer(p.data, p.item, true);
+};
+
+async function initPlayer(data, item, force) {
   // Always use the direct presigned B2 URL — the Worker's own /stream proxy path
   // was unreliable (Cloudflare's internal fetch path to B2 could silently ignore
   // Range headers), so every consumer now gets a direct signed URL instead.
@@ -4863,6 +4871,29 @@ async function initPlayer(data, item) {
   try { if (window.PichaChromecast) PichaChromecast.setMedia(window._tvCast.url, window._tvCast.title); } catch (e) {}
   try { if (window.PichaChromecast) { var _a = _tvArt(item); PichaChromecast.setArt(_a[0], _a[1]); } } catch (e) {}
   if (window.showTvCastBtn) window.showTvCastBtn();
+  try {
+    if (!force && window.PichaChromecast && PichaChromecast.isCasting && PichaChromecast.isCasting()) {
+      var _ct = (item && (item.title || item.name)) || '';
+      var _ca = _tvArt(item);
+      try { closePlayer(); } catch (e) {}
+      window._pendingInApp = { data: data, item: item };
+      PichaChromecast.setMedia(url, _ct);
+      PichaChromecast.setArt(_ca[0], _ca[1]);
+      PichaChromecast.castNow(url, _ct);
+      return;
+    }
+  } catch (e) {}
+  if (force && window._resumeAt > 0) {
+    var _t = window._resumeAt; window._resumeAt = 0;
+    var _n = 0;
+    var _iv = setInterval(function () {
+      var v = document.querySelector('video');
+      if (v && v.readyState >= 1 && isFinite(v.duration)) {
+        clearInterval(_iv);
+        try { v.currentTime = Math.max(0, Math.min(_t, v.duration - 1)); } catch (e) {}
+      } else if (++_n > 60) clearInterval(_iv);
+    }, 500);
+  }
 
   // Diagnostic: catch stale shorts-pager state bleeding into a fresh movie/episode
   // load. Should never be true here — if it is, that's the actual bug to chase.
