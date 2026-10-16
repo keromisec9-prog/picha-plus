@@ -4859,15 +4859,23 @@ window.__playInApp = function (pos) {
   if (!p) {
     try {
       var _s = JSON.parse(localStorage.getItem('picha_lastPlay') || 'null');
-      if (_s && _s.item && _s.item.id) {
-        fetch(API + '/video?id=' + _s.item.id, {
-          headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-        }).then(function (r) { return r.json(); }).then(function (d) {
-          if (d && d.url) {
-            window._pendingInApp = { data: d, item: _s.item };
-            window.__playInApp(pos);
-          }
-        }).catch(function () {});
+      if (_s && _s.item) {
+        var _go = function (d) {
+          window._pendingInApp = { data: d, item: _s.item };
+          window.__playInApp(pos);
+        };
+        if (_s.data && _s.t && (Date.now() - _s.t) < 100 * 60 * 1000) {
+          _go(_s.data);
+        } else if (_s.item.id) {
+          fetch(API + '/video?id=' + _s.item.id, {
+            headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+          }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d && d.url) _go(d);
+            else showToast('Could not resume in the app. Please play it again.', 'error');
+          }).catch(function () {
+            showToast('Connection error. Please try again.', 'error');
+          });
+        }
       }
     } catch (e) {}
     return;
@@ -4892,7 +4900,7 @@ window.__playInApp = function (pos) {
 
 async function initPlayer(data, item, force) {
   window._lastPlay = { data: data, item: item };
-  try { localStorage.setItem('picha_lastPlay', JSON.stringify({ item: item })); } catch (e) {}
+  try { localStorage.setItem('picha_lastPlay', JSON.stringify({ item: item, data: data, t: Date.now() })); } catch (e) {}
   // Always use the direct presigned B2 URL — the Worker's own /stream proxy path
   // was unreliable (Cloudflare's internal fetch path to B2 could silently ignore
   // Range headers), so every consumer now gets a direct signed URL instead.
