@@ -10847,6 +10847,10 @@ function _mpfSlideHTML(idx) {
           <span class="material-symbols-rounded" style="font-size:26px;">share</span>
           <span style="font-size:0.68rem;font-weight:600;">Share</span>
         </div>
+        <div onclick="_mpfSaveToggle(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+          <span id="mpfSaveIcon_${idx}" style="display:inline-flex;">${_mpfBookmarkSVG(false)}</span>
+          <span id="mpfSaveLbl_${idx}" style="font-size:0.68rem;font-weight:600;">Save</span>
+        </div>
         <div onclick="_mpfToggleAutoScroll()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span class="mpf-auto-icon" style="display:inline-flex;">${window._mpfAutoScroll !== false ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`}</span>
           <span style="font-size:0.68rem;font-weight:600;">Auto</span>
@@ -11202,6 +11206,43 @@ async function _mpfMountSlide(idx, autoplay) {
 
   _mpfSlideMeta[idx] = { item };
 }
+
+function _mpfBookmarkSVG(on) {
+  return on
+    ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="26" height="26" fill="var(--gold)"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Z"/></svg>'
+    : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="26" height="26" fill="currentColor"><path fill-rule="evenodd" d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Z"/></svg>';
+}
+
+function _mpfRefreshSave(idx) {
+  var meta = _mpfSlideMeta[idx];
+  var ico = document.getElementById('mpfSaveIcon_' + idx);
+  var lbl = document.getElementById('mpfSaveLbl_' + idx);
+  if (!meta || !meta.item || !ico || !lbl) return;
+  var on = myList.some(function (m) { return m.id === meta.item.id; });
+  var flag = on ? '1' : '0';
+  if (ico.dataset.on === flag) return;
+  ico.dataset.on = flag;
+  ico.innerHTML = _mpfBookmarkSVG(on);
+  lbl.textContent = on ? 'Saved' : 'Save';
+  lbl.style.color = on ? 'var(--gold)' : '';
+}
+
+function _mpfRefreshAllSave() {
+  document.querySelectorAll('.mpf-slide').forEach(function (sl) {
+    _mpfRefreshSave(parseInt(sl.dataset.idx, 10));
+  });
+}
+
+function _mpfSaveToggle(idx) {
+  var meta = _mpfSlideMeta[idx];
+  if (!meta || !meta.item) return;
+  toggleMyList(meta.item, null);
+  _mpfRefreshSave(idx);
+}
+
+setInterval(function () {
+  if (document.querySelector('.mpf-slide')) _mpfRefreshAllSave();
+}, 700);
 
 function _mpfWatchFull(idx) {
   const meta = _mpfSlideMeta[idx];
