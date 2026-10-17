@@ -10913,8 +10913,21 @@ function _mpfWaitForPrefetchAllowed() {
   });
 }
 
+const _mpfEpPick = {};
+function _mpfEpFor(item) {
+  if (_mpfEpPick[item.id] === undefined) {
+    var n = 0;
+    if (Array.isArray(item.episodes)) n = item.episodes.length;
+    else if (item.episodes && typeof item.episodes === 'object') n = Object.keys(item.episodes).length;
+    if (!n) n = item.number_of_episodes || 0;
+    if (!n) n = 8;
+    _mpfEpPick[item.id] = Math.floor(Math.random() * Math.min(n, 30));
+  }
+  return _mpfEpPick[item.id];
+}
+
 function _mpfCacheKeyFor(item) {
-  return item.media_type === 'tv' ? (item.id + '_ep0') : item.id;
+  return item.media_type === 'tv' ? (item.id + '_ep' + _mpfEpFor(item)) : item.id;
 }
 
 async function _mpfResolvePreviewUrl(item) {
@@ -10923,7 +10936,7 @@ async function _mpfResolvePreviewUrl(item) {
   if (!url) {
     const isTV = item.media_type === 'tv';
     const endpoint = isTV
-      ? `${API}/episode-preview?seriesId=${item.id}&ep=0`
+      ? `${API}/episode-preview?seriesId=${item.id}&ep=${_mpfEpFor(item)}`
       : `${API}/preview?id=${item.id}`;
     const res = await fetch(endpoint, {
       headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
