@@ -10941,6 +10941,38 @@ function _mpfSaveClip(item, url, startSec) {
   } catch (e) {}
 }
 
+function _mpfUseLocalIfSaved(idx) {
+  try {
+    var v = document.getElementById('mpfVid_' + idx);
+    var item = _mpfList[idx];
+    if (!v || !item || !window.PichaClips || v.dataset.local === '1') return false;
+    var loc = PichaClips.get(_mpfCacheKeyFor(item)) || '';
+    if (!loc) return false;
+    var orig = _mpfClipFixedStart[idx];
+    v.dataset.local = '1';
+    _mpfClipStarts[idx] = 0;
+    _mpfClipFixedStart[idx] = 0;
+    v.addEventListener('error', function () {
+      if (v.dataset.local !== '1') return;
+      v.dataset.local = '0';
+      _mpfResolvePreviewUrl(item).then(function (u) {
+        if (!u) return;
+        v.addEventListener('loadedmetadata', function () {
+          if (orig != null) { v.currentTime = orig; _mpfClipStarts[idx] = orig; _mpfClipFixedStart[idx] = orig; }
+          v.play().catch(function () {});
+        }, { once: true });
+        v.src = u;
+      }).catch(function () {});
+    }, { once: true });
+    v.addEventListener('loadedmetadata', function () {
+      v.currentTime = 0;
+      v.play().catch(function () {});
+    }, { once: true });
+    v.src = loc;
+    return true;
+  } catch (e) { return false; }
+}
+
 async function _mpfResolvePreviewUrl(item) {
   const cacheKey = _mpfCacheKeyFor(item);
   let url = _previewCache[cacheKey];
@@ -11153,6 +11185,7 @@ async function _mpfMountSlide(idx, autoplay) {
     const _mpfMintMs = performance.now() - _mpfMintStart;
 
     video.src = _usingLocal ? _local : previewUrl;
+    if (_usingLocal) video.dataset.local = '1';
 
     video.addEventListener('error', () => {
       if (!_usingLocal) return;
@@ -11217,8 +11250,10 @@ async function _mpfMountSlide(idx, autoplay) {
           if (window._mpfAutoScroll !== false && idx + 1 < _mpfList.length) {
             _mpfGoTo(idx + 1, 0);
           } else {
-            video.currentTime = start;
-            video.play().catch(() => {});
+            if (!_mpfUseLocalIfSaved(idx)) {
+              video.currentTime = start;
+              video.play().catch(() => {});
+            }
           }
         }
       }
@@ -11387,6 +11422,7 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) {
+    if (_mpfPlayedIndices.has(newIdx)) _mpfUseLocalIfSaved(newIdx);
     if (_mpfPlayedIndices.has(newIdx) && _mpfClipFixedStart[newIdx] != null) {
       // Revisit — rewind to the ORIGINAL clip start every time, so each replay shows
       // the same short preview window. Previously this just reset the timer baseline
