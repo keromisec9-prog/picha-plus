@@ -10930,17 +10930,6 @@ function _mpfCacheKeyFor(item) {
   return item.media_type === 'tv' ? (item.id + '_ep' + _mpfEpFor(item)) : item.id;
 }
 
-const _mpfSavedClips = {};
-function _mpfSaveClip(item, url, startSec) {
-  try {
-    if (!window.PichaClips || !url) return;
-    var key = _mpfCacheKeyFor(item);
-    if (_mpfSavedClips[key]) return;
-    _mpfSavedClips[key] = 1;
-    PichaClips.save(key, url, startSec > 0 ? startSec : 0);
-  } catch (e) {}
-}
-
 async function _mpfResolvePreviewUrl(item) {
   const cacheKey = _mpfCacheKeyFor(item);
   let url = _previewCache[cacheKey];
@@ -11137,14 +11126,8 @@ async function _mpfMountSlide(idx, autoplay) {
 
   try {
     const _mpfMintStart = performance.now();
-    let _local = '';
-    try { if (window.PichaClips) _local = PichaClips.get(_mpfCacheKeyFor(item)) || ''; } catch (e) {}
-    let _usingLocal = !!_local;
-    let previewUrl = '';
-    if (!_usingLocal) {
-      previewUrl = await _mpfResolvePreviewUrl(item);
-      if (!previewUrl) throw new Error('no preview url');
-    }
+    const previewUrl = await _mpfResolvePreviewUrl(item);
+    if (!previewUrl) throw new Error('no preview url');
     // The feed may have been closed (or reopened, invalidating this whole session)
     // while this fetch was in flight — bail out before touching the DOM or starting
     // playback, otherwise a late-resolving mount can play audio behind a hidden/
@@ -11152,27 +11135,10 @@ async function _mpfMountSlide(idx, autoplay) {
     if (_mpfMyGen !== _mpfGeneration) { clearTimeout(spinnerTimer); return; }
     const _mpfMintMs = performance.now() - _mpfMintStart;
 
-    video.src = _usingLocal ? _local : previewUrl;
-
-    video.addEventListener('error', () => {
-      if (!_usingLocal) return;
-      _usingLocal = false;
-      _mpfResolvePreviewUrl(item).then(u => {
-        if (!u) return;
-        previewUrl = u;
-        video.addEventListener('loadedmetadata', () => {
-          if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
-          _mpfClipStarts[idx] = video.currentTime;
-          _mpfClipFixedStart[idx] = video.currentTime;
-        }, { once: true });
-        video.src = u;
-        video.play().catch(() => {});
-      }).catch(() => {});
-    });
+    video.src = previewUrl;
 
     video.addEventListener('loadedmetadata', () => {
-      if (_usingLocal) video.currentTime = 0;
-      else if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
+      if (video.duration && !isNaN(video.duration)) video.currentTime = video.duration * 0.27;
       _mpfClipStarts[idx] = video.currentTime;
       _mpfClipFixedStart[idx] = video.currentTime;
     }, { once: true });
@@ -11213,7 +11179,6 @@ async function _mpfMountSlide(idx, autoplay) {
         }
 
         if (elapsed >= MPF_CLIP_SECS) {
-          if (!_usingLocal && previewUrl) _mpfSaveClip(item, previewUrl, _mpfClipFixedStart[idx] != null ? _mpfClipFixedStart[idx] : start);
           if (window._mpfAutoScroll !== false && idx + 1 < _mpfList.length) {
             _mpfGoTo(idx + 1, 0);
           } else {
