@@ -7472,8 +7472,8 @@ function _africanPrice(planId, base) {
   const promo = window._activePromo;
   const on = promo && promo.active && Array.isArray(promo.plans) && promo.plans.includes(planId);
   const final = on ? Math.round(base * (1 - promo.percentOff / 100)) : base;
-  const old = on ? '<span style="text-decoration:line-through;color:#777;font-size:0.72rem;font-weight:500;margin-right:6px;">' + base.toLocaleString() + '</span>' : '';
-  return old + '<span class="ap-final">UGX ' + final.toLocaleString() + '</span>';
+  const old = on ? '<span style="display:block;text-align:right;text-decoration:line-through;color:#777;font-size:0.68rem;font-weight:500;line-height:1.1;margin-bottom:2px;">' + base.toLocaleString() + '</span>' : '';
+  return old + '<span class="ap-final" style="display:block;text-align:right;">UGX ' + final.toLocaleString() + '</span>';
 }
 
 function africanPlanRow(planId, name, subtitle, price, isBest, icon) {
