@@ -10930,6 +10930,145 @@ function _mpfCacheKeyFor(item) {
   return item.media_type === 'tv' ? (item.id + '_ep' + _mpfEpFor(item)) : item.id;
 }
 
+// ===== SHORTS TIMING LOG (temporary, on-screen only) =====
+const _shd = { lines: [], slides: {}, byId: {}, urlIdx: {} };
+function _shdNow() { return Math.round(performance.now()); }
+function _shdLog(idx, msg) {
+  var sl = _shd.slides[idx];
+  var rel = sl ? (_shdNow() - sl.t0) : null;
+  _shd.lines.push('[' + idx + (sl ? ' ' + sl.title : '') + '] ' + (rel !== null ? '+' + rel + 'ms ' : '') + msg);
+  if (_shd.lines.length > 600) _shd.lines.splice(0, 150);
+}
+function _shdMark(idx, k) {
+  var sl = _shd.slides[idx];
+  if (sl && sl.m[k] === undefined) sl.m[k] = _shdNow() - sl.t0;
+}
+function _shdBuf(v) {
+  var out = [];
+  try { for (var i = 0; i < v.buffered.length; i++) out.push(v.buffered.start(i).toFixed(0) + '-' + v.buffered.end(i).toFixed(0)); } catch (e) {}
+  return out.join(',');
+}
+function _shdMount(idx, item) {
+  _shd.slides[idx] = { t0: _shdNow(), title: String(item.title || item.name || '').slice(0, 18), m: {} };
+  _shd.byId[String(item.id)] = idx;
+  _shdLog(idx, 'MOUNT start');
+}
+function _shdActive(idx) {
+  var sl = _shd.slides[idx];
+  if (!sl) return;
+  sl.act = _shdNow() - sl.t0;
+  sl.done = false;
+  var v = document.getElementById('mpfVid_' + idx);
+  _shdLog(idx, 'ACTIVE (landed on this short)' + (v ? ' rs=' + v.readyState + ' t=' + v.currentTime.toFixed(1) + ' buf=[' + _shdBuf(v) + ']' : ''));
+}
+function _shdSummary(idx) {
+  var sl = _shd.slides[idx];
+  if (!sl) return;
+  var m = sl.m;
+  function d(a, b) { return (m[a] !== undefined && m[b] !== undefined) ? (m[b] - m[a]) + 'ms' : '?'; }
+  var rel = _shdNow() - sl.t0;
+  var act = sl.act !== undefined ? sl.act : 0;
+  _shdLog(idx, 'SUMMARY url-ready=' + (m.src !== undefined ? m.src + 'ms' : '?') + ' | src>metadata=' + d('src', 'loadedmetadata') + ' | metadata>seeked=' + d('loadedmetadata', 'seeked') + ' | landed>playing=' + (rel - act) + 'ms');
+}
+function _shdVideo(idx, v, url) {
+  if (!_shd.slides[idx]) return;
+  _shd.urlIdx[url] = idx;
+  _shdMark(idx, 'src');
+  _shdLog(idx, 'video.src set');
+  ['loadstart', 'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'playing', 'waiting', 'stalled', 'suspend', 'seeking', 'seeked', 'error', 'ended'].forEach(function (ev) {
+    v.addEventListener(ev, function () {
+      _shdMark(idx, ev);
+      var extra = ' rs=' + v.readyState + ' t=' + v.currentTime.toFixed(1) + ' buf=[' + _shdBuf(v) + ']';
+      if (ev === 'error' && v.error) extra += ' code=' + v.error.code;
+      _shdLog(idx, ev + extra);
+      var s2 = _shd.slides[idx];
+      if (ev === 'playing' && s2 && !s2.done) { s2.done = true; _shdSummary(idx); }
+    });
+  });
+  var lastP = 0;
+  v.addEventListener('progress', function () {
+    var n = _shdNow();
+    if (n - lastP < 2000) return;
+    lastP = n;
+    _shdLog(idx, 'progress buf=[' + _shdBuf(v) + ']');
+  });
+}
+(function () {
+  var _of = window.fetch;
+  window.fetch = function (input, init) {
+    try {
+      var u = typeof input === 'string' ? input : '';
+      if (u && /\/(episode-)?preview\?/.test(u)) {
+        var mm = u.match(/[?&](?:id|seriesId)=([^&]+)/);
+        var idx = mm ? _shd.byId[decodeURIComponent(mm[1])] : undefined;
+        var t0 = performance.now();
+        return _of.call(this, u + '&dbg=1', init).then(function (res) {
+          if (idx !== undefined) {
+            var th = Math.round(performance.now() - t0);
+            _shdLog(idx, 'API ' + (u.indexOf('episode-preview') >= 0 ? 'episode-preview' : 'preview') + ' headers in ' + th + 'ms (HTTP ' + res.status + ')');
+            res.clone().json().then(function (d) {
+              var tb = Math.round(performance.now() - t0);
+              var t = d && d._t;
+              var sv = ' | no worker timing';
+              if (t) {
+                var parts = ['auth', 'rate', 'catalog', 'lookup', 'sign'].filter(function (k) { return t[k] !== undefined; }).map(function (k) { return k + '=' + t[k]; });
+                sv = ' | worker (cumulative ms): ' + parts.join(' ') + (t.colo ? ' colo=' + t.colo : '');
+              }
+              _shdLog(idx, 'API body parsed at ' + tb + 'ms' + sv);
+            }).catch(function () {});
+          }
+          return res;
+        });
+      }
+    } catch (e) {}
+    return _of.apply(this, arguments);
+  };
+})();
+try {
+  new PerformanceObserver(function (list) {
+    list.getEntries().forEach(function (e) {
+      if (!/backblazeb2\.com/.test(e.name)) return;
+      var idx = _shd.urlIdx[e.name];
+      if (idx === undefined) return;
+      var sl = _shd.slides[idx];
+      _shdLog(idx, 'B2 request done: started +' + Math.round(e.startTime - (sl ? sl.t0 : 0)) + 'ms, took ' + Math.round(e.duration) + 'ms, first-byte=' + (e.responseStart > 0 ? Math.round(e.responseStart - e.startTime) + 'ms' : 'n/a') + ', bytes=' + (e.encodedBodySize || e.transferSize || 'n/a'));
+    });
+  }).observe({ type: 'resource', buffered: true });
+} catch (e) {}
+(function () {
+  var bs = 'font:700 12px sans-serif;padding:6px 12px;';
+  function build() {
+    if (document.getElementById('shdBtn') || !document.body) return;
+    var b = document.createElement('div');
+    b.id = 'shdBtn';
+    b.textContent = 'LOG';
+    b.style.cssText = 'position:fixed;left:8px;top:300px;z-index:99998;background:rgba(0,0,0,.7);color:#9f9;font:700 11px monospace;padding:6px 9px;border:1px solid #9f9;border-radius:6px;display:none;';
+    var p = document.createElement('div');
+    p.id = 'shdPanel';
+    p.style.cssText = 'position:fixed;inset:48px 6px 6px 6px;z-index:99999;background:rgba(0,0,0,.96);display:none;flex-direction:column;border:1px solid #9f9;border-radius:8px;padding:6px;';
+    p.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:6px;"><button id="shdCopy" style="' + bs + '">Copy</button><button id="shdClear" style="' + bs + '">Clear</button><button id="shdClose" style="' + bs + '">Close</button></div><textarea id="shdTxt" readonly style="flex:1;background:#000;color:#9f9;font:10px/1.35 monospace;border:0;resize:none;"></textarea>';
+    document.body.appendChild(b);
+    document.body.appendChild(p);
+    var ta = document.getElementById('shdTxt');
+    b.onclick = function () { ta.value = _shd.lines.join('\n'); p.style.display = 'flex'; ta.scrollTop = ta.scrollHeight; };
+    document.getElementById('shdClose').onclick = function () { p.style.display = 'none'; };
+    document.getElementById('shdClear').onclick = function () { _shd.lines.length = 0; ta.value = ''; };
+    document.getElementById('shdCopy').onclick = function () {
+      ta.value = _shd.lines.join('\n');
+      ta.focus(); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      if (!ok && navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(function () {});
+      try { showToast('Log copied'); } catch (e) {}
+    };
+  }
+  setInterval(function () {
+    build();
+    var b = document.getElementById('shdBtn');
+    if (b) b.style.display = document.querySelector('.mpf-slide') ? 'block' : 'none';
+  }, 1000);
+})();
+
 async function _mpfResolvePreviewUrl(item) {
   const cacheKey = _mpfCacheKeyFor(item);
   let url = _previewCache[cacheKey];
@@ -11110,6 +11249,7 @@ async function _mpfMountSlide(idx, autoplay) {
     return;
   }
   slideEl.dataset.mounted = '1';
+  _shdMount(idx, item);
 
   const isTV = item.media_type === 'tv';
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
@@ -11135,6 +11275,7 @@ async function _mpfMountSlide(idx, autoplay) {
     if (_mpfMyGen !== _mpfGeneration) { clearTimeout(spinnerTimer); return; }
     const _mpfMintMs = performance.now() - _mpfMintStart;
 
+    _shdVideo(idx, video, previewUrl);
     video.src = previewUrl;
 
     video.addEventListener('loadedmetadata', () => {
@@ -11349,6 +11490,7 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   if (prevVideo) prevVideo.pause();
   [prevIdx, newIdx].forEach(i => { const ind = document.getElementById('mpfPause_' + i); if (ind) ind.style.display = 'none'; });
   _mpfIdx = newIdx;
+  _shdActive(newIdx);
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) {
