@@ -2038,6 +2038,13 @@
 #paymentModal .pay-back-btn{position:static!important;inset:auto!important;transform:none!important}
 #paymentModal .modal-header{justify-content:flex-start!important;gap:12px;padding-right:64px!important}
 #paymentModal .modal-title{margin:0;flex:1;min-width:0}
+/* Full-screen payment page (was a small centered box) */
+#paymentModal.modal-overlay{padding:0!important;align-items:stretch!important;justify-content:stretch!important}
+#paymentModal .modal-box{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;margin:0!important;border-radius:0!important;display:flex!important;flex-direction:column!important}
+#paymentModal .modal-header{flex:0 0 auto;padding-top:max(14px,env(safe-area-inset-top))!important}
+#paymentModal .modal-body{flex:1 1 auto!important;min-height:0!important;padding:0!important;overflow:hidden!important;display:flex;flex-direction:column}
+#paymentModal .payment-iframe{flex:1 1 auto;width:100%;height:100%!important;border-radius:0!important;background:#fff}
+#paymentModal .payment-loading{flex:1 1 auto;height:auto!important}
 </style>
 <style id="picha-acct">
 #accountSettingsModal .modal-header{justify-content:flex-start!important;gap:12px;padding-right:64px!important}
