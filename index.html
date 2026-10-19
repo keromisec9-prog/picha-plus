@@ -7406,9 +7406,9 @@ function showAfricanUpgradeToast() {
     </div>` : ''}
 
     <div id="africanPlanRows" style="display:flex;flex-direction:column;gap:0.7rem;">
-      ${africanPlanRow('dailyplus','Daily','24 hours access','UGX 2,000',false,'calendar_month')}
-      ${africanPlanRow('weeklyplus','Weekly','7 days access','UGX 8,000',false,'calendar_month')}
-      ${africanPlanRow('monthlyplus','Monthly','30 days access','UGX 20,000',true,'star')}
+      ${africanPlanRow('dailyplus','Daily+','24 hours access',_africanPrice('dailyplus',2000),false,'calendar_month')}
+      ${africanPlanRow('weeklyplus','Weekly+','7 days access',_africanPrice('weeklyplus',8000),false,'calendar_month')}
+      ${africanPlanRow('monthlyplus','Monthly+','30 days access',_africanPrice('monthlyplus',20000),true,'star')}
     </div>
 
     <button id="africanContinueBtn" style="width:100%;background:var(--gold);color:#000;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:1.2rem;">Continue</button>
@@ -7445,7 +7445,7 @@ function showAfricanUpgradeToast() {
   const _upd = () => {
     const r = modal.querySelector('.african-plan-row[data-plan="' + selectedPlan + '"]');
     const b = document.getElementById('africanContinueBtn');
-    if (r && b) b.textContent = 'Continue \u2014 ' + r.lastElementChild.textContent.trim();
+    if (r && b) b.textContent = 'Continue \u2014 ' + (r.querySelector('.ap-final') || r.lastElementChild).textContent.trim();
   };
   _upd();
   modal.querySelectorAll('.african-plan-row').forEach(row => {
@@ -7464,6 +7464,16 @@ function showAfricanUpgradeToast() {
     overlay.remove();
     startPayment(selectedPlan);
   };
+}
+
+// Same promo formula as startPayment() so the popup, the button and the
+// payment title always agree. Falls back to base price if no promo is loaded.
+function _africanPrice(planId, base) {
+  const promo = window._activePromo;
+  const on = promo && promo.active && Array.isArray(promo.plans) && promo.plans.includes(planId);
+  const final = on ? Math.round(base * (1 - promo.percentOff / 100)) : base;
+  const old = on ? '<span style="text-decoration:line-through;color:#777;font-size:0.72rem;font-weight:500;margin-right:6px;">' + base.toLocaleString() + '</span>' : '';
+  return old + '<span class="ap-final">UGX ' + final.toLocaleString() + '</span>';
 }
 
 function africanPlanRow(planId, name, subtitle, price, isBest, icon) {
