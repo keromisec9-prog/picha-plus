@@ -2251,6 +2251,7 @@
 .pp-shake{animation:ppShake .35s}
 @media (prefers-reduced-motion:reduce){.pp-shake{animation:none}}
 </style>
+<script>window._errSnd=function(){try{if(window.PichaApp&&PichaApp.playSound)PichaApp.playSound("error");}catch(e){}};</script>
 <script id="pp-signin-js">
 (function(){
   var emailRe=/^[^ @]+@[^ @]+[.][^ @]{2,}$/;
@@ -2356,6 +2357,7 @@
     });
     var last="";
     function fail(){
+      try{_errSnd();}catch(e){}
       form.classList.remove("pp-shake");
       void form.offsetWidth;
       form.classList.add("pp-shake");
@@ -6598,7 +6600,7 @@ async function setAccountPassword() {
   const cf = document.getElementById('acctSetConfirmPwd').value;
   const errEl = document.getElementById('acctSetError');
   const btn = document.getElementById('acctSetBtn');
-  const fail = m => { errEl.textContent = m; errEl.style.display = 'block'; };
+  const fail = m => { errEl.textContent = m; errEl.style.display = 'block'; _errSnd(); };
   errEl.style.display = 'none';
   if (!pw || !cf) return fail('Please fill in both fields.');
   if (pw.length < 8) return fail('Password must be at least 8 characters.');
@@ -6697,7 +6699,7 @@ async function submitPCSetup() {
   const confirmPwd = document.getElementById('pcSetupConfirmPwd').value;
   const errEl = document.getElementById('pcSetupError');
   errEl.style.display = 'none';
-  if (pwd !== confirmPwd) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+  if (pwd !== confirmPwd) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; _errSnd(); return; }
   try {
     const res = await fetch(`${API}/account/parental-controls/setup`, {
       method: 'POST',
@@ -6716,7 +6718,7 @@ async function submitPCSetup() {
     renderMyListRow();
     renderContinueWatching();
     toast('Parental Controls enabled', 'gold');
-  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; _errSnd(); }
 }
 
 async function submitPCVerify() {
@@ -6742,7 +6744,7 @@ async function submitPCVerify() {
     renderMyListRow();
     renderContinueWatching();
     toast(enabling ? 'Parental Controls enabled' : 'Parental Controls disabled', 'gold');
-  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; _errSnd(); }
 }
 
 function togglePCChangeForm() {
@@ -6774,7 +6776,7 @@ async function submitPCRemovePassword() {
     document.getElementById('pcChangeSection').style.display = 'none';
     document.getElementById('acctPCToggle').checked = false;
     toast('Parental Control password removed', 'gold');
-  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; _errSnd(); }
 }
 
 async function submitPCChangePassword() {
@@ -6784,7 +6786,7 @@ async function submitPCChangePassword() {
   const errEl = document.getElementById('pcChangeError');
   const successEl = document.getElementById('pcChangeSuccess');
   errEl.style.display = 'none'; successEl.style.display = 'none';
-  if (next !== confirmNext) { errEl.textContent = 'New passwords do not match'; errEl.style.display = 'block'; return; }
+  if (next !== confirmNext) { errEl.textContent = 'New passwords do not match'; errEl.style.display = 'block'; _errSnd(); return; }
   try {
     const res = await fetch(`${API}/account/parental-controls/change-password`, {
       method: 'POST',
@@ -6796,7 +6798,7 @@ async function submitPCChangePassword() {
     successEl.textContent = '✅ Password updated';
     successEl.style.display = 'block';
     ['pcChangeCurrentPwd', 'pcChangeNewPwd', 'pcChangeConfirmPwd'].forEach(id => document.getElementById(id).value = '');
-  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; _errSnd(); }
 }
 
 // Rate limit: max 3 password changes per hour stored in localStorage
@@ -6824,20 +6826,20 @@ async function changePassword() {
 
   if (!current || !newPwd || !confirm) {
     errEl.textContent = 'Please fill in all fields.';
-    errEl.style.display = 'block'; return;
+    errEl.style.display = 'block'; _errSnd(); return;
   }
-  if (newPwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  if (!/[A-Z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; return; }
-  if (!/[a-z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; return; }
-  if (!/[0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; return; }
-  if (!/[^A-Za-z0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; return; }
+  if (newPwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[A-Z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[a-z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[^A-Za-z0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; _errSnd(); return; }
   if (newPwd !== confirm) {
     errEl.textContent = 'Passwords do not match.';
-    errEl.style.display = 'block'; return;
+    errEl.style.display = 'block'; _errSnd(); return;
   }
   if (!checkPwdRateLimit()) {
     errEl.textContent = 'Too many password changes. Please wait an hour before trying again.';
-    errEl.style.display = 'block'; return;
+    errEl.style.display = 'block'; _errSnd(); return;
   }
 
   btn.textContent = 'Updating...';
@@ -6852,7 +6854,7 @@ async function changePassword() {
     const data = await res.json();
     if (!res.ok) {
       errEl.textContent = data.error || 'Failed to update password.';
-      errEl.style.display = 'block';
+      errEl.style.display = 'block'; _errSnd();
     } else {
       successEl.textContent = '✓ Password updated successfully.';
       successEl.style.display = 'block';
@@ -6862,7 +6864,7 @@ async function changePassword() {
     }
   } catch(e) {
     errEl.textContent = 'Connection error. Please try again.';
-    errEl.style.display = 'block';
+    errEl.style.display = 'block'; _errSnd();
   }
 
   btn.textContent = 'Update Password';
@@ -6951,7 +6953,7 @@ async function handleEmailAuth() {
 
   if (_authMode === 'forgot') {
     errEl.style.display = 'none';
-    if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = 'block'; return; }
+    if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = 'block'; _errSnd(); return; }
     btn.textContent = 'Sending...';
     btn.disabled = true;
     try {
@@ -6976,15 +6978,15 @@ async function handleEmailAuth() {
   const name = document.getElementById('authName')?.value.trim();
 
   errEl.style.display = 'none';
-  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
-  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  if (_authMode === 'register' && !/[A-Z]/.test(password)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; return; }
-  if (_authMode === 'register' && !/[a-z]/.test(password)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; return; }
-  if (_authMode === 'register' && !/[0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; return; }
-  if (_authMode === 'register' && !/[^A-Za-z0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; return; }
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (_authMode === 'register' && !/[A-Z]/.test(password)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (_authMode === 'register' && !/[a-z]/.test(password)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (_authMode === 'register' && !/[0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (_authMode === 'register' && !/[^A-Za-z0-9]/.test(password)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; _errSnd(); return; }
   if (_authMode === 'register') {
     const confirm = document.getElementById('authConfirm')?.value;
-    if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+    if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; _errSnd(); return; }
   }
 
   btn.textContent = 'Please wait...';
@@ -7002,7 +7004,7 @@ async function handleEmailAuth() {
 
     if (!res.ok) {
       errEl.textContent = data.error || 'Something went wrong.';
-      errEl.style.display = 'block';
+      errEl.style.display = 'block'; _errSnd();
       btn.textContent = _authMode === 'register' ? 'Create Account' : 'Sign In';
       btn.disabled = false;
       return;
@@ -7022,7 +7024,7 @@ async function handleEmailAuth() {
     }
   } catch(e) {
     errEl.textContent = 'Connection error. Please try again.';
-    errEl.style.display = 'block';
+    errEl.style.display = 'block'; _errSnd();
     btn.textContent = _authMode === 'register' ? 'Create Account' : 'Sign In';
     btn.disabled = false;
   }
@@ -13136,13 +13138,13 @@ async function submitForceReset() {
   const btn = document.getElementById('forceResetBtn');
   errEl.style.display = 'none';
 
-  if (!newPwd || !confirm) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
-  if (newPwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  if (!/[A-Z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; return; }
-  if (!/[a-z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; return; }
-  if (!/[0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; return; }
-  if (!/[^A-Za-z0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; return; }
-  if (newPwd !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+  if (!newPwd || !confirm) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (newPwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[A-Z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one uppercase letter.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[a-z]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one lowercase letter.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one number.'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (!/[^A-Za-z0-9]/.test(newPwd)) { errEl.textContent = 'Password must contain at least one special character (!@#$% etc).'; errEl.style.display = 'block'; _errSnd(); return; }
+  if (newPwd !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; _errSnd(); return; }
 
   btn.textContent = 'Updating...';
   btn.disabled = true;
@@ -13155,7 +13157,7 @@ async function submitForceReset() {
     const data = await res.json();
     if (!res.ok) {
       errEl.textContent = data.error || 'Failed to update password.';
-      errEl.style.display = 'block';
+      errEl.style.display = 'block'; _errSnd();
       btn.textContent = 'Set new password';
       btn.disabled = false;
       return;
@@ -13164,7 +13166,7 @@ async function submitForceReset() {
     showToast('Password updated. Welcome back!');
   } catch (e) {
     errEl.textContent = 'Connection error. Please try again.';
-    errEl.style.display = 'block';
+    errEl.style.display = 'block'; _errSnd();
     btn.textContent = 'Set new password';
     btn.disabled = false;
   }
