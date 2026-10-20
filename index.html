@@ -2272,9 +2272,11 @@
     $("ppWSub").textContent="Enter your account email and we'll send you a temporary password.";
     $("authSubmitBtn").textContent='Send temporary password';
     $("authSubmitBtn").disabled=false;
+    if (typeof _checkStoredForgotState === 'function') _checkStoredForgotState();
   }
   function exitForgotMode(){
     _authMode='login';
+    if (typeof _clearForgotCountdown === 'function') _clearForgotCountdown();
     $("authDivider").style.display='';
     $("googleSignInBtn").style.display='';
     $("authPasswordWrap").style.display='';
@@ -6890,6 +6892,58 @@ function toggleAuthMode() {
   });
 }
 
+let _forgotCountdownTimer = null;
+function _escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function _formatMMSS(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+function _clearForgotCountdown() {
+  if (_forgotCountdownTimer) { clearInterval(_forgotCountdownTimer); _forgotCountdownTimer = null; }
+}
+function _startForgotCountdown(email, expiresAt) {
+  _clearForgotCountdown();
+  const successEl = document.getElementById('authForgotSuccess');
+  const btn = document.getElementById('authSubmitBtn');
+  function tick() {
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) {
+      _clearForgotCountdown();
+      localStorage.removeItem('pichaplus_forgotpwd_state');
+      successEl.style.display = 'none';
+      btn.style.display = '';
+      btn.disabled = false;
+      btn.textContent = 'Send temporary password';
+      return;
+    }
+    const expiryTimeStr = new Date(expiresAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    successEl.innerHTML = `We've sent a temporary password to <strong>${_escapeHtml(email)}</strong>. Take a look in your inbox — and your spam folder too, just in case it slipped in there. It's valid until ${expiryTimeStr} <span style="color:#9a9a9a;">(${_formatMMSS(remaining)} remaining)</span>`;
+    successEl.style.display = 'block';
+    btn.style.display = '';
+    btn.disabled = true;
+    btn.textContent = 'Resend available in ' + _formatMMSS(remaining);
+  }
+  tick();
+  _forgotCountdownTimer = setInterval(tick, 1000);
+}
+function _checkStoredForgotState() {
+  try {
+    const raw = localStorage.getItem('pichaplus_forgotpwd_state');
+    if (!raw) { _clearForgotCountdown(); return false; }
+    const state = JSON.parse(raw);
+    if (!state.expiresAt || Date.now() >= state.expiresAt) {
+      localStorage.removeItem('pichaplus_forgotpwd_state');
+      _clearForgotCountdown();
+      return false;
+    }
+    document.getElementById('authEmail').value = state.email;
+    _startForgotCountdown(state.email, state.expiresAt);
+    return true;
+  } catch (e) { return false; }
+}
+
 async function handleEmailAuth() {
   const email = document.getElementById('authEmail').value.trim();
   const errEl = document.getElementById('authError');
@@ -6901,16 +6955,20 @@ async function handleEmailAuth() {
     btn.textContent = 'Sending...';
     btn.disabled = true;
     try {
-      await fetch(API + '/auth/forgot-password', {
+      const res = await fetch(API + '/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-    } catch (e) {}
-    const successEl = document.getElementById('authForgotSuccess');
-    successEl.textContent = 'If that email is registered, a temporary password has been sent. Check your inbox.';
-    successEl.style.display = 'block';
-    btn.style.display = 'none';
+      const data = await res.json().catch(() => ({}));
+      const ttlSec = data.expiresInSeconds || 1800;
+      const expiresAt = Date.now() + ttlSec * 1000;
+      localStorage.setItem('pichaplus_forgotpwd_state', JSON.stringify({ email, expiresAt }));
+      _startForgotCountdown(email, expiresAt);
+    } catch (e) {
+      btn.textContent = 'Send temporary password';
+      btn.disabled = false;
+    }
     return;
   }
 
