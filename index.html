@@ -6263,8 +6263,57 @@ function _fzScore(title, q) {
   return 30 + (total / qw.length) * 3;
 }
 
+// Filter-style metadata: VJ, genres, language, type
+const _FZ_GENRES = {
+  28:'action', 12:'adventure', 16:'animation', 35:'comedy', 80:'crime', 99:'documentary',
+  18:'drama', 10751:'family', 14:'fantasy', 36:'history', 27:'horror', 10402:'music',
+  9648:'mystery', 10749:'romance', 878:'science fiction sci fi scifi', 10770:'tv movie',
+  53:'thriller', 10752:'war', 37:'western', 10759:'action adventure', 10762:'kids',
+  10763:'news', 10764:'reality', 10765:'sci fi scifi fantasy', 10766:'soap',
+  10767:'talk', 10768:'war politics'
+};
+const _fzMetaCache = new WeakMap();
+function _fzMeta(item) {
+  var m = _fzMetaCache.get(item);
+  if (m !== undefined) return m;
+  var parts = [];
+  if (item._vj) parts.push(item._vj);
+  (item.genre_ids || []).forEach(function (g) { if (_FZ_GENRES[g]) parts.push(_FZ_GENRES[g]); });
+  if (item.isUgandan) parts.push('luganda ugandan uganda african africa');
+  parts.push(item.media_type === 'tv' ? 'series tv show shows' : 'movie movies film films');
+  m = _fzNorm(parts.join(' '));
+  _fzMetaCache.set(item, m);
+  return m;
+}
+
 let searchTimer;
 let _searchRunId = 0;
+
+function _searchOutsideHTML(items, hasLocal) {
+  return '<div style="color:#888;font-size:0.8rem;grid-column:1/-1;padding:' + (hasLocal ? '1.25rem' : '0') + ' 0 0.5rem 0;">Not in your library yet</div>' +
+    items.map(item => createCard(item)).join('');
+}
+async function _searchFetchOutside(query, localItems) {
+  var items = [];
+  try { items = (await tmdbSearch(query)) || []; } catch (e) { items = []; }
+  var shown = new Set(localItems.map(i => _fzNorm(i.title)));
+  return items.filter(i => !shown.has(_fzNorm(i.title || i.name))).slice(0, 20);
+}
+async function _searchLoadMore() {
+  const runId = _searchRunId;
+  const btn = document.getElementById('searchMoreBtn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'Searching...';
+  const outside = await _searchFetchOutside(window._searchMoreQuery || '', window._searchLocal || []);
+  if (runId !== _searchRunId) return; // a newer search has started
+  const holder = document.getElementById('searchMoreHolder');
+  if (!holder) return;
+  holder.outerHTML = outside.length
+    ? _searchOutsideHTML(outside, true)
+    : '<div style="color:#666;font-size:0.85rem;grid-column:1/-1;text-align:center;padding:1rem 0;">No other results found</div>';
+}
+
 async function handleSearch(query) {
   clearTimeout(searchTimer);
   const results = document.getElementById('searchResults');
@@ -6287,41 +6336,45 @@ async function handleSearch(query) {
       }, 800);
     }
 
-    // Library: fuzzy-scored, best first
-    const localItems = (window._allCards || [])
-      .map(item => ({ item, score: _fzScore(item.title, q) }))
-      .filter(x => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 20)
-      .map(x => x.item);
+    // Library: title match OR filter match (VJ / genre / language / type), best first
+    let titleHit = false;
+    const scored = [];
+    (window._allCards || []).forEach(item => {
+      const ts = _fzScore(item.title, q);
+      const ms = _fzScore((item.title || '') + ' ' + _fzMeta(item), q) * 0.6;
+      const score = Math.max(ts, ms);
+      if (score > 0) {
+        if (ts > 0) titleHit = true;
+        scored.push({ item, score });
+      }
+    });
+    scored.sort((a, b) => b.score - a.score);
+    const localItems = scored.slice(0, 30).map(x => x.item);
 
-    // Outside library: TMDB (its own matching), failures must not break local results
-    let tmdbItems = [];
-    try { tmdbItems = await tmdbSearch(query) || []; } catch (e) { tmdbItems = []; }
+    window._searchLocal = localItems;
+    window._searchMoreQuery = query.trim();
 
-    if (runId !== _searchRunId) return; // a newer search has started
-
-    // Don't repeat titles already shown in the library section
-    const shown = new Set(localItems.map(i => _fzNorm(i.title)));
-    const outside = tmdbItems
-      .filter(i => !shown.has(_fzNorm(i.title || i.name)))
-      .slice(0, 20);
-
-    if (!localItems.length && !outside.length) {
-      results.innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">No results found</div>';
+    // Library has something: show it, TMDB only on request
+    if (localItems.length) {
+      let html = '<div style="color:#f0a500;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">In your library</div>' +
+        localItems.map(item => createCard(item)).join('');
+      // Pure filter matches (VJ / genre / language) don't get a "see more" button
+      if (titleHit) {
+        html += '<div id="searchMoreHolder" style="grid-column:1/-1;text-align:center;padding:1.25rem 0 0.5rem;">' +
+          '<button id="searchMoreBtn" onclick="_searchLoadMore()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.6rem 1.4rem;font-size:0.85rem;cursor:pointer;">See more results</button></div>';
+      }
+      results.innerHTML = html;
       return;
     }
 
-    let html = '';
-    if (localItems.length) {
-      html += '<div style="color:#f0a500;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">In your library</div>' +
-        localItems.map(item => createCard(item)).join('');
+    // Nothing in the library at all: now the TMDB call is justified
+    const outside = await _searchFetchOutside(query, []);
+    if (runId !== _searchRunId) return;
+    if (!outside.length) {
+      results.innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">No results found</div>';
+      return;
     }
-    if (outside.length) {
-      html += '<div style="color:#888;font-size:0.8rem;grid-column:1/-1;padding:' + (localItems.length ? '1.25rem' : '0') + ' 0 0.5rem 0;">Not in your library yet</div>' +
-        outside.map(item => createCard(item)).join('');
-    }
-    results.innerHTML = html;
+    results.innerHTML = _searchOutsideHTML(outside, false);
   }, 250);
 }
 
