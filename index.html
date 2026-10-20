@@ -2287,6 +2287,8 @@
     $("authSubmitBtn").textContent='Sign In';
     $("authSubmitBtn").disabled=false;
   }
+  window.enterForgotMode = enterForgotMode;
+  window.exitForgotMode = exitForgotMode;
   function init(){
     var modal=$("signinModal"),em=$("authEmail"),pw=$("authPassword"),cf=$("authConfirm"),
         err=$("authError"),form=$("authEmailForm");
