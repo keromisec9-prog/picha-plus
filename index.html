@@ -6331,12 +6331,37 @@ async function _searchLoadMore() {
     ? _searchOutsideHTML(outside, true)
     : '<div style="color:#666;font-size:0.85rem;grid-column:1/-1;text-align:center;padding:1rem 0;">No other results found</div>';
 }
-function _searchSeeAll() {
+function _searchToggle() {
   const grid = document.getElementById('searchLocalGrid');
   const btn = document.getElementById('searchSeeAllBtn');
   if (!grid) return;
+  if (window._searchExpanded) { _searchCollapse(); return; }
+  window._searchExpanded = true;
   grid.innerHTML = (window._searchLocal || []).map(item => createCard(item)).join('');
-  if (btn) btn.remove();
+  if (btn) btn.textContent = 'Show less';
+  if (!document.getElementById('searchLessBottom')) {
+    grid.insertAdjacentHTML('afterend',
+      '<div id="searchLessBottom" style="grid-column:1/-1;text-align:center;padding:1rem 0 0;">' +
+      '<button onclick="_searchToggle()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.5rem 1.2rem;font-size:0.8rem;cursor:pointer;">Show less</button></div>');
+  }
+}
+// Returns true if it collapsed something (used by the back button)
+function _searchCollapse() {
+  if (!window._searchExpanded) return false;
+  window._searchExpanded = false;
+  const grid = document.getElementById('searchLocalGrid');
+  if (!grid) return false;
+  const list = window._searchLocal || [];
+  grid.innerHTML = list.slice(0, window._searchPreview || 8).map(item => createCard(item)).join('');
+  const btn = document.getElementById('searchSeeAllBtn');
+  if (btn) btn.textContent = 'See all (' + list.length + ')';
+  const low = document.getElementById('searchLessBottom');
+  if (low) low.remove();
+  const ov = document.getElementById('searchOverlay');
+  const rs = document.getElementById('searchResults');
+  if (ov) ov.scrollTop = 0;
+  if (rs) rs.scrollTop = 0;
+  return true;
 }
 
 async function handleSearch(query) {
@@ -6377,6 +6402,7 @@ async function handleSearch(query) {
     const localItems = scored.map(x => x.item);
 
     window._searchLocal = localItems;
+    window._searchExpanded = false;
     window._searchMoreQuery = query.trim();
 
     // Library has something: show two rows, TMDB only on request
@@ -6384,10 +6410,11 @@ async function handleSearch(query) {
       const perRow = window.innerWidth >= 900 ? 6 : 4;
       const preview = perRow * 2;
       const hasMore = localItems.length > preview;
+      window._searchPreview = preview;
       let html =
         '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 0 0.5rem 0;">' +
           '<span style="color:#f0a500;font-size:0.8rem;">In your library</span>' +
-          (hasMore ? '<button id="searchSeeAllBtn" onclick="_searchSeeAll()" style="background:none;border:none;color:#f0a500;font-size:0.8rem;cursor:pointer;padding:0.25rem 0;">See all (' + localItems.length + ')</button>' : '') +
+          (hasMore ? '<button id="searchSeeAllBtn" onclick="_searchToggle()" style="background:none;border:none;color:#f0a500;font-size:0.8rem;cursor:pointer;padding:0.25rem 0;">See all (' + localItems.length + ')</button>' : '') +
         '</div>' +
         _srGrid(localItems.slice(0, preview), 'searchLocalGrid');
       // Always offer a way past the library
@@ -12188,7 +12215,7 @@ window.addEventListener('focus', clearStrayFocus);
     if (a) { a.remove(); return true; }
     return false;
   });
-  add(function () { return on('searchOverlay') && call('closeSearch'); });
+  add(function () { if (!on('searchOverlay')) return false; if (typeof window._searchCollapse === 'function' && window._searchCollapse()) return true; return call('closeSearch'); });
   add(function () { return on('userDropdown', 'open') && call('toggleUserMenu', true); });
   add(function () { return on('accountSettingsModal') && call('closeAccountSettings'); });
   add(function () { return on('signinModal') && call('closeSignin'); });
