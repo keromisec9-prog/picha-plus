@@ -7403,13 +7403,27 @@ async function startPayment(plan) {
 function _payBack() {
   const origin = window._payOrigin;
   window._payOrigin = null;
+  const held = window._africanHeld;
+  window._africanHeld = null;
+
+  if (origin === 'african' && held && document.body.contains(held)) {
+    // Show the same picker again in the same frame the payment screen closes: no blink
+    held.removeAttribute('data-held');
+    held.style.display = 'flex';
+    closePayment();
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+  if (held) held.remove();
   closePayment();
-  // Small delay lets the history entry for the payment screen settle first
+  // Fallbacks (picker was lost, or the payment started from the plans screen)
   if (origin === 'african') setTimeout(() => { if (typeof showAfricanUpgradeToast === 'function') showAfricanUpgradeToast(); }, 150);
   else if (origin === 'paywall') setTimeout(() => { if (typeof showPaywall === 'function') showPaywall(); }, 150);
 }
 
 function closePayment() {
+  if (window._africanHeld) { const h = window._africanHeld; window._africanHeld = null; h.remove(); }
   document.getElementById('paymentModal').classList.remove('active');
   document.getElementById('paymentFrame').src = '';
   document.documentElement.style.overflow = '';
@@ -7800,7 +7814,9 @@ function showAfricanUpgradeToast() {
   });
 
   document.getElementById('africanContinueBtn').onclick = () => {
-    overlay.remove();
+    overlay.setAttribute('data-held', '1');
+    overlay.style.display = 'none';
+    window._africanHeld = overlay;
     window._payOriginNext = 'african';
     startPayment(selectedPlan);
   };
@@ -12237,7 +12253,7 @@ window.addEventListener('focus', clearStrayFocus);
   var add = window.addBackFallback;
   add(function () { return on('playerModal') && call('_ppPlayerBack'); });
   add(function () {
-    var a = document.querySelector('.african-modal-overlay');
+    var a = document.querySelector('.african-modal-overlay:not([data-held])');
     if (a) { a.remove(); return true; }
     return false;
   });
