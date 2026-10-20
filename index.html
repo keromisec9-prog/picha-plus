@@ -6207,6 +6207,20 @@ function closeSearch() {
 }
 
 // ── FUZZY SEARCH ──────────────────────────────────────────────────────────────
+(function () {
+  if (document.getElementById('srGridStyle')) return;
+  var st = document.createElement('style');
+  st.id = 'srGridStyle';
+  st.textContent =
+    '.sr-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.5rem;}' +
+    '@media(min-width:900px){.sr-grid{grid-template-columns:repeat(6,minmax(0,1fr));}}' +
+    '.sr-grid .card{width:100% !important;min-width:0 !important;max-width:none !important;height:auto !important;aspect-ratio:2/3;margin:0 !important;flex:none !important;}' +
+    '.sr-grid .card-poster,.sr-grid .card-poster-placeholder{width:100% !important;height:100% !important;object-fit:cover;}' +
+    '.sr-grid .card-badge{font-size:0.5rem !important;padding:0.1rem 0.25rem !important;max-width:calc(100% - 0.5rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '.sr-grid .card-title{font-size:0.65rem !important;}';
+  document.head.appendChild(st);
+})();
+
 function _fzNorm(s) {
   return (s || '').toLowerCase().normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -6289,9 +6303,13 @@ function _fzMeta(item) {
 let searchTimer;
 let _searchRunId = 0;
 
+function _srGrid(items, id) {
+  return '<div class="sr-grid"' + (id ? ' id="' + id + '"' : '') + '>' +
+    items.map(item => createCard(item)).join('') + '</div>';
+}
 function _searchOutsideHTML(items, hasLocal) {
   return '<div style="color:#888;font-size:0.8rem;grid-column:1/-1;padding:' + (hasLocal ? '1.25rem' : '0') + ' 0 0.5rem 0;">Not in your library yet</div>' +
-    items.map(item => createCard(item)).join('');
+    _srGrid(items);
 }
 async function _searchFetchOutside(query, localItems) {
   var items = [];
@@ -6312,6 +6330,13 @@ async function _searchLoadMore() {
   holder.outerHTML = outside.length
     ? _searchOutsideHTML(outside, true)
     : '<div style="color:#666;font-size:0.85rem;grid-column:1/-1;text-align:center;padding:1rem 0;">No other results found</div>';
+}
+function _searchSeeAll() {
+  const grid = document.getElementById('searchLocalGrid');
+  const btn = document.getElementById('searchSeeAllBtn');
+  if (!grid) return;
+  grid.innerHTML = (window._searchLocal || []).map(item => createCard(item)).join('');
+  if (btn) btn.remove();
 }
 
 async function handleSearch(query) {
@@ -6336,7 +6361,7 @@ async function handleSearch(query) {
       }, 800);
     }
 
-    // Library: title match OR filter match (VJ / genre / language / type), best first
+    // Library: title match OR filter match (VJ / genre / language / type), best first, no cap
     let titleHit = false;
     const scored = [];
     (window._allCards || []).forEach(item => {
@@ -6349,19 +6374,26 @@ async function handleSearch(query) {
       }
     });
     scored.sort((a, b) => b.score - a.score);
-    const localItems = scored.slice(0, 30).map(x => x.item);
+    const localItems = scored.map(x => x.item);
 
     window._searchLocal = localItems;
     window._searchMoreQuery = query.trim();
 
-    // Library has something: show it, TMDB only on request
+    // Library has something: show two rows, TMDB only on request
     if (localItems.length) {
-      let html = '<div style="color:#f0a500;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">In your library</div>' +
-        localItems.map(item => createCard(item)).join('');
-      // Pure filter matches (VJ / genre / language) don't get a "see more" button
+      const perRow = window.innerWidth >= 900 ? 6 : 4;
+      const preview = perRow * 2;
+      const hasMore = localItems.length > preview;
+      let html =
+        '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 0 0.5rem 0;">' +
+          '<span style="color:#f0a500;font-size:0.8rem;">In your library</span>' +
+          (hasMore ? '<button id="searchSeeAllBtn" onclick="_searchSeeAll()" style="background:none;border:none;color:#f0a500;font-size:0.8rem;cursor:pointer;padding:0.25rem 0;">See all (' + localItems.length + ')</button>' : '') +
+        '</div>' +
+        _srGrid(localItems.slice(0, preview), 'searchLocalGrid');
+      // Pure filter matches (VJ / genre / language) don't get the beyond-library button
       if (titleHit) {
         html += '<div id="searchMoreHolder" style="grid-column:1/-1;text-align:center;padding:1.25rem 0 0.5rem;">' +
-          '<button id="searchMoreBtn" onclick="_searchLoadMore()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.6rem 1.4rem;font-size:0.85rem;cursor:pointer;">See more results</button></div>';
+          '<button id="searchMoreBtn" onclick="_searchLoadMore()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.6rem 1.4rem;font-size:0.85rem;cursor:pointer;">Search beyond library</button></div>';
       }
       results.innerHTML = html;
       return;
