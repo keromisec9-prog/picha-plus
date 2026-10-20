@@ -6208,16 +6208,22 @@ function closeSearch() {
 
 // ── FUZZY SEARCH ──────────────────────────────────────────────────────────────
 (function () {
-  if (document.getElementById('srGridStyle')) return;
+  var old = document.getElementById('srGridStyle');
+  if (old) old.remove();
   var st = document.createElement('style');
   st.id = 'srGridStyle';
   st.textContent =
-    '.sr-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.5rem;}' +
-    '@media(min-width:900px){.sr-grid{grid-template-columns:repeat(6,minmax(0,1fr));}}' +
-    '.sr-grid .card{width:100% !important;min-width:0 !important;max-width:none !important;height:auto !important;aspect-ratio:2/3;margin:0 !important;flex:none !important;}' +
-    '.sr-grid .card-poster,.sr-grid .card-poster-placeholder{width:100% !important;height:100% !important;object-fit:cover;}' +
-    '.sr-grid .card-badge{font-size:0.5rem !important;padding:0.1rem 0.25rem !important;max-width:calc(100% - 0.5rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
-    '.sr-grid .card-title{font-size:0.65rem !important;}';
+    '.sr-rows,.sr-grid{grid-column:1/-1;--sr-gap:0.5rem;--sr-cw:min(var(--card-w),calc((100% - 3 * var(--sr-gap)) / 3.5));}' +
+    '.sr-rows{display:flex;flex-direction:column;gap:0.75rem;}' +
+    '.sr-row{display:flex;gap:var(--sr-gap);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;}' +
+    '.sr-row::-webkit-scrollbar{display:none;}' +
+    '.sr-row .card{flex:0 0 var(--sr-cw) !important;width:var(--sr-cw) !important;}' +
+    '.sr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--sr-cw),1fr));gap:var(--sr-gap);}' +
+    '.sr-grid .card{width:100% !important;}' +
+    '.sr-rows .card,.sr-grid .card{min-width:0 !important;max-width:none !important;height:auto !important;aspect-ratio:2/3;margin:0 !important;}' +
+    '.sr-rows .card-poster,.sr-rows .card-poster-placeholder,.sr-grid .card-poster,.sr-grid .card-poster-placeholder{width:100% !important;height:100% !important;object-fit:cover;}' +
+    '.sr-rows .card-badge,.sr-grid .card-badge{font-size:0.5rem !important;padding:0.1rem 0.25rem !important;max-width:calc(100% - 0.5rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '.sr-rows .card-title,.sr-grid .card-title{font-size:0.65rem !important;}';
   document.head.appendChild(st);
 })();
 
@@ -6303,9 +6309,15 @@ function _fzMeta(item) {
 let searchTimer;
 let _searchRunId = 0;
 
-function _srGrid(items, id) {
-  return '<div class="sr-grid"' + (id ? ' id="' + id + '"' : '') + '>' +
-    items.map(item => createCard(item)).join('') + '</div>';
+function _srGrid(items) {
+  return '<div class="sr-grid">' + items.map(item => createCard(item)).join('') + '</div>';
+}
+function _srPreviewHTML(list) {
+  const items = list.slice(0, 20);
+  const half = items.length > 8 ? Math.ceil(items.length / 2) : items.length;
+  const rows = [items.slice(0, half), items.slice(half)].filter(r => r.length);
+  return '<div class="sr-rows">' + rows.map(r =>
+    '<div class="sr-row">' + r.map(item => createCard(item)).join('') + '</div>').join('') + '</div>';
 }
 function _searchOutsideHTML(items, hasLocal) {
   return '<div style="color:#888;font-size:0.8rem;grid-column:1/-1;padding:' + (hasLocal ? '1.25rem' : '0') + ' 0 0.5rem 0;">Not in your library yet</div>' +
@@ -6337,7 +6349,7 @@ function _searchToggle() {
   if (!grid) return;
   if (window._searchExpanded) { _searchCollapse(); return; }
   window._searchExpanded = true;
-  grid.innerHTML = (window._searchLocal || []).map(item => createCard(item)).join('');
+  grid.innerHTML = _srGrid(window._searchLocal || []);
   if (btn) btn.textContent = 'Show less';
   if (!document.getElementById('searchLessBottom')) {
     grid.insertAdjacentHTML('afterend',
@@ -6352,7 +6364,7 @@ function _searchCollapse() {
   const grid = document.getElementById('searchLocalGrid');
   if (!grid) return false;
   const list = window._searchLocal || [];
-  grid.innerHTML = list.slice(0, window._searchPreview || 8).map(item => createCard(item)).join('');
+  grid.innerHTML = _srPreviewHTML(list);
   const btn = document.getElementById('searchSeeAllBtn');
   if (btn) btn.textContent = 'See all (' + list.length + ')';
   const low = document.getElementById('searchLessBottom');
@@ -6407,8 +6419,7 @@ async function handleSearch(query) {
 
     // Library has something: show two rows, TMDB only on request
     if (localItems.length) {
-      const perRow = window.innerWidth >= 900 ? 6 : 4;
-      const preview = perRow * 2;
+      const preview = 20;
       const hasMore = localItems.length > preview;
       window._searchPreview = preview;
       let html =
@@ -6416,7 +6427,7 @@ async function handleSearch(query) {
           '<span style="color:#f0a500;font-size:0.8rem;">In your library</span>' +
           (hasMore ? '<button id="searchSeeAllBtn" onclick="_searchToggle()" style="background:none;border:none;color:#f0a500;font-size:0.8rem;cursor:pointer;padding:0.25rem 0;">See all (' + localItems.length + ')</button>' : '') +
         '</div>' +
-        _srGrid(localItems.slice(0, preview), 'searchLocalGrid');
+        '<div id="searchLocalGrid" style="grid-column:1/-1;">' + _srPreviewHTML(localItems) + '</div>';
       // Always offer a way past the library
       {
         html += '<div id="searchMoreHolder" style="grid-column:1/-1;text-align:center;padding:1.25rem 0 0.5rem;">' +
