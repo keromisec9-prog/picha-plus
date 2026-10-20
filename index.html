@@ -6206,17 +6206,78 @@ function closeSearch() {
   }, 150);
 }
 
+// ── FUZZY SEARCH ──────────────────────────────────────────────────────────────
+function _fzNorm(s) {
+  return (s || '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+function _fzLev(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  var prev = [], cur, i, j;
+  for (j = 0; j <= b.length; j++) prev[j] = j;
+  for (i = 1; i <= a.length; i++) {
+    cur = [i];
+    var rowMin = i;
+    for (j = 1; j <= b.length; j++) {
+      var c = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + c);
+      if (cur[j] < rowMin) rowMin = cur[j];
+    }
+    if (rowMin > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// 0 = no match; higher = better
+function _fzScore(title, q) {
+  var t = _fzNorm(title);
+  if (!t || !q) return 0;
+  if (t === q) return 100;
+  if (t.indexOf(q) === 0) return 90;
+  if ((' ' + t).indexOf(' ' + q) !== -1) return 80;
+  if (t.indexOf(q) !== -1) return 70;
+  var qw = q.split(' '), tw = t.split(' '), total = 0;
+  for (var a = 0; a < qw.length; a++) {
+    var qt = qw[a], best = 0;
+    var max = qt.length <= 3 ? 0 : qt.length <= 6 ? 1 : 2;
+    for (var b = 0; b < tw.length; b++) {
+      var w = tw[b], sc = 0;
+      if (w === qt) sc = 10;
+      else if (w.indexOf(qt) === 0) sc = 9;
+      else if (qt.length >= 3 && w.indexOf(qt) !== -1) sc = 7;
+      else if (max) {
+        var d = _fzLev(qt, w, max);
+        if (d <= max) sc = 8 - d;
+        else {
+          var d2 = _fzLev(qt, w.slice(0, qt.length), max);
+          if (d2 <= max) sc = 6 - d2;
+        }
+      }
+      if (sc > best) best = sc;
+    }
+    if (!best) return 0;
+    total += best;
+  }
+  return 30 + (total / qw.length) * 3;
+}
+
 let searchTimer;
+let _searchRunId = 0;
 async function handleSearch(query) {
   clearTimeout(searchTimer);
   const results = document.getElementById('searchResults');
   if (!query.trim()) {
+    _searchRunId++;
     results.innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">Start typing to search...</div>';
     return;
   }
   results.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
   searchTimer = setTimeout(async () => {
-    const q = query.trim().toLowerCase();
+    const runId = ++_searchRunId;
+    const q = _fzNorm(query);
+    if (!q) return;
 
     // Track search query — only after user stops typing (final term only)
     if (q.length >= 3) {
@@ -6226,29 +6287,42 @@ async function handleSearch(query) {
       }, 800);
     }
 
-    // Search local catalog first
-    const localItems = (window._allCards || []).filter(item =>
-      (item.title || '').toLowerCase().includes(q)
-    );
+    // Library: fuzzy-scored, best first
+    const localItems = (window._allCards || [])
+      .map(item => ({ item, score: _fzScore(item.title, q) }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20)
+      .map(x => x.item);
 
-    if (localItems.length) {
-      // Show local results with a header indicating availability
-      results.innerHTML = 
-        '<div style="color:#f0a500;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">Available on Picha+</div>' +
-        localItems.slice(0, 20).map(item => createCard(item)).join('');
-      return;
-    }
+    // Outside library: TMDB (its own matching), failures must not break local results
+    let tmdbItems = [];
+    try { tmdbItems = await tmdbSearch(query) || []; } catch (e) { tmdbItems = []; }
 
-    // No local results — fall back to TMDB
-    const items = await tmdbSearch(query);
-    if (!items.length) {
+    if (runId !== _searchRunId) return; // a newer search has started
+
+    // Don't repeat titles already shown in the library section
+    const shown = new Set(localItems.map(i => _fzNorm(i.title)));
+    const outside = tmdbItems
+      .filter(i => !shown.has(_fzNorm(i.title || i.name)))
+      .slice(0, 20);
+
+    if (!localItems.length && !outside.length) {
       results.innerHTML = '<div style="color:#666;font-size:0.88rem;grid-column:1/-1;text-align:center;padding:3rem 0;">No results found</div>';
       return;
     }
-    results.innerHTML = 
-      '<div style="color:#666;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">No matches in library — showing general results</div>' +
-      items.slice(0, 20).map(item => createCard(item)).join('');
-  }, 400);
+
+    let html = '';
+    if (localItems.length) {
+      html += '<div style="color:#f0a500;font-size:0.8rem;grid-column:1/-1;padding:0 0 0.5rem 0;">In your library</div>' +
+        localItems.map(item => createCard(item)).join('');
+    }
+    if (outside.length) {
+      html += '<div style="color:#888;font-size:0.8rem;grid-column:1/-1;padding:' + (localItems.length ? '1.25rem' : '0') + ' 0 0.5rem 0;">Not in your library yet</div>' +
+        outside.map(item => createCard(item)).join('');
+    }
+    results.innerHTML = html;
+  }, 250);
 }
 
 // ── LANGUAGE FILTER ───────────────────────────────────────────────────────────
