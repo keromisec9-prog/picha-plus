@@ -10924,7 +10924,7 @@ onMessage(messaging, (payload) => {
   const { title, body } = payload.notification || {};
   if (Notification.permission === "granted") new Notification(title || "Picha+", { body, icon: "/icon-192.png" });
 });
-window.addEventListener("load", () => setTimeout(registerPush, 3000));
+setTimeout(registerPush, 3000);
 
   // ── TV REMOTE / KEYBOARD NAVIGATION (2D Spatial) ──
   (function() {
