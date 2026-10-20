@@ -12244,6 +12244,12 @@ window.addEventListener('focus', clearStrayFocus);
 (function () {
   var armedAt = 0, fallbacks = [];
   window.addBackFallback = function (fn) { fallbacks.push(fn); };
+  window.__ppRunFallbacks = function () {
+    for (var i = 0; i < fallbacks.length; i++) {
+      try { if (fallbacks[i]()) return true; } catch (e) {}
+    }
+    return false;
+  };
   try {
     history.replaceState({ root: 1 }, '', location.href);
     history.pushState({ home: 1 }, '', location.href);
@@ -12274,7 +12280,7 @@ window.addEventListener('focus', clearStrayFocus);
         var now = Date.now();
         if (now - armedAt < 2000) { exitNow(); return; }
         armedAt = now;
-        note('JS: Press again to exit');
+        note('Press again to exit');
       }
     }
     try {
