@@ -3241,7 +3241,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <div class="modal-overlay" id="paymentModal">
   <div class="modal-box" style="max-width:500px;">
     <div class="modal-header">
-      <button class="pay-back-btn" onclick="closePayment()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
+      <button class="pay-back-btn" onclick="_payBack()" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button>
       <h3 class="modal-title" id="paymentTitle">Subscribe</h3>
     </div>
     <div class="modal-body" style="padding:1rem;">
@@ -7337,6 +7337,11 @@ const PLANS = {
 async function startPayment(plan) {
   if (!session.isLoggedIn()) { openSignin(); showToast('Please sign in first', 'error'); return; }
 
+  // Remember which screen the payment was opened from, so back can return there
+  window._payOrigin = window._payOriginNext ||
+    (getComputedStyle(document.getElementById('paywallModal')).display !== 'none' ? 'paywall' : null);
+  window._payOriginNext = null;
+
   // Close the paywall overlay first so it doesn't sit on top of the payment modal
   closePaywall();
 
@@ -7393,6 +7398,15 @@ async function startPayment(plan) {
     closePayment();
     showToast('Payment failed. Please try again.', 'error');
   }
+}
+
+function _payBack() {
+  const origin = window._payOrigin;
+  window._payOrigin = null;
+  closePayment();
+  // Small delay lets the history entry for the payment screen settle first
+  if (origin === 'african') setTimeout(() => { if (typeof showAfricanUpgradeToast === 'function') showAfricanUpgradeToast(); }, 150);
+  else if (origin === 'paywall') setTimeout(() => { if (typeof showPaywall === 'function') showPaywall(); }, 150);
 }
 
 function closePayment() {
@@ -7787,6 +7801,7 @@ function showAfricanUpgradeToast() {
 
   document.getElementById('africanContinueBtn').onclick = () => {
     overlay.remove();
+    window._payOriginNext = 'african';
     startPayment(selectedPlan);
   };
 }
@@ -12132,7 +12147,7 @@ window.addEventListener('focus', clearStrayFocus);
   var OVL = [
     ['accountSettingsModal', 'closeAccountSettings', 'd'],
     ['signinModal', 'closeSignin', 'd'],
-    ['paymentModal', 'closePayment', 'd'],
+    ['paymentModal', '_payBack', 'd'],
     ['paywallModal', 'closePaywall', 'd'],
     ['categoryOverlay', 'closeCategory', 'c']
   ];
@@ -12230,7 +12245,7 @@ window.addEventListener('focus', clearStrayFocus);
   add(function () { return on('userDropdown', 'open') && call('toggleUserMenu', true); });
   add(function () { return on('accountSettingsModal') && call('closeAccountSettings'); });
   add(function () { return on('signinModal') && call('closeSignin'); });
-  add(function () { return on('paymentModal') && call('closePayment'); });
+  add(function () { return on('paymentModal') && call('_payBack'); });
   add(function () { return shown('paywallModal') && call('closePaywall'); });
   add(function () { return on('categoryOverlay') && call('closeCategory'); });
   add(function () {
