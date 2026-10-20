@@ -6390,10 +6390,10 @@ async function handleSearch(query) {
           (hasMore ? '<button id="searchSeeAllBtn" onclick="_searchSeeAll()" style="background:none;border:none;color:#f0a500;font-size:0.8rem;cursor:pointer;padding:0.25rem 0;">See all (' + localItems.length + ')</button>' : '') +
         '</div>' +
         _srGrid(localItems.slice(0, preview), 'searchLocalGrid');
-      // Pure filter matches (VJ / genre / language) don't get the beyond-library button
-      if (titleHit) {
+      // Always offer a way past the library
+      {
         html += '<div id="searchMoreHolder" style="grid-column:1/-1;text-align:center;padding:1.25rem 0 0.5rem;">' +
-          '<button id="searchMoreBtn" onclick="_searchLoadMore()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.6rem 1.4rem;font-size:0.85rem;cursor:pointer;">Search beyond library</button></div>';
+          '<button id="searchMoreBtn" onclick="_searchLoadMore()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.6rem 1.4rem;font-size:0.85rem;cursor:pointer;">Show more results</button></div>';
       }
       results.innerHTML = html;
       return;
