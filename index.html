@@ -1053,6 +1053,12 @@
     }
     #acctPreviewSoundToggle:checked + #acctPreviewSoundSlider { background: var(--gold); }
     #acctPreviewSoundToggle:checked + #acctPreviewSoundSlider::before { transform: translateX(20px); }
+    #acctBgSlider::before {
+      content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    #acctBgToggle:checked + #acctBgSlider { background: var(--gold); }
+    #acctBgToggle:checked + #acctBgSlider::before { transform: translateX(20px); }
 
     #acctPCSlider::before {
       content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
@@ -3078,12 +3084,15 @@ function saveProgress(id, pos, dur, forceSync, title) {
         </div>
         <div id="acctBgWrap" style="display:none;">
           <div class="acct-label">Notifications</div>
-          <div class="acct-card acct-row" onclick="try{PichaApp.toggleBatteryExemption();}catch(e){}" style="cursor:pointer;">
+          <div class="acct-card acct-row">
             <div>
               <div style="font-size:0.9rem;font-weight:600;">Background access</div>
               <div style="font-size:0.78rem;color:#888;margin-top:0.15rem;">Get alerts even when the app is closed</div>
             </div>
-            <div id="acctBgState" style="font-size:0.82rem;font-weight:600;color:#888;">Off</div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+              <input type="checkbox" id="acctBgToggle" onchange="ppBgToggle()" style="opacity:0;width:0;height:0;">
+              <span id="acctBgSlider" style="position:absolute;cursor:pointer;inset:0;background:#333;border-radius:24px;transition:0.2s;"></span>
+            </label>
           </div>
         </div>
         <script>
@@ -3092,10 +3101,13 @@ function saveProgress(id, pos, dur, forceSync, title) {
             try{
               if(!(window.PichaApp&&PichaApp.batteryExempt))return;
               document.getElementById('acctBgWrap').style.display='';
-              var on=PichaApp.batteryExempt(),el=document.getElementById('acctBgState');
-              el.textContent=on?'On':'Off'; el.style.color=on?'#46d369':'#888';
+              document.getElementById('acctBgToggle').checked=!!PichaApp.batteryExempt();
             }catch(e){}
           }
+          window.ppBgToggle=function(){
+            try{PichaApp.toggleBatteryExemption();}catch(e){}
+            var n=0,t=setInterval(function(){refresh();if(++n>30)clearInterval(t);},500);
+          };
           refresh();
           window.addEventListener('focus',refresh);
           document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh();});
