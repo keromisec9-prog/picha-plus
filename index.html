@@ -8053,10 +8053,94 @@ function closeCategory() {
   _historyNoMore = true;
 }
 
+/* pichaConfirm v2 */
+function pichaConfirm(opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    if (!document.getElementById('pichaConfirmCSS')) {
+      const st = document.createElement('style');
+      st.id = 'pichaConfirmCSS';
+      st.textContent = `
+        .pc-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:1.25rem;background:rgba(0,0,0,0.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);overscroll-behavior:contain;touch-action:none;animation:pcFade .18s ease-out}
+        .pc-overlay.pc-out{animation:pcFadeOut .16s ease-in forwards}
+        .pc-card{width:100%;max-width:370px;background:#0e0e12;border:1px solid rgba(255,255,255,0.14);border-radius:24px;padding:2rem 1.5rem 1.5rem;box-shadow:0 30px 80px rgba(0,0,0,0.8);animation:pcPop .22s cubic-bezier(.2,.9,.3,1.2);font-family:inherit;text-align:center}
+        .pc-icon{width:76px;height:76px;margin:0 auto 1.2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(229,9,60,0.16);border:1px solid rgba(229,9,60,0.18)}
+        .pc-title{color:#fff;font-size:1.45rem;font-weight:700;letter-spacing:0.005em;margin-bottom:0.7rem}
+        .pc-msg{color:#b4b4c6;font-size:1rem;line-height:1.5;margin-bottom:1.7rem}
+        .pc-actions{display:flex;gap:0.8rem}
+        .pc-btn{flex:1;height:52px;padding:0 0.5rem;border-radius:14px;font-size:1rem;font-weight:600;font-family:inherit;cursor:pointer;transition:transform .1s,opacity .15s;outline:none;-webkit-tap-highlight-color:transparent}
+        .pc-btn:active{transform:scale(0.97)}
+        .pc-cancel{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.28)}
+        .pc-ok{background:#d6103f;color:#fff;border:none}
+        .pc-ok.pc-safe{background:#d4af37;color:#111}
+        @keyframes pcFade{from{opacity:0}to{opacity:1}}
+        @keyframes pcFadeOut{to{opacity:0}}
+        @keyframes pcPop{from{opacity:0;transform:scale(.92) translateY(8px)}to{opacity:1;transform:none}}
+      `;
+      document.head.appendChild(st);
+    }
+
+    const ov = document.createElement('div');
+    ov.className = 'pc-overlay';
+    ov.innerHTML = `<div class="pc-card" role="alertdialog" aria-modal="true">
+      <div class="pc-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 10v6M14 10v6"/></svg></div>
+      <div class="pc-title"></div>
+      <div class="pc-msg"></div>
+      <div class="pc-actions">
+        <button class="pc-btn pc-cancel"></button>
+        <button class="pc-btn pc-ok"></button>
+      </div>
+    </div>`;
+    ov.querySelector('.pc-title').textContent = opts.title || 'Are you sure?';
+    ov.querySelector('.pc-msg').textContent = opts.message || '';
+    const cancelBtn = ov.querySelector('.pc-cancel');
+    const okBtn = ov.querySelector('.pc-ok');
+    cancelBtn.textContent = opts.cancelText || 'Cancel';
+    okBtn.textContent = opts.confirmText || 'Confirm';
+    if (opts.danger === false) {
+      okBtn.classList.add('pc-safe');
+      ov.querySelector('.pc-icon').style.display = 'none';
+    }
+
+    // Lock background scrolling while the modal is open
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const stop = e => e.preventDefault();
+    ov.addEventListener('touchmove', stop, { passive: false });
+    ov.addEventListener('wheel', stop, { passive: false });
+
+    function close(val) {
+      document.removeEventListener('keydown', onKey);
+      ov.classList.add('pc-out');
+      setTimeout(() => {
+        ov.remove();
+        document.body.style.overflow = prevBody;
+        document.documentElement.style.overflow = prevHtml;
+        resolve(val);
+      }, 160);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(false); }
+    document.addEventListener('keydown', onKey);
+    cancelBtn.onclick = () => close(false);
+    okBtn.onclick = () => close(true);
+    ov.addEventListener('click', e => { if (e.target === ov) close(false); });
+
+    document.body.appendChild(ov);
+    cancelBtn.focus();
+  });
+}
+
 async function clearAllWatchHistory() {
   const list = window._historyFullList || [];
   if (!list.length) return;
-  const confirmed = confirm(`Remove all ${list.length} title${list.length !== 1 ? 's' : ''} from your watch history? This can't be undone.`);
+  const confirmed = await pichaConfirm({
+    title: 'Clear watch history?',
+    message: `Remove all ${list.length} title${list.length !== 1 ? 's' : ''} from your watch history? This action can't be undone.`,
+    confirmText: 'Clear history',
+    cancelText: 'Keep history'
+  });
   if (!confirmed) return;
 
   const token = session.token;
@@ -10858,7 +10942,7 @@ closeCategory = function() {
     </button>
     <div class="category-page-title" id="categoryTitle">Category</div>
     <div class="category-count" id="categoryCount"></div>
-    <button id="historyClearAllBtn" onclick="clearAllWatchHistory()" style="display:none;background:none;border:1px solid rgba(255,100,100,0.5);color:#ff8080;font-size:0.72rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;font-family:inherit;letter-spacing:0.04em;margin-left:0.6rem;white-space:nowrap;">Clear All</button>
+    <button id="historyClearAllBtn" onclick="clearAllWatchHistory()" style="display:none;background:none;border:1px solid rgba(229,9,60,0.7);color:#ff3b5c;font-size:0.8rem;font-weight:600;padding:0.45rem 0.9rem;border-radius:9px;cursor:pointer;font-family:inherit;margin-left:0.6rem;white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.4rem"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 10v6M14 10v6"/></svg>Clear All</button>
   </div>
   <div id="historySearchWrap" style="display:none;padding:0.6rem 4vw;position:sticky;top:56px;z-index:5;background:var(--bg);">
     <div style="position:relative;display:flex;align-items:center;">
