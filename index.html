@@ -23,7 +23,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual"/>
   <title id="pageTitle">Picha+ | Luganda Translated Movies & Series Uganda</title>
   <meta id="metaDescription" name="description" content="Watch the latest movies and series translated to Luganda by top VJs — VJ Junior, VJ Ice P, VJ Uncle T, VJ Arafa and more. Uganda's #1 Luganda streaming platform. No ads, HD quality."/>
-  <meta name="keywords" content="Luganda movies, Luganda translated movies, Uganda movies online, VJ Junior movies, VJ Ice P, Luganda series, watch movies Uganda, Picha Plus, African movies Luganda, Uganda streaming"/>
+  <meta name="keywords" content="Luganda movies, Luganda translated movies, Uganda movies online, VJ Junior movies, VJ Ice P, Luganda series, watch movies Uganda, MyPicha+, African movies Luganda, Uganda streaming"/>
   <meta id="ogTitle" property="og:title" content="Picha+ | Luganda Translated Movies & Series"/>
   <meta id="ogDescription" property="og:description" content="Uganda's #1 Luganda movie streaming platform. Watch movies & series translated by VJ Junior, VJ Ice P, VJ Uncle T and more. No ads, HD quality."/>
   <meta id="ogType" property="og:type" content="website"/>
@@ -2913,7 +2913,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <!-- BOTTOM NAV -->
   <div class="apk-banner" id="apkBanner" style="display:none;">
     <img src="icon-192.png" class="apk-banner-icon" alt=""/>
-    <div class="apk-banner-text"><strong>Get the PichaPlus app</strong>Faster, offline downloads & more</div>
+    <div class="apk-banner-text"><strong>Get the MyPicha+ app</strong>Faster, offline downloads & more</div>
     <a href="https://apkpure.com/pichaplus-lite/com.pichaplus.app" target="_blank" class="apk-banner-btn">Get App</a>
     <button class="apk-banner-close" onclick="document.getElementById('apkBanner').style.display='none';">&times;</button>
   </div>
@@ -5803,6 +5803,8 @@ async function openContinueWatchingAll() {
   const searchInput = document.getElementById('historySearchInput');
   if (searchWrap) searchWrap.style.display = 'block';
   if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('historyClearAllBtn');
+  if (clearBtn) clearBtn.style.display = 'inline-block';
   _historyCursor = null;
   _historyNoMore = false;
   _historyLoading = false;
@@ -8002,6 +8004,8 @@ function openCategory(name, items) {
   const searchInput = document.getElementById('historySearchInput');
   if (searchWrap) searchWrap.style.display = 'none';
   if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('historyClearAllBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
   const gridReset = document.getElementById('categoryGrid');
   if (gridReset) gridReset.classList.remove('list-mode');
   // Stop Watch History's infinite-scroll observer — it lives outside categoryGrid
@@ -8047,6 +8051,34 @@ function closeCategory() {
   const staleSentinel = document.getElementById('historyScrollSentinel');
   if (staleSentinel) staleSentinel.remove();
   _historyNoMore = true;
+}
+
+async function clearAllWatchHistory() {
+  const list = window._historyFullList || [];
+  if (!list.length) return;
+  const confirmed = confirm(`Remove all ${list.length} title${list.length !== 1 ? 's' : ''} from your watch history? This can't be undone.`);
+  if (!confirmed) return;
+
+  const token = session.token;
+  const deviceId = getDeviceId();
+
+  list.forEach(m => {
+    const key = m.isSeries ? `series__${m.kvKey}__${m.epIndex}` : m.id;
+    delete progress[key];
+    if (token) {
+      fetch(`${API}/watch-progress`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Token': token, 'X-Device-Id': deviceId },
+        body: JSON.stringify({ movieId: key })
+      }).catch(() => {});
+    }
+  });
+  localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
+  renderContinueWatching();
+
+  window._historyFullList = [];
+  _buildContinueOverlay(window._historyFullList);
+  showToast('Watch history cleared', 'gold');
 }
 
 function openInfoFromCategory(item) {
@@ -10826,6 +10858,7 @@ closeCategory = function() {
     </button>
     <div class="category-page-title" id="categoryTitle">Category</div>
     <div class="category-count" id="categoryCount"></div>
+    <button id="historyClearAllBtn" onclick="clearAllWatchHistory()" style="display:none;background:none;border:1px solid rgba(255,100,100,0.5);color:#ff8080;font-size:0.72rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;font-family:inherit;letter-spacing:0.04em;margin-left:0.6rem;white-space:nowrap;">Clear All</button>
   </div>
   <div id="historySearchWrap" style="display:none;padding:0.6rem 4vw;position:sticky;top:56px;z-index:5;background:var(--bg);">
     <div style="position:relative;display:flex;align-items:center;">
