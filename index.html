@@ -13609,7 +13609,7 @@ async function submitForceReset() {
 </script>
 <script id="pichaCastBridge">
 function pichaSetNativeCast(show){
-  try { if (window.PichaNative && typeof PichaNative.setCastVisible === 'function') PichaNative.setCastVisible(!!show); } catch(e) {}
+  try { if (window.PichaApp && typeof PichaApp.showCastButton === 'function') PichaApp.showCastButton(!!show); } catch(e) {}
 }
 (function(){
   if (typeof window.closeCategory === 'function') {
