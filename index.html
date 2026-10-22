@@ -12396,6 +12396,8 @@ window.addEventListener('focus', clearStrayFocus);
   window.addEventListener('popstate', function () {
     if (history.state && history.state.ovl) return;
     var id = stack[stack.length - 1]; if (!id) return;
+    var _af = document.querySelector('.african-modal-overlay:not([data-held])');
+    if (_af) { _af.remove(); try { history.pushState({ ovl: id }, '', location.href); } catch (e) {} return; }
     var o = OVL.filter(function (x) { return x[0] === id; })[0];
     try { window[o[1]](); } catch (e) {}
     sync();
