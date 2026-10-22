@@ -4776,7 +4776,7 @@ function renderSavedDownloads() {
       actionBtn = `
         <button onclick="playDownloaded(${d.id})" title="Play"
           style="flex-shrink:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
-          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;font-variation-settings:'FILL' 1">play_circle</span>
+          <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;font-variation-settings:'FILL' 0">play_circle</span>
         </button>`;
     } else if (d.failed || d.paused) {
       actionBtn = `
@@ -4823,8 +4823,6 @@ function renderSavedDownloads() {
           ${statusLine}
         </div>
         ${actionBtn}
-        <button onclick="removeDownload(${d.id})" title="Remove"
-          style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.25);cursor:pointer;font-size:1rem;padding:0.3rem;line-height:1;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
       </div>`;
   }).join('');
 
@@ -5976,7 +5974,7 @@ function _renderHistoryRow(m) {
       </div>
       <button onclick="event.stopPropagation();${playFn}" title="${isFinished ? 'Replay' : 'Play'}"
         style="flex-shrink:0;background:none;border:none;color:${isFinished ? 'rgba(255,255,255,0.55)' : 'var(--gold)'};cursor:pointer;padding:0.2rem;display:flex;align-items:center;justify-content:center;">
-        <span class="material-symbols-rounded" style="font-size:28px;line-height:1;font-variation-settings:'FILL' 1;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
+        <span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;font-variation-settings:'FILL' 0;">${isFinished ? 'replay_circle_filled' : 'play_circle'}</span>
       </button>
       <button onclick="event.stopPropagation();toggleHistoryMenu('${removeKey}',this)" title="More"
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
