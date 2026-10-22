@@ -13607,5 +13607,21 @@ async function submitForceReset() {
   }
 }
 </script>
+<script id="pichaCastBridge">
+function pichaSetNativeCast(show){
+  try { if (window.PichaNative && typeof PichaNative.setCastVisible === 'function') PichaNative.setCastVisible(!!show); } catch(e) {}
+}
+(function(){
+  if (typeof window.closeCategory === 'function') {
+    var _cc = window.closeCategory;
+    window.closeCategory = function(){
+      var ov = document.getElementById('categoryOverlay');
+      if (ov) ov.classList.remove('history-mode');
+      pichaSetNativeCast(true);
+      return _cc.apply(this, arguments);
+    };
+  }
+})();
+</script>
 </body>
 </html>
