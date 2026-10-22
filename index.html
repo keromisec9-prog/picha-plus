@@ -5716,8 +5716,6 @@ function renderContinueWatching() {
         ${m.poster
           ? `<img class="card-poster" src="${m.poster}" alt="${esc(m.title)}" loading="lazy">`
           : `<div class="card-poster-placeholder">▶</div>`}
-        <button onclick="removeFromContinue('${removeKey}',event)"
-          style="position:absolute;top:0.3rem;right:0.3rem;z-index:5;background:rgba(0,0,0,0.7);border:none;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;"><span class="material-symbols-rounded" style="font-size:18px;line-height:1;">close</span></button>
         <div class="card-overlay" style="opacity:1;background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,transparent 60%);">
           <div class="card-title">${esc(m.title)}</div>
           <div style="font-size:0.65rem;color:var(--gold);margin-bottom:0.4rem;">
