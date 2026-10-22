@@ -6014,7 +6014,7 @@ function _historyDateLabel(ts) {
 
 function _buildContinueOverlay(matched) {
   document.getElementById('categoryTitle').textContent = 'Watch History';
-  document.getElementById('categoryCount').textContent = `${matched.length} title${matched.length !== 1 ? 's' : ''}`;
+  document.getElementById('categoryCount').textContent = '';
 
   const grid = document.getElementById('categoryGrid');
   grid.classList.add('list-mode');
@@ -6047,8 +6047,7 @@ function appendHistoryRows(newMatched) {
   const grid = document.getElementById('categoryGrid');
   grid.insertAdjacentHTML('beforeend', newMatched.map(_renderHistoryRow).join(''));
   const countEl = document.getElementById('categoryCount');
-  const current = (window._continueMatched || []).length;
-  countEl.textContent = `${current} title${current !== 1 ? 's' : ''}`;
+  if (countEl) countEl.textContent = '';
 }
 
 function resolveServerHistoryRow(row) {
