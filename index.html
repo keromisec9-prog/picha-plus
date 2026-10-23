@@ -12697,6 +12697,11 @@ window.addEventListener('focus', clearStrayFocus);
   add(function () { return on('paymentModal') && call('_payBack'); });
   add(function () { return shown('paywallModal') && call('closePaywall'); });
   add(function () {
+    var _c = document.getElementById('infoCard');
+    if (on('infoModal') && _c && _c.dataset.view && _c.dataset.view !== 'details' && typeof window._ppTab === 'function') {
+      window._ppTab('details');
+      return true;
+    }
     var done = false, hb = history.back;
     history.back = function () {};
     try {
