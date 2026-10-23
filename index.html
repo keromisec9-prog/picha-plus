@@ -1998,7 +1998,32 @@
     }
 
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=add,all_inclusive,arrow_back,auto_awesome,calendar_month,campaign,card_membership,cast,check_circle,close,cloud_alert,delete,download,favorite,frame_inspect,hd,history,keyboard_arrow_down,keyboard_arrow_right,live_tv,lock,logout,mic,more_horiz,more_vert,movie,notifications_active,pause_circle,play_arrow,play_circle,public,refresh,replay_circle_filled,settings,share,smart_display,star,subscriptions,supervisor_account,thumb_down,thumb_up,visibility,volume_off,volume_up,workspace_premium&display=swap" rel="stylesheet"/>
+<style id="msLocal">
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(assets/ms-rounded-1.woff2) format('woff2');
+}
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+</style>
 <style id="fullpage-modals">
 @keyframes pageUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
 @media (max-width: 768px) {
@@ -2758,9 +2783,7 @@ document.addEventListener('click',function(e){
 })();
 </script>
 <style id="seeAllArrowCss">
-.row-see-all{font-size:0!important;color:transparent!important;display:flex!important;align-items:center;justify-content:center;min-width:44px;height:36px;padding:0 0.2rem!important;}
-.row-see-all .material-symbols-rounded{display:none!important;}
-.row-see-all::after{content:"";display:block;width:26px;height:26px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h16M14 6l6 6-6 6'/%3E%3C/svg%3E") no-repeat center/contain;}
+.row-see-all{display:flex!important;align-items:center;justify-content:center;min-width:44px;height:36px;padding:0 0.2rem!important;}
 </style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
@@ -2964,7 +2987,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="content-section" id="continueSection" style="display:none;">
     <div class="row-header">
       <div class="row-title">Continue Watching</div>
-      <button class="row-see-all" onclick="openContinueWatchingAll()">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+      <button class="row-see-all" onclick="openContinueWatchingAll()"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
     </div>
     <div class="scroll-row" id="continueRow"></div>
   </div>
@@ -2973,7 +2996,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="content-section" id="newSection">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">New</span> This Week</div>
-      <button class="row-see-all" onclick="openCategory('New This Week', window._newItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+      <button class="row-see-all" onclick="openCategory('New This Week', window._newItems || [])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
     </div>
     <div class="scroll-row" id="newRow">
       <div class="skeleton skeleton-card"></div>
@@ -2988,7 +3011,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="content-section" id="seriesSection" style="display:none;">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">Series</span> on Picha+</div>
-      <button class="row-see-all" onclick="openCategory('Series on Picha+', window._seriesItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+      <button class="row-see-all" onclick="openCategory('Series on Picha+', window._seriesItems || [])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
     </div>
     <div class="scroll-row" id="seriesRow"></div>
   </div>
@@ -3007,7 +3030,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="content-section" id="latestSection">
     <div class="row-header">
       <div class="row-title"><span class="row-title-accent">Latest</span> on Picha+</div>
-      <button class="row-see-all" onclick="openCategory('Latest on Picha+', window._latestItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+      <button class="row-see-all" onclick="openCategory('Latest on Picha+', window._latestItems || [])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
     </div>
     <div class="scroll-row" id="latestRow">
       <div class="skeleton skeleton-card"></div>
@@ -3931,7 +3954,7 @@ async function loadContent() {
       section.innerHTML = `
         <div class="row-header">
           <div class="row-title">${name}</div>
-          <button class="row-see-all" onclick="openCategory('${name}', window._genreMap['${gid}'])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+          <button class="row-see-all" onclick="openCategory('${name}', window._genreMap['${gid}'])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
         </div>
         <div class="scroll-row" id="row-${gid}"></div>`;
       container.appendChild(section);
@@ -3950,7 +3973,7 @@ async function loadContent() {
       ugSection.innerHTML = `
         <div class="row-header">
           <div class="row-title">African Cinema</div>
-          <button class="row-see-all" onclick="openCategory('African Cinema', window._ugandanItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+          <button class="row-see-all" onclick="openCategory('African Cinema', window._ugandanItems || [])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
         </div>
         <div class="scroll-row" id="row-ugandan"></div>`;
       container.appendChild(ugSection);
@@ -7909,7 +7932,7 @@ function filterByVJ(vj, btn) {
     section.className = 'content-section';
     section.innerHTML = `
       <div class="row-header"><div class="row-title">${name}</div>
-      <button class="row-see-all" onclick="openCategory('${name}', window._vjGenreMap['${gid}'])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button></div>
+      <button class="row-see-all" onclick="openCategory('${name}', window._vjGenreMap['${gid}'])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button></div>
       <div class="scroll-row" id="row-${gid}"></div>`;
     container.appendChild(section);
     renderRow(`row-${gid}`, items);
@@ -7924,7 +7947,7 @@ function filterByVJ(vj, btn) {
     ugSection.innerHTML = `
       <div class="row-header">
         <div class="row-title">African Cinema</div>
-        <button class="row-see-all" onclick="openCategory('African Cinema', window._ugandanItems || [])">All <span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;">keyboard_arrow_right</span></button>
+        <button class="row-see-all" onclick="openCategory('African Cinema', window._ugandanItems || [])"><span class="material-symbols-rounded" style="font-size:28px;color:#fff;vertical-align:middle;">arrow_forward</span></button>
       </div>
       <div class="scroll-row" id="row-ugandan"></div>`;
     container.appendChild(ugSection);
