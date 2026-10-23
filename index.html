@@ -12598,6 +12598,25 @@ window.addEventListener('focus', clearStrayFocus);
   });
 })();
 </script>
+<script id="back-skip">
+(function(){
+  var pb=0, ob=history.back;
+  history.back=function(){ pb=Date.now(); return ob.apply(this,arguments); };
+  function on(i,c){var e=document.getElementById(i);return !!(e&&e.classList.contains(c||'active'));}
+  function shown(i){var e=document.getElementById(i);return !!(e&&getComputedStyle(e).display!=='none');}
+  function isOpen(){
+    var t=document.querySelector('.bn-tab.active');
+    return on('infoModal')||on('seriesModal')||on('playerModal')||on('categoryOverlay')||on('searchOverlay')||on('accountSettingsModal')||on('signinModal')||on('paymentModal')||on('userDropdown','open')||shown('paywallModal')||!!document.querySelector('.african-modal-overlay:not([data-held])')||!!(t&&t.id!=='bn-home');
+  }
+  window.addEventListener('popstate',function(e){
+    var s=history.state||{};
+    if(!(s.type||s.ovl||s.home)) return;
+    if(Date.now()-pb<600||window._peExpectBack||window._paywallHeld||isOpen()) return;
+    e.stopImmediatePropagation();
+    ob.call(history);
+  },true);
+})();
+</script>
 <script id="back-guard">
 (function () {
   var armedAt = 0, fallbacks = [];
