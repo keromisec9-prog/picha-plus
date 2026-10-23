@@ -12688,6 +12688,21 @@ window.addEventListener('focus', clearStrayFocus);
   });
 })();
 </script>
+<script id="african-back">
+(function(){
+  var fwd=false;
+  window.addEventListener('popstate',function(e){
+    if(fwd){fwd=false;e.stopImmediatePropagation();return;}
+    var a=document.querySelector('.african-modal-overlay:not([data-held])');
+    if(!a) return;
+    e.stopImmediatePropagation();
+    a.remove();
+    fwd=true;
+    try{history.forward();}catch(x){fwd=false;}
+    setTimeout(function(){fwd=false;},600);
+  },true);
+})();
+</script>
 <script id="bk-debug">
 (function(){
   var L=[],box;
