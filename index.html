@@ -12702,6 +12702,7 @@ window.addEventListener('focus', clearStrayFocus);
       window._ppTab('details');
       return true;
     }
+    if (on('seriesModal') && typeof window._serBack === 'function' && window._serBack()) return true;
     var done = false, hb = history.back;
     history.back = function () {};
     try {
@@ -13157,6 +13158,7 @@ function _serHeroPolish(s) {
 
   var view = 'eps';
   function apply(t) { view = t; tab(t); }
+  window._serBack = function () { if (view !== 'eps') { apply('eps'); return true; } return false; };
   function go(t) {
     if (t === view) return;
     if (t === 'eps') { history.back(); return; }
