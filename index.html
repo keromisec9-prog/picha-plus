@@ -4005,13 +4005,14 @@ function updateHero(index) {
 
   document.getElementById('heroTitle').textContent = title;
   document.getElementById('heroDesc').textContent = desc;
-  document.getElementById('heroRating').innerHTML = `⭐ ${rating} &nbsp;·&nbsp; ${mediaType === 'tv' ? 'Series' : 'Movie'}`;
+  const _hr = document.getElementById('heroRating');
+  if (_hr) { _hr.innerHTML = ''; _hr.style.display = 'none'; }
 
   const meta = document.getElementById('heroMeta');
   meta.innerHTML = `
-    <span style="color:#46d369;font-weight:600;">${Math.round(Number(item.vote_average) * 10)}% Match</span>
-    <span class="hero-meta-dot">·</span>
-    <span>${year}</span>
+    ${rating ? `<span><span style="color:var(--gold);">★</span> ${rating}</span><span class="hero-meta-dot">·</span>` : ''}
+    <span>${mediaType === 'tv' ? 'Series' : 'Movie'}</span>
+    ${year ? `<span class="hero-meta-dot">·</span><span>${year}</span>` : ''}
     ${item.adult ? '<span style="border:1px solid #808080;padding:0 4px;font-size:0.7rem;color:#808080;">18+</span>' : '<span style="border:1px solid #808080;padding:0 4px;font-size:0.7rem;color:#808080;">PG</span>'}
   `;
 
