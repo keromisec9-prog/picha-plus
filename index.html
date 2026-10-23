@@ -2786,6 +2786,9 @@ document.addEventListener('click',function(e){
 .row-see-all{display:flex!important;align-items:center;justify-content:center;min-width:44px;height:36px;margin:-5px 0!important;padding:0 0.2rem!important;}
 .row-see-all .material-symbols-rounded{line-height:1!important;}
 .row-see-all .material-symbols-rounded{color:rgba(255,255,255,0.55)!important;font-size:calc(clamp(20px,7.96vw - 5.97px,30px) * var(--tz,1))!important;}
+.row-header{position:relative;}
+.row-header > .row-see-all{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;min-width:0!important;margin:0!important;padding:0!important;justify-content:flex-end!important;background:none!important;-webkit-tap-highlight-color:transparent;}
+.row-header > .row-see-all .material-symbols-rounded{transform:translateX(0.13em);}
 </style>
 <style id="vjPillShapeCss">
 #vjPills .lang-pill{border-radius:8px!important;}
