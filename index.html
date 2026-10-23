@@ -13160,7 +13160,7 @@ function _serHeroPolish(s) {
 
   var view = 'eps';
   function apply(t) { view = t; tab(t); }
-  window._serBack = function () { try{window.__bklog&&window.__bklog('serBack view='+view);}catch(e){} if (view !== 'eps') { apply('eps'); return true; } return false; };
+  window._serBack = function () { var c=document.getElementById('serCast'); var shown=!!(c&&c.style.display==='block'); try{window.__bklog&&window.__bklog('serBack view='+view+' castShown='+shown);}catch(e){} if (view !== 'eps' || shown) { apply('eps'); return true; } return false; };
   function go(t) {
     if (t === view) return;
     if (t === 'eps') { history.back(); return; }
