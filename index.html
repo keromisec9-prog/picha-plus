@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="canonical" id="canonicalLink" href="https://pichaplus.netlify.app/">
     <script>
       // Single Page Apps for GitHub Pages — decode the redirect from 404.html
       // back into a real pathname via history.replaceState, before anything else runs.
@@ -4251,7 +4252,9 @@ function updatePageMeta({ title, description, image, path, type, releaseYear }) 
   document.getElementById('ogTitle').setAttribute('content', fullTitle);
   document.getElementById('ogDescription').setAttribute('content', description || DEFAULT_OG_DESC);
   document.getElementById('ogImage').setAttribute('content', image || DEFAULT_OG_IMAGE);
-  document.getElementById('ogUrl').setAttribute('content', `https://keromisec9-prog.github.io${path || ''}`);
+  document.getElementById('ogUrl').setAttribute('content', `https://pichaplus.netlify.app${path || ''}`);
+  const _canon = document.getElementById('canonicalLink');
+  if (_canon) _canon.setAttribute('href', `https://pichaplus.netlify.app${path || ''}`);
   document.getElementById('ogType').setAttribute('content', type === 'tv' ? 'video.tv_show' : 'video.movie');
 
   let ld = document.getElementById('jsonLd');
