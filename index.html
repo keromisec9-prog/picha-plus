@@ -12607,7 +12607,17 @@ window.addEventListener('focus', clearStrayFocus);
     if(typeof showToast==='function') showToast(m);
   }
   function rearm(){ try{ history.pushState({home:1},'',location.href); }catch(e){} }
+  var ls=history.state;
+  ['pushState','replaceState'].forEach(function(k){ var o=history[k]; history[k]=function(a){ ls=a; return o.apply(this,arguments); }; });
   window.addEventListener('popstate',function(e){
+    var from=ls; ls=history.state;
+    var sm=document.getElementById('seriesModal');
+    if(from&&from.serview&&sm&&sm.classList.contains('active')&&typeof window._serForceEps==='function'){
+      e.stopImmediatePropagation();
+      window._serForceEps();
+      try{window.__bklog&&window.__bklog('serForce');}catch(x){}
+      return;
+    }
     if(Date.now()-pb<600||window._peExpectBack||window._paywallHeld) return;
     var pmod=document.getElementById('paymentModal');
     if(pmod&&pmod.classList.contains('active')) return;
@@ -13160,6 +13170,7 @@ function _serHeroPolish(s) {
 
   var view = 'eps';
   function apply(t) { view = t; tab(t); }
+  window._serForceEps = function () { apply('eps'); };
   window._serBack = function () { var c=document.getElementById('serCast'); var shown=!!(c&&c.style.display==='block'); try{window.__bklog&&window.__bklog('serBack view='+view+' castShown='+shown);}catch(e){} if (view !== 'eps' || shown) { apply('eps'); return true; } return false; };
   function go(t) {
     if (t === view) return;
