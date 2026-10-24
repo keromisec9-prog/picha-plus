@@ -12587,7 +12587,11 @@ window.addEventListener('focus', clearStrayFocus);
     var el = document.getElementById(o[0]);
     if (el) new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
   });
+  var _ls = history.state;
+  ['pushState', 'replaceState'].forEach(function (k) { var o = history[k]; history[k] = function (a) { _ls = a; return o.apply(this, arguments); }; });
   window.addEventListener('popstate', function () {
+    var _from = _ls; _ls = history.state;
+    if (_from && (_from.serview || _from.ppview)) return;
     if (history.state && history.state.ovl) return;
     var id = stack[stack.length - 1]; if (!id) return;
     var _af = document.querySelector('.african-modal-overlay:not([data-held])');
