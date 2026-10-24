@@ -12763,38 +12763,6 @@ window.addEventListener('focus', clearStrayFocus);
   });
 })();
 </script>
-<script id="bk-debug">
-(function(){
-  var L=[],box;
-  function ui(){ if(box||!document.body) return; box=document.createElement('div');
-    box.style.cssText='position:fixed;left:0;right:0;top:40px;z-index:2147483647;font:10px/1.25 monospace;color:#0f0;background:rgba(0,0,0,.8);pointer-events:none;padding:2px 4px;white-space:pre-wrap';
-    document.body.appendChild(box); }
-  function g(i){var e=document.getElementById(i);return e&&e.classList.contains('active')?1:0;}
-  function st(){ var h=history.state||{}; return (Object.keys(h)[0]||'null')+' I'+g('infoModal')+' C'+g('categoryOverlay')+' P'+g('playerModal')+' n'+history.length; }
-  function log(m){ L.push(m+' | '+st()); if(L.length>12) L.shift(); ui(); if(box) box.textContent=L.join('\n'); }
-  window.__bklog=log;
-  ['pushState','replaceState'].forEach(function(k){ var o=history[k];
-    history[k]=function(a){ log(k.slice(0,4)+' '+(a?Object.keys(a)[0]:'-')); return o.apply(this,arguments); }; });
-  var b=history.back; history.back=function(){ log('BACK()'); return b.apply(this,arguments); };
-  window.addEventListener('popstate',function(){ log('POP t='+(Date.now()%100000)+' '+JSON.stringify(history.state)); },true);
-  var f=window.__ppRunFallbacks;
-  if(f) window.__ppRunFallbacks=function(){ var r=f.apply(this,arguments); log('FALLBACK='+r); return r; };
-})();
-</script>
-<script id="cat-trace">
-(function(){
-  var cc=window.closeCategory;
-  if(typeof cc!=='function'||cc._t) return;
-  var w=function(){
-    try{
-      var f=(new Error().stack||'').split('\n').slice(2,6).map(function(l){var m=l.match(/at\s+(\S+)/);return m?m[1].replace(/^.*\//,''):'?';}).join('<');
-      window.__bklog&&window.__bklog('closeCat from '+f);
-    }catch(e){}
-    return cc.apply(this,arguments);
-  };
-  w._t=1; window.closeCategory=w;
-})();
-</script>
 <script id="series-page">
 function _serEsc(x) {
   return String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
