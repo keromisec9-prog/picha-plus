@@ -3848,6 +3848,7 @@ window.addEventListener('popstate', (_pe) => {
     // Back button navigated away from a title — close whichever modal is open
     const infoOpen = document.getElementById('infoModal')?.classList.contains('active');
     const seriesOpen = document.getElementById('seriesModal')?.classList.contains('active');
+    if (infoOpen || seriesOpen) window._ppTitleClosedAt = Date.now();
     if (infoOpen) { _clearInfoRecs(); document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow = ''; currentInfoItem = null; }
     if (seriesOpen) { document.getElementById('seriesModal').classList.remove('active'); document.body.style.overflow = ''; currentSeries = null; }
   } else {
@@ -12635,6 +12636,11 @@ window.addEventListener('focus', clearStrayFocus);
         try{window.__bklog&&window.__bklog('titlePop');}catch(x){}
         return;
       }
+    }
+    if(Date.now()-(window._ppTitleClosedAt||0)<80){
+      e.stopImmediatePropagation();
+      try{window.__bklog&&window.__bklog('titleClosed');}catch(x){}
+      return;
     }
     if(Date.now()-pb<600||window._peExpectBack||window._paywallHeld) return;
     var pmod=document.getElementById('paymentModal');
