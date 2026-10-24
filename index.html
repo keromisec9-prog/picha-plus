@@ -12626,6 +12626,7 @@ window.addEventListener('focus', clearStrayFocus);
     }
     var ty=from&&from.type;
     if(ty==='series'||ty==='title'){
+      if(location.pathname.indexOf('/title/')>-1) return;
       var im=document.getElementById('infoModal');
       var serOpen=!!(sm&&sm.classList.contains('active'));
       var infoOpen=!!(im&&im.classList.contains('active'));
