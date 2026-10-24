@@ -12776,7 +12776,7 @@ window.addEventListener('focus', clearStrayFocus);
   ['pushState','replaceState'].forEach(function(k){ var o=history[k];
     history[k]=function(a){ log(k.slice(0,4)+' '+(a?Object.keys(a)[0]:'-')); return o.apply(this,arguments); }; });
   var b=history.back; history.back=function(){ log('BACK()'); return b.apply(this,arguments); };
-  window.addEventListener('popstate',function(){ log('POP'); },true);
+  window.addEventListener('popstate',function(){ log('POP t='+(Date.now()%100000)+' '+JSON.stringify(history.state)); },true);
   var f=window.__ppRunFallbacks;
   if(f) window.__ppRunFallbacks=function(){ var r=f.apply(this,arguments); log('FALLBACK='+r); return r; };
 })();
