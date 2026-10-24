@@ -12596,7 +12596,7 @@ window.addEventListener('focus', clearStrayFocus);
     if (history.state && history.state.ovl) return;
     var id = stack[stack.length - 1]; if (!id) return;
     var _af = document.querySelector('.african-modal-overlay:not([data-held])');
-    if (_af) { _af.remove(); try { history.pushState({ ovl: id }, '', location.href); } catch (e) {} return; }
+    if (_af) { _af.remove(); try{window.__bklog&&window.__bklog('afrOvl');}catch(e){} try { history.pushState({ ovl: id }, '', location.href); } catch (e) {} return; }
     var o = OVL.filter(function (x) { return x[0] === id; })[0];
     window._ppOvlClosedAt = Date.now();
     try { window[o[1]](); } catch (e) {}
@@ -12728,7 +12728,7 @@ window.addEventListener('focus', clearStrayFocus);
   add(function () { return on('playerModal') && call('_ppPlayerBack'); });
   add(function () {
     var a = document.querySelector('.african-modal-overlay:not([data-held])');
-    if (a) { a.remove(); return true; }
+    if (a) { a.remove(); try{window.__bklog&&window.__bklog('afrFallback');}catch(e){} return true; }
     return false;
   });
   add(function () { if (!on('searchOverlay')) return false; if (typeof window._searchCollapse === 'function' && window._searchCollapse()) return true; return call('closeSearch'); });
