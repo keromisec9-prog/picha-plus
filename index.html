@@ -12596,7 +12596,7 @@ window.addEventListener('focus', clearStrayFocus);
     if (history.state && history.state.ovl) return;
     var id = stack[stack.length - 1]; if (!id) return;
     var _af = document.querySelector('.african-modal-overlay:not([data-held])');
-    if (_af) { _af.remove(); try{window.__bklog&&window.__bklog('afrOvl');}catch(e){} try { history.pushState({ ovl: id }, '', location.href); } catch (e) {} return; }
+    if (_af) { _af.remove(); window._ppOvlClosedAt = Date.now(); window._ppAfrKeep = true; try{window.__bklog&&window.__bklog('afrOvl');}catch(e){} try { history.pushState({ ovl: id }, '', location.href); } catch (e) {} return; }
     var o = OVL.filter(function (x) { return x[0] === id; })[0];
     window._ppOvlClosedAt = Date.now();
     try { window[o[1]](); } catch (e) {}
@@ -12646,7 +12646,8 @@ window.addEventListener('focus', clearStrayFocus);
     if(Date.now()-(window._ppOvlClosedAt||0)<80){
       e.stopImmediatePropagation();
       try{window.__bklog&&window.__bklog('ovlClosed');}catch(x){}
-      rearm();
+      if(!window._ppAfrKeep) rearm();
+      window._ppAfrKeep=false;
       return;
     }
     if(Date.now()-pb<600||window._peExpectBack||window._paywallHeld) return;
