@@ -12622,6 +12622,20 @@ window.addEventListener('focus', clearStrayFocus);
       try{window.__bklog&&window.__bklog('serForce');}catch(x){}
       return;
     }
+    var ty=from&&from.type;
+    if(ty==='series'||ty==='title'){
+      var im=document.getElementById('infoModal');
+      var serOpen=!!(sm&&sm.classList.contains('active'));
+      var infoOpen=!!(im&&im.classList.contains('active'));
+      if(serOpen||infoOpen){
+        e.stopImmediatePropagation();
+        try{ if(serOpen&&typeof closeSeries==='function') closeSeries(); }catch(x){}
+        try{ if(infoOpen&&typeof closeInfo==='function') closeInfo(); }catch(x){}
+        try{ if(typeof resetPageMeta==='function') resetPageMeta(); }catch(x){}
+        try{window.__bklog&&window.__bklog('titlePop');}catch(x){}
+        return;
+      }
+    }
     if(Date.now()-pb<600||window._peExpectBack||window._paywallHeld) return;
     var pmod=document.getElementById('paymentModal');
     if(pmod&&pmod.classList.contains('active')) return;
