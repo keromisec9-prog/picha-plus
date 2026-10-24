@@ -12593,6 +12593,9 @@ window.addEventListener('focus', clearStrayFocus);
   window.addEventListener('popstate', function () {
     var _from = _ls; _ls = history.state;
     if (_from && (_from.serview || _from.ppview)) return;
+    if (Date.now() - (window._ppTitleClosedAt || 0) < 300) return;
+    var _pm = document.getElementById('playerModal');
+    if (_pm && _pm.classList.contains('active')) return;
     if (history.state && history.state.ovl) return;
     var id = stack[stack.length - 1]; if (!id) return;
     var _af = document.querySelector('.african-modal-overlay:not([data-held])');
