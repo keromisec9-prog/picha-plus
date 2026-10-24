@@ -12753,6 +12753,20 @@ window.addEventListener('focus', clearStrayFocus);
   if(f) window.__ppRunFallbacks=function(){ var r=f.apply(this,arguments); log('FALLBACK='+r); return r; };
 })();
 </script>
+<script id="cat-trace">
+(function(){
+  var cc=window.closeCategory;
+  if(typeof cc!=='function'||cc._t) return;
+  var w=function(){
+    try{
+      var f=(new Error().stack||'').split('\n').slice(2,6).map(function(l){var m=l.match(/at\s+(\S+)/);return m?m[1].replace(/^.*\//,''):'?';}).join('<');
+      window.__bklog&&window.__bklog('closeCat from '+f);
+    }catch(e){}
+    return cc.apply(this,arguments);
+  };
+  w._t=1; window.closeCategory=w;
+})();
+</script>
 <script id="series-page">
 function _serEsc(x) {
   return String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
