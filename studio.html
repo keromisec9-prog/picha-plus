@@ -344,6 +344,8 @@ background:linear-gradient(90deg,rgba(10,10,10,.93),rgba(10,10,10,.5)),url(asset
 
 <div class="view" id="v-submit"><div class="wrap page" id="submitRoot"></div></div>
 
+<div class="view" id="v-camp"><div class="wrap page" id="campRoot"></div></div>
+
 <div class="view" id="v-partner"><div class="wrap page" id="partnerRoot"></div></div>
 </main>
 
@@ -668,6 +670,154 @@ function loadSubs(){
 }
 var _openApps=openApps;
 openApps=function(){_openApps();loadSubs()};
+
+// ── CAMPAIGN BUILDER ──────────────────────────────────────────────────
+var C=null;
+var OBJS=[['free_viewing','Free viewing','Let viewers watch your content free for an agreed period'],['release_promotion','Release promotion','Promote a release, trailer or premiere'],['project_awareness','Project awareness','Build awareness for an upcoming project']];
+var OBJ_LABEL={free_viewing:'Free viewing',release_promotion:'Release promotion',project_awareness:'Project awareness'};
+var PLACES=[['featured','Featured placement'],['browse','Browse and discovery'],['trailer','Trailer and project promotion']];
+var AFTERS=[['subscription','Subscription access'],['paid','Paid viewing'],['undecided','Decide later']];
+function todayStr(){return new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function freeOk(){return C.kind==='movie'||C.kind==='series'}
+function lab(list,v){var m=list.filter(function(x){return x[0]===v})[0];return m?m[1]:v}
+function openCamp(sid,kind,ctitle){
+  if(!token)return gate();
+  var fv=(kind==='movie'||kind==='series');
+  C={step:0,sid:sid,kind:kind,ctitle:ctitle,objective:fv?'free_viewing':(kind==='project'?'project_awareness':'release_promotion'),title:'',desc:'',start:'',days:7,aud:'all',place:['featured'],after:'undecided',rights:false,done:false};
+  show('v-camp');renderC();
+}
+function cfld(k,label,type){
+  var v=C[k]||'',a=' data-ck="'+k+'"';
+  var h='<div class="fld"><label>'+label+'</label>';
+  if(type==='area')h+='<textarea rows="3"'+a+'>'+esc(v)+'</textarea>';
+  else if(type==='date')h+='<input type="date"'+a+' value="'+escA(v)+'" min="'+todayStr()+'">';
+  else h+='<input type="text"'+a+' value="'+escA(v)+'">';
+  return h+'</div>';
+}
+function cchips(list,act,isOn){return '<div class="chs">'+list.map(function(x){return '<span class="chp'+(isOn(x[0])?' on':'')+'" data-act="'+act+'" data-v="'+x[0]+'">'+x[1]+'</span>'}).join('')+'</div>'}
+function cStep0(){
+  var h='<h2>Choose your campaign objective</h2><p class="sub">Campaign for: <b>'+esc(C.ctitle)+'</b></p>';
+  OBJS.forEach(function(o){
+    if(o[0]==='free_viewing'&&!freeOk())return;
+    h+='<div class="opt'+(C.objective===o[0]?' on':'')+'" data-act="cobj" data-v="'+o[0]+'"><b>'+o[1]+'</b><span>'+o[2]+'</span></div>';
+  });
+  if(!freeOk())h+='<p class="note">Free viewing is available for movies and series.</p>';
+  return h;
+}
+function cStep1(){
+  var h='<h2>Campaign details</h2><p class="sub">Tell us when and where you’d like it to run.</p>';
+  h+=cfld('title','Campaign title','text')+cfld('desc','Short description (optional)','area')+cfld('start','Start date','date');
+  h+='<div class="fld"><label>Duration (days)</label>'+cchips([[3,'3'],[7,'7'],[14,'14'],[30,'30']],'cdays',function(v){return C.days===v})+'</div>';
+  h+='<div class="fld"><label>Audience</label>'+cchips([['all','All MyPicha+ viewers'],['uganda','Uganda-focused']],'caud',function(v){return C.aud===v})+'</div>';
+  h+='<div class="fld"><label>Placement (choose one or more)</label>'+cchips(PLACES,'cplace',function(v){return C.place.indexOf(v)>-1})+'</div>';
+  if(C.objective==='free_viewing')h+='<div class="fld"><label>When the free period ends</label>'+cchips(AFTERS,'cafter',function(v){return C.after===v})+'</div>';
+  h+='<p class="note">Actual placement depends on approval and available promotional space.</p>';
+  return h;
+}
+function cStep2(){
+  var h='<h2>Review your campaign</h2><p class="sub">Check the details before you submit.</p>';
+  h+=sum('Content',C.ctitle)+sum('Objective',OBJ_LABEL[C.objective])+sum('Campaign title',C.title)+sum('Description',C.desc)+sum('Starts',C.start)+sum('Duration',C.days+' days')+sum('Audience',C.aud==='uganda'?'Uganda-focused':'All MyPicha+ viewers')+sum('Placement',C.place.map(function(p){return lab(PLACES,p)}).join(', '));
+  if(C.objective==='free_viewing'){
+    h+=sum('After the free period',lab(AFTERS,C.after));
+    h+='<p class="note">Free viewing runs only for the dates we approve.</p>';
+  }
+  h+='<label class="chk"><input type="checkbox" id="crights"'+(C.rights?' checked':'')+'><span>I confirm that I own or have permission to grant the promotional and distribution rights for this content.</span></label>';
+  h+='<p class="note">Approval is not guaranteed, and we don’t promise views, reach or revenue.</p>';
+  return h;
+}
+function renderC(){
+  var root=document.getElementById('campRoot');
+  if(C.done){
+    root.innerHTML='<div class="center"><h2>Campaign request received.</h2><p class="sub" style="margin:10px auto 24px">Our team will review it. You can follow its status under My campaigns.</p><button class="btn gold" data-act="capps">View my campaigns</button> <button class="btn" data-act="chome">Back to Studio</button></div>';
+    return;
+  }
+  var last=C.step===2;
+  root.innerHTML='<div class="eyebrow">CAMPAIGN · STEP '+(C.step+1)+' OF 3</div><div class="bar"><i style="width:'+((C.step+1)*33.4)+'%"></i></div>'+[cStep0,cStep1,cStep2][C.step]()+
+    '<div class="nav"><button class="btn" data-act="cback">'+(C.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="cBtn" data-act="'+(last?'csubmit':'cnext')+'">'+(last?'Submit campaign':'Continue →')+'</button></div>';
+}
+function cValid(s){
+  if(s===1){
+    if(!C.title.trim())return 'Enter a campaign title';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(C.start))return 'Choose a start date';
+    if(C.start<todayStr())return 'Start date cannot be in the past';
+    if(!C.place.length)return 'Choose at least one placement';
+  }
+  if(s===2&&!C.rights)return 'Please confirm the declaration';
+  return '';
+}
+function cSubmit(){
+  var e=cValid(2);if(e)return toast(e);
+  var btn=document.getElementById('cBtn');btn.disabled=true;btn.textContent='Submitting…';
+  function fail(m){btn.disabled=false;btn.textContent='Submit campaign';toast(m)}
+  api('/studio/campaign',{method:'POST',body:JSON.stringify({submissionId:C.sid,objective:C.objective,title:C.title.trim(),description:C.desc.trim(),audience:C.aud,placements:C.place,startDate:C.start,durationDays:C.days,afterMode:C.objective==='free_viewing'?C.after:'undecided',rightsConfirmed:true})}).then(function(res){
+    if(isAuthFail(res))return gate();
+    if(res.body&&res.body.ok){C.done=true;renderC();window.scrollTo(0,0);return}
+    fail((res.body&&res.body.error)||'Could not submit. Try again.');
+  }).catch(function(){fail('Connection problem. Try again.')});
+}
+(function(){
+  var root=document.getElementById('campRoot');
+  root.addEventListener('click',function(ev){
+    var el=ev.target.closest('[data-act]');if(!el||!C)return;
+    var a=el.dataset.act,v=el.dataset.v;
+    if(a==='cobj'){C.objective=v;renderC()}
+    else if(a==='cdays'){C.days=parseInt(v,10);renderC()}
+    else if(a==='caud'){C.aud=v;renderC()}
+    else if(a==='cplace'){toggle(C.place,v);renderC()}
+    else if(a==='cafter'){C.after=v;renderC()}
+    else if(a==='cnext'){
+      var e=cValid(C.step);if(e)return toast(e);
+      if(C.step===0&&!C.title)C.title=C.ctitle+' – '+OBJ_LABEL[C.objective];
+      C.step++;renderC();window.scrollTo(0,0);
+    }
+    else if(a==='cback'){if(C.step===0)openApps();else{C.step--;renderC();window.scrollTo(0,0)}}
+    else if(a==='csubmit')cSubmit();
+    else if(a==='capps')openApps();
+    else if(a==='chome')show('v-home');
+  });
+  function onC(ev){
+    var t=ev.target;if(!C)return;
+    if(t.id==='crights'){C.rights=t.checked;return}
+    var k=t.dataset&&t.dataset.ck;if(k)C[k]=t.value;
+  }
+  root.addEventListener('input',onC);
+  root.addEventListener('change',onC);
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest('[data-camp]');if(!b)return;
+    openCamp(b.dataset.sid,b.dataset.kind,b.dataset.title);
+  });
+})();
+function campEnd(c){
+  if(!c.start_date)return '';
+  var e=new Date(c.start_date+'T00:00:00Z');e.setUTCDate(e.getUTCDate()+(c.duration_days||0));
+  return e.toISOString().slice(0,10);
+}
+function campOpen(c,today){
+  return c.status==='received'||c.status==='in_review'||c.status==='action_required'||(c.status==='approved'&&campEnd(c)>=today);
+}
+loadSubs=function(){
+  var box=document.getElementById('subsList');if(!box||!token)return;
+  box.innerHTML='';
+  Promise.all([api('/studio/submissions'),api('/studio/campaigns')]).then(function(r){
+    var subs=(r[0].body&&r[0].body.items)||[],camps=(r[1].body&&r[1].body.items)||[];
+    var today=todayStr(),busy={};
+    camps.forEach(function(c){if(campOpen(c,today))busy[String(c.submission_id)]=1});
+    var h='';
+    if(subs.length){
+      h+='<h2 style="margin-top:34px">My submissions</h2><p class="sub">Content and projects you’ve shared with us.</p>'+subs.map(function(a){
+        var d=a.created_at?new Date(a.created_at.replace(' ','T')).toLocaleDateString():'';
+        var b=(a.status==='approved'&&!busy[String(a.id)])?'<button class="btn gold" style="margin-top:12px;padding:9px 16px;font-size:13px" data-camp="1" data-sid="'+esc(a.id)+'" data-kind="'+esc(a.kind)+'" data-title="'+escA(a.title)+'">Create a campaign</button>':'';
+        return '<div class="app"><div class="row"><h3>'+esc(a.title)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">'+esc(KIND_LABEL[a.kind]||a.kind)+' · Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+b+'</div>';
+      }).join('');
+    }
+    if(camps.length){
+      h+='<h2 style="margin-top:34px">My campaigns</h2><p class="sub">Promotion requests for your approved content.</p>'+camps.map(function(c){
+        return '<div class="app"><div class="row"><h3>'+esc(c.title)+'</h3><span class="badge s-'+esc(c.status)+'">'+esc(STATUS[c.status]||c.status)+'</span></div><div class="d">'+esc(OBJ_LABEL[c.objective]||c.objective)+' · '+esc(c.content_title||'')+' · '+esc(c.start_date||'')+' to '+esc(campEnd(c))+'</div>'+(c.staff_note?'<div class="staff">'+esc(c.staff_note)+'</div>':'')+'</div>';
+      }).join('');
+    }
+    box.innerHTML=h;
+  }).catch(function(){});
+};
 </script>
 </body>
 </html>
