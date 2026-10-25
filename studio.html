@@ -103,6 +103,39 @@ background:linear-gradient(180deg,transparent 35%,var(--card)),var(--img),#1c140
 @media(min-width:720px){
 .hero{min-height:560px}
 .card::before{height:150px}}
+/* studio-v3 */
+html,body{overflow-x:hidden;max-width:100%}
+.top .wrap{height:56px;gap:6px;padding:0 12px}
+.logo{font-size:15px;min-width:0;flex:1 1 auto;overflow:hidden}
+.logo small{display:none}
+.top .wrap>span{gap:5px;flex:0 0 auto}
+.pill{font-size:11px;padding:6px 9px}
+.hero{min-height:400px;padding:56px 0 44px}
+.hero h1{font-size:34px}
+.cards{gap:10px}
+.card{display:grid;grid-template-columns:104px 1fr;align-content:start;padding:0;min-height:112px}
+.card::before{grid-column:1;grid-row:1/span 4;height:auto;min-height:112px;
+background:linear-gradient(90deg,transparent 55%,var(--card)),var(--img),#1c1409}
+.card>*{grid-column:2}
+.card .ic{position:absolute;left:10px;bottom:10px;width:32px;height:32px;font-size:14px;margin:0}
+.card h3{font-size:15px;margin:12px 12px 2px}
+.card .t{font-size:11px;margin:0 12px 4px}
+.card p{font-size:12px;line-height:1.4;margin:0 12px 6px}
+.card .more{font-size:12px;margin:0 12px 12px}
+@media(min-width:720px){
+.top .wrap{padding:0 20px}
+.logo small{display:block}
+.pill{font-size:13px;padding:7px 12px}
+.hero h1{font-size:56px}
+.cards{gap:16px}
+.card{display:block;min-height:0}
+.card::before{display:block;height:110px;min-height:0;
+background:linear-gradient(180deg,transparent 35%,var(--card)),var(--img),#1c1409}
+.card .ic{position:relative;left:auto;bottom:auto;width:40px;height:40px;font-size:18px;margin:-20px 16px 10px}
+.card h3{font-size:18px;margin:0 16px 2px}
+.card .t{font-size:12px;margin:0 16px 8px}
+.card p{font-size:13px;margin:0 16px 10px}
+.card .more{margin:0 16px 16px}}
 </style>
 </head>
 <body>
