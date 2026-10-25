@@ -186,7 +186,15 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
 background:linear-gradient(180deg,rgba(10,10,10,.3),rgba(10,10,10,.88) 70%),var(--img),#1c1409}
 .card>*{position:relative;z-index:1}
 @media(min-width:720px){.hero{min-height:420px;padding:28px 0}.hero h1{font-size:28px}.hero p{font-size:16px}}
+/* studio-v9 */
+.hero{position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;background:#0a0a0a}
+.hero-bg i{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
+.hero-bg i.on{opacity:1}
+.hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.6),rgba(10,10,10,.25) 50%,rgba(10,10,10,.85))}
+.hero>.wrap{position:relative;z-index:1}
 </style>
+<link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -199,7 +207,7 @@ background:linear-gradient(180deg,rgba(10,10,10,.3),rgba(10,10,10,.88) 70%),var(
 
 <main>
 <div class="view on" id="v-home">
-  <div class="hero"><div class="wrap">
+  <div class="hero"><div class="hero-bg"><i class="on" style="background-image:url(assets/studio/hero1.webp)"></i><i style="background-image:url(assets/studio/hero2.webp)"></i><i style="background-image:url(assets/studio/hero3.webp)"></i><i style="background-image:url(assets/studio/hero4.webp)"></i></div><div class="wrap">
     <div class="eyebrow">MYPICHA+ STUDIO</div>
     <h1>Your stories deserve a <span>bigger screen.</span></h1>
     <p>MyPicha+ Studio connects filmmakers, VJs, creators and production companies with opportunities to promote, distribute and monetize their content through MyPicha+.</p>
@@ -465,6 +473,17 @@ window.openPartner=function(){
     initP();render();
   }).catch(function(){root.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
 };
+</script>
+<script>
+(function(){
+  var s=document.querySelectorAll('.hero-bg i'),n=0;
+  if(s.length<2||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;
+  setInterval(function(){
+    s[n].classList.remove('on');
+    n=(n+1)%s.length;
+    s[n].classList.add('on');
+  },5000);
+})();
 </script>
 </body>
 </html>
