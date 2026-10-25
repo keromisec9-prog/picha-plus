@@ -244,6 +244,26 @@ transform:translateZ(0);will-change:transform;backface-visibility:hidden;-webkit
 .top .wrap{height:var(--hh);align-items:center}
 .top #myBtn{display:flex;align-items:center;line-height:1;margin:0}
 @media(min-width:720px){:root{--hh:72px}}
+/* studio-v17 */
+.how-back{display:inline-block;color:#d8d1c2;font-size:12px;margin-bottom:10px;cursor:pointer}
+.how-proc{padding:26px 0 6px;border:0}
+.how-proc h2{font-size:22px;margin-bottom:14px}
+.how-proc h2 span{color:var(--gold)}
+.how-proc .steps{gap:12px}
+.how-proc .steps>div{position:relative;background:rgba(255,255,255,.05);border-radius:12px;padding:10px 8px 12px}
+.how-proc .steps>div:not(:last-child)::after{right:-11px;top:22px}
+.sic{width:30px;height:30px;border-radius:50%;background:rgba(240,180,41,.14);color:var(--gold);display:grid;place-items:center;margin-bottom:6px}
+.sic svg{width:16px;height:16px;display:block}
+.sn{font-size:9px;color:var(--gold);margin-bottom:2px}
+.how-proc .steps h3{font-size:11.5px}
+.how-proc .steps p{font-size:9px}
+.how-cta{padding:14px 0 30px;border:0}
+.cta2{border-radius:16px;overflow:hidden;padding:26px 18px;text-align:left;
+background:linear-gradient(90deg,rgba(10,10,10,.93),rgba(10,10,10,.5)),url(assets/studio/hero4.webp) center/cover no-repeat,#120d07}
+.cta2 h2{font-size:24px;margin-bottom:8px}
+.cta2 .sub{font-size:13px;margin:0 0 16px}
+.how-cta .note{text-align:center}
+@media(min-width:720px){.how-proc h2{font-size:28px}.how-proc .steps h3{font-size:15px}.how-proc .steps p{font-size:12px}.sn{font-size:11px}.cta2{padding:44px 36px}.cta2 h2{font-size:32px}.cta2 .sub{font-size:15px}}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -283,24 +303,26 @@ transform:translateZ(0);will-change:transform;backface-visibility:hidden;-webkit
 </div>
 
 <div class="view" id="v-how">
-<div class="wrap" style="padding-top:18px"><button class="pill" onclick="show('v-home');window.scrollTo(0,0)">← Back</button></div>
-<section><div class="wrap">
-    <div class="eyebrow">SIMPLE · TRANSPARENT</div>
-    <h2>How MyPicha+ Studio works</h2>
-    <p class="sub"></p>
-    <div class="steps">
-      <div><div class="n">01</div><h3>Submit</h3><p>Share your content, project or profile.</p></div>
-      <div><div class="n">02</div><h3>Review</h3><p>Our team evaluates your submission.</p></div>
-      <div><div class="n">03</div><h3>Collaborate</h3><p>Explore partnership opportunities.</p></div>
-      <div><div class="n">04</div><h3>Promote</h3><p>Reach MyPicha+ viewers.</p></div>
-    </div>
-  </div></section>
-  <section class="cta"><div class="wrap">
+<div class="hero how-hero"><div class="hero-bg" id="howBg"></div><div class="wrap">
+  <a class="how-back" onclick="show('v-home');window.scrollTo(0,0)">&larr; Back</a>
+  <h1>How MyPicha+ <span>Studio</span> works</h1>
+  <p>Turn your ideas into great content. We connect filmmakers, VJs, creators and production companies with real opportunities.</p>
+  <button class="hero-more" aria-label="Read more" onclick="this.closest('.hero').classList.toggle('open')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+</div></div>
+<section class="how-proc"><div class="wrap">
+  <div class="eyebrow">THE PROCESS</div>
+  <h2>From application to <span>opportunity</span></h2>
+  <div class="steps"><div><div class="sic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M360-240h240q17 0 28.5-11.5T640-280q0-17-11.5-28.5T600-320H360q-17 0-28.5 11.5T320-280q0 17 11.5 28.5T360-240Zm0-160h240q17 0 28.5-11.5T640-440q0-17-11.5-28.5T600-480H360q-17 0-28.5 11.5T320-440q0 17 11.5 28.5T360-400ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h287q16 0 30.5 6t25.5 17l194 194q11 11 17 25.5t6 30.5v447q0 33-23.5 56.5T720-80H240Zm280-560v-160H240v640h480v-440H560q-17 0-28.5-11.5T520-640ZM240-800v200-200 640-640Z"/></svg></div><div class="sn">01</div><h3>Submit</h3><p>Share your content, project or profile.</p></div><div><div class="sic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M380-320q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg></div><div class="sn">02</div><h3>Review</h3><p>Our team evaluates your submission.</p></div><div><div class="sic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M40-240q-17 0-28.5-11.5T0-280v-23q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H40Zm240 0q-17 0-28.5-11.5T240-280v-25q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v25q0 17-11.5 28.5T680-240H280Zm500 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v23q0 17-11.5 28.5T920-240H780Zm-455-80h311q-10-20-55.5-35T480-370q-55 0-100.5 15T325-320ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Zm0-80q17 0 28.5-11.5T520-600q0-17-11.5-28.5T480-640q-17 0-28.5 11.5T440-600q0 17 11.5 28.5T480-560Zm1 240Zm-1-280Z"/></svg></div><div class="sn">03</div><h3>Collaborate</h3><p>Explore partnership opportunities.</p></div><div><div class="sic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143Zm126 18L314-169q-11 7-23 6t-21-8q-9-7-14-17.5t-2-23.5l44-189-147-127q-10-9-12.5-20.5T140-571q4-11 12-18t22-9l194-17 75-178q5-12 15.5-18t21.5-6q11 0 21.5 6t15.5 18l75 178 194 17q14 2 22 9t12 18q4 11 1.5 22.5T809-528L662-401l44 189q3 13-2 23.5T690-171q-9 7-21 8t-23-6L480-269Zm0-201Z"/></svg></div><div class="sn">04</div><h3>Promote</h3><p>Reach MyPicha+ viewers.</p></div></div>
+</div></section>
+<section class="how-cta"><div class="wrap">
+  <div class="cta2">
+    <div class="eyebrow">OPPORTUNITY AWAITS</div>
     <h2>Your next opportunity starts here.</h2>
-    <p class="sub" style="margin:10px auto 22px">Tell us about you and your work.</p>
-    <button class="btn gold" onclick="go('partner')">Get started →</button>
-    <p class="note">Submitting an application does not guarantee acceptance, distribution or payment.</p>
-  </div></section>
+    <p class="sub">Whether you are a filmmaker, VJ, creator or production company, MyPicha+ Studio helps you get discovered and grow.</p>
+    <button class="btn gold" onclick="go('partner')">Get started &rarr;</button>
+  </div>
+  <p class="note">Submitting an application does not guarantee acceptance, distribution or payment.</p>
+</div></section>
 <footer data-moved-footer><div class="wrap">
   <span>© 2025 MyPicha+ Studio. All rights reserved.</span>
   <a href="./">Back to MyPicha+</a>
@@ -534,6 +556,16 @@ window.openPartner=function(){
     n=(n+1)%s.length;
     s[n].classList.add('on');
   },5000);
+})();
+</script>
+<script>
+(function(){
+  var from=document.querySelectorAll('#v-home .hero-bg i'),box=document.getElementById('howBg');
+  if(!box||!from.length)return;
+  for(var k=0;k<from.length;k++){var i=document.createElement('i');i.style.backgroundImage=from[k].style.backgroundImage;if(k===0)i.className='on';box.appendChild(i);}
+  var s=box.children,n=0;
+  if(s.length<2||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;
+  setInterval(function(){s[n].classList.remove('on');n=(n+1)%s.length;s[n].classList.add('on');},5000);
 })();
 </script>
 </body>
