@@ -156,6 +156,21 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
 #opps .sub{font-size:13px;margin-bottom:14px}
 .how-link{display:block;text-align:center;margin-top:18px;color:var(--gold);font-size:14px;font-weight:700;cursor:pointer}
 @media(min-width:720px){.hero{padding:70px 0 56px}.hero h1{font-size:56px}#opps{padding:44px 0}#opps h2{font-size:28px}#opps .sub{font-size:16px}}
+/* studio-v7 */
+.hero{min-height:330px;padding:48px 0 40px}
+.hero h1{font-size:40px;margin-bottom:22px}
+.hero .eyebrow::after{content:"";display:block;width:32px;height:2px;background:var(--gold);margin-top:8px}
+.hero .btns{display:flex}
+.hero .btns .btn.gold{display:none}
+.hero .btns .btn:not(.gold){background:linear-gradient(180deg,#f6c445,#d99a1c);color:#111;border-color:transparent}
+.hero .btns .btn:not(.gold)::after{content:" \2192"}
+.card{display:flex;flex-direction:column;padding:12px 10px;background:linear-gradient(160deg,#1c1710,#0f0e0c)}
+.card::before{display:none}
+.card .ic{position:static;margin:0 0 8px;width:34px;height:34px;font-size:15px}
+.card h3{margin:0 0 3px;font-size:13px}
+.card .t{margin:0 0 8px;font-size:10px}
+.card .more{margin:auto 0 0;align-self:flex-start;display:inline-block;border:1px solid var(--gold);border-radius:14px;padding:4px 8px;font-size:8.5px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+@media(min-width:720px){.hero{min-height:420px;padding:80px 0 60px}.hero h1{font-size:56px}.card{padding:20px}.card h3{font-size:18px}.card .t{font-size:12px}.card .more{font-size:10px}}
 </style>
 </head>
 <body>
@@ -211,6 +226,10 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
     <button class="btn gold" onclick="go('partner')">Get started →</button>
     <p class="note">Submitting an application does not guarantee acceptance, distribution or payment.</p>
   </div></section>
+<footer data-moved-footer><div class="wrap">
+  <span>© 2025 MyPicha+ Studio. All rights reserved.</span>
+  <a href="./">Back to MyPicha+</a>
+</div></footer>
 </div>
 
 <div class="view" id="v-gate"><div class="wrap center">
@@ -228,10 +247,7 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
 <div class="view" id="v-partner"><div class="wrap page" id="partnerRoot"></div></div>
 </main>
 
-<footer><div class="wrap">
-  <span>© 2025 MyPicha+ Studio. All rights reserved.</span>
-  <a href="./">Back to MyPicha+</a>
-</div></footer>
+
 <div id="toast"></div>
 
 <script>
