@@ -147,6 +147,15 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
 .hero p,.hero .btns{display:none}
 .hero{min-height:300px;padding:64px 0 56px}
 @media(min-width:720px){.hero{min-height:420px}}
+/* studio-v6 */
+.hero{min-height:0;padding:34px 0 26px}
+.hero h1{font-size:30px;margin-bottom:0}
+.eyebrow{margin-bottom:10px}
+#opps{padding:22px 0 30px}
+#opps h2{font-size:24px;margin-bottom:6px}
+#opps .sub{font-size:13px;margin-bottom:14px}
+.how-link{display:block;text-align:center;margin-top:18px;color:var(--gold);font-size:14px;font-weight:700;cursor:pointer}
+@media(min-width:720px){.hero{padding:70px 0 56px}.hero h1{font-size:56px}#opps{padding:44px 0}#opps h2{font-size:28px}#opps .sub{font-size:16px}}
 </style>
 </head>
 <body>
@@ -178,8 +187,14 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
       <div class="card" onclick="go('promote-project')"><div class="ic" data-i="movie">🎬</div><h3>Promote My Project</h3><div class="t">Upcoming releases and ideas</div><p>Build awareness for your upcoming films, series, trailers or creative projects.</p><span class="more">Coming soon</span></div>
       <div class="card" onclick="go('partner')"><div class="ic" data-i="handshake">🤝</div><h3>Partner with MyPicha+</h3><div class="t">VJs, filmmakers, producers and more</div><p>Apply for creator programs, distribution partnerships, licensing and production opportunities.</p><span class="more">Apply now →</span></div>
     </div>
+    <a class="how-link" onclick="show('v-how');window.scrollTo(0,0)">How MyPicha+ Studio works →</a>
   </div></section>
-  <section><div class="wrap">
+  
+</div>
+
+<div class="view" id="v-how">
+<div class="wrap" style="padding-top:18px"><button class="pill" onclick="show('v-home');window.scrollTo(0,0)">← Back</button></div>
+<section><div class="wrap">
     <div class="eyebrow">SIMPLE · TRANSPARENT</div>
     <h2>How MyPicha+ Studio works</h2>
     <p class="sub"></p>
