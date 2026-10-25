@@ -219,7 +219,10 @@ background:linear-gradient(180deg,rgba(10,10,10,.3),rgba(10,10,10,.88) 70%),var(
 /* studio-v13 */
 body{background:#0f0f0f}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-background:linear-gradient(rgba(15,15,15,0.80),rgba(15,15,15,0.80)),url(assets/picha_bg.webp) center/cover no-repeat,#0f0f0f}
+background-color:#0f0f0f;
+background-image:linear-gradient(rgba(15,15,15,.80),rgba(15,15,15,.80)),url(assets/picha_bg.webp);
+background-repeat:no-repeat;background-position:top center;background-size:cover;
+background-blend-mode:normal,luminosity}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
