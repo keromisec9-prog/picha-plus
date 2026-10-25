@@ -223,12 +223,18 @@ background-color:#0f0f0f;
 background-image:linear-gradient(rgba(15,15,15,.80),rgba(15,15,15,.80)),url(assets/picha_bg.webp);
 background-repeat:no-repeat;background-position:top center;background-size:cover;
 background-blend-mode:normal,luminosity}
+/* studio-v14 */
+.logo{display:flex;align-items:center;gap:5px;flex:0 1 auto;overflow:visible}
+.logo img{display:block;width:auto}
+.logo .lg-mp{height:30px}
+.logo .lg-st{height:19px}
+@media(min-width:720px){.logo{gap:7px}.logo .lg-mp{height:38px}.logo .lg-st{height:24px}}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="logo" onclick="show('v-home')">MyPicha<b>+</b> Studio<small>CREATORS · FILMMAKERS · PARTNERS</small></a>
+  <a class="logo" onclick="show('v-home')"><img class="lg-mp" src="assets/studio/logo-mp.webp" alt="MP" width="118" height="90"><img class="lg-st" src="assets/studio/logo-studio.webp" alt="Studio" width="151" height="56"></a>
   <span style="display:flex;gap:8px">
     <button class="pill" id="myBtn" onclick="openApps()" style="display:none">My applications</button>
     <a class="pill" href="./">← MyPicha+</a>
