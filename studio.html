@@ -76,6 +76,33 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-bet
 .sum b{color:var(--mute);font-weight:500;flex:0 0 38%}.sum span{text-align:right;word-break:break-word}
 .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-top:18px}.chk input{margin-top:4px}
 .ph{font-size:12px;letter-spacing:2px;color:var(--gold);margin:22px 0 12px}
+/* studio-v2 */
+.top .wrap{height:60px;flex-wrap:nowrap}
+.logo{white-space:nowrap;font-size:16px}
+.logo small{font-size:7px;letter-spacing:1.5px;white-space:nowrap}
+.top .wrap>span{display:flex;gap:6px;flex-shrink:0}
+.pill{white-space:nowrap;font-size:12px;padding:7px 10px}
+a.pill{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
+.hero{position:relative;overflow:hidden;min-height:480px;padding:72px 0 56px;
+background:
+linear-gradient(180deg,rgba(10,10,10,.45),rgba(10,10,10,.9)),
+url(assets/studio/hero.jpg) right center/cover no-repeat,
+radial-gradient(circle at 82% 18%,rgba(255,190,80,.55) 0,transparent 9%),
+radial-gradient(circle at 62% 30%,rgba(255,160,50,.35) 0,transparent 7%),
+radial-gradient(circle at 92% 55%,rgba(255,200,110,.3) 0,transparent 8%),
+radial-gradient(ellipse at 80% 40%,#5a3a10 0,#1f1408 45%,#0a0a0a 80%)}
+.card{position:relative;padding:0;overflow:hidden}
+.card::before{content:"";display:block;height:130px;
+background:linear-gradient(180deg,transparent 35%,var(--card)),var(--img),#1c1409}
+.cards .card:nth-child(1){--img:url(assets/studio/card1.jpg) center/cover,radial-gradient(circle at 30% 40%,rgba(255,170,70,.5) 0,transparent 30%),linear-gradient(135deg,#3a2a14,#120d07)}
+.cards .card:nth-child(2){--img:url(assets/studio/card2.jpg) center/cover,radial-gradient(circle at 70% 85%,rgba(255,120,60,.55) 0,transparent 40%),linear-gradient(180deg,#2a2438,#1b1209 70%,#4a2a10)}
+.cards .card:nth-child(3){--img:url(assets/studio/card3.jpg) center/cover,radial-gradient(circle at 20% 25%,rgba(255,200,100,.5) 0,transparent 20%),radial-gradient(circle at 75% 30%,rgba(255,170,70,.4) 0,transparent 22%),linear-gradient(135deg,#2e220f,#0f0b06)}
+.card .ic{margin:-23px 22px 14px;position:relative}
+.card h3,.card .t,.card p{margin-left:22px;margin-right:22px}
+.card .more{display:block;margin:0 22px 22px}
+@media(min-width:720px){
+.hero{min-height:560px}
+.card::before{height:150px}}
 </style>
 </head>
 <body>
