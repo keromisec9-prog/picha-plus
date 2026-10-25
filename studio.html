@@ -61,6 +61,21 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-bet
 #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:var(--gold);color:#111;padding:11px 18px;border-radius:24px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.25s}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 @media(min-width:720px){.hero{padding:96px 0 80px}.hero h1{font-size:56px}.cards{grid-template-columns:repeat(3,1fr)}.steps{grid-template-columns:repeat(4,1fr)}}
+.bar{height:3px;background:var(--line);border-radius:3px;margin:10px 0 22px}.bar i{display:block;height:100%;background:var(--gold);border-radius:3px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px;cursor:pointer}
+.opt b{display:block;font-size:16px}.opt span{font-size:13px;color:var(--mute)}
+.opt.on{border-color:var(--gold);background:#1a1508}
+.fld{margin-bottom:16px}.fld label{display:block;font-size:13px;color:var(--mute);margin-bottom:6px}
+.fld input,.fld textarea,.fld select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--text);font:inherit}
+.fld input:focus,.fld textarea:focus,.fld select:focus{outline:none;border-color:var(--gold)}
+.chs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.chp{border:1px solid var(--line);background:var(--card);padding:10px 14px;border-radius:22px;font-size:14px;cursor:pointer}
+.chp.on{border-color:var(--gold);color:var(--gold);background:#1a1508}
+.nav{display:flex;gap:12px;justify-content:space-between;margin-top:26px}
+.sum{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.sum b{color:var(--mute);font-weight:500;flex:0 0 38%}.sum span{text-align:right;word-break:break-word}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-top:18px}.chk input{margin-top:4px}
+.ph{font-size:12px;letter-spacing:2px;color:var(--gold);margin:22px 0 12px}
 </style>
 </head>
 <body>
@@ -173,6 +188,165 @@ function go(flow){
   if(flow==='partner'&&window.openPartner)return window.openPartner();
   toast('Coming soon');
 }
+
+// ── PARTNER APPLICATION ───────────────────────────────────────────────
+var P=null;
+var OPPS=['Promote my movie or series','Submit content for distribution','Explore content monetization','Join the VJ Creator Program','Promote an upcoming project','Discuss a production partnership'];
+var EXPS=['Just getting started','1–3 years','More than 3 years'];
+var STATUSES=['In development','In production','Completed','Already released'];
+var TLIST=[['vj','VJ / Entertainment Creator','Promote, narrate and distribute entertainment'],['filmmaker','Filmmaker / Director','Submit movies, series and productions'],['producer','Producer / Production Company','Explore distribution and business partnerships']];
+var FIELDS={
+ vj:{title:'VJ / Creator',items:[['vj_name','VJ / creator name','text'],['vj_languages','Languages you work in','text'],['vj_link','YouTube, TikTok or portfolio link','url'],['vj_sample','Link to a sample narration or video','url'],['vj_previous','Previous entertainment projects','area']]},
+ filmmaker:{title:'Filmmaker / Director',items:[['film_title','Movie or series title','text'],['film_genre','Genre','text'],['film_status','Release status','select'],['film_trailer','Trailer or preview link','url'],['film_synopsis','Brief synopsis','area'],['film_role','Your role in the production','text']]},
+ producer:{title:'Producer / Production Company',items:[['prod_company','Production company name','text'],['prod_count','Number of movies and series available','text'],['prod_genres','Genres and production types','text'],['prod_catalog','Catalog or portfolio link','url'],['prod_rights','Distribution rights contact','text'],['prod_proposal','Partnership proposal','area']]}
+};
+function escA(s){return esc(s).replace(/"/g,'&quot;')}
+function has(t){return P.types.indexOf(t)>-1}
+function toggle(arr,v){var i=arr.indexOf(v);if(i>-1)arr.splice(i,1);else arr.push(v)}
+function initP(){
+  var u=null;try{u=JSON.parse(localStorage.getItem('pichaplus_user')||'null')}catch(e){}
+  P={step:0,types:[],interests:[],rights:false,done:false,
+     profile:{fullName:(u&&u.name)||'',brand:'',role:'',email:(u&&u.email)||'',phone:'',location:'',experience:''},
+     portfolio:{}};
+}
+function fld(g,k,label,type,ph){
+  var v=P[g][k]||'', a=' data-g="'+g+'" data-k="'+k+'"';
+  var h='<div class="fld"><label>'+label+'</label>';
+  if(type==='area')h+='<textarea rows="3"'+a+'>'+esc(v)+'</textarea>';
+  else if(type==='select')h+='<select'+a+'><option value="">Select…</option>'+STATUSES.map(function(s){return '<option'+(v===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select>';
+  else h+='<input'+a+' type="'+(type==='url'||type==='tel'||type==='email'?type:'text')+'" value="'+escA(v)+'"'+(ph?' placeholder="'+ph+'"':'')+'>';
+  return h+'</div>';
+}
+function sType(){
+  var h='<h2>Let’s work together.</h2><p class="sub">Choose how you’d like to partner with MyPicha+ Studio. You can select more than one.</p>';
+  TLIST.forEach(function(t){h+='<div class="opt'+(has(t[0])?' on':'')+'" data-act="type" data-v="'+t[0]+'"><b>'+t[1]+'</b><span>'+t[2]+'</span></div>'});
+  return h;
+}
+function sProfile(){
+  var prod=has('producer');
+  var h='<h2>Who are you?</h2><p class="sub">Let’s get to know you and your work.</p>';
+  h+=fld('profile','fullName','Full name','text');
+  h+=fld('profile','brand',prod?'Registered or trading company name':'Professional name / brand (optional)','text');
+  if(prod)h+=fld('profile','role','Your role in the company','text');
+  h+=fld('profile','email','Email address','email');
+  h+=fld('profile','phone','Phone number','tel');
+  h+=fld('profile','location','Location','text');
+  h+='<div class="fld"><label>How long have you been creating?</label><div class="chs">'+EXPS.map(function(x){return '<span class="chp'+(P.profile.experience===x?' on':'')+'" data-act="exp" data-v="'+x+'">'+x+'</span>'}).join('')+'</div></div>';
+  return h;
+}
+function sInterests(){
+  var h='<h2>Let’s explore your opportunity.</h2><p class="sub">Select the opportunities you’re interested in. This helps us direct your application to the right team.</p>';
+  h+='<div class="chs">'+OPPS.map(function(x){return '<span class="chp'+(P.interests.indexOf(x)>-1?' on':'')+'" data-act="opp" data-v="'+x+'">'+x+'</span>'}).join('')+'</div>';
+  h+=fld('portfolio','message','Tell us more about your interest','area');
+  return h;
+}
+function sPortfolio(){
+  var h='<h2>Showcase your work</h2><p class="sub">A trailer, portfolio or catalog link is enough to start. Full movies are requested later, only if needed.</p>';
+  P.types.forEach(function(t){
+    h+='<div class="ph">'+FIELDS[t].title.toUpperCase()+'</div>';
+    FIELDS[t].items.forEach(function(it){h+=fld('portfolio',it[0],it[1],it[2],it[2]==='url'?'https://':'')});
+  });
+  return h;
+}
+function sum(label,val){return val?'<div class="sum"><b>'+label+'</b><span>'+esc(val)+'</span></div>':''}
+function sReview(){
+  var pr=P.profile;
+  var h='<h2>Ready to submit?</h2><p class="sub">Review your partnership details.</p>';
+  h+=sum('Applicant',pr.fullName)+sum('Brand / company',pr.brand)+sum('Role',has('producer')?pr.role:'')+sum('Email',pr.email)+sum('Phone',pr.phone)+sum('Location',pr.location)+sum('Experience',pr.experience);
+  h+=sum('Partnership',P.types.map(function(t){return FIELDS[t].title}).join(', '));
+  h+=sum('Interests',P.interests.join(', '))+sum('Message',P.portfolio.message);
+  P.types.forEach(function(t){FIELDS[t].items.forEach(function(it){h+=sum(it[1],P.portfolio[it[0]])})});
+  h+='<label class="chk"><input type="checkbox" id="rights"'+(P.rights?' checked':'')+'><span>I confirm that the information provided is accurate and that I have the necessary rights or permissions for any submitted materials.</span></label>';
+  h+='<p class="note">Submitting an application does not guarantee acceptance or a partnership.</p>';
+  return h;
+}
+var STEPS=[sType,sProfile,sInterests,sPortfolio,sReview];
+function render(){
+  var root=document.getElementById('partnerRoot');
+  if(P.done){
+    root.innerHTML='<div class="center"><h2>You’re on your way.</h2><p class="sub" style="margin:10px auto 24px">Your application has been submitted to MyPicha+ Studio. We’ll review your details and contact you about the next steps.</p><button class="btn gold" data-act="apps">View my applications</button> <button class="btn" data-act="home">Back to Studio</button></div>';
+    return;
+  }
+  var last=P.step===4;
+  root.innerHTML='<div class="eyebrow">PARTNERSHIP APPLICATION · STEP '+(P.step+1)+' OF 5</div><div class="bar"><i style="width:'+((P.step+1)*20)+'%"></i></div>'+STEPS[P.step]()+
+    '<div class="nav"><button class="btn" data-act="back">'+(P.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="nextBtn" data-act="'+(last?'submit':'next')+'">'+(last?'Submit application':'Continue →')+'</button></div>';
+}
+function validate(s){
+  if(s===0&&!P.types.length)return 'Choose at least one option';
+  if(s===1){
+    if(!(P.profile.fullName||'').trim())return 'Enter your full name';
+    if((P.profile.phone||'').replace(/\D/g,'').length<7)return 'Enter a valid phone number';
+  }
+  if(s===2&&!P.interests.length)return 'Select at least one opportunity';
+  if(s===3){
+    var any=false;
+    for(var i=0;i<P.types.length;i++){
+      var items=FIELDS[P.types[i]].items;
+      for(var j=0;j<items.length;j++){
+        var v=(P.portfolio[items[j][0]]||'').trim();
+        if(v){any=true;if(items[j][2]==='url'&&!/^https?:\/\/\S+$/i.test(v))return 'Links must start with https://'}
+      }
+    }
+    if(!any)return 'Add at least one detail about your work';
+  }
+  if(s===4&&!P.rights)return 'Please confirm the declaration';
+  return '';
+}
+function submitP(){
+  var e=validate(4);if(e)return toast(e);
+  var btn=document.getElementById('nextBtn');btn.disabled=true;btn.textContent='Submitting…';
+  var port={},prof={};
+  P.types.forEach(function(t){FIELDS[t].items.forEach(function(it){var v=(P.portfolio[it[0]]||'').trim();if(v)port[it[0]]=v})});
+  if((P.portfolio.message||'').trim())port.message=P.portfolio.message.trim();
+  Object.keys(P.profile).forEach(function(k){var v=(P.profile[k]||'').trim();if(v&&!(k==='role'&&!has('producer')))prof[k]=v});
+  function fail(m){btn.disabled=false;btn.textContent='Submit application';toast(m)}
+  api('/studio/apply',{method:'POST',body:JSON.stringify({types:P.types,rightsConfirmed:true,profile:prof,interests:P.interests,portfolio:port})}).then(function(res){
+    if(isAuthFail(res))return gate();
+    if(res.body&&res.body.ok){P.done=true;render();window.scrollTo(0,0);return}
+    fail((res.body&&res.body.error)||'Could not submit. Try again.');
+  }).catch(function(){fail('Connection problem. Try again.')});
+}
+(function(){
+  var root=document.getElementById('partnerRoot');
+  root.addEventListener('click',function(ev){
+    var el=ev.target.closest('[data-act]');if(!el||!P)return;
+    var a=el.dataset.act,v=el.dataset.v;
+    if(a==='type'){toggle(P.types,v);render()}
+    else if(a==='opp'){toggle(P.interests,v);render()}
+    else if(a==='exp'){P.profile.experience=(P.profile.experience===v?'':v);render()}
+    else if(a==='next'){var e=validate(P.step);if(e)return toast(e);P.step++;render();window.scrollTo(0,0)}
+    else if(a==='back'){if(P.step===0)show('v-home');else{P.step--;render();window.scrollTo(0,0)}}
+    else if(a==='submit')submitP();
+    else if(a==='apps')openApps();
+    else if(a==='home')show('v-home');
+  });
+  function onField(ev){
+    var t=ev.target;if(!P)return;
+    if(t.id==='rights'){P.rights=t.checked;return}
+    if(t.dataset&&t.dataset.k)P[t.dataset.g][t.dataset.k]=t.value;
+  }
+  root.addEventListener('input',onField);
+  root.addEventListener('change',onField);
+})();
+window.openPartner=function(){
+  if(!token)return gate();
+  show('v-partner');
+  var root=document.getElementById('partnerRoot');
+  root.innerHTML='<p class="sub">Loading…</p>';
+  api('/studio/my').then(function(res){
+    if(isAuthFail(res))return gate();
+    var items=(res.body&&res.body.items)||[];
+    var open=items.some(function(a){return a.status==='received'||a.status==='in_review'||a.status==='action_required'});
+    if(open){
+      P=null;
+      root.innerHTML='<h2>You already have an application</h2><p class="sub">Your application is still being handled. You can follow its status, or see if we asked for anything.</p><button class="btn gold" data-act="apps">View my applications</button>';
+      root.onclick=function(ev){if(ev.target.closest('[data-act="apps"]'))openApps()};
+      return;
+    }
+    root.onclick=null;
+    initP();render();
+  }).catch(function(){root.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
+};
 </script>
 </body>
 </html>
