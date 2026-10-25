@@ -235,6 +235,15 @@ background-blend-mode:normal,luminosity}
 .logo .lg-mp{height:42px}
 .logo .lg-st{height:27px}
 @media(min-width:720px){.top .wrap{height:72px}.logo{gap:10px}.logo .lg-mp{height:52px}.logo .lg-st{height:33px}}
+/* studio-v16 */
+:root{--hh:60px}
+html{scroll-padding-top:var(--hh)}
+body{padding-top:var(--hh)}
+.top{position:fixed;top:0;left:0;right:0;height:var(--hh);z-index:50;
+transform:translateZ(0);will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;contain:layout paint}
+.top .wrap{height:var(--hh);align-items:center}
+.top #myBtn{display:flex;align-items:center;line-height:1;margin:0}
+@media(min-width:720px){:root{--hh:72px}}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
