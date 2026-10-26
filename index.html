@@ -4091,10 +4091,24 @@ function startHeroRotation() {
   }, 6000);
 }
 
+// ── STUDIO FREE WINDOWS ──────────────────────────────────────────────────────
+var _studioFreeIds = {};
+function loadStudioFree() {
+  fetch(API + '/studio/free-now').then(function (r) { return r.json(); }).then(function (d) {
+    var m = {}; (d.ids || []).forEach(function (i) { m[String(i)] = 1; }); _studioFreeIds = m;
+  }).catch(function () {});
+}
+function isStudioFree(item) {
+  if (!item) return false;
+  return [item.id, item.tmdbId, item.movieId].some(function (v) { return v != null && _studioFreeIds[String(v)] === 1; });
+}
+loadStudioFree();
+setInterval(loadStudioFree, 300000);
+
 async function handleHeroPlay() {
   if (!currentPlayItem) return;
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed() && !isStudioFree(currentPlayItem)) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
   showInfo(currentPlayItem);
 }
 
@@ -5103,7 +5117,7 @@ function showSessionConflictToast() {
 // ── PLAY ──────────────────────────────────────────────────────────────────────
 async function handleCardPlay(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed() && !isStudioFree(item)) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
 
   const title = item.title || item.name || '';
 
@@ -5929,7 +5943,7 @@ function renderContinueWatching() {
 
 async function resumeWatching(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed()) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed() && !isStudioFree(item)) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
   document.getElementById('playerTitle').textContent = item.title || item.name || '';
   document.getElementById('playerModal').classList.add('active');
   document.body.style.overflow = 'hidden';
