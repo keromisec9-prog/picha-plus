@@ -264,6 +264,16 @@ background:linear-gradient(90deg,rgba(10,10,10,.93),rgba(10,10,10,.5)),url(asset
 .cta2 .sub{font-size:13px;margin:0 0 16px}
 .how-cta .note{text-align:center}
 @media(min-width:720px){.how-proc h2{font-size:28px}.how-proc .steps h3{font-size:15px}.how-proc .steps p{font-size:12px}.sn{font-size:11px}.cta2{padding:44px 36px}.cta2 h2{font-size:32px}.cta2 .sub{font-size:15px}}
+/* studio-v18 */
+.upl{background:rgba(255,255,255,.05);border-radius:12px;padding:12px}
+.upc{display:inline-block;cursor:pointer;font-size:13px;padding:10px 16px}
+.uph{font-size:11px;color:var(--mute);margin-top:6px}
+.upn{font-size:13px;word-break:break-all;margin-bottom:8px}
+.upb{height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.upb i{display:block;height:100%;width:0;background:var(--gold);transition:width .15s}
+.upr{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--mute)}
+.upp{width:90px;border-radius:8px;display:block;margin-bottom:8px}
+.upe{color:#e06666;font-size:12px;margin-bottom:8px}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -611,8 +621,10 @@ function renderS(){
   h+=sfld('releaseStatus','Release status','select');
   if(proj)h+=sfld('releaseDate','Expected release (e.g. December 2026)','text');
   h+=sfld('synopsis','Brief synopsis','area');
+  h+=upHTML('video','Upload a preview or trailer (optional)','MP4 only, up to 3 GB. Large files upload in parts.');
   h+=sfld('trailerLink','Trailer or preview link','url','https://');
   h+=sfld('posterLink','Poster link (optional)','url','https://');
+  h+=upHTML('poster','Or upload a poster image (optional)','JPG, PNG or WebP, up to 8 MB.');
   h+=sfld('portfolioLink','Portfolio or channel link (optional)','url','https://');
   h+=sfld('role','Your role in the production','text');
   h+=sfld('notes','Anything else we should know? (optional)','area');
@@ -621,11 +633,92 @@ function renderS(){
   h+='<div class="nav"><button class="btn" data-act="cancel">Cancel</button><button class="btn gold" id="sBtn" data-act="ssubmit">Submit</button></div>';
   root.innerHTML=h;
 }
+(function(){
+var LIM={video:3*1024*1024*1024,poster:8*1024*1024};
+function U(){S.up=S.up||{};return S.up}
+function upBusy(){if(!S)return false;var u=U();return !!((u.video&&u.video.busy)||(u.poster&&u.poster.busy))}
+window.upBusy=upBusy;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function inner(slot){
+  var st=U()[slot],acc=slot==='video'?'video/mp4':'image/jpeg,image/png,image/webp';
+  if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="upcancel" data-slot="'+slot+'">Cancel</button></div>';
+  if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="upclear" data-slot="'+slot+'">Remove</button></div>';
+  return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<label class="btn upc">Choose '+(slot==='video'?'video (MP4)':'poster image')+'<input type="file" accept="'+acc+'" data-up="'+slot+'" hidden></label>';
+}
+function paint(slot){var b=document.getElementById('up_'+slot);if(b)b.innerHTML=inner(slot)}
+window.upHTML=function(slot,label,hint){return '<div class="fld"><label>'+label+'</label><div class="upl" id="up_'+slot+'">'+inner(slot)+'</div><div class="uph">'+hint+'</div></div>'};
+function setP(slot,f){
+  var st=U()[slot];if(!st)return;st.pct=Math.max(0,Math.min(99,Math.round(f*100)));
+  var b=document.getElementById('up_'+slot);if(!b)return;
+  var i=b.querySelector('.upb i'),t=b.querySelector('.upr span');
+  if(i)i.style.width=st.pct+'%';if(t)t.textContent=st.pct+'%';
+}
+function xput(st,url,blob,onp){return new Promise(function(res,rej){
+  var x=new XMLHttpRequest();st.xhr=x;x.open('PUT',url);
+  x.upload.onprogress=function(e){if(e.lengthComputable)onp(e.loaded)};
+  x.onload=function(){if(x.status>=200&&x.status<300)res(x.getResponseHeader('ETag')||'');else rej(new Error('Upload failed ('+x.status+')'))};
+  x.onerror=function(){rej(new Error('Connection problem'))};
+  x.onabort=function(){rej(new Error('cancelled'))};
+  x.send(blob);
+})}
+function putRetry(st,url,blob,onp,n){return xput(st,url,blob,onp).catch(function(e){if(st.cancel||n<=1)throw e;return putRetry(st,url,blob,onp,n-1)})}
+function start(slot,file){
+  var u=U();
+  if(slot==='video'&&!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
+  if(file.size>LIM[slot])return toast('That file is too large');
+  var st=u[slot]={name:file.name,pct:0,busy:true,preview:slot==='poster'?URL.createObjectURL(file):null};
+  paint(slot);
+  var body={kind:slot,fileName:file.name,size:file.size},multi=slot==='video'&&file.size>20*1024*1024;
+  if(multi){body.multipart=true;body.partSize=10*1024*1024}
+  api('/studio/upload/init',{method:'POST',body:JSON.stringify(body)}).then(function(res){
+    if(isAuthFail(res))throw new Error('auth');
+    var b=res.body||{};if(!b.ok)throw new Error(b.error||'Could not start upload');
+    st.pendKey=b.key;
+    if(!b.multipart)return xput(st,b.uploadUrl,file,function(l){setP(slot,l/file.size)}).then(function(){st.key=b.key});
+    st.uploadId=b.uploadId;
+    var parts=[],sent=0,i=0,ps=b.partSize;
+    function next(){
+      if(st.cancel)throw new Error('cancelled');
+      if(i>=b.parts.length)return Promise.resolve();
+      var idx=i++,blob=file.slice(idx*ps,Math.min(file.size,(idx+1)*ps));
+      return putRetry(st,b.parts[idx],blob,function(l){setP(slot,(sent+l)/file.size)},3).then(function(et){
+        if(!et)throw new Error('Cannot read ETag - storage CORS must expose ETag');
+        parts.push({partNumber:idx+1,etag:et});sent+=blob.size;return next();
+      });
+    }
+    return next().then(function(){return api('/studio/upload/complete',{method:'POST',body:JSON.stringify({key:b.key,uploadId:b.uploadId,parts:parts})})}).then(function(r){
+      if(!(r.body&&r.body.ok))throw new Error('Could not finish upload');
+      st.key=b.key;
+    });
+  }).then(function(){st.busy=false;st.pct=100;paint(slot)}).catch(function(e){
+    st.busy=false;
+    if(st.uploadId&&!st.key)api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:st.pendKey,uploadId:st.uploadId})}).catch(function(){});
+    if(e.message==='auth'){u[slot]=null;paint(slot);return gate()}
+    u[slot]=st.cancel?null:{err:e.message||'Upload failed'};
+    paint(slot);
+  });
+}
+var root=document.getElementById('submitRoot');
+root.addEventListener('change',function(ev){
+  var el=ev.target;if(!el.dataset||!el.dataset.up||!S)return;
+  var f=el.files&&el.files[0];el.value='';if(f)start(el.dataset.up,f);
+});
+root.addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-act]');if(!el||!S)return;
+  var a=el.dataset.act,slot=el.dataset.slot,st=slot&&U()[slot];
+  if(a==='upcancel'&&st){st.cancel=true;if(st.xhr)st.xhr.abort()}
+  else if(a==='upclear'){U()[slot]=null;paint(slot)}
+});
+})();
 function submitS(){
   var d={},keys=['genre','releaseStatus','releaseDate','synopsis','trailerLink','posterLink','portfolioLink','role','notes'];
   keys.forEach(function(k){var v=(S.d[k]||'').trim();if(v)d[k]=v});
   if(!S.title.trim())return toast('Enter a title');
-  if(!d.synopsis&&!d.trailerLink&&!d.portfolioLink)return toast('Add a synopsis or a trailer link');
+  if(upBusy())return toast('Please wait for the upload to finish');
+  var up=S.up||{};
+  if(up.video&&up.video.key)d.videoKey=up.video.key;
+  if(up.poster&&up.poster.key)d.posterKey=up.poster.key;
+  if(!d.synopsis&&!d.trailerLink&&!d.portfolioLink&&!d.videoKey)return toast('Add a synopsis, a link or a video');
   var bad=['trailerLink','posterLink','portfolioLink'].some(function(k){return d[k]&&!/^https?:\/\/\S+$/i.test(d[k])});
   if(bad)return toast('Links must start with https://');
   if(!S.rights)return toast('Please confirm the declaration');
