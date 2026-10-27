@@ -274,6 +274,8 @@ background:linear-gradient(90deg,rgba(10,10,10,.93),rgba(10,10,10,.5)),url(asset
 .upr{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--mute)}
 .upp{width:90px;border-radius:8px;display:block;margin-bottom:8px}
 .upe{color:#e06666;font-size:12px;margin-bottom:8px}
+/* studio-v19 */
+.upin{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -643,7 +645,7 @@ function inner(slot){
   var st=U()[slot],acc=slot==='video'?'video/mp4':'image/jpeg,image/png,image/webp';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="upcancel" data-slot="'+slot+'">Cancel</button></div>';
   if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="upclear" data-slot="'+slot+'">Remove</button></div>';
-  return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<label class="btn upc">Choose '+(slot==='video'?'video (MP4)':'poster image')+'<input type="file" accept="'+acc+'" data-up="'+slot+'" hidden></label>';
+  return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<button type="button" class="btn upc" data-act="uppick" data-slot="'+slot+'">Choose '+(slot==='video'?'video (MP4)':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
 }
 function paint(slot){var b=document.getElementById('up_'+slot);if(b)b.innerHTML=inner(slot)}
 window.upHTML=function(slot,label,hint){return '<div class="fld"><label>'+label+'</label><div class="upl" id="up_'+slot+'">'+inner(slot)+'</div><div class="uph">'+hint+'</div></div>'};
@@ -707,6 +709,7 @@ root.addEventListener('click',function(ev){
   var el=ev.target.closest('[data-act]');if(!el||!S)return;
   var a=el.dataset.act,slot=el.dataset.slot,st=slot&&U()[slot];
   if(a==='upcancel'&&st){st.cancel=true;if(st.xhr)st.xhr.abort()}
+  else if(a==='uppick'){var fi=document.querySelector('#up_'+slot+' input[type=file]');if(fi)fi.click()}
   else if(a==='upclear'){U()[slot]=null;paint(slot)}
 });
 })();
