@@ -380,6 +380,12 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .sh span{font:700 20px system-ui,sans-serif}
 .bkb{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.08);display:grid;place-items:center;padding:0;cursor:pointer}
 .bkb svg{width:22px;height:22px;fill:#fff}
+/* studio-v26 */
+:root{--btnbg:#3a3a3c}
+.btn,.pill,.seg,.seg button,.chp,.go,.tsb .btn{border-radius:10px!important}
+.btn.gold,.seg button.on,.chp.on,.pill.on,.pill.gold{background:var(--btnbg)!important;color:#fff!important;border-color:var(--btnbg)!important}
+.btn:not(.gold){border-color:var(--btnbg)!important}
+#toast,.toast{background:var(--btnbg)!important;color:#fff!important;border-radius:10px!important}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
