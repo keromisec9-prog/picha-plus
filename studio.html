@@ -162,7 +162,6 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
 .hero .btns{display:flex}
 .hero .btns .btn.gold{display:none}
 .hero .btns .btn:not(.gold){background:linear-gradient(180deg,#f6c445,#d99a1c);color:#111;border-color:transparent}
-.hero .btns .btn:not(.gold)::after{content:" \2192"}
 .card{display:flex;flex-direction:column;padding:12px 10px;background:linear-gradient(160deg,#1c1710,#0f0e0c)}
 .card::before{display:none}
 .card .ic{position:static;margin:0 0 8px;width:34px;height:34px;font-size:15px}
@@ -401,7 +400,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
     <p>MyPicha+ Studio connects filmmakers, VJs, creators and production companies with opportunities to promote, distribute and monetize their content through MyPicha+.</p>
     <button class="hero-more" aria-label="Read more" onclick="this.closest('.hero').classList.toggle('open')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="btns">
-      <button class="btn gold" onclick="go('partner')">Start a partnership →</button>
+      <button class="btn gold" onclick="go('partner')">Start a partnership</button>
       <button class="btn" onclick="document.getElementById('opps').scrollIntoView({behavior:'smooth'})">Explore opportunities</button>
     </div>
   </div></div>
@@ -501,7 +500,7 @@ function openApps(){
   api('/studio/my').then(function(res){
     if(isAuthFail(res))return gate();
     var items=(res.body&&res.body.items)||[];
-    if(!items.length){box.innerHTML='<p class="sub">No applications yet.</p><button class="btn gold" onclick="go(\'partner\')">Start a partnership →</button>';return}
+    if(!items.length){box.innerHTML='<p class="sub">No applications yet.</p><button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>';return}
     box.innerHTML=items.map(function(a){
       var t=(a.types||[]).map(function(x){return TYPES[x]||x}).join(' · ');
       var d=a.created_at?new Date(a.created_at).toLocaleDateString():'';
@@ -597,7 +596,7 @@ function render(){
   }
   var last=P.step===4;
   root.innerHTML='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><div class="eyebrow">PARTNERSHIP APPLICATION · STEP '+(P.step+1)+' OF 5</div><div class="bar"><i style="width:'+((P.step+1)*20)+'%"></i></div>'+STEPS[P.step]()+
-    '<div class="nav"><button class="btn" data-act="back">'+(P.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="nextBtn" data-act="'+(last?'submit':'next')+'">'+(last?'Submit application':'Continue →')+'</button></div>';
+    '<div class="nav"><button class="btn" data-act="back">'+(P.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="nextBtn" data-act="'+(last?'submit':'next')+'">'+(last?'Submit application':'Continue')+'</button></div>';
 }
 function validate(s){
   if(s===0&&!P.types.length)return 'Choose at least one option';
@@ -940,7 +939,7 @@ function renderC(){
   }
   var last=C.step===2;
   root.innerHTML='<div class="eyebrow">CAMPAIGN · STEP '+(C.step+1)+' OF 3</div><div class="bar"><i style="width:'+((C.step+1)*33.4)+'%"></i></div>'+[cStep0,cStep1,cStep2][C.step]()+
-    '<div class="nav"><button class="btn" data-act="cback">'+(C.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="cBtn" data-act="'+(last?'csubmit':'cnext')+'">'+(last?'Submit campaign':'Continue →')+'</button></div>';
+    '<div class="nav"><button class="btn" data-act="cback">'+(C.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="cBtn" data-act="'+(last?'csubmit':'cnext')+'">'+(last?'Submit campaign':'Continue')+'</button></div>';
 }
 function cValid(s){
   if(s===1){
@@ -1153,7 +1152,7 @@ function renderList(){
   h+='<div class="chips">'+[['all','All content'],['movie','Movies'],['series','Series']].map(function(c){return '<button type="button" class="chip'+(L.flt===c[0]?' on':'')+'" data-act="flt" data-v="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>';
   var list=d.titles.filter(function(t){return L.flt==='all'||t.kind===L.flt});
   if(!list.length){
-    h+='<div class="lc"><h3>Your next release starts here</h3><div class="t" style="margin-bottom:14px">Add a movie or create a series to begin building your catalogue.</div><button class="btn gold" data-act="openadd">Upload your first title &rarr;</button></div>';
+    h+='<div class="lc"><h3>Your next release starts here</h3><div class="t" style="margin-bottom:14px">Add a movie or create a series to begin building your catalogue.</div><button class="btn gold" data-act="openadd">Upload your first title</button></div>';
   }
   list.forEach(function(t){
     var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
@@ -1171,7 +1170,7 @@ function renderList(){
     }
     h+='</div>';
   });
-  if(d.tier==='free')h+='<div class="upsell"><h3>Need a bigger catalogue?</h3><p>Verified creators and partners can upload far more movies and series.</p><button class="btn gold" data-act="partner">Become a verified partner &rarr;</button></div>';
+  if(d.tier==='free')h+='<div class="upsell"><h3>Need a bigger catalogue?</h3><p>Verified creators and partners can upload far more movies and series.</p><button class="btn gold" data-act="partner">Become a verified partner</button></div>';
   R(h);
 }
 function renderPick(){
@@ -1180,11 +1179,11 @@ function renderPick(){
    +'<div class="pc" data-act="choose" data-kind="movie" style="--bg:url(assets/studio/hero2.webp)"><div class="pcb"><h3>Upload a movie</h3><p>Add a full-length film, poster and details.</p></div></div>'
    +'<div class="pc" data-act="choose" data-kind="series" style="--bg:url(assets/studio/hero6.webp)"><div class="pcb"><h3>Create a series</h3><p>Set up a series and add episodes over time.</p></div></div>'
    +'<div class="allow"><h3>Your free publishing allowance</h3><ul><li>'+q.movies.max+' full movies ('+q.movies.used+' used)</li><li>'+q.series.max+' series, up to '+q.episodesPerSeries+' episodes each ('+q.series.used+' used)</li></ul>'
-   +(free?'<p>Need more uploads?</p><a data-act="partner">Become a verified partner &rarr;</a>':'')+'</div>');
+   +(free?'<p>Need more uploads?</p><a data-act="partner">Become a verified partner</a>':'')+'</div>');
 }
 function renderUpsell(kind){
   setMode('pick');
-  R('<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><div class="eyebrow">LIMIT REACHED</div><h2>You have used your free '+(kind==='movie'?'movies':kind==='series'?'series':'episodes')+'</h2><div class="upsell"><h3>Unlock a longer catalogue</h3><p>Verified creators and partners can upload many more titles. Apply and our team will review it.</p><button class="btn gold" data-act="partner">Become a verified partner &rarr;</button></div><div class="nav"><button class="btn" data-act="back">Back to library</button></div>');
+  R('<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><div class="eyebrow">LIMIT REACHED</div><h2>You have used your free '+(kind==='movie'?'movies':kind==='series'?'series':'episodes')+'</h2><div class="upsell"><h3>Unlock a longer catalogue</h3><p>Verified creators and partners can upload many more titles. Apply and our team will review it.</p><button class="btn gold" data-act="partner">Become a verified partner</button></div><div class="nav"><button class="btn" data-act="back">Back to library</button></div>');
 }
 var RIGHTS='<label class="chk"><input type="checkbox" id="lf_rights"><span>I confirm that I own or have permission to share this content, and that the information provided is accurate.</span></label><p class="note">Uploads are reviewed before they go live.</p>';
 var TMK='3ba29e8934b640ae467a31241cd2f0fd';
@@ -1238,7 +1237,7 @@ function renderForm(){
     h+=RIGHTS;
   }
   var last=!movie||n===3;
-  h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?'submit':'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?'Submit for review':'Next'))+' &rarr;</button></div>';
+  h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?'submit':'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?'Submit for review':'Next'))+'</button></div>';
   R(h);
 }
 function renderDetail(){
