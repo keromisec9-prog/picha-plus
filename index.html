@@ -13912,5 +13912,207 @@ async function submitForceReset() {
   }
 }
 </script>
+<style id="ppCreatorCss">
+#ppBarWrap{display:flex;align-items:center;gap:.8rem;}
+#ppBarWrap #ppBar{flex:1 1 0;min-width:0;}
+#ppCreator{display:none;flex:none;width:88px;flex-direction:column;align-items:center;text-align:center;gap:.3rem;}
+#ppCreator.on{display:flex;}
+.pp-av{position:relative;width:62px;height:62px;border-radius:50%;border:2px solid var(--gold,#e6b422);background:#2a2a2a center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1.3rem;}
+.pp-fb{position:absolute;right:-5px;bottom:-5px;width:24px;height:24px;border-radius:50%;background:var(--gold,#e6b422);color:#111;border:2px solid #181818;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;}
+.pp-fb.on{background:#fff;}
+.pp-fb .material-symbols-rounded{font-size:16px;line-height:1;font-weight:700;}
+.pp-cn{font-size:.72rem;color:#ddd;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pp-cf{font-size:.64rem;color:#8a8a8a;}
+#ppCmtTab{margin-left:auto;display:flex;align-items:center;gap:.35rem;}
+#ppCmtTab .material-symbols-rounded{font-size:1.15rem;line-height:1;color:var(--gold,#e6b422);}
+#ppComments{display:none;}
+#ppBody[data-tab="comments"] #ppDetails,#ppBody[data-tab="comments"] #ppCast{display:none!important;}
+#ppBody[data-tab="comments"] #ppComments{display:block;}
+.pp-ch{font-size:1rem;font-weight:700;color:#fff;margin:.2rem 0 .8rem;}
+.pp-ch span{color:#8a8a8a;font-weight:500;font-size:.85rem;margin-left:.3rem;}
+.pp-cin{display:flex;gap:.5rem;margin-bottom:1rem;}
+.pp-cin input{flex:1;min-width:0;background:#222;border:1px solid #333;border-radius:20px;color:#fff;padding:.6rem .9rem;font:inherit;font-size:.9rem;outline:none;}
+.pp-cin button{background:var(--gold,#e6b422);color:#111;border:none;border-radius:20px;padding:0 1.1rem;font-weight:700;cursor:pointer;}
+.pp-cin button:disabled{opacity:.5;}
+.pp-cnote{color:#8a8a8a;font-size:.85rem;margin-bottom:1rem;}
+.pp-cm{padding:.7rem 0;border-bottom:1px solid rgba(255,255,255,.07);}
+.pp-cmh{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#8a8a8a;}
+.pp-cmh b{color:#e8e8e8;font-weight:600;}
+.pp-cmd{margin-left:auto;background:none;border:none;color:#777;cursor:pointer;padding:0;}
+.pp-cmd .material-symbols-rounded{font-size:1.05rem;line-height:1;}
+.pp-cmt{color:#d6d6d6;font-size:.9rem;margin-top:.25rem;line-height:1.4;word-break:break-word;}
+.pp-cmore{display:block;margin:.9rem auto 0;background:none;border:1px solid #333;color:#ccc;border-radius:18px;padding:.45rem 1.2rem;cursor:pointer;}
+.pp-cempty{color:#777;font-size:.88rem;padding:.8rem 0;}
+</style>
+<script id="ppCreatorJs">
+(function () {
+  var API_ = (typeof API !== "undefined") ? API : "https://picha-plus-worker.kerosoftz522.workers.dev";
+  function $(i) { return document.getElementById(i); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function tok() { try { return localStorage.getItem("pichaplus_session") || ""; } catch (e) { return ""; } }
+  function hdr(json) { var h = {}; var t = tok(); if (t) h["X-Session-Token"] = t; if (json) h["Content-Type"] = "application/json"; return h; }
+  function note(m) { if (typeof showToast === "function") { try { showToast(m); return; } catch (e) {} } alert(m); }
+  function ago(iso) {
+    var d = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (!(d >= 0)) return "";
+    if (d < 60) return "just now";
+    if (d < 3600) return Math.floor(d / 60) + "m";
+    if (d < 86400) return Math.floor(d / 3600) + "h";
+    if (d < 2592000) return Math.floor(d / 86400) + "d";
+    return Math.floor(d / 2592000) + "mo";
+  }
+  var key = "", creator = null, items = [], total = 0, more = false, busy = false, posting = false;
+
+  function ensure() {
+    var bar = $("ppBar"), tabs = $("ppTabs"), body = $("ppBody");
+    if (!bar || !tabs || !body) return false;
+    if (!$("ppCreator")) {
+      var wrap = document.createElement("div"); wrap.id = "ppBarWrap";
+      bar.parentNode.insertBefore(wrap, bar);
+      wrap.appendChild(bar);
+      var cr = document.createElement("div"); cr.id = "ppCreator";
+      cr.addEventListener("click", function (e) {
+        if (e.target.closest && e.target.closest("#ppFollowBtn")) toggleFollow();
+      });
+      wrap.appendChild(cr);
+    }
+    if (!$("ppCmtTab")) {
+      var b = document.createElement("button"); b.type = "button"; b.id = "ppCmtTab"; b.dataset.t = "comments";
+      b.innerHTML = '<span class="material-symbols-rounded">comment</span>Comments';
+      b.addEventListener("click", function () { if (window._ppTab) window._ppTab("comments"); });
+      tabs.appendChild(b);
+    }
+    if (!$("ppComments")) {
+      var c = document.createElement("div"); c.id = "ppComments";
+      c.innerHTML = '<div class="pp-ch">Comments<span id="ppCmtCount">0</span></div>' +
+        '<div class="pp-cin" id="ppCmtForm"><input id="ppCmtInput" maxlength="500" autocomplete="off"><button type="button" id="ppCmtSend">Post</button></div>' +
+        '<div id="ppCmtList"></div><button type="button" class="pp-cmore" id="ppCmtMore" style="display:none">Load more</button>';
+      body.appendChild(c);
+      c.addEventListener("click", function (e) {
+        var t = e.target;
+        if (t.closest("#ppCmtSend")) return post();
+        if (t.closest("#ppCmtMore")) return loadComments(true);
+        var d = t.closest("[data-del]");
+        if (d) return del(d.getAttribute("data-del"));
+      });
+      c.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.id === "ppCmtInput") { e.preventDefault(); post(); } });
+    }
+    return true;
+  }
+
+  function renderCreator() {
+    var c = $("ppCreator"); if (!c) return;
+    if (!creator) { c.className = ""; c.innerHTML = ""; return; }
+    var nm = creator.displayName || ("@" + creator.username);
+    var st = creator.avatarUrl ? ' style="background-image:url(\'' + esc(creator.avatarUrl) + '\')"' : "";
+    var ini = creator.avatarUrl ? "" : esc((creator.username || "?").charAt(0).toUpperCase());
+    var fb = creator.isSelf ? "" : '<button type="button" id="ppFollowBtn" class="pp-fb' + (creator.following ? " on" : "") + '"><span class="material-symbols-rounded">' + (creator.following ? "check" : "add") + "</span></button>";
+    var n = creator.followers || 0;
+    c.className = "on";
+    c.innerHTML = '<div class="pp-av"' + st + ">" + ini + fb + '</div><div class="pp-cn">' + esc(nm) + '</div><div class="pp-cf">' + n + (n === 1 ? " follower" : " followers") + "</div>";
+  }
+
+  function toggleFollow() {
+    if (!creator || busy) return;
+    if (!tok()) return note("Sign in to follow creators");
+    busy = true;
+    var k = key, want = !creator.following;
+    fetch(API_ + (want ? "/studio/follow" : "/studio/unfollow"), { method: "POST", headers: hdr(true), body: JSON.stringify({ username: creator.username }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        busy = false;
+        if (k !== key || !creator) return;
+        if (j && j.ok) { creator.following = !!j.following; creator.followers = j.followers; renderCreator(); }
+        else note((j && j.error) || "Please sign in again");
+      })
+      .catch(function () { busy = false; note("Network error"); });
+  }
+
+  function fetchCreator(k) {
+    fetch(API_ + "/studio/creator-of/" + encodeURIComponent(k), { headers: hdr(false) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (k !== key) return; creator = (j && j.ok) ? j.creator : null; renderCreator(); })
+      .catch(function () {});
+  }
+
+  function itemHtml(it) {
+    return '<div class="pp-cm"><div class="pp-cmh"><b>' + esc(it.name) + "</b><span>" + esc(ago(it.at)) + "</span>" +
+      (it.mine ? '<button type="button" class="pp-cmd" data-del="' + esc(it.id) + '"><span class="material-symbols-rounded">delete</span></button>' : "") +
+      '</div><div class="pp-cmt">' + esc(it.text) + "</div></div>";
+  }
+  function renderComments() {
+    var l = $("ppCmtList"); if (!l) return;
+    l.innerHTML = items.length ? items.map(itemHtml).join("") : '<div class="pp-cempty">No comments yet. Be the first.</div>';
+    $("ppCmtCount").textContent = String(total);
+    $("ppCmtMore").style.display = more ? "block" : "none";
+    var inp = $("ppCmtInput"), sb = $("ppCmtSend"), has = !!tok();
+    if (inp) { inp.disabled = !has; inp.placeholder = has ? "Add a comment..." : "Sign in to comment"; }
+    if (sb) sb.disabled = !has;
+  }
+  function loadComments(append) {
+    var k = key, before = (append && items.length) ? items[items.length - 1].id : 0;
+    fetch(API_ + "/studio/comments/" + encodeURIComponent(k) + (before ? "?before=" + before : ""), { headers: hdr(false) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (k !== key || !j || !j.ok) return;
+        items = append ? items.concat(j.items || []) : (j.items || []);
+        total = j.total || 0; more = !!j.more;
+        renderComments();
+      }).catch(function () {});
+  }
+  function post() {
+    var inp = $("ppCmtInput"); if (!inp || posting) return;
+    if (!tok()) return note("Sign in to comment");
+    var t = inp.value.trim(); if (!t) return;
+    posting = true; var k = key;
+    fetch(API_ + "/studio/comment", { method: "POST", headers: hdr(true), body: JSON.stringify({ key: k, text: t }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        posting = false;
+        if (j && j.ok && j.item) {
+          if (k === key) { items.unshift(j.item); total++; renderComments(); }
+          inp.value = "";
+        } else note((j && j.error) || "Could not post comment");
+      }).catch(function () { posting = false; note("Network error"); });
+  }
+  function del(id) {
+    if (!id) return;
+    var k = key;
+    fetch(API_ + "/studio/comment/delete", { method: "POST", headers: hdr(true), body: JSON.stringify({ id: id }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok && k === key) {
+          items = items.filter(function (x) { return x.id !== id; });
+          total = Math.max(0, total - 1); renderComments();
+        }
+      }).catch(function () {});
+  }
+
+  function sync() {
+    if (!ensure()) return;
+    var it = (typeof currentInfoItem !== "undefined") ? currentInfoItem : null;
+    var m = $("infoModal");
+    var open = !!(m && m.classList.contains("active"));
+    if (!open) { key = ""; return; }
+    if (!it) return;
+    var k = String(it.catalogKey || it.catalog_key || it.id || "");
+    if (!k || k === key) return;
+    key = k; creator = null; items = []; total = 0; more = false;
+    renderCreator(); renderComments();
+    fetchCreator(k); loadComments(false);
+  }
+  var tm;
+  function kick() { clearTimeout(tm); tm = setTimeout(sync, 120); }
+  function init() {
+    var m = $("infoModal"), t = $("infoTitle");
+    if (!m || !t || !$("ppTabs")) return setTimeout(init, 500);
+    try { new MutationObserver(kick).observe(m, { attributes: true, attributeFilter: ["class"] }); } catch (e) {}
+    try { new MutationObserver(kick).observe(t, { childList: true, subtree: true, characterData: true }); } catch (e) {}
+    setInterval(sync, 1200);
+    sync();
+  }
+  init();
+})();
+</script>
 </body>
 </html>
