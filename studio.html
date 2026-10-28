@@ -378,6 +378,11 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .rvw{background:rgba(255,255,255,.05);border-radius:14px;padding:14px;margin-bottom:14px}
 .rvw .inf{background:none;padding:0;margin-top:12px}
 .tr[data-act=view]{cursor:pointer}
+/* studio-v25 */
+.sh{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.sh span{font:700 20px system-ui,sans-serif}
+.bkb{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.08);display:grid;place-items:center;padding:0;cursor:pointer}
+.bkb svg{width:22px;height:22px;fill:#fff}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -1088,11 +1093,28 @@ function slotInner(slot){
 }
 function paint(slot){var b=$('lu_'+slot);if(b)b.innerHTML=slotInner(slot)}
 function slotHTML(slot,label,hint){return '<div class="fld"><label>'+label+'</label><div class="upl" id="lu_'+slot+'">'+slotInner(slot)+'</div><div class="uph">'+hint+'</div></div>'}
-function start(slot,file){
-  if(slot==='video'&&!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
-  if(file.size>(slot==='video'?3221225472:5242880))return toast(slot==='video'?'Video must be 3 GB or smaller':'Poster must be 5 MB or smaller');
-  var st=L.up[slot]={name:file.name,pct:0,busy:true,preview:slot==='poster'?URL.createObjectURL(file):null};
-  paint(slot);
+function shrink(file){
+  return new Promise(function(res,rej){
+    function done(img,w,h){
+      var k=Math.min(1,1000/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+      var c=document.createElement('canvas');c.width=cw;c.height=ch;
+      c.getContext('2d').drawImage(img,0,0,cw,ch);
+      var qs=[0.86,0.78,0.7],i=0;
+      (function tryQ(){
+        c.toBlob(function(b){
+          if(!b)return rej(new Error('image'));
+          if(b.type!=='image/webp'){c.toBlob(function(j){j?res({blob:j,ext:'jpg'}):rej(new Error('image'))},'image/jpeg',0.82);return}
+          if(b.size>250*1024&&i<qs.length-1){i++;tryQ();return}
+          res({blob:b,ext:'webp'});
+        },'image/webp',qs[i]);
+      })();
+    }
+    function viaImg(){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){done(im,im.naturalWidth,im.naturalHeight);URL.revokeObjectURL(u)};im.onerror=function(){rej(new Error('image'))};im.src=u}
+    if(window.createImageBitmap){createImageBitmap(file,{imageOrientation:'from-image'}).then(function(bm){done(bm,bm.width,bm.height)}).catch(viaImg)}else viaImg();
+  });
+}
+function run(slot,file,st,preview){
+  st.preview=preview||null;
   upFile(slot,file,st).then(function(k){st.key=k;st.busy=false;st.pct=100;paint(slot)}).catch(function(e){
     st.busy=false;
     if(st.uploadId&&!st.key)api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:st.pendKey,uploadId:st.uploadId})}).catch(function(){});
@@ -1100,6 +1122,21 @@ function start(slot,file){
     L.up[slot]=st.cancel?null:{err:e.message||'Upload failed'};
     paint(slot);
   });
+}
+function start(slot,file){
+  if(slot==='video'){
+    if(!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
+    if(file.size>3221225472)return toast('Video must be 3 GB or smaller');
+    var sv=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
+    return run(slot,file,sv,null);
+  }
+  if(file.size>60*1024*1024)return toast('That image is too large. Please pick a smaller one.');
+  var st=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
+  shrink(file).then(function(r){
+    if(st.cancel){L.up[slot]=null;paint(slot);return}
+    var f=new File([r.blob],'poster.'+r.ext,{type:r.blob.type});
+    run(slot,f,st,URL.createObjectURL(r.blob));
+  }).catch(function(){L.up[slot]={err:'That image could not be used. Please try another one.'};paint(slot)});
 }
 function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;if(st.xhr)st.xhr.abort()}});L.up={}}
 
@@ -1181,23 +1218,21 @@ function tmdbBlock(movie){
   }
   return h;
 }
+function hdr(title,act){return '<div class="sh"><button type="button" class="bkb" aria-label="Back" data-act="'+act+'"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><span>'+title+'</span></div>'}
 function renderForm(){
   var movie=L.kind==='movie',f=L.f||{},n=movie?(L.step||1):1,tm=L.src==='tmdb';
   var hasTp=tm&&L.tmdb&&L.tmdb.poster;
-  var h='<div class="bk"><button type="button" class="pill" data-act="fback">&larr; '+(movie&&n>1?'Back':'Cancel')+'</button></div><h2>'+(movie?'Upload movie':'Create series')+'</h2>';
+  var h=hdr(movie?'Upload Movie':'Create Series','fback');
   if(movie)h+=stepsBar(n);else h+='<p class="sub">Create the series first, then add episodes.</p>';
   if(n===1){
     h+=tmdbBlock(movie);
+    if(!tm||(L.tmdb&&!L.tmdb.poster))h+=slotHTML('poster','Poster image (optional)','');
     h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
     h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
     h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
-    if(!movie){
-      if(!hasTp)h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
-      h+=RIGHTS;
-    }
+    if(!movie)h+=RIGHTS;
   }else if(n===2){
     h+=slotHTML('video','Movie file','MP4 only, up to 3 GB. Large files upload in parts.');
-    if(!hasTp)h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
   }else{
     var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
     h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+'</div></div>';
