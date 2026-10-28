@@ -393,6 +393,23 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .btn:not(.gold){border-color:var(--gold)!important}
 #toast,.toast{background:var(--gold)!important;color:#111!important}
 [data-act="flt"],.more,.more{border-radius:10px!important}
+/* studio-v29 */
+.ph{display:flex;gap:16px;align-items:center;margin:6px 0 20px}
+.pav{width:72px;height:72px;border-radius:50%;background:#1c1c1e;border:2px solid var(--gold);display:grid;place-items:center;flex:0 0 72px}
+.pav svg{width:36px;height:36px;fill:var(--mute)}
+.pn{font:700 24px system-ui,sans-serif;margin-bottom:6px}
+.pbd{display:inline-block;font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--gold);color:var(--gold)}
+.pbd.ok{background:var(--gold);color:#111}
+.ptabs{display:flex;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:18px}
+.ptabs button{flex:1;background:none;border:0;color:var(--mute);padding:12px 0;font:600 14px system-ui,sans-serif;border-bottom:2px solid transparent;cursor:pointer}
+.ptabs button.on{color:var(--text);border-bottom-color:var(--gold)}
+.qcard{background:rgba(255,255,255,.05);border-radius:14px;padding:16px;margin-bottom:16px}
+.qcard h3{font:700 16px system-ui,sans-serif;margin:0 0 14px}
+.qb{margin-bottom:14px}
+.ql{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.ql span{color:var(--mute)}
+.qt{height:8px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.qt i{display:block;height:100%;background:var(--gold)}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -465,10 +482,11 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 </div></div>
 
 <div class="view" id="v-apps"><div class="wrap page">
-  <h2>My applications</h2>
-  <p class="sub">Track the status of your partnership applications.</p>
-  <div id="appsList"></div>
-  <div id="subsList"></div>
+  <div id="profHead"></div>
+  <div class="ptabs"><button type="button" class="on" data-pt="lib">Library</button><button type="button" data-pt="apps">Applications</button><button type="button" data-pt="about">About</button></div>
+  <div id="pt-lib"></div>
+  <div id="pt-apps" style="display:none"><h2>My applications</h2><p class="sub">Track the status of your partnership applications.</p><div id="appsList"></div><div id="subsList"></div></div>
+  <div id="pt-about" style="display:none"></div>
 </div></div>
 
 <div class="view" id="v-submit"><div class="wrap page" id="submitRoot"></div></div>
@@ -483,7 +501,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <nav class="bnav" id="bnav">
 <button data-nav="home" class="on" onclick="show('v-home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</button>
 <button data-nav="lib" onclick="openLib()"><svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>Library</button>
-<button data-nav="acct" onclick="openApps()"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Account</button>
+<button data-nav="acct" onclick="openApps();ptab('lib')"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Account</button>
 </nav>
 <div id="toast"></div>
 
@@ -516,7 +534,7 @@ function openApps(){
     if(!items.length){box.innerHTML='<p class="sub">No applications yet.</p><button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>';return}
     box.innerHTML=items.map(function(a){
       var t=(a.types||[]).map(function(x){return TYPES[x]||x}).join(' · ');
-      var d=a.created_at?new Date(a.created_at).toLocaleDateString():'';
+      var d=fmtD(a.created_at||a.createdAt||a.submitted_at);
       return '<div class="app"><div class="row"><h3>'+esc(t)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+'</div>';
     }).join('');
   }).catch(function(){box.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
@@ -882,7 +900,7 @@ function loadSubs(){
     var items=(res.body&&res.body.items)||[];
     if(!items.length)return;
     box.innerHTML='<h2 style="margin-top:34px">My submissions</h2><p class="sub">Content and projects you’ve shared with us.</p>'+items.map(function(a){
-      var d=a.created_at?new Date(a.created_at.replace(' ','T')).toLocaleDateString():'';
+      var d=fmtD(a.created_at||a.createdAt||a.submitted_at);
       return '<div class="app"><div class="row"><h3>'+esc(a.title)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">'+esc(KIND_LABEL[a.kind]||a.kind)+' · Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+'</div>';
     }).join('');
   }).catch(function(){});
@@ -1024,7 +1042,7 @@ loadSubs=function(){
     var h='';
     if(subs.length){
       h+='<h2 style="margin-top:34px">My submissions</h2><p class="sub">Content and projects you’ve shared with us.</p>'+subs.map(function(a){
-        var d=a.created_at?new Date(a.created_at.replace(' ','T')).toLocaleDateString():'';
+        var d=fmtD(a.created_at||a.createdAt||a.submitted_at);
         var b=(a.status==='approved'&&!busy[String(a.id)])?'<button class="btn gold" style="margin-top:12px;padding:9px 16px;font-size:13px" data-camp="1" data-sid="'+esc(a.id)+'" data-kind="'+esc(a.kind)+'" data-title="'+escA(a.title)+'">Create a campaign</button>':'';
         return '<div class="app"><div class="row"><h3>'+esc(a.title)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">'+esc(KIND_LABEL[a.kind]||a.kind)+' · Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+b+'</div>';
       }).join('');
@@ -1378,6 +1396,51 @@ rt.addEventListener('change',function(ev){
   var el=ev.target;if(!el.dataset||!el.dataset.up)return;
   var f=el.files&&el.files[0];el.value='';if(f)start(el.dataset.up,f);
 });
+})();
+</script>
+<script>
+function fmtD(v){
+  if(v==null||v==='')return '';
+  var d,t=String(v).trim();
+  if(typeof v==='number'||/^\d+$/.test(t)){var n=+t;d=new Date(n<1e12?n*1000:n)}
+  else{
+    d=new Date(t.replace(' ','T'));
+    if(isNaN(d)){var m=t.match(/(\d{4})-(\d{2})-(\d{2})/);d=m?new Date(+m[1],+m[2]-1,+m[3]):new Date(t)}
+  }
+  return isNaN(d)?'':d.toLocaleDateString();
+}
+(function(){
+  function E(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  window.ptab=function(k){
+    ['lib','apps','about'].forEach(function(x){var e=document.getElementById('pt-'+x);if(e)e.style.display=x===k?'':'none'});
+    var bs=document.querySelectorAll('.ptabs button');
+    for(var i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].getAttribute('data-pt')===k);
+  };
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.ptabs button');if(b)ptab(b.getAttribute('data-pt'))});
+  function lim(o,re){for(var k in o){if(re.test(k)&&!/used|count|episode/i.test(k)&&typeof o[k]==='number')return o[k]}return null}
+  function titlesOf(d){for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&v[0]&&v[0].kind)return v}return d.titles||d.items||[]}
+  function bar(label,used,max){
+    var p=max?Math.min(100,Math.round(used/max*100)):0;
+    return '<div class="qb"><div class="ql"><span>'+label+'</span><b>'+used+(max?' of '+max:'')+' used</b></div>'+(max?'<div class="qt"><i style="width:'+p+'%"></i></div>':'')+'</div>';
+  }
+  var AV='<div class="pav"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>';
+  window.renderProfile=function(){
+    var h=document.getElementById('profHead'),l=document.getElementById('pt-lib'),ab=document.getElementById('pt-about');
+    if(!h||!l||!ab||!token)return;
+    h.innerHTML='<div class="ph">'+AV+'<div><div class="pn">Creator</div><span class="pbd">Creator</span></div></div>';
+    l.innerHTML='<p class="sub">Loading…</p>';
+    Promise.all([api('/studio/library'),api('/studio/my')]).then(function(r){
+      if(isAuthFail(r[0]))return gate();
+      var d=r[0].body||{},q=d.quota||{},ts=titlesOf(d),items=(r[1].body&&r[1].body.items)||[];
+      var mv=ts.filter(function(t){return t.kind==='movie'}).length,sr=ts.filter(function(t){return t.kind==='series'}).length;
+      var ok=items.some(function(a){return a.status==='approved'})||(d.tier&&d.tier!=='free');
+      h.innerHTML='<div class="ph">'+AV+'<div><div class="pn">Creator</div><span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span></div></div>';
+      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',mv,lim(q,/movie/i))+bar('Series',sr,lim(q,/series/i))+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
+      ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
+    }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
+  };
+  var _o2=openApps;
+  openApps=function(){_o2();if(token){renderProfile();ptab('apps')}};
 })();
 </script>
 </body>
