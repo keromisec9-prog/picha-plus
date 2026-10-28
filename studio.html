@@ -428,6 +428,12 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pfcp span{background:rgba(0,0,0,.55);padding:6px 12px;border-radius:8px}
 .pfed .pfa{margin:-42px 0 14px 4px}
 .pfed .fld textarea{min-height:90px}
+/* studio-v31 */
+.pfbt{display:flex;gap:8px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.pcd .pim{width:100%;aspect-ratio:2/3;border-radius:10px;object-fit:cover;background:#1c1409;display:block}
+.pcd .pt{font-size:13px;font-weight:600;margin-top:6px;line-height:1.3}
+.pcd .pk{font-size:11px;color:var(--mute)}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -515,6 +521,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 </main>
 
 
+<div class="view" id="v-creator"><div class="wrap page" id="pubRoot"></div></div>
 <div class="view" id="v-lib"><div class="wrap page" id="libRoot"></div></div>
 <nav class="bnav" id="bnav">
 <button data-nav="home" class="on" onclick="show('v-home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</button>
@@ -1491,7 +1498,7 @@ function fmtD(v){
   function headHTML(p,ok){
     var cov='<div class="pfc"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'></div>';
     var av=p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS;
-    return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'</div><button type="button" class="btn gold pfe" onclick="profEdit()">Edit profile</button></div>'
+    return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'</div><div class="pfbt">'+(p.username?'<button type="button" class="btn pfe" data-pub="'+E(p.username)+'">Public view</button>':'')+'<button type="button" class="btn gold pfe" onclick="profEdit()">Edit profile</button></div></div>'
       +'<div class="pfn">'+E(p.displayName||'Creator')+'</div>'
       +(p.username?'<div class="pfu">@'+E(p.username)+'</div>':'')
       +'<span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span>'
@@ -1578,6 +1585,57 @@ function fmtD(v){
       profEditClose();renderProfile();
     }).catch(function(e){if(e&&e.message==='auth'){PF.busy=false;return gate()}fail(e&&e.message)});
   };
+})();
+</script>
+<script>
+(function(){
+  function E(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  var BK='<svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>';
+  var AVS='<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+  var from='';
+  function root(h){document.getElementById('pubRoot').innerHTML=h}
+  function head(){return '<div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="pubBack()">'+BK+'</button></div>'}
+  function render(u){
+    show('v-creator');window.scrollTo(0,0);
+    root(head()+'<p class="sub">Loading…</p>');
+    fetch(API+'/studio/creator/'+encodeURIComponent(u)).then(function(r){return r.json()}).then(function(b){
+      if(!b||!b.ok)return root(head()+'<h2>Creator not found</h2><p class="sub">This profile does not exist or the link is wrong.</p>');
+      var c=b.creator,t=c.titles||[];
+      var h=head()+'<div class="pf"><div class="pfc"'+(c.coverUrl?' style="background-image:url(\''+E(c.coverUrl)+'\')"':'')+'></div>'
+        +'<div class="pfr"><div class="pfa">'+(c.avatarUrl?'<img src="'+E(c.avatarUrl)+'" alt="">':AVS)+'</div></div>'
+        +'<div class="pfn">'+E(c.displayName||('@'+c.username))+'</div>'
+        +'<div class="pfu">@'+E(c.username)+'</div>'
+        +'<span class="pbd'+(c.verified?' ok':'')+'">'+(c.verified?'Verified partner':'Creator')+'</span>'
+        +(c.bio?'<p class="pfb">'+E(c.bio)+'</p>':'')
+        +(c.location?'<div class="pfl">'+E(c.location)+'</div>':'')+'</div>';
+      h+='<h3 class="dsec">Titles</h3>';
+      if(!t.length)h+='<p class="sub">No published titles yet.</p>';
+      else h+='<div class="pgrid">'+t.map(function(x){
+        return '<div class="pcd">'+(x.posterUrl?'<img class="pim" src="'+E(x.posterUrl)+'" alt="">':'<div class="pim"></div>')+'<div class="pt">'+E(x.title)+'</div><div class="pk">'+(x.kind==='series'?'Series':'Movie')+'</div></div>';
+      }).join('')+'</div>';
+      root(h);
+    }).catch(function(){root(head()+'<p class="sub">Could not load. Check your connection and try again.</p>')});
+  }
+  window.pubOpen=function(u,f){
+    from=f||'';
+    if(location.hash==='#@'+u)render(u);else location.hash='@'+u;
+  };
+  window.pubBack=function(){
+    var f=from;from='';
+    if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+    if(f==='me'&&token)openApps();else show('v-home');
+    window.scrollTo(0,0);
+  };
+  function fromHash(){
+    var m=/^#@([A-Za-z0-9_]{3,20})$/.exec(location.hash);
+    if(m)render(m[1].toLowerCase());
+  }
+  window.addEventListener('hashchange',fromHash);
+  document.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest('[data-pub]');
+    if(b)pubOpen(b.getAttribute('data-pub'),'me');
+  });
+  fromHash();
 })();
 </script>
 </body>
