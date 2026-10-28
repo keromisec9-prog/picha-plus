@@ -391,7 +391,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
   <a class="logo" onclick="show('v-home')"><img class="lg-mp" src="assets/studio/logo-mp.webp" alt="MP" width="118" height="90"><img class="lg-st" src="assets/studio/logo-studio.webp" alt="Studio" width="151" height="56"></a>
   <span style="display:flex;gap:8px">
     <button class="pill" id="myBtn" onclick="openApps()" style="display:none">My applications</button>
-    <a class="pill" href="./">← MyPicha+</a>
+    <a class="bkb" aria-label="Back to MyPicha+" href="./" style="text-decoration:none"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></a>
   </span>
 </div></header>
 
@@ -423,7 +423,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 
 <div class="view" id="v-how">
 <div class="hero how-hero"><div class="hero-bg" id="howBg"></div><div class="wrap">
-  <a class="how-back" onclick="show('v-home');window.scrollTo(0,0)">&larr; Back</a>
+  <div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="show('v-home');window.scrollTo(0,0)"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>
   <h1>How MyPicha+ <span>Studio</span> works</h1>
   <p>Turn your ideas into great content. We connect filmmakers, VJs, creators and production companies with real opportunities.</p>
   <button class="hero-more" aria-label="Read more" onclick="this.closest('.hero').classList.toggle('open')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -598,7 +598,7 @@ function render(){
     return;
   }
   var last=P.step===4;
-  root.innerHTML='<div class="eyebrow">PARTNERSHIP APPLICATION · STEP '+(P.step+1)+' OF 5</div><div class="bar"><i style="width:'+((P.step+1)*20)+'%"></i></div>'+STEPS[P.step]()+
+  root.innerHTML='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><div class="eyebrow">PARTNERSHIP APPLICATION · STEP '+(P.step+1)+' OF 5</div><div class="bar"><i style="width:'+((P.step+1)*20)+'%"></i></div>'+STEPS[P.step]()+
     '<div class="nav"><button class="btn" data-act="back">'+(P.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="nextBtn" data-act="'+(last?'submit':'next')+'">'+(last?'Submit application':'Continue →')+'</button></div>';
 }
 function validate(s){
@@ -1178,7 +1178,7 @@ function renderList(){
 }
 function renderPick(){
   var q=L.data.quota,free=L.data.tier==='free';
-  R('<div class="bk"><button type="button" class="pill" data-act="back">&larr; Back</button></div><h2 style="margin-bottom:6px">What would you like to upload?</h2><p class="sub">Choose the type of content you want to add to your MyPicha+ library.</p>'
+  R('<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><h2 style="margin-bottom:6px">What would you like to upload?</h2><p class="sub">Choose the type of content you want to add to your MyPicha+ library.</p>'
    +'<div class="pc" data-act="choose" data-kind="movie" style="--bg:url(assets/studio/hero2.webp)"><div class="pcb"><h3>Upload a movie</h3><p>Add a full-length film, poster and details.</p></div><span class="go">&rarr;</span></div>'
    +'<div class="pc" data-act="choose" data-kind="series" style="--bg:url(assets/studio/hero6.webp)"><div class="pcb"><h3>Create a series</h3><p>Set up a series and add episodes over time.</p></div><span class="go">&rarr;</span></div>'
    +'<div class="allow"><h3>Your free publishing allowance</h3><ul><li>'+q.movies.max+' full movies ('+q.movies.used+' used)</li><li>'+q.series.max+' series, up to '+q.episodesPerSeries+' episodes each ('+q.series.used+' used)</li></ul>'
@@ -1186,7 +1186,7 @@ function renderPick(){
 }
 function renderUpsell(kind){
   setMode('pick');
-  R('<div class="eyebrow">LIMIT REACHED</div><h2>You have used your free '+(kind==='movie'?'movies':kind==='series'?'series':'episodes')+'</h2><div class="upsell"><h3>Unlock a longer catalogue</h3><p>Verified creators and partners can upload many more titles. Apply and our team will review it.</p><button class="btn gold" data-act="partner">Become a verified partner &rarr;</button></div><div class="nav"><button class="btn" data-act="back">Back to library</button></div>');
+  R('<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><div class="eyebrow">LIMIT REACHED</div><h2>You have used your free '+(kind==='movie'?'movies':kind==='series'?'series':'episodes')+'</h2><div class="upsell"><h3>Unlock a longer catalogue</h3><p>Verified creators and partners can upload many more titles. Apply and our team will review it.</p><button class="btn gold" data-act="partner">Become a verified partner &rarr;</button></div><div class="nav"><button class="btn" data-act="back">Back to library</button></div>');
 }
 var RIGHTS='<label class="chk"><input type="checkbox" id="lf_rights"><span>I confirm that I own or have permission to share this content, and that the information provided is accurate.</span></label><p class="note">Uploads are reviewed before they go live.</p>';
 var TMK='3ba29e8934b640ae467a31241cd2f0fd';
@@ -1247,7 +1247,7 @@ function renderDetail(){
   var t=findT(L.did);
   if(!t){openLib();return}
   var isS=t.kind==='series',s=ST[t.status]||[t.status,''],q=L.data.quota,eps=t.episodes||[];
-  var h='<div class="bk"><button type="button" class="pill" data-act="back">&larr; Library</button></div>';
+  var h='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>';
   h+='<div class="dh">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><h2 style="font-size:22px;margin:0 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
