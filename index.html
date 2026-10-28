@@ -13301,9 +13301,10 @@ function _serHeroPolish(s) {
     var cols = [];
     if (a) cols.push([P.head, "Audio", a]);
     if (b) cols.push([P.chat, "Dub", b]);
-    if (vj) cols.push([P.mic, "Voice", vj]);
+    var solo = !cols.length && !vj;
+    if (vj) cols.push([P.mic, "Voice", vj]); else cols.push([P.mic, "Voice", solo ? "No VJ named for this upload" : "No VJ named"]);
     if (a) cols.push([P.globe, "Subtitles", a]);
-    bar.style.display = cols.length ? "flex" : "none";
+    bar.style.display = "flex"; bar.classList.toggle("pp-solo", cols.length === 1);
     bar.innerHTML = cols.map(function (c) {
       return '<div class="pp-col">' + svg(c[0], 24) + "<div><small>" + c[1] + "</small><b>" + esc(c[2]) + "</b></div></div>";
     }).join("");
@@ -13957,6 +13958,8 @@ async function submitForceReset() {
 #ppEmoRow{display:flex;gap:.15rem;overflow-x:auto;margin:-.4rem 0 .9rem;scrollbar-width:none;}
 #ppEmoRow::-webkit-scrollbar{display:none;}
 #ppEmoRow button{flex:none;background:none;border:none;font-size:1.25rem;line-height:1;padding:.2rem .45rem;cursor:pointer;}
+#ppBar.pp-solo .pp-col{flex:1 1 100%!important;max-width:none!important;width:100%!important;}
+#ppBar.pp-solo .pp-col b{font-size:.88rem;font-weight:500;color:#aaa;}
 </style>
 <script id="ppCreatorJs">
 (function () {
@@ -14026,7 +14029,7 @@ async function submitForceReset() {
     var fb = creator.isSelf ? "" : '<button type="button" id="ppFollowBtn" class="pp-fb' + (creator.following ? " on" : "") + '">' + (creator.following ? IC_CHK : IC_ADD) + "</button>";
     var n = creator.followers || 0;
     c.className = "on";
-    c.innerHTML = '<div class="pp-av"' + st + ">" + ini + fb + '</div><div class="pp-cn">' + esc(nm) + '</div><div class="pp-cf">' + n + (n === 1 ? " follower" : " followers") + "</div>";
+    c.innerHTML = '<div class="pp-av"' + st + ">" + ini + fb + '</div><div class="pp-cn">' + esc(nm) + '</div>';
   }
 
   function toggleFollow() {
@@ -14112,12 +14115,20 @@ async function submitForceReset() {
       }).catch(function () {});
   }
 
+  function fixBar() {
+    var b = $("ppBar"); if (!b) return;
+    if (b.style.display === "none" || !b.innerHTML.trim()) {
+      b.style.display = "flex"; b.classList.add("pp-solo");
+      b.innerHTML = '<div class="pp-col"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg><div><small>Voice</small><b>No VJ named for this upload</b></div></div>';
+    }
+  }
   function sync() {
     if (!ensure()) return;
     var it = (typeof currentInfoItem !== "undefined") ? currentInfoItem : null;
     var m = $("infoModal");
     var open = !!(m && m.classList.contains("active"));
     if (!open) { key = ""; return; }
+    fixBar();
     if (!it) return;
     var k = String(it.catalogKey || it.catalog_key || it.id || "");
     if (!k || k === key) return;
