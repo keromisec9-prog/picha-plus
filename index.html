@@ -13951,6 +13951,12 @@ async function submitForceReset() {
 .pp-cn{max-width:100px!important;}
 .pp-fb svg{display:block;}
 .pp-cmd svg{display:block;}
+#ppCmtSend{width:38px;height:38px;flex:none;padding:0!important;border-radius:50%!important;background:#fff!important;color:#111!important;display:flex;align-items:center;justify-content:center;align-self:center;transition:opacity .15s;}
+#ppCmtInput:placeholder-shown + #ppCmtSend{opacity:.35;}
+#ppCmtSend:disabled{opacity:.35!important;}
+#ppEmoRow{display:flex;gap:.15rem;overflow-x:auto;margin:-.4rem 0 .9rem;scrollbar-width:none;}
+#ppEmoRow::-webkit-scrollbar{display:none;}
+#ppEmoRow button{flex:none;background:none;border:none;font-size:1.25rem;line-height:1;padding:.2rem .45rem;cursor:pointer;}
 </style>
 <script id="ppCreatorJs">
 (function () {
@@ -13994,13 +14000,15 @@ async function submitForceReset() {
     if (!$("ppComments")) {
       var c = document.createElement("div"); c.id = "ppComments";
       c.innerHTML = '<div class="pp-ch">Comments<span id="ppCmtCount">0</span></div>' +
-        '<div class="pp-cin" id="ppCmtForm"><input id="ppCmtInput" maxlength="500" autocomplete="off"><button type="button" id="ppCmtSend">Post</button></div>' +
-        '<div id="ppCmtList"></div><button type="button" class="pp-cmore" id="ppCmtMore" style="display:none">Load more</button>';
+        '<div class="pp-cin" id="ppCmtForm"><input id="ppCmtInput" maxlength="500" autocomplete="off"><button type="button" id="ppCmtSend" aria-label="Post"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>' +
+        '<div id="ppEmoRow"><button type="button" data-emo="&#x1F602;">&#x1F602;</button><button type="button" data-emo="&#x2764;&#xFE0F;">&#x2764;&#xFE0F;</button><button type="button" data-emo="&#x1F525;">&#x1F525;</button><button type="button" data-emo="&#x1F60D;">&#x1F60D;</button><button type="button" data-emo="&#x1F44F;">&#x1F44F;</button><button type="button" data-emo="&#x1F62D;">&#x1F62D;</button><button type="button" data-emo="&#x1F64C;">&#x1F64C;</button><button type="button" data-emo="&#x1F4AF;">&#x1F4AF;</button></div><div id="ppCmtList"></div><button type="button" class="pp-cmore" id="ppCmtMore" style="display:none">Load more</button>';
       body.appendChild(c);
       c.addEventListener("click", function (e) {
         var t = e.target;
         if (t.closest("#ppCmtSend")) return post();
         if (t.closest("#ppCmtMore")) return loadComments(true);
+        var em = t.closest("[data-emo]");
+        if (em) return insertEmo(em.getAttribute("data-emo"));
         var d = t.closest("[data-del]");
         if (d) return del(d.getAttribute("data-del"));
       });
@@ -14012,7 +14020,7 @@ async function submitForceReset() {
   function renderCreator() {
     var c = $("ppCreator"); if (!c) return;
     if (!creator) { c.className = ""; c.innerHTML = ""; return; }
-    var nm = creator.displayName || ("@" + creator.username);
+    var nm = "@" + creator.username;
     var st = creator.avatarUrl ? ' style="background-image:url(\'' + esc(creator.avatarUrl) + '\')"' : "";
     var ini = creator.avatarUrl ? "" : esc((creator.username || "?").charAt(0).toUpperCase());
     var fb = creator.isSelf ? "" : '<button type="button" id="ppFollowBtn" class="pp-fb' + (creator.following ? " on" : "") + '">' + (creator.following ? IC_CHK : IC_ADD) + "</button>";
@@ -14068,6 +14076,13 @@ async function submitForceReset() {
         total = j.total || 0; more = !!j.more;
         renderComments();
       }).catch(function () {});
+  }
+  function insertEmo(x) {
+    var i = $("ppCmtInput"); if (!i || i.disabled) return;
+    var a = i.selectionStart == null ? i.value.length : i.selectionStart, b = i.selectionEnd == null ? a : i.selectionEnd;
+    if (i.value.length - (b - a) + x.length > 500) return;
+    i.value = i.value.slice(0, a) + x + i.value.slice(b);
+    var q = a + x.length; try { i.setSelectionRange(q, q); } catch (e) {}
   }
   function post() {
     var inp = $("ppCmtInput"); if (!inp || posting) return;
