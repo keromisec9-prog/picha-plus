@@ -124,7 +124,6 @@ background:linear-gradient(180deg,transparent 30%,var(--card)),var(--img),#1c140
 .card .more{display:block;font-size:10px;margin:0 8px 10px}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .steps>div{position:relative}
-.steps>div:not(:last-child)::after{content:"\2192";position:absolute;right:4px;top:6px;color:var(--mute);font-size:12px}
 .n{width:30px;height:30px;font-size:11px;margin-bottom:6px}
 .steps h3{font-size:12px;margin-bottom:2px}
 .steps p{font-size:9.5px;line-height:1.35}
@@ -251,8 +250,7 @@ transform:translateZ(0);will-change:transform;backface-visibility:hidden;-webkit
 .how-proc h2 span{color:var(--gold)}
 .how-proc .steps{gap:12px}
 .how-proc .steps>div{position:relative;background:rgba(255,255,255,.05);border-radius:12px;padding:10px 8px 12px}
-.how-proc .steps>div:not(:last-child)::after{right:-11px;top:22px}
-.sic{width:30px;height:30px;border-radius:50%;background:rgba(240,180,41,.14);color:var(--gold);display:grid;place-items:center;margin-bottom:6px}
+.how-proc .sic{width:30px;height:30px;border-radius:50%;background:rgba(240,180,41,.14);color:var(--gold);display:grid;place-items:center;margin-bottom:6px}
 .sic svg{width:16px;height:16px;display:block}
 .sn{font-size:9px;color:var(--gold);margin-bottom:2px}
 .how-proc .steps h3{font-size:11.5px}
@@ -438,7 +436,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
     <div class="eyebrow">OPPORTUNITY AWAITS</div>
     <h2>Your next opportunity starts here.</h2>
     <p class="sub">Whether you are a filmmaker, VJ, creator or production company, MyPicha+ Studio helps you get discovered and grow.</p>
-    <button class="btn gold" onclick="go('partner')">Get started &rarr;</button>
+    <button class="btn gold" onclick="go('partner')">Get started</button>
   </div>
   <p class="note">Submitting an application does not guarantee acceptance, distribution or payment.</p>
 </div></section>
