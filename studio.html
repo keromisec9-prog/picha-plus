@@ -436,6 +436,9 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pf .pfa{width:96px;height:96px;flex:0 0 96px;overflow:visible;}
 .pf .pfa>img,.pf .pfa>svg:not(.pfcam svg){border-radius:50%;}
 .pf .pfa>img{width:100%;height:100%;}
+.pf .pfc{background-size:contain;background-repeat:no-repeat;background-position:center;height:190px;}
+.page:has(#profHead){padding-top:0!important;}
+@media(min-width:720px){.page:has(#profHead){padding-top:0!important;}}
 .pfcam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#2a2a2c;border:2px solid #111;color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer;}
 .pfcam svg{width:16px;height:16px;fill:currentColor;display:block;}
 
