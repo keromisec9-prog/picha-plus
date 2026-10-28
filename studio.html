@@ -327,6 +327,35 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .tsb .btn{padding:10px 16px;font-size:13px}
 .tsr{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;background:rgba(255,255,255,.05);margin-top:8px;cursor:pointer}
 .tsi{width:40px;height:58px;border-radius:6px;object-fit:cover;background:#1c1409;flex:0 0 40px;display:block}
+/* studio-v23 */
+.lh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.lh h2{margin:0}
+.btn.lab{padding:10px 16px;font-size:13px;white-space:nowrap}
+.cat{background:linear-gradient(135deg,#1c1710,#0f0e0c);border-radius:16px;padding:16px;margin-bottom:14px}
+.cl{font-size:10px;letter-spacing:2px;color:var(--mute)}
+.cn{font:700 24px Georgia,serif;margin:4px 0 12px}
+.ct{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ct>div{background:rgba(255,255,255,.05);border-radius:12px;padding:12px}
+.ct b{display:block;font-size:22px}
+.ct span{display:block;font-size:12px;color:var(--text)}
+.ct i{display:block;font-style:normal;font-size:11px;color:var(--mute);margin-top:2px}
+.chips{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto}
+.chip{flex:0 0 auto;background:rgba(255,255,255,.07);border:0;color:var(--mute);border-radius:18px;padding:8px 16px;font:600 13px system-ui,sans-serif;cursor:pointer}
+.chip.on{background:var(--gold);color:#111}
+.tk{font-size:10px;letter-spacing:1.5px;color:var(--mute);margin-bottom:2px}
+.dots{background:none;border:0;color:var(--mute);font-size:22px;line-height:1;padding:4px 8px;cursor:pointer;align-self:flex-start}
+.stt.rv{background:rgba(80,130,255,.2);color:#7ea6ff}
+.tth{width:56px;height:80px;flex:0 0 56px}
+.bk{margin-bottom:14px}
+.pc{position:relative;border-radius:16px;overflow:hidden;min-height:170px;margin-bottom:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:16px;cursor:pointer;background:linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.9)),var(--bg) center/cover no-repeat,#1c1409}
+.pcb h3{font-size:19px;margin-bottom:3px}
+.pcb p{font-size:13px;color:#d8d1c2}
+.go{flex:0 0 38px;height:38px;border-radius:50%;background:var(--gold);color:#111;display:grid;place-items:center;font-size:18px}
+.allow{background:rgba(255,255,255,.05);border-radius:14px;padding:16px;margin-top:6px}
+.allow h3{font-size:14px;margin-bottom:8px;font-family:system-ui,sans-serif}
+.allow ul{margin:0 0 12px 18px;font-size:13px;color:#d8d1c2;line-height:1.7}
+.allow p{font-size:12px;color:var(--mute);margin-bottom:4px}
+.allow a{color:var(--gold);font-size:13px;font-weight:700;cursor:pointer}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -417,7 +446,6 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <nav class="bnav" id="bnav">
 <button data-nav="home" class="on" onclick="show('v-home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</button>
 <button data-nav="lib" onclick="openLib()"><svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>Library</button>
-<button data-nav="add" class="plus" onclick="openAdd()"><span><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></span>Upload</button>
 <button data-nav="acct" onclick="openApps()"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Account</button>
 </nav>
 <div id="toast"></div>
@@ -975,7 +1003,7 @@ loadSubs=function(){
 </script>
 <script>
 (function(){
-var L={mode:'list',data:null,kind:'movie',tid:null,up:{},armed:null,tm:null,src:'tmdb',tmdb:null,f:{},res:[]};
+var L={mode:'list',data:null,kind:'movie',tid:null,up:{},armed:null,tm:null,src:'tmdb',tmdb:null,f:{},res:[],flt:'all',open:null};
 function $(i){return document.getElementById(i)}
 function R(h){$('libRoot').innerHTML=h}
 function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -983,7 +1011,7 @@ function busy(){return !!((L.up.video&&L.up.video.busy)||(L.up.poster&&L.up.post
 var _show=window.show;
 function nav(id){
   var k='home';
-  if(id==='v-lib')k=L.mode==='list'?'lib':'add';
+  if(id==='v-lib')k='lib';
   else if(id!=='v-home'&&id!=='v-how')k='acct';
   document.querySelectorAll('#bnav button').forEach(function(b){b.classList.toggle('on',b.dataset.nav===k)});
 }
@@ -1060,30 +1088,29 @@ function loadLib(cb){
     L.data=res.body;cb();
   }).catch(function(){R('<p class="sub">Connection problem. Try again.</p>')});
 }
-var ST={pending:['In review',''],approved:['Live','ok'],rejected:['Not approved','no']};
+var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action required','no']};
 function renderList(){
-  var d=L.data,q=d.quota;
-  var h='<div class="eyebrow">MY LIBRARY</div><h2>Your catalogue</h2>';
-  h+='<div class="qrow"><span>Movies '+q.movies.used+'/'+q.movies.max+'</span><span>Series '+q.series.used+'/'+q.series.max+'</span></div>';
-  if(!d.titles.length){
-    h+='<div class="lc"><h3>Nothing here yet</h3><div class="t" style="margin-bottom:14px">Upload your first movie or start a series. It is free.</div><button class="btn gold" data-act="openadd">Upload now &rarr;</button></div>';
+  var d=L.data,q=d.quota,n=d.titles.length;
+  var h='<div class="eyebrow">CREATOR WORKSPACE</div><div class="lh"><h2>My Library</h2><button type="button" class="btn gold lab" data-act="openadd">+ Add Content</button></div><p class="sub" style="margin-bottom:16px">Manage your films and series.</p>';
+  h+='<div class="cat"><div class="cl">YOUR CATALOGUE</div><div class="cn">'+n+' title'+(n===1?'':'s')+'</div><div class="ct"><div><b>'+q.movies.used+'</b><span>Movies</span><i>of '+q.movies.max+' slots</i></div><div><b>'+q.series.used+'</b><span>Series</span><i>of '+q.series.max+' slots</i></div></div></div>';
+  h+='<div class="chips">'+[['all','All content'],['movie','Movies'],['series','Series']].map(function(c){return '<button type="button" class="chip'+(L.flt===c[0]?' on':'')+'" data-act="flt" data-v="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>';
+  var list=d.titles.filter(function(t){return L.flt==='all'||t.kind===L.flt});
+  if(!list.length){
+    h+='<div class="lc"><h3>Your next release starts here</h3><div class="t" style="margin-bottom:14px">Add a movie or create a series to begin building your catalogue.</div><button class="btn gold" data-act="openadd">Upload your first title &rarr;</button></div>';
   }
-  d.titles.forEach(function(t){
-    var s=ST[t.status]||[t.status,''];
-    h+='<div class="tc"><div class="tr">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(t.title)+'</div><div class="tm">'+(t.kind==='series'?'Series':'Movie')+(t.genre?' &middot; '+esc(t.genre):'')+'</div><span class="stt '+s[1]+'">'+s[0]+'</span>';
-    if(t.status==='rejected'&&t.staffNote)h+='<div class="tm" style="margin-top:6px">'+esc(t.staffNote)+'</div>';
-    h+='</div></div>';
-    if(t.kind==='series'){
-      if(t.episodes.length){
+  list.forEach(function(t){
+    var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
+    h+='<div class="tc"><div class="tr">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><span class="stt '+s[1]+'">'+s[0]+'</span><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
+    if(open){
+      if(t.status==='rejected'&&t.staffNote)h+='<div class="tm" style="margin-top:8px">'+esc(t.staffNote)+'</div>';
+      if(isS&&t.episodes.length){
         h+='<div class="eps">';
         t.episodes.forEach(function(e){
           h+='<div class="ep"><span>S'+e.season+' &middot; E'+e.number+(e.name?' &middot; '+esc(e.name):'')+'</span><button class="pill dng" data-act="del" data-type="episode" data-id="'+e.id+'">'+(L.armed==='episode'+e.id?'Tap again to confirm':'Delete')+'</button></div>';
         });
         h+='</div>';
       }
-      h+='<div class="acts"><button class="pill" data-act="addep" data-id="'+t.id+'">+ Add episode</button><button class="pill dng" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':'Delete series')+'</button></div>';
-    }else{
-      h+='<div class="acts"><button class="pill dng" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':'Delete')+'</button></div>';
+      h+='<div class="acts">'+(isS?'<button class="pill" data-act="addep" data-id="'+t.id+'">+ Add episode</button>':'')+'<button class="pill dng" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':(isS?'Delete series':'Delete'))+'</button></div>';
     }
     h+='</div>';
   });
@@ -1091,10 +1118,12 @@ function renderList(){
   R(h);
 }
 function renderPick(){
-  var q=L.data.quota;
-  R('<div class="eyebrow">UPLOAD</div><h2>What would you like to add?</h2><p class="sub">Free to upload. Everything is reviewed before it goes live.</p>'
-   +'<div class="lc pk" data-act="choose" data-kind="movie"><h3>Upload a movie</h3><div class="t">A full movie &middot; '+q.movies.used+' of '+q.movies.max+' used</div></div>'
-   +'<div class="lc pk" data-act="choose" data-kind="series"><h3>Add a series</h3><div class="t">Add episodes any time &middot; '+q.series.used+' of '+q.series.max+' used</div></div>');
+  var q=L.data.quota,free=L.data.tier==='free';
+  R('<div class="bk"><button type="button" class="pill" data-act="back">&larr; Back</button></div><h2 style="margin-bottom:6px">What would you like to upload?</h2><p class="sub">Choose the type of content you want to add to your MyPicha+ library.</p>'
+   +'<div class="pc" data-act="choose" data-kind="movie" style="--bg:url(assets/studio/hero2.webp)"><div class="pcb"><h3>Upload a movie</h3><p>Add a full-length film, poster and details.</p></div><span class="go">&rarr;</span></div>'
+   +'<div class="pc" data-act="choose" data-kind="series" style="--bg:url(assets/studio/hero6.webp)"><div class="pcb"><h3>Create a series</h3><p>Set up a series and add episodes over time.</p></div><span class="go">&rarr;</span></div>'
+   +'<div class="allow"><h3>Your free publishing allowance</h3><ul><li>'+q.movies.max+' full movies ('+q.movies.used+' used)</li><li>'+q.series.max+' series, up to '+q.episodesPerSeries+' episodes each ('+q.series.used+' used)</li></ul>'
+   +(free?'<p>Need more uploads?</p><a data-act="partner">Become a verified partner &rarr;</a>':'')+'</div>');
 }
 function renderUpsell(kind){
   setMode('pick');
@@ -1217,6 +1246,8 @@ rt.addEventListener('click',function(ev){
   else if(a==='esubmit')submitEp();
   else if(a==='back')openLib();
   else if(a==='addep'){var t=findT(el.dataset.id);if(t){L.tid=t.id;L.up={};setMode('ep');renderEp(t);window.scrollTo(0,0)}}
+  else if(a==='flt'){L.flt=el.dataset.v;renderList()}
+  else if(a==='menu'){L.open=String(L.open)===el.dataset.id?null:el.dataset.id;renderList()}
   else if(a==='del')del(el);
   else if(a==='partner')go('partner');
   else if(a==='openadd')openAdd();
