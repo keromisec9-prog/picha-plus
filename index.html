@@ -13478,8 +13478,7 @@ function _serHeroPolish(s) {
   function go(t) {
     if (t === view) return;
     if (t === "details") { if (view !== "details") history.back(); return; }
-    if (view !== "details") return;
-    try { history.pushState({ ppview: t }, "", location.href); } catch (e) {}
+    try { history[view === "details" ? "pushState" : "replaceState"]({ ppview: t }, "", location.href); } catch (e) {}
     apply(t);
   }
   function openItem(it) {
