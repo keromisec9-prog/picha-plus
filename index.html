@@ -13302,7 +13302,7 @@ function _serHeroPolish(s) {
     if (a) cols.push([P.head, "Audio", a]);
     if (b) cols.push([P.chat, "Dub", b]);
     var solo = !cols.length && !vj;
-    if (vj) cols.push([P.mic, "Voice", vj]); else cols.push([P.mic, "Voice", solo ? "No VJ named for this upload" : "No VJ named"]);
+    if (vj) cols.push([P.mic, "Voice", vj]); else cols.push([P.mic, "Voice", solo ? "No details added" : "No details added"]);
     if (a) cols.push([P.globe, "Subtitles", a]);
     bar.style.display = "flex"; bar.classList.toggle("pp-solo", cols.length === 1);
     bar.innerHTML = cols.map(function (c) {
@@ -14119,7 +14119,7 @@ async function submitForceReset() {
     var b = $("ppBar"); if (!b) return;
     if (b.style.display === "none" || !b.innerHTML.trim()) {
       b.style.display = "flex"; b.classList.add("pp-solo");
-      b.innerHTML = '<div class="pp-col"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg><div><small>Voice</small><b>No VJ named for this upload</b></div></div>';
+      b.innerHTML = '<div class="pp-col"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg><div><small>Voice</small><b>No details added</b></div></div>';
     }
   }
   function sync() {
