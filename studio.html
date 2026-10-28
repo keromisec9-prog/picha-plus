@@ -410,6 +410,24 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .ql span{color:var(--mute)}
 .qt{height:8px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
 .qt i{display:block;height:100%;background:var(--gold)}
+/* studio-v30 */
+.pf{margin:0 0 18px}
+.pfc{height:130px;border-radius:14px;background:#1c1409 center/cover no-repeat;position:relative}
+.pfr{display:flex;justify-content:space-between;align-items:flex-end;padding:0 4px;margin-top:-42px;margin-bottom:10px}
+.pfa{width:84px;height:84px;border-radius:50%;border:3px solid var(--gold);background:#1c1c1e;overflow:hidden;display:grid;place-items:center;position:relative;flex:0 0 84px}
+.pfa img{width:100%;height:100%;object-fit:cover;display:block}
+.pfa svg{width:40px;height:40px;fill:var(--mute)}
+.pfe{padding:9px 16px!important;font-size:13px!important}
+.pfn{font:700 22px system-ui,sans-serif;margin-bottom:2px}
+.pfu{color:var(--mute);font-size:14px;margin-bottom:8px}
+.pfb{font-size:14px;line-height:1.5;margin:10px 0 6px;color:#d8d1c2}
+.pfl{font-size:13px;color:var(--mute)}
+.pfpick{cursor:pointer}
+.pfpick input{display:none}
+.pfcp{display:grid;place-items:center;color:#fff;font-size:13px}
+.pfcp span{background:rgba(0,0,0,.55);padding:6px 12px;border-radius:8px}
+.pfed .pfa{margin:-42px 0 14px 4px}
+.pfed .fld textarea{min-height:90px}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -1441,6 +1459,125 @@ function fmtD(v){
   };
   var _o2=openApps;
   openApps=function(){_o2();if(token){renderProfile();ptab('apps')}};
+})();
+</script>
+<script>
+(function(){
+  function E(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function G(i){return document.getElementById(i)}
+  var PF={p:null,ok:false,av:null,cv:null,busy:false};
+  var AVS='<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+  var BK='<svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>';
+  function lim(o,re){for(var k in o){if(re.test(k)&&!/used|count|episode/i.test(k)&&typeof o[k]==='number')return o[k]}return null}
+  function titlesOf(d){for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&v[0]&&v[0].kind)return v}return d.titles||d.items||[]}
+  function bar(label,used,max){
+    var pc=max?Math.min(100,Math.round(used/max*100)):0;
+    return '<div class="qb"><div class="ql"><span>'+label+'</span><b>'+used+(max?' of '+max:'')+' used</b></div>'+(max?'<div class="qt"><i style="width:'+pc+'%"></i></div>':'')+'</div>';
+  }
+  function shr(file){return new Promise(function(res,rej){
+    function done(img,w,h){
+      var k=Math.min(1,1000/Math.max(w,h)),c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(b){
+        if(!b)return rej(new Error('image'));
+        if(b.type==='image/webp')return res({blob:b,ext:'webp'});
+        c.toBlob(function(j){j?res({blob:j,ext:'jpg'}):rej(new Error('image'))},'image/jpeg',0.82);
+      },'image/webp',0.82);
+    }
+    function viaImg(){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){done(im,im.naturalWidth,im.naturalHeight);URL.revokeObjectURL(u)};im.onerror=function(){rej(new Error('image'))};im.src=u}
+    if(window.createImageBitmap){createImageBitmap(file,{imageOrientation:'from-image'}).then(function(bm){done(bm,bm.width,bm.height)}).catch(viaImg)}else viaImg();
+  })}
+  function headHTML(p,ok){
+    var cov='<div class="pfc"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'></div>';
+    var av=p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS;
+    return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'</div><button type="button" class="btn gold pfe" onclick="profEdit()">Edit profile</button></div>'
+      +'<div class="pfn">'+E(p.displayName||'Creator')+'</div>'
+      +(p.username?'<div class="pfu">@'+E(p.username)+'</div>':'')
+      +'<span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span>'
+      +(p.bio?'<p class="pfb">'+E(p.bio)+'</p>':'')
+      +(p.location?'<div class="pfl">'+E(p.location)+'</div>':'')+'</div>';
+  }
+  window.renderProfile=function(){
+    var h=G('profHead'),l=G('pt-lib'),ab=G('pt-about');
+    if(!h||!l||!ab||!token)return;
+    if(!PF.p)h.innerHTML=headHTML({},false);
+    l.innerHTML='<p class="sub">Loading…</p>';
+    Promise.all([api('/studio/library'),api('/studio/my'),api('/studio/profile')]).then(function(r){
+      if(isAuthFail(r[0]))return gate();
+      var d=r[0].body||{},q=d.quota||{},ts=titlesOf(d),items=(r[1].body&&r[1].body.items)||[];
+      var mv=ts.filter(function(t){return t.kind==='movie'}).length,sr=ts.filter(function(t){return t.kind==='series'}).length;
+      var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
+      PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;
+      h.innerHTML=headHTML(PF.p,ok);
+      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',mv,lim(q,/movie/i))+bar('Series',sr,lim(q,/series/i))+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
+      ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
+    }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
+  };
+  function editBox(){
+    var pe=G('profEdit');
+    if(!pe){pe=document.createElement('div');pe.id='profEdit';pe.style.display='none';var h=G('profHead');h.parentNode.insertBefore(pe,h)}
+    return pe;
+  }
+  window.profEdit=function(){
+    var p=PF.p||{},pe=editBox();
+    PF.av=null;PF.cv=null;
+    G('profHead').style.display='none';
+    var t=document.querySelector('.ptabs');if(t)t.style.display='none';
+    ['lib','apps','about'].forEach(function(x){var e=G('pt-'+x);if(e)e.style.display='none'});
+    pe.innerHTML='<div class="pfed"><div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="profEditClose()">'+BK+'</button><span>Edit profile</span></div>'
+      +'<label class="pfc pfpick pfcp" id="pf_covl"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'><input type="file" accept="image/*" onchange="profPick(\'cv\',this)"><span>Change cover</span></label>'
+      +'<label class="pfa pfpick" id="pf_avl">'+(p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS)+'<input type="file" accept="image/*" onchange="profPick(\'av\',this)"></label>'
+      +'<div class="fld"><label>Name</label><input id="pf_name" type="text" maxlength="40" value="'+E(p.displayName||'')+'"></div>'
+      +'<div class="fld"><label>Username</label><input id="pf_user" type="text" maxlength="20" autocapitalize="none" autocomplete="off" value="'+E(p.username||'')+'"><div class="uph">3 to 20 letters, numbers or underscores.</div></div>'
+      +'<div class="fld"><label>Bio</label><textarea id="pf_bio" maxlength="160">'+E(p.bio||'')+'</textarea></div>'
+      +'<div class="fld"><label>Location</label><input id="pf_loc" type="text" maxlength="60" value="'+E(p.location||'')+'"></div>'
+      +'<div class="nav"><button class="btn gold" id="pf_go" onclick="profSave()" style="width:100%">Save profile</button></div></div>';
+    pe.style.display='';window.scrollTo(0,0);
+  };
+  window.profEditClose=function(){
+    var pe=G('profEdit');if(pe)pe.style.display='none';
+    G('profHead').style.display='';
+    var t=document.querySelector('.ptabs');if(t)t.style.display='';
+    ptab('lib');window.scrollTo(0,0);
+  };
+  window.profPick=function(kind,inp){
+    var f=inp.files&&inp.files[0];if(!f)return;
+    if(f.size>60*1024*1024)return toast('That image is too large. Please pick a smaller one.');
+    shr(f).then(function(r){
+      var u=URL.createObjectURL(r.blob);PF[kind]={blob:r.blob,ext:r.ext};
+      if(kind==='cv'){G('pf_covl').style.backgroundImage="url('"+u+"')"}
+      else{var l=G('pf_avl'),im=l.querySelector('img'),sv=l.querySelector('svg');if(sv)sv.remove();if(!im){im=document.createElement('img');l.insertBefore(im,l.firstChild)}im.src=u}
+    }).catch(function(){toast('That image could not be used. Please try another one.')});
+    inp.value='';
+  };
+  function upImg(it){
+    if(!it)return Promise.resolve(null);
+    var f=new File([it.blob],'photo.'+it.ext,{type:it.blob.type});
+    return api('/studio/upload/init',{method:'POST',body:JSON.stringify({kind:'poster',fileName:f.name,size:f.size})}).then(function(res){
+      if(isAuthFail(res))throw new Error('auth');
+      var b=res.body||{};if(!b.ok)throw new Error(b.error||'Could not start upload');
+      return fetch(b.uploadUrl,{method:'PUT',body:f}).then(function(r){if(!r.ok)throw new Error('Upload failed');return b.key});
+    });
+  }
+  window.profSave=function(){
+    if(PF.busy)return;
+    var un=G('pf_user').value.trim().toLowerCase().replace(/^@/,'');
+    if(un&&!/^[a-z0-9_]{3,20}$/.test(un))return toast('Username must be 3 to 20 letters, numbers or underscores');
+    var p=PF.p||{},btn=G('pf_go');
+    PF.busy=true;btn.disabled=true;btn.textContent='Saving…';
+    function fail(m){PF.busy=false;btn.disabled=false;btn.textContent='Save profile';toast(m||'Could not save profile')}
+    Promise.all([upImg(PF.av),upImg(PF.cv)]).then(function(k){
+      var body={displayName:G('pf_name').value,username:un,bio:G('pf_bio').value,location:G('pf_loc').value,avatarKey:k[0]||p.avatarKey||'',coverKey:k[1]||p.coverKey||''};
+      return api('/studio/profile',{method:'POST',body:JSON.stringify(body)});
+    }).then(function(res){
+      if(isAuthFail(res)){PF.busy=false;return gate()}
+      var b=res.body||{};
+      if(!b.ok)return fail(b.error);
+      PF.busy=false;PF.p=b.profile||{};toast('Profile saved');
+      profEditClose();renderProfile();
+    }).catch(function(e){if(e&&e.message==='auth'){PF.busy=false;return gate()}fail(e&&e.message)});
+  };
 })();
 </script>
 </body>
