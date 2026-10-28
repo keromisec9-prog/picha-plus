@@ -1453,7 +1453,7 @@ function fmtD(v){
       var mv=ts.filter(function(t){return t.kind==='movie'}).length,sr=ts.filter(function(t){return t.kind==='series'}).length;
       var ok=items.some(function(a){return a.status==='approved'})||(d.tier&&d.tier!=='free');
       h.innerHTML='<div class="ph">'+AV+'<div><div class="pn">Creator</div><span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span></div></div>';
-      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',mv,lim(q,/movie/i))+bar('Series',sr,lim(q,/series/i))+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
+      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',(q.movies&&q.movies.used!=null)?q.movies.used:mv,q.movies&&q.movies.max)+bar('Series',(q.series&&q.series.used!=null)?q.series.used:sr,q.series&&q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
@@ -1510,7 +1510,7 @@ function fmtD(v){
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
       PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;
       h.innerHTML=headHTML(PF.p,ok);
-      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',mv,lim(q,/movie/i))+bar('Series',sr,lim(q,/series/i))+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
+      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',(q.movies&&q.movies.used!=null)?q.movies.used:mv,q.movies&&q.movies.max)+bar('Series',(q.series&&q.series.used!=null)?q.series.used:sr,q.series&&q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
