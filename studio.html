@@ -356,6 +356,28 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .allow ul{margin:0 0 12px 18px;font-size:13px;color:#d8d1c2;line-height:1.7}
 .allow p{font-size:12px;color:var(--mute);margin-bottom:4px}
 .allow a{color:var(--gold);font-size:13px;font-weight:700;cursor:pointer}
+/* studio-v24 */
+.stp{display:flex;align-items:flex-start;margin:6px 0 20px}
+.stp>div{flex:1;text-align:center;position:relative;font-size:11px;color:var(--mute)}
+.stp>div::before{content:"";position:absolute;top:13px;left:-50%;width:100%;height:2px;background:rgba(255,255,255,.12);z-index:0}
+.stp>div:first-child::before{display:none}
+.stp b{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#2a2a2c;color:var(--mute);margin:0 auto 5px;font-size:12px}
+.stp .on b{background:var(--gold);color:#111}
+.stp .on,.stp .dn{color:var(--text)}
+.stp .dn b{background:rgba(240,180,41,.25);color:var(--gold)}
+.stp .on::before,.stp .dn::before{background:var(--gold)}
+.dh{display:flex;gap:14px;margin-bottom:16px}
+.dp{width:96px;height:140px;border-radius:12px;object-fit:cover;background:#1c1409;flex:0 0 96px;display:block}
+.dsec{font:700 15px system-ui,sans-serif;margin:20px 0 8px}
+.dov{font-size:14px;color:#d8d1c2;line-height:1.6}
+.inf{background:rgba(255,255,255,.05);border-radius:14px;padding:2px 14px;margin-top:16px}
+.inf>div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.06)}
+.inf>div:last-child{border:0}
+.inf span{color:var(--mute)}
+.inf b{font-weight:600;text-align:right;word-break:break-all}
+.rvw{background:rgba(255,255,255,.05);border-radius:14px;padding:14px;margin-bottom:14px}
+.rvw .inf{background:none;padding:0;margin-top:12px}
+.tr[data-act=view]{cursor:pointer}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -1100,7 +1122,7 @@ function renderList(){
   }
   list.forEach(function(t){
     var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
-    h+='<div class="tc"><div class="tr">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><span class="stt '+s[1]+'">'+s[0]+'</span><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
+    h+='<div class="tc"><div class="tr" data-act="view" data-id="'+t.id+'">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><span class="stt '+s[1]+'">'+s[0]+'</span><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
     if(open){
       if(t.status==='rejected'&&t.staffNote)h+='<div class="tm" style="margin-top:8px">'+esc(t.staffNote)+'</div>';
       if(isS&&t.episodes.length){
@@ -1145,10 +1167,10 @@ function tsearch(){
     }).join('');
   }).catch(function(){box.innerHTML='<p class="upe">Could not reach TMDB. Use Enter manually instead.</p>'});
 }
-function renderForm(){
-  var movie=L.kind==='movie',tm=L.src==='tmdb',f=L.f||{};
-  var h='<div class="eyebrow">'+(movie?'UPLOAD A MOVIE':'ADD A SERIES')+'</div><h2>'+(movie?'Movie details':'Series details')+'</h2><p class="sub">'+(movie?'Free to upload. We review it before it goes live.':'Create the series first, then add episodes.')+'</p>';
-  h+='<div class="seg"><button type="button" class="'+(tm?'on':'')+'" data-act="src" data-v="tmdb">Search TMDB</button><button type="button" class="'+(tm?'':'on')+'" data-act="src" data-v="manual">Enter manually</button></div>';
+function stepsBar(n){return '<div class="stp">'+['Details','Media','Review'].map(function(x,i){return '<div class="'+(i+1<n?'dn':(i+1===n?'on':''))+'"><b>'+(i+1)+'</b><span>'+x+'</span></div>'}).join('')+'</div>'}
+function tmdbBlock(movie){
+  var tm=L.src==='tmdb';
+  var h='<div class="seg"><button type="button" class="'+(tm?'on':'')+'" data-act="src" data-v="tmdb">Search TMDB</button><button type="button" class="'+(tm?'':'on')+'" data-act="src" data-v="manual">Enter manually</button></div>';
   if(tm){
     if(L.tmdb){
       h+='<div class="tc"><div class="tr">'+(L.tmdb.poster?'<img class="tth" src="https://image.tmdb.org/t/p/w185'+L.tmdb.poster+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(L.tmdb.name)+'</div><div class="tm">'+(L.tmdb.year||'')+' &middot; Matched on TMDB</div><button class="pill" data-act="tclear">Change</button></div></div></div>';
@@ -1157,15 +1179,60 @@ function renderForm(){
     }
     h+='<p class="uph" style="margin-bottom:14px">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>';
   }
-  if(movie)h+=slotHTML('video','Movie file','MP4 only, up to 3 GB. Large files upload in parts.');
-  if(!(tm&&L.tmdb&&L.tmdb.poster))h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
-  h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
-  h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
-  h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
-  h+=RIGHTS;
-  h+='<div class="nav"><button class="btn" data-act="back">Cancel</button><button class="btn gold" id="lf_go" data-act="submit">Submit</button></div>';
+  return h;
+}
+function renderForm(){
+  var movie=L.kind==='movie',f=L.f||{},n=movie?(L.step||1):1,tm=L.src==='tmdb';
+  var hasTp=tm&&L.tmdb&&L.tmdb.poster;
+  var h='<div class="bk"><button type="button" class="pill" data-act="fback">&larr; '+(movie&&n>1?'Back':'Cancel')+'</button></div><h2>'+(movie?'Upload movie':'Create series')+'</h2>';
+  if(movie)h+=stepsBar(n);else h+='<p class="sub">Create the series first, then add episodes.</p>';
+  if(n===1){
+    h+=tmdbBlock(movie);
+    h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
+    h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
+    h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
+    if(!movie){
+      if(!hasTp)h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
+      h+=RIGHTS;
+    }
+  }else if(n===2){
+    h+=slotHTML('video','Movie file','MP4 only, up to 3 GB. Large files upload in parts.');
+    if(!hasTp)h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
+  }else{
+    var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
+    h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+'</div></div>';
+    h+='<div class="inf"><div><span>Movie file</span><b>'+esc(L.up.video?L.up.video.name:'')+'</b></div><div><span>Details from</span><b>'+(L.tmdb?'TMDB':'Entered manually')+'</b></div><div><span>Poster</span><b>'+(hasTp?'TMDB':(L.up.poster&&L.up.poster.key?'Uploaded':'None'))+'</b></div></div></div>';
+    h+=RIGHTS;
+  }
+  var last=!movie||n===3;
+  h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?'submit':'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?'Submit for review':'Next'))+' &rarr;</button></div>';
   R(h);
 }
+function renderDetail(){
+  var t=findT(L.did);
+  if(!t){openLib();return}
+  var isS=t.kind==='series',s=ST[t.status]||[t.status,''],q=L.data.quota,eps=t.episodes||[];
+  var h='<div class="bk"><button type="button" class="pill" data-act="back">&larr; Library</button></div>';
+  h+='<div class="dh">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><h2 style="font-size:22px;margin:0 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
+  if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
+  if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
+  var d=t.createdAt?new Date(t.createdAt):null;
+  h+='<div class="inf"><div><span>Status</span><b>'+s[0]+'</b></div><div><span>Type</span><b>'+(isS?'Series':'Movie')+'</b></div>'+(d&&!isNaN(d)?'<div><span>Added</span><b>'+d.toLocaleDateString()+'</b></div>':'')+'</div>';
+  if(isS){
+    h+='<h3 class="dsec">Episodes <span class="tm" style="font-weight:400">('+eps.length+' of '+q.episodesPerSeries+')</span></h3>';
+    if(!eps.length)h+='<div class="lc"><div class="t">No episodes yet. Add your first episode to get started.</div></div>';
+    else{
+      h+='<div class="eps" style="border:0">';
+      eps.forEach(function(e){h+='<div class="ep"><span>S'+e.season+' &middot; E'+e.number+(e.name?' &middot; '+esc(e.name):'')+'</span><button class="pill dng" data-act="del" data-type="episode" data-id="'+e.id+'">'+(L.armed==='episode'+e.id?'Tap again to confirm':'Delete')+'</button></div>'});
+      h+='</div>';
+    }
+    if(eps.length<q.episodesPerSeries)h+='<div class="acts"><button class="btn gold" data-act="addep" data-id="'+t.id+'">+ Add episode</button></div>';
+    else h+='<p class="uph" style="margin-top:10px">You have reached the episode limit for this series.</p>';
+  }
+  h+='<div class="acts" style="margin-top:22px"><button class="pill dng" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':(isS?'Delete series':'Delete movie'))+'</button></div>';
+  R(h);
+}
+window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderDetail)};
 function renderEp(t){
   var ms=1,mn=0;
   t.episodes.forEach(function(e){if(e.season>ms){ms=e.season;mn=0}if(e.season===ms&&e.number>mn)mn=e.number});
@@ -1190,35 +1257,39 @@ function post(path,body,btn,label,ok){
   }).catch(function(){fail('Connection problem. Try again.')});
 }
 function submitTitle(){
-  var t=$('lf_title').value.trim(),movie=L.kind==='movie';
+  saveF();
+  var f=L.f||{},t=(f.title||'').trim(),movie=L.kind==='movie';
   if(!t)return toast('Enter a title');
   if(movie&&!(L.up.video&&L.up.video.key))return toast('Upload your movie file first');
   if(busy())return toast('Please wait for the upload to finish');
-  if(!$('lf_rights').checked)return toast('Please confirm the declaration');
-  var body={kind:L.kind,title:t,genre:$('lf_genre').value.trim(),synopsis:$('lf_syn').value.trim(),rightsConfirmed:true};
+  var rc=$('lf_rights');if(!rc||!rc.checked)return toast('Please confirm the declaration');
+  var body={kind:L.kind,title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true};
   if(movie)body.videoKey=L.up.video.key;
   if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
   if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
-  post('/studio/title',body,$('lf_go'),'Submit',function(){toast(movie?'Movie submitted for review':'Series created');L.up={};openLib()});
+  post('/studio/title',body,$('lf_go'),movie?'Submit for review':'Save & Continue',function(b){
+    toast(movie?'Movie submitted for review':'Series created');L.up={};
+    if(movie)openLib();else openDetail(b.id);
+  });
 }
 function submitEp(){
   var season=parseInt($('lf_season').value,10),num=parseInt($('lf_num').value,10);
   if(!(season>=1)||!(num>=1))return toast('Enter a valid season and episode number');
   if(!(L.up.video&&L.up.video.key))return toast('Upload the episode file first');
   if(busy())return toast('Please wait for the upload to finish');
-  post('/studio/episode',{titleId:String(L.tid),season:season,number:num,name:$('lf_name').value.trim(),videoKey:L.up.video.key},$('lf_go'),'Add episode',function(){toast('Episode added');L.up={};openLib()});
+  post('/studio/episode',{titleId:String(L.tid),season:season,number:num,name:$('lf_name').value.trim(),videoKey:L.up.video.key},$('lf_go'),'Add episode',function(){toast('Episode added');L.up={};openDetail(L.tid)});
 }
 function del(el){
   var key=el.dataset.type+el.dataset.id;
   if(L.armed!==key){
     L.armed=key;el.textContent='Tap again to confirm';
-    clearTimeout(L.tm);L.tm=setTimeout(function(){L.armed=null;if(L.mode==='list'&&L.data)renderList()},4000);
+    clearTimeout(L.tm);L.tm=setTimeout(function(){L.armed=null;if(L.data){if(L.mode==='list')renderList();else if(L.mode==='detail')renderDetail()}},4000);
     return;
   }
   L.armed=null;clearTimeout(L.tm);el.disabled=true;
   api('/studio/delete',{method:'POST',body:JSON.stringify({type:el.dataset.type,id:el.dataset.id})}).then(function(res){
     if(isAuthFail(res))return gate();
-    if(res.body&&res.body.ok){toast('Deleted');loadLib(renderList)}
+    if(res.body&&res.body.ok){toast('Deleted');if(L.mode==='detail'&&el.dataset.type==='episode')openDetail(L.did);else openLib()}
     else{el.disabled=false;toast((res.body&&res.body.error)||'Could not delete')}
   }).catch(function(){el.disabled=false;toast('Connection problem')});
 }
@@ -1236,7 +1307,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='choose'){
     var k=el.dataset.kind,q=L.data.quota[k==='movie'?'movies':'series'];
     if(q.used>=q.max)return renderUpsell(k);
-    L.kind=k;L.up={};L.f={};L.tmdb=null;L.src='tmdb';setMode('form');renderForm();window.scrollTo(0,0);
+    L.kind=k;L.up={};L.f={};L.tmdb=null;L.src='tmdb';L.step=1;setMode('form');renderForm();window.scrollTo(0,0);
   }
   else if(a==='src'){saveF();L.src=el.dataset.v;renderForm()}
   else if(a==='tsearch')tsearch();
@@ -1244,8 +1315,14 @@ rt.addEventListener('click',function(ev){
   else if(a==='tclear'){saveF();L.tmdb=null;renderForm()}
   else if(a==='submit')submitTitle();
   else if(a==='esubmit')submitEp();
-  else if(a==='back')openLib();
+  else if(a==='back'){if(L.mode==='ep'&&L.tid)openDetail(L.tid);else openLib()}
   else if(a==='addep'){var t=findT(el.dataset.id);if(t){L.tid=t.id;L.up={};setMode('ep');renderEp(t);window.scrollTo(0,0)}}
+  else if(a==='view')openDetail(el.dataset.id);
+  else if(a==='fback'){saveF();if(L.kind==='movie'&&(L.step||1)>1){L.step=L.step-1;renderForm();window.scrollTo(0,0)}else openLib()}
+  else if(a==='next'){saveF();var ff=L.f||{};
+    if((L.step||1)===1){if(!(ff.title||'').trim())return toast('Enter a title');L.step=2}
+    else if(L.step===2){if(!(L.up.video&&L.up.video.key))return toast(busy()?'Please wait for the upload to finish':'Upload your movie file first');L.step=3}
+    renderForm();window.scrollTo(0,0)}
   else if(a==='flt'){L.flt=el.dataset.v;renderList()}
   else if(a==='menu'){L.open=String(L.open)===el.dataset.id?null:el.dataset.id;renderList()}
   else if(a==='del')del(el);
