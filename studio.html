@@ -439,6 +439,22 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pf .pfc{background-size:contain;background-repeat:no-repeat;background-position:center;height:190px;}
 .page:has(#profHead){padding-top:0!important;}
 @media(min-width:720px){.page:has(#profHead){padding-top:0!important;}}
+.pf{margin-bottom:10px}
+.pf .pfr{margin-bottom:6px}
+.pfedit{background:none!important;border:0!important;box-shadow:none!important;color:var(--gold)!important;display:inline-flex!important;align-items:center;gap:6px;padding:6px 2px!important;}
+.pfedit svg{width:18px;height:18px;fill:currentColor;flex:none}
+.pfnr{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.pfnr .pfn{flex:0 1 auto;min-width:0;margin:0;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.pfnr .pfn.open{white-space:normal;overflow:visible;text-overflow:clip}
+.pfpen{flex:none;background:none;border:0;padding:4px;color:var(--mute);display:grid;place-items:center;cursor:pointer}
+.pfpen svg{width:16px;height:16px;fill:currentColor}
+.pfur{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pfur .pfu{margin:0}
+.pfur .pbd{font-size:11px!important;padding:2px 8px!important;margin:0!important;line-height:1.4}
+.pf .pfb{margin:6px 0 0}
+.qcard{padding:12px 14px;margin-bottom:12px}
+.qcard h3{margin:0 0 8px;font-size:15px}
+.qcard .bar{margin:6px 0 12px}
 .pfcam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#2a2a2c;border:2px solid #111;color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer;}
 .pfcam svg{width:16px;height:16px;fill:currentColor;display:block;}
 
@@ -1510,12 +1526,10 @@ function fmtD(v){
   function headHTML(p,ok){
     var cov='<div class="pfc"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'></div>';
     var av=p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS;
-    return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'<button type="button" class="pfcam" aria-label="Change photo" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button></div><div class="pfbt">'+(p.username?'<button type="button" class="btn pfe" data-pub="'+E(p.username)+'">Public view</button>':'')+'<button type="button" class="btn gold pfe" onclick="profEdit()">Edit profile</button></div></div>'
-      +'<div class="pfn">'+E(p.displayName||'Creator')+'</div>'
-      +(p.username?'<div class="pfu">@'+E(p.username)+'</div>':'')
-      +'<span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span>'
-      +(p.bio?'<p class="pfb">'+E(p.bio)+'</p>':'')
-      +(p.location?'<div class="pfl">'+E(p.location)+'</div>':'')+'</div>';
+    return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'<button type="button" class="pfcam" aria-label="Change photo" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button></div><div class="pfbt"><button type="button" class="btn pfe pfedit" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span>Edit profile</span></button></div></div>'
+      +'<div class="pfnr"><div class="pfn" onclick="this.classList.toggle(\'open\')">'+E(p.displayName||'Creator')+'</div><button type="button" class="pfpen" aria-label="Edit name" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button></div>'
+      +'<div class="pfur">'+(p.username?'<span class="pfu">@'+E(p.username)+'</span>':'')+'<span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span></div>'
+      +(p.bio?'<p class="pfb">'+E(p.bio)+'</p>':'')+'</div>';
   }
   window.renderProfile=function(){
     var h=G('profHead'),l=G('pt-lib'),ab=G('pt-about');
