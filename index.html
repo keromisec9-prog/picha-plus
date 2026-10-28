@@ -13917,9 +13917,13 @@ async function submitForceReset() {
 #ppBarWrap #ppBar{flex:1 1 0;min-width:0;}
 #ppCreator{display:none;flex:none;width:88px;flex-direction:column;align-items:center;text-align:center;gap:.3rem;}
 #ppCreator.on{display:flex;}
-.pp-av{position:relative;width:62px;height:62px;border-radius:50%;border:2px solid var(--gold,#e6b422);background:#2a2a2a center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1.3rem;}
+.pp-av{position:relative;width:62px;height:62px;border-radius:50%;border:0;background:#2a2a2a center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1.3rem;}
 .pp-fb{position:absolute;right:-5px;bottom:-5px;width:24px;height:24px;border-radius:50%;background:var(--gold,#e6b422);color:#111;border:2px solid #181818;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;}
 .pp-fb.on{background:#fff;}
+.pp-fb{transition:background .35s ease,opacity .45s ease,transform .45s ease;}
+.pp-fb.on svg{animation:ppTick .35s ease;}
+.pp-fb.pp-fade{opacity:0;transform:scale(.6);pointer-events:none;}
+@keyframes ppTick{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
 .pp-fb .material-symbols-rounded{font-size:16px;line-height:1;font-weight:700;}
 .pp-cn{font-size:.72rem;color:#ddd;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pp-cf{font-size:.64rem;color:#8a8a8a;}
@@ -14025,7 +14029,7 @@ async function submitForceReset() {
     var nm = "@" + creator.username;
     var st = creator.avatarUrl ? ' style="background-image:url(\'' + esc(creator.avatarUrl) + '\')"' : "";
     var ini = creator.avatarUrl ? "" : esc((creator.username || "?").charAt(0).toUpperCase());
-    var fb = creator.isSelf ? "" : '<button type="button" id="ppFollowBtn" class="pp-fb' + (creator.following ? " on" : "") + '">' + (creator.following ? IC_CHK : IC_ADD) + "</button>";
+    var fb = (creator.isSelf || creator.following) ? "" : '<button type="button" id="ppFollowBtn" class="pp-fb">' + IC_ADD + "</button>";
     var n = creator.followers || 0;
     c.className = "on";
     c.innerHTML = '<div class="pp-av"' + st + ">" + ini + fb + '</div><div class="pp-cn">' + esc(nm) + '</div>';
@@ -14041,7 +14045,17 @@ async function submitForceReset() {
       .then(function (j) {
         busy = false;
         if (k !== key || !creator) return;
-        if (j && j.ok) { creator.following = !!j.following; creator.followers = j.followers; renderCreator(); }
+        if (j && j.ok) {
+          creator.following = !!j.following; creator.followers = j.followers;
+          var fbtn = $("ppFollowBtn");
+          if (creator.following && fbtn) {
+            fbtn.classList.add("on"); fbtn.innerHTML = IC_CHK;
+            setTimeout(function () {
+              fbtn.classList.add("pp-fade");
+              setTimeout(function () { if (fbtn.parentNode) fbtn.parentNode.removeChild(fbtn); }, 480);
+            }, 900);
+          } else renderCreator();
+        }
         else note((j && j.error) || "Please sign in again");
       })
       .catch(function () { busy = false; note("Network error"); });
