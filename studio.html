@@ -378,6 +378,11 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .rvw{background:rgba(255,255,255,.05);border-radius:14px;padding:14px;margin-bottom:14px}
 .rvw .inf{background:none;padding:0;margin-top:12px}
 .tr[data-act=view]{cursor:pointer}
+/* studio-v25 */
+.sh{display:flex;align-items:center;gap:14px;margin:0 0 18px}
+.bkb{flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.08);border:0;color:var(--text);display:grid;place-items:center;cursor:pointer}
+.bkb svg{width:22px;height:22px;fill:currentColor}
+.sh span{font:600 17px system-ui,sans-serif}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 </head>
@@ -772,327 +777,28 @@ function xput(st,url,blob,onp){return new Promise(function(res,rej){
   x.send(blob);
 })}
 function putRetry(st,url,blob,onp,n){return xput(st,url,blob,onp).catch(function(e){if(st.cancel||n<=1)throw e;return putRetry(st,url,blob,onp,n-1)})}
-function start(slot,file){
-  var u=U();
-  if(slot==='video'&&!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
-  if(file.size>LIM[slot])return toast('That file is too large');
-  var st=u[slot]={name:file.name,pct:0,busy:true,preview:slot==='poster'?URL.createObjectURL(file):null};
-  paint(slot);
-  var body={kind:slot,fileName:file.name,size:file.size},multi=slot==='video'&&file.size>20*1024*1024;
-  if(multi){body.multipart=true;body.partSize=10*1024*1024}
-  api('/studio/upload/init',{method:'POST',body:JSON.stringify(body)}).then(function(res){
-    if(isAuthFail(res))throw new Error('auth');
-    var b=res.body||{};if(!b.ok)throw new Error(b.error||'Could not start upload');
-    st.pendKey=b.key;
-    if(!b.multipart)return xput(st,b.uploadUrl,file,function(l){setP(slot,l/file.size)}).then(function(){st.key=b.key});
-    st.uploadId=b.uploadId;
-    var parts=[],sent=0,i=0,ps=b.partSize;
-    function next(){
-      if(st.cancel)throw new Error('cancelled');
-      if(i>=b.parts.length)return Promise.resolve();
-      var idx=i++,blob=file.slice(idx*ps,Math.min(file.size,(idx+1)*ps));
-      return putRetry(st,b.parts[idx],blob,function(l){setP(slot,(sent+l)/file.size)},3).then(function(et){
-        if(!et)throw new Error('Cannot read ETag - storage CORS must expose ETag');
-        parts.push({partNumber:idx+1,etag:et});sent+=blob.size;return next();
-      });
+function shrink(file){
+  return new Promise(function(res,rej){
+    function done(img,w,h){
+      var k=Math.min(1,1000/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+      var c=document.createElement('canvas');c.width=cw;c.height=ch;
+      c.getContext('2d').drawImage(img,0,0,cw,ch);
+      var qs=[0.86,0.78,0.7],i=0;
+      (function tryQ(){
+        c.toBlob(function(b){
+          if(!b)return rej(new Error('image'));
+          if(b.type!=='image/webp'){c.toBlob(function(j){j?res({blob:j,ext:'jpg'}):rej(new Error('image'))},'image/jpeg',0.82);return}
+          if(b.size>250*1024&&i<qs.length-1){i++;tryQ();return}
+          res({blob:b,ext:'webp'});
+        },'image/webp',qs[i]);
+      })();
     }
-    return next().then(function(){return api('/studio/upload/complete',{method:'POST',body:JSON.stringify({key:b.key,uploadId:b.uploadId,parts:parts})})}).then(function(r){
-      if(!(r.body&&r.body.ok))throw new Error('Could not finish upload');
-      st.key=b.key;
-    });
-  }).then(function(){st.busy=false;st.pct=100;paint(slot)}).catch(function(e){
-    st.busy=false;
-    if(st.uploadId&&!st.key)api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:st.pendKey,uploadId:st.uploadId})}).catch(function(){});
-    if(e.message==='auth'){u[slot]=null;paint(slot);return gate()}
-    u[slot]=st.cancel?null:{err:e.message||'Upload failed'};
-    paint(slot);
+    function viaImg(){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){done(im,im.naturalWidth,im.naturalHeight);URL.revokeObjectURL(u)};im.onerror=function(){rej(new Error('image'))};im.src=u}
+    if(window.createImageBitmap){createImageBitmap(file,{imageOrientation:'from-image'}).then(function(bm){done(bm,bm.width,bm.height)}).catch(viaImg)}else viaImg();
   });
 }
-var root=document.getElementById('submitRoot');
-root.addEventListener('change',function(ev){
-  var el=ev.target;if(!el.dataset||!el.dataset.up||!S)return;
-  var f=el.files&&el.files[0];el.value='';if(f)start(el.dataset.up,f);
-});
-root.addEventListener('click',function(ev){
-  var el=ev.target.closest('[data-act]');if(!el||!S)return;
-  var a=el.dataset.act,slot=el.dataset.slot,st=slot&&U()[slot];
-  if(a==='upcancel'&&st){st.cancel=true;if(st.xhr)st.xhr.abort()}
-  else if(a==='uppick'){var fi=document.querySelector('#up_'+slot+' input[type=file]');if(fi)fi.click()}
-  else if(a==='upclear'){U()[slot]=null;paint(slot)}
-});
-})();
-function submitS(){
-  var d={},keys=['genre','releaseStatus','releaseDate','synopsis','trailerLink','posterLink','portfolioLink','role','notes'];
-  keys.forEach(function(k){var v=(S.d[k]||'').trim();if(v)d[k]=v});
-  if(!S.title.trim())return toast('Enter a title');
-  if(upBusy())return toast('Please wait for the upload to finish');
-  var up=S.up||{};
-  if(up.video&&up.video.key)d.videoKey=up.video.key;
-  if(up.poster&&up.poster.key)d.posterKey=up.poster.key;
-  if(!d.synopsis&&!d.trailerLink&&!d.portfolioLink&&!d.videoKey)return toast('Add a synopsis, a link or a video');
-  var bad=['trailerLink','posterLink','portfolioLink'].some(function(k){return d[k]&&!/^https?:\/\/\S+$/i.test(d[k])});
-  if(bad)return toast('Links must start with https://');
-  if(!S.rights)return toast('Please confirm the declaration');
-  var btn=document.getElementById('sBtn');btn.disabled=true;btn.textContent='Submitting…';
-  function fail(m){btn.disabled=false;btn.textContent='Submit';toast(m)}
-  api('/studio/submit',{method:'POST',body:JSON.stringify({kind:S.kind,title:S.title.trim(),rightsConfirmed:true,details:d})}).then(function(res){
-    if(isAuthFail(res))return gate();
-    if(res.body&&res.body.ok){S.done=true;renderS();window.scrollTo(0,0);return}
-    fail((res.body&&res.body.error)||'Could not submit. Try again.');
-  }).catch(function(){fail('Connection problem. Try again.')});
-}
-(function(){
-  var root=document.getElementById('submitRoot');
-  root.addEventListener('click',function(ev){
-    var el=ev.target.closest('[data-act]');if(!el||!S)return;
-    var a=el.dataset.act;
-    if(a==='kind'){S.kind=el.dataset.v;renderS()}
-    else if(a==='cancel'||a==='home')show('v-home');
-    else if(a==='ssubmit')submitS();
-    else if(a==='subs')openApps();
-  });
-  function onF(ev){
-    var t=ev.target;if(!S)return;
-    if(t.id==='srights'){S.rights=t.checked;return}
-    var k=t.dataset&&t.dataset.sk;if(!k)return;
-    if(k==='title')S.title=t.value;else S.d[k]=t.value;
-  }
-  root.addEventListener('input',onF);
-  root.addEventListener('change',onF);
-})();
-function loadSubs(){
-  var box=document.getElementById('subsList');if(!box||!token)return;
-  box.innerHTML='';
-  api('/studio/submissions').then(function(res){
-    var items=(res.body&&res.body.items)||[];
-    if(!items.length)return;
-    box.innerHTML='<h2 style="margin-top:34px">My submissions</h2><p class="sub">Content and projects you’ve shared with us.</p>'+items.map(function(a){
-      var d=a.created_at?new Date(a.created_at.replace(' ','T')).toLocaleDateString():'';
-      return '<div class="app"><div class="row"><h3>'+esc(a.title)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">'+esc(KIND_LABEL[a.kind]||a.kind)+' · Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+'</div>';
-    }).join('');
-  }).catch(function(){});
-}
-var _openApps=openApps;
-openApps=function(){_openApps();loadSubs()};
-
-// ── CAMPAIGN BUILDER ──────────────────────────────────────────────────
-var C=null;
-var OBJS=[['free_viewing','Free viewing','Let viewers watch your content free for an agreed period'],['release_promotion','Release promotion','Promote a release, trailer or premiere'],['project_awareness','Project awareness','Build awareness for an upcoming project']];
-var OBJ_LABEL={free_viewing:'Free viewing',release_promotion:'Release promotion',project_awareness:'Project awareness'};
-var PLACES=[['featured','Featured placement'],['browse','Browse and discovery'],['trailer','Trailer and project promotion']];
-var AFTERS=[['subscription','Subscription access'],['paid','Paid viewing'],['undecided','Decide later']];
-function todayStr(){return new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}
-function freeOk(){return C.kind==='movie'||C.kind==='series'}
-function lab(list,v){var m=list.filter(function(x){return x[0]===v})[0];return m?m[1]:v}
-function openCamp(sid,kind,ctitle){
-  if(!token)return gate();
-  var fv=(kind==='movie'||kind==='series');
-  C={step:0,sid:sid,kind:kind,ctitle:ctitle,objective:fv?'free_viewing':(kind==='project'?'project_awareness':'release_promotion'),title:'',desc:'',start:'',days:7,aud:'all',place:['featured'],after:'undecided',rights:false,done:false};
-  show('v-camp');renderC();
-}
-function cfld(k,label,type){
-  var v=C[k]||'',a=' data-ck="'+k+'"';
-  var h='<div class="fld"><label>'+label+'</label>';
-  if(type==='area')h+='<textarea rows="3"'+a+'>'+esc(v)+'</textarea>';
-  else if(type==='date')h+='<input type="date"'+a+' value="'+escA(v)+'" min="'+todayStr()+'">';
-  else h+='<input type="text"'+a+' value="'+escA(v)+'">';
-  return h+'</div>';
-}
-function cchips(list,act,isOn){return '<div class="chs">'+list.map(function(x){return '<span class="chp'+(isOn(x[0])?' on':'')+'" data-act="'+act+'" data-v="'+x[0]+'">'+x[1]+'</span>'}).join('')+'</div>'}
-function cStep0(){
-  var h='<h2>Choose your campaign objective</h2><p class="sub">Campaign for: <b>'+esc(C.ctitle)+'</b></p>';
-  OBJS.forEach(function(o){
-    if(o[0]==='free_viewing'&&!freeOk())return;
-    h+='<div class="opt'+(C.objective===o[0]?' on':'')+'" data-act="cobj" data-v="'+o[0]+'"><b>'+o[1]+'</b><span>'+o[2]+'</span></div>';
-  });
-  if(!freeOk())h+='<p class="note">Free viewing is available for movies and series.</p>';
-  return h;
-}
-function cStep1(){
-  var h='<h2>Campaign details</h2><p class="sub">Tell us when and where you’d like it to run.</p>';
-  h+=cfld('title','Campaign title','text')+cfld('desc','Short description (optional)','area')+cfld('start','Start date','date');
-  h+='<div class="fld"><label>Duration (days)</label>'+cchips([[3,'3'],[7,'7'],[14,'14'],[30,'30']],'cdays',function(v){return C.days===v})+'</div>';
-  h+='<div class="fld"><label>Audience</label>'+cchips([['all','All MyPicha+ viewers'],['uganda','Uganda-focused']],'caud',function(v){return C.aud===v})+'</div>';
-  h+='<div class="fld"><label>Placement (choose one or more)</label>'+cchips(PLACES,'cplace',function(v){return C.place.indexOf(v)>-1})+'</div>';
-  if(C.objective==='free_viewing')h+='<div class="fld"><label>When the free period ends</label>'+cchips(AFTERS,'cafter',function(v){return C.after===v})+'</div>';
-  h+='<p class="note">Actual placement depends on approval and available promotional space.</p>';
-  return h;
-}
-function cStep2(){
-  var h='<h2>Review your campaign</h2><p class="sub">Check the details before you submit.</p>';
-  h+=sum('Content',C.ctitle)+sum('Objective',OBJ_LABEL[C.objective])+sum('Campaign title',C.title)+sum('Description',C.desc)+sum('Starts',C.start)+sum('Duration',C.days+' days')+sum('Audience',C.aud==='uganda'?'Uganda-focused':'All MyPicha+ viewers')+sum('Placement',C.place.map(function(p){return lab(PLACES,p)}).join(', '));
-  if(C.objective==='free_viewing'){
-    h+=sum('After the free period',lab(AFTERS,C.after));
-    h+='<p class="note">Free viewing runs only for the dates we approve.</p>';
-  }
-  h+='<label class="chk"><input type="checkbox" id="crights"'+(C.rights?' checked':'')+'><span>I confirm that I own or have permission to grant the promotional and distribution rights for this content.</span></label>';
-  h+='<p class="note">Approval is not guaranteed, and we don’t promise views, reach or revenue.</p>';
-  return h;
-}
-function renderC(){
-  var root=document.getElementById('campRoot');
-  if(C.done){
-    root.innerHTML='<div class="center"><h2>Campaign request received.</h2><p class="sub" style="margin:10px auto 24px">Our team will review it. You can follow its status under My campaigns.</p><button class="btn gold" data-act="capps">View my campaigns</button> <button class="btn" data-act="chome">Back to Studio</button></div>';
-    return;
-  }
-  var last=C.step===2;
-  root.innerHTML='<div class="eyebrow">CAMPAIGN · STEP '+(C.step+1)+' OF 3</div><div class="bar"><i style="width:'+((C.step+1)*33.4)+'%"></i></div>'+[cStep0,cStep1,cStep2][C.step]()+
-    '<div class="nav"><button class="btn" data-act="cback">'+(C.step===0?'Cancel':'Back')+'</button><button class="btn gold" id="cBtn" data-act="'+(last?'csubmit':'cnext')+'">'+(last?'Submit campaign':'Continue →')+'</button></div>';
-}
-function cValid(s){
-  if(s===1){
-    if(!C.title.trim())return 'Enter a campaign title';
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(C.start))return 'Choose a start date';
-    if(C.start<todayStr())return 'Start date cannot be in the past';
-    if(!C.place.length)return 'Choose at least one placement';
-  }
-  if(s===2&&!C.rights)return 'Please confirm the declaration';
-  return '';
-}
-function cSubmit(){
-  var e=cValid(2);if(e)return toast(e);
-  var btn=document.getElementById('cBtn');btn.disabled=true;btn.textContent='Submitting…';
-  function fail(m){btn.disabled=false;btn.textContent='Submit campaign';toast(m)}
-  api('/studio/campaign',{method:'POST',body:JSON.stringify({submissionId:C.sid,objective:C.objective,title:C.title.trim(),description:C.desc.trim(),audience:C.aud,placements:C.place,startDate:C.start,durationDays:C.days,afterMode:C.objective==='free_viewing'?C.after:'undecided',rightsConfirmed:true})}).then(function(res){
-    if(isAuthFail(res))return gate();
-    if(res.body&&res.body.ok){C.done=true;renderC();window.scrollTo(0,0);return}
-    fail((res.body&&res.body.error)||'Could not submit. Try again.');
-  }).catch(function(){fail('Connection problem. Try again.')});
-}
-(function(){
-  var root=document.getElementById('campRoot');
-  root.addEventListener('click',function(ev){
-    var el=ev.target.closest('[data-act]');if(!el||!C)return;
-    var a=el.dataset.act,v=el.dataset.v;
-    if(a==='cobj'){C.objective=v;renderC()}
-    else if(a==='cdays'){C.days=parseInt(v,10);renderC()}
-    else if(a==='caud'){C.aud=v;renderC()}
-    else if(a==='cplace'){toggle(C.place,v);renderC()}
-    else if(a==='cafter'){C.after=v;renderC()}
-    else if(a==='cnext'){
-      var e=cValid(C.step);if(e)return toast(e);
-      if(C.step===0&&!C.title)C.title=C.ctitle+' – '+OBJ_LABEL[C.objective];
-      C.step++;renderC();window.scrollTo(0,0);
-    }
-    else if(a==='cback'){if(C.step===0)openApps();else{C.step--;renderC();window.scrollTo(0,0)}}
-    else if(a==='csubmit')cSubmit();
-    else if(a==='capps')openApps();
-    else if(a==='chome')show('v-home');
-  });
-  function onC(ev){
-    var t=ev.target;if(!C)return;
-    if(t.id==='crights'){C.rights=t.checked;return}
-    var k=t.dataset&&t.dataset.ck;if(k)C[k]=t.value;
-  }
-  root.addEventListener('input',onC);
-  root.addEventListener('change',onC);
-  document.addEventListener('click',function(ev){
-    var b=ev.target.closest('[data-camp]');if(!b)return;
-    openCamp(b.dataset.sid,b.dataset.kind,b.dataset.title);
-  });
-})();
-function campEnd(c){
-  if(!c.start_date)return '';
-  var e=new Date(c.start_date+'T00:00:00Z');e.setUTCDate(e.getUTCDate()+(c.duration_days||0));
-  return e.toISOString().slice(0,10);
-}
-function campOpen(c,today){
-  return c.status==='received'||c.status==='in_review'||c.status==='action_required'||(c.status==='approved'&&campEnd(c)>=today);
-}
-loadSubs=function(){
-  var box=document.getElementById('subsList');if(!box||!token)return;
-  box.innerHTML='';
-  Promise.all([api('/studio/submissions'),api('/studio/campaigns')]).then(function(r){
-    var subs=(r[0].body&&r[0].body.items)||[],camps=(r[1].body&&r[1].body.items)||[];
-    var today=todayStr(),busy={};
-    camps.forEach(function(c){if(campOpen(c,today))busy[String(c.submission_id)]=1});
-    var h='';
-    if(subs.length){
-      h+='<h2 style="margin-top:34px">My submissions</h2><p class="sub">Content and projects you’ve shared with us.</p>'+subs.map(function(a){
-        var d=a.created_at?new Date(a.created_at.replace(' ','T')).toLocaleDateString():'';
-        var b=(a.status==='approved'&&!busy[String(a.id)])?'<button class="btn gold" style="margin-top:12px;padding:9px 16px;font-size:13px" data-camp="1" data-sid="'+esc(a.id)+'" data-kind="'+esc(a.kind)+'" data-title="'+escA(a.title)+'">Create a campaign</button>':'';
-        return '<div class="app"><div class="row"><h3>'+esc(a.title)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">'+esc(KIND_LABEL[a.kind]||a.kind)+' · Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+b+'</div>';
-      }).join('');
-    }
-    if(camps.length){
-      h+='<h2 style="margin-top:34px">My campaigns</h2><p class="sub">Promotion requests for your approved content.</p>'+camps.map(function(c){
-        return '<div class="app"><div class="row"><h3>'+esc(c.title)+'</h3><span class="badge s-'+esc(c.status)+'">'+esc(STATUS[c.status]||c.status)+'</span></div><div class="d">'+esc(OBJ_LABEL[c.objective]||c.objective)+' · '+esc(c.content_title||'')+' · '+esc(c.start_date||'')+' to '+esc(campEnd(c))+'</div>'+(c.staff_note?'<div class="staff">'+esc(c.staff_note)+'</div>':'')+'</div>';
-      }).join('');
-    }
-    box.innerHTML=h;
-  }).catch(function(){});
-};
-</script>
-<script>
-(function(){
-var L={mode:'list',data:null,kind:'movie',tid:null,up:{},armed:null,tm:null,src:'tmdb',tmdb:null,f:{},res:[],flt:'all',open:null};
-function $(i){return document.getElementById(i)}
-function R(h){$('libRoot').innerHTML=h}
-function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function busy(){return !!((L.up.video&&L.up.video.busy)||(L.up.poster&&L.up.poster.busy))}
-var _show=window.show;
-function nav(id){
-  var k='home';
-  if(id==='v-lib')k='lib';
-  else if(id!=='v-home'&&id!=='v-how')k='acct';
-  document.querySelectorAll('#bnav button').forEach(function(b){b.classList.toggle('on',b.dataset.nav===k)});
-}
-window.show=function(id){_show(id);nav(id)};
-function setMode(m){L.mode=m;nav('v-lib')}
-
-function xput(st,url,blob,onp){return new Promise(function(res,rej){
-  var x=new XMLHttpRequest();st.xhr=x;x.open('PUT',url);
-  x.upload.onprogress=function(e){if(e.lengthComputable)onp(e.loaded)};
-  x.onload=function(){if(x.status>=200&&x.status<300)res(x.getResponseHeader('ETag')||'');else rej(new Error('Upload failed ('+x.status+')'))};
-  x.onerror=function(){rej(new Error('Connection problem'))};
-  x.onabort=function(){rej(new Error('cancelled'))};
-  x.send(blob);
-})}
-function putRetry(st,url,blob,onp,n){return xput(st,url,blob,onp).catch(function(e){if(st.cancel||n<=1)throw e;return putRetry(st,url,blob,onp,n-1)})}
-function setP(slot,f){
-  var st=L.up[slot];if(!st)return;st.pct=Math.max(0,Math.min(99,Math.round(f*100)));
-  var b=$('lu_'+slot);if(!b)return;
-  var i=b.querySelector('.upb i'),t=b.querySelector('.upr span');
-  if(i)i.style.width=st.pct+'%';if(t)t.textContent=st.pct+'%';
-}
-function upFile(slot,file,st){
-  var body={kind:slot,fileName:file.name,size:file.size},multi=slot==='video'&&file.size>20*1024*1024;
-  if(multi){body.multipart=true;body.partSize=10*1024*1024}
-  return api('/studio/upload/init',{method:'POST',body:JSON.stringify(body)}).then(function(res){
-    if(isAuthFail(res))throw new Error('auth');
-    var b=res.body||{};if(!b.ok)throw new Error(b.error||'Could not start upload');
-    st.pendKey=b.key;
-    if(!b.multipart)return xput(st,b.uploadUrl,file,function(l){setP(slot,l/file.size)}).then(function(){return b.key});
-    st.uploadId=b.uploadId;
-    var parts=[],sent=0,i=0,ps=b.partSize;
-    function next(){
-      if(st.cancel)throw new Error('cancelled');
-      if(i>=b.parts.length)return Promise.resolve();
-      var idx=i++,blob=file.slice(idx*ps,Math.min(file.size,(idx+1)*ps));
-      return putRetry(st,b.parts[idx],blob,function(l){setP(slot,(sent+l)/file.size)},3).then(function(et){
-        if(!et)throw new Error('Cannot read ETag - storage CORS must expose ETag');
-        parts.push({partNumber:idx+1,etag:et});sent+=blob.size;return next();
-      });
-    }
-    return next().then(function(){return api('/studio/upload/complete',{method:'POST',body:JSON.stringify({key:b.key,uploadId:b.uploadId,parts:parts})})}).then(function(r){
-      if(!(r.body&&r.body.ok))throw new Error('Could not finish upload');
-      return b.key;
-    });
-  });
-}
-function slotInner(slot){
-  var st=L.up[slot],acc=slot==='video'?'video/mp4':'image/jpeg,image/png,image/webp';
-  if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
-  if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
-  return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<button type="button" class="btn upc" data-act="pick" data-slot="'+slot+'">Choose '+(slot==='video'?'video (MP4)':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
-}
-function paint(slot){var b=$('lu_'+slot);if(b)b.innerHTML=slotInner(slot)}
-function slotHTML(slot,label,hint){return '<div class="fld"><label>'+label+'</label><div class="upl" id="lu_'+slot+'">'+slotInner(slot)+'</div><div class="uph">'+hint+'</div></div>'}
-function start(slot,file){
-  if(slot==='video'&&!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
-  if(file.size>(slot==='video'?3221225472:5242880))return toast(slot==='video'?'Video must be 3 GB or smaller':'Poster must be 5 MB or smaller');
-  var st=L.up[slot]={name:file.name,pct:0,busy:true,preview:slot==='poster'?URL.createObjectURL(file):null};
-  paint(slot);
+function run(slot,file,st,preview){
+  st.preview=preview||null;
   upFile(slot,file,st).then(function(k){st.key=k;st.busy=false;st.pct=100;paint(slot)}).catch(function(e){
     st.busy=false;
     if(st.uploadId&&!st.key)api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:st.pendKey,uploadId:st.uploadId})}).catch(function(){});
@@ -1100,6 +806,21 @@ function start(slot,file){
     L.up[slot]=st.cancel?null:{err:e.message||'Upload failed'};
     paint(slot);
   });
+}
+function start(slot,file){
+  if(slot==='video'){
+    if(!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
+    if(file.size>3221225472)return toast('Video must be 3 GB or smaller');
+    var sv=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
+    return run(slot,file,sv,null);
+  }
+  if(file.size>60*1024*1024)return toast('That image is too large. Please pick a smaller one.');
+  var st=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
+  shrink(file).then(function(r){
+    if(st.cancel){L.up[slot]=null;paint(slot);return}
+    var f=new File([r.blob],'poster.'+r.ext,{type:r.blob.type});
+    run(slot,f,st,URL.createObjectURL(r.blob));
+  }).catch(function(){L.up[slot]={err:'That image could not be used. Please try another one.'};paint(slot)});
 }
 function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;if(st.xhr)st.xhr.abort()}});L.up={}}
 
@@ -1141,7 +862,7 @@ function renderList(){
 }
 function renderPick(){
   var q=L.data.quota,free=L.data.tier==='free';
-  R('<div class="bk"><button type="button" class="pill" data-act="back">&larr; Back</button></div><h2 style="margin-bottom:6px">What would you like to upload?</h2><p class="sub">Choose the type of content you want to add to your MyPicha+ library.</p>'
+  R(hdr('Add Content','back')+'<h2 style="margin-bottom:6px">What would you like to upload?</h2><p class="sub">Choose the type of content you want to add to your MyPicha+ library.</p>'
    +'<div class="pc" data-act="choose" data-kind="movie" style="--bg:url(assets/studio/hero2.webp)"><div class="pcb"><h3>Upload a movie</h3><p>Add a full-length film, poster and details.</p></div><span class="go">&rarr;</span></div>'
    +'<div class="pc" data-act="choose" data-kind="series" style="--bg:url(assets/studio/hero6.webp)"><div class="pcb"><h3>Create a series</h3><p>Set up a series and add episodes over time.</p></div><span class="go">&rarr;</span></div>'
    +'<div class="allow"><h3>Your free publishing allowance</h3><ul><li>'+q.movies.max+' full movies ('+q.movies.used+' used)</li><li>'+q.series.max+' series, up to '+q.episodesPerSeries+' episodes each ('+q.series.used+' used)</li></ul>'
@@ -1181,23 +902,21 @@ function tmdbBlock(movie){
   }
   return h;
 }
+function hdr(title,act){return '<div class="sh"><button type="button" class="bkb" aria-label="Back" data-act="'+act+'"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><span>'+title+'</span></div>'}
 function renderForm(){
   var movie=L.kind==='movie',f=L.f||{},n=movie?(L.step||1):1,tm=L.src==='tmdb';
   var hasTp=tm&&L.tmdb&&L.tmdb.poster;
-  var h='<div class="bk"><button type="button" class="pill" data-act="fback">&larr; '+(movie&&n>1?'Back':'Cancel')+'</button></div><h2>'+(movie?'Upload movie':'Create series')+'</h2>';
+  var h=hdr(movie?'Upload Movie':'Create Series','fback');
   if(movie)h+=stepsBar(n);else h+='<p class="sub">Create the series first, then add episodes.</p>';
   if(n===1){
     h+=tmdbBlock(movie);
+    if(!tm||(L.tmdb&&!L.tmdb.poster))h+=slotHTML('poster','Poster image (optional)','');
     h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
     h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
     h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
-    if(!movie){
-      if(!hasTp)h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
-      h+=RIGHTS;
-    }
+    if(!movie)h+=RIGHTS;
   }else if(n===2){
     h+=slotHTML('video','Movie file','MP4 only, up to 3 GB. Large files upload in parts.');
-    if(!hasTp)h+=slotHTML('poster','Poster image (optional)','JPG, PNG or WebP, up to 5 MB.');
   }else{
     var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
     h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+'</div></div>';
@@ -1212,7 +931,7 @@ function renderDetail(){
   var t=findT(L.did);
   if(!t){openLib();return}
   var isS=t.kind==='series',s=ST[t.status]||[t.status,''],q=L.data.quota,eps=t.episodes||[];
-  var h='<div class="bk"><button type="button" class="pill" data-act="back">&larr; Library</button></div>';
+  var h=hdr(isS?'Series Details':'Movie Details','back');
   h+='<div class="dh">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><h2 style="font-size:22px;margin:0 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
@@ -1236,7 +955,7 @@ window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail
 function renderEp(t){
   var ms=1,mn=0;
   t.episodes.forEach(function(e){if(e.season>ms){ms=e.season;mn=0}if(e.season===ms&&e.number>mn)mn=e.number});
-  var h='<div class="eyebrow">ADD EPISODE</div><h2>'+esc(t.title)+'</h2><p class="sub">Upload one episode at a time.</p>';
+  var h=hdr('Add Episode','back')+'<h2>'+esc(t.title)+'</h2><p class="sub">Upload one episode at a time.</p>';
   h+='<div class="two"><div class="fld"><label>Season</label><input id="lf_season" type="number" inputmode="numeric" value="'+ms+'"></div><div class="fld"><label>Episode</label><input id="lf_num" type="number" inputmode="numeric" value="'+(mn+1)+'"></div></div>';
   h+='<div class="fld"><label>Episode name (optional)</label><input id="lf_name" type="text" maxlength="120"></div>';
   h+=slotHTML('video','Episode file','MP4 only, up to 3 GB.');
@@ -1318,7 +1037,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='back'){if(L.mode==='ep'&&L.tid)openDetail(L.tid);else openLib()}
   else if(a==='addep'){var t=findT(el.dataset.id);if(t){L.tid=t.id;L.up={};setMode('ep');renderEp(t);window.scrollTo(0,0)}}
   else if(a==='view')openDetail(el.dataset.id);
-  else if(a==='fback'){saveF();if(L.kind==='movie'&&(L.step||1)>1){L.step=L.step-1;renderForm();window.scrollTo(0,0)}else openLib()}
+  else if(a==='fback'){saveF();if(L.kind==='movie'&&(L.step||1)>1){L.step=L.step-1;renderForm();window.scrollTo(0,0)}else openAdd()}
   else if(a==='next'){saveF();var ff=L.f||{};
     if((L.step||1)===1){if(!(ff.title||'').trim())return toast('Enter a title');L.step=2}
     else if(L.step===2){if(!(L.up.video&&L.up.video.key))return toast(busy()?'Please wait for the upload to finish':'Upload your movie file first');L.step=3}
