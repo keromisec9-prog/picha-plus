@@ -56,6 +56,64 @@ ui();
 log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.length);
 })();
 </script>
+<script id="PichaNav">
+(function(){
+  var L=[],mute=0,progAt=0,closedAt=0,exAt=0,ls=history.state;
+  var ob=history.back,op=history.pushState,or=history.replaceState;
+  history.back=function(){ if(mute) return; progAt=Date.now(); return ob.apply(this,arguments); };
+  history.pushState=function(a){ if(mute) return; ls=a; return op.apply(this,arguments); };
+  history.replaceState=function(a){ ls=a; return or.apply(this,arguments); };
+  function isT(x){ return !!x&&(x.type==='title'||x.type==='series'); }
+  function reg(id,sel,close,test){ L.push({id:id,sel:sel,close:close,test:test}); }
+  function find(l){ var e=document.querySelector(l.sel); if(!e) return null;
+    if(l.test) return l.test(e)?e:null;
+    return getComputedStyle(e).display==='none'?null:e; }
+  function z(e){ var n=parseInt(getComputedStyle(e).zIndex,10); return isNaN(n)?0:n; }
+  function fn(n){ return function(){ if(typeof window[n]==='function') window[n](); }; }
+  function closeTop(){
+    var best=null,bz=-1e9;
+    L.forEach(function(l){ var e=find(l); if(!e) return; var v=z(e);
+      if(!best||v>bz||(v===bz&&(best.el.compareDocumentPosition(e)&4))){ best={l:l,el:e}; bz=v; } });
+    if(!best) return false;
+    mute++; setTimeout(function(){ mute--; },200);
+    try{ best.l.close(best.el); }catch(x){}
+    closedAt=Date.now();
+    try{
+      if(location.pathname.indexOf('/title/')>-1 && !document.querySelector('#seriesModal.active,#infoModal.active'))
+        or.call(history,history.state,'','/picha-plus/');
+    }catch(x){}
+    return true;
+  }
+  reg('payment','#paymentModal.active',fn('_payBack'),function(){return true;});
+  reg('paywall','#paywallModal',fn('closePaywall'));
+  reg('signin','#signinModal',fn('closeSignin'));
+  reg('acct','#accountSettingsModal',fn('closeAccountSettings'));
+  reg('african','.african-modal-overlay:not([data-held])',function(e){e.remove();});
+  reg('player','#playerModal.active',fn('closePlayer'),function(){return true;});
+  reg('series','#seriesModal.active',fn('closeSeries'),function(){return true;});
+  reg('info','#infoModal.active',fn('closeInfo'),function(){return true;});
+  reg('category','#categoryOverlay.active',fn('closeCategory'),function(){return true;});
+  reg('creator','#ppCr',fn('__ppCrShut'),function(){return true;});
+  window.PichaNav={reg:reg,closeTop:closeTop};
+  window.addEventListener('popstate',function(e){
+    var from=ls, st=history.state; ls=st;
+    if(Date.now()-progAt<700) return;
+    if((from&&(from.serview||from.ppview))||(isT(from)&&isT(st))){ exAt=Date.now(); return; }
+    if(closeTop()) e.stopImmediatePropagation();
+  },true);
+  function wrap(){
+    var f=window.__ppRunFallbacks; if(typeof f!=='function'||f.__nav) return;
+    var w=function(){
+      if(Date.now()-exAt<800) return f.apply(this,arguments);
+      if(Date.now()-closedAt<300) return true;
+      if(closeTop()) return true;
+      return f.apply(this,arguments);
+    };
+    w.__nav=1; window.__ppRunFallbacks=w;
+  }
+  wrap(); window.addEventListener('load',wrap);
+})();
+</script>
 <script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){var st=e.state||{};["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift")});if(window.__ppDet&&(st.ppcr||st.type==="title"||st.type==="series")){if(st.ppcr){var o=document.getElementById("ppCr");if(o)o.style.visibility="";window.__ppDet=false}return}window.__ppDet=false;e.stopImmediatePropagation();window.__ppCrShut();}else{window.__ppDet=false}}catch(x){}},true);</script>
   <link rel="canonical" id="canonicalLink" href="https://pichaplus.netlify.app/">
     <script>
@@ -14418,27 +14476,6 @@ body.pp-in-profile #serCreator{cursor:default}
       }).catch(function(){});
     }catch(e){console.warn(e)}
   };
-})();
-</script>
-<script id="ppCrFallback">
-(function(){
-  function wrap(){
-    var f=window.__ppRunFallbacks;
-    if(typeof f!=='function'||f.__ppw) return false;
-    var w=function(){
-      try{
-        var cr=document.getElementById('ppCr');
-        var pw=document.getElementById('paywallModal');
-        var pm=document.getElementById('paymentModal');
-        var busy=document.querySelector('#infoModal.active,#seriesModal.active,#playerModal.active,#paymentModal.active')
-          || (pw&&getComputedStyle(pw).display!=='none');
-        if(cr&&!busy&&typeof window.__ppCrShut==='function'){ window.__ppCrShut(); return true; }
-      }catch(e){}
-      return f.apply(this,arguments);
-    };
-    w.__ppw=1; window.__ppRunFallbacks=w; return true;
-  }
-  if(!wrap()) window.addEventListener('load',wrap);
 })();
 </script>
 </body>
