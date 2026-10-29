@@ -14166,6 +14166,7 @@ async function submitForceReset() {
 <style>
 #ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
 .crcard{cursor:pointer}
+#playerModal{z-index:100002!important}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
 #ppCr .crt{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5}
 #ppCr .crb{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
@@ -14244,7 +14245,7 @@ async function submitForceReset() {
   }
   function ovEl(){return document.getElementById("ppCr")}
   function unhide(){var o=ovEl();if(o)o.style.visibility="";window.__ppDet=false}
-  ["closeInfo","closeSeries"].forEach(function(fn){var f=window[fn];if(typeof f!=="function")return;window[fn]=function(){var r=f.apply(this,arguments);setTimeout(function(){var o=ovEl();if(o&&o.style.visibility==="hidden"&&!document.querySelector("#infoModal.active,#seriesModal.active"))unhide()},400);return r}});
+  ["closeInfo","closeSeries","closePlayer"].forEach(function(fn){var f=window[fn];if(typeof f!=="function")return;window[fn]=function(){var r=f.apply(this,arguments);setTimeout(function(){var o=ovEl();if(o&&o.style.visibility==="hidden"&&!document.querySelector("#infoModal.active,#seriesModal.active,#playerModal.active"))unhide()},400);return r}});
   function openCard(id,kind){
     var key="studiot_"+id,o=ovEl(),opened=false;
     try{
