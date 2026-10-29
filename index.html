@@ -14031,7 +14031,7 @@ async function submitForceReset() {
     var ini = creator.avatarUrl ? "" : esc((creator.username || "?").charAt(0).toUpperCase());
     var fb = (creator.isSelf || creator.following) ? "" : '<button type="button" id="ppFollowBtn" class="pp-fb">' + IC_ADD + "</button>";
     var n = creator.followers || 0;
-    c.className = "on";
+    c.className = "on"; c.setAttribute("data-u", creator.username);
     c.innerHTML = '<div class="pp-av"' + st + ">" + ini + fb + '</div><div class="pp-cn">' + esc(nm) + '</div>';
   }
 
@@ -14161,6 +14161,18 @@ async function submitForceReset() {
   }
   init();
 })();
+</script>
+<style>#ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}</style>
+<script>
+document.addEventListener("click",function(e){
+  var t=e.target;if(!t||!t.closest)return;
+  if(t.closest("#ppFollowBtn"))return;
+  var c=t.closest("#ppCreator");if(!c||!c.classList.contains("on"))return;
+  if(!t.closest(".pp-av,.pp-cn"))return;
+  var u=c.getAttribute("data-u");if(!u)return;
+  var m=location.pathname.match(/^(.*\/picha-plus\/)/);
+  location.href=location.origin+(m?m[1]:"/")+"studio.html#@"+encodeURIComponent(u);
+},true);
 </script>
 </body>
 </html>
