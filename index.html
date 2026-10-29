@@ -7935,7 +7935,7 @@ function closeSeries() {
 }
 
 async function playEpisode(epIndex) {
-  if (!session.isLoggedIn()) { closeSeries(); openSignin(); return; }
+  if (!session.isLoggedIn()) { openSignin(); return; }
   if (!session.isSubscribed()) { showPaywall(); showToast('Subscribe to watch', 'error'); return; }
 
   const s = currentSeries;
