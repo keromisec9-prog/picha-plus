@@ -460,6 +460,15 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pfst>div+div{border-left:1px solid rgba(255,255,255,.12)}
 .pfst b{display:block;font-size:18px}
 .pfst span{font-size:12px;color:var(--mute)}
+.libmenu{margin-left:auto;flex:none;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer}
+.libmenu svg,.lsx svg{width:22px;height:22px;fill:currentColor;display:block}
+.lsh{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:none;align-items:flex-end}
+.lsh.on{display:flex}
+.lsc{width:100%;max-height:85vh;overflow:auto;background:#161616;border-radius:20px 20px 0 0;padding:14px 16px 24px;box-sizing:border-box}
+.lsh-h{display:flex;justify-content:space-between;align-items:center}
+.lsh-h b{font-size:16px}
+.lsx{background:none;border:0;color:var(--mute);padding:6px;cursor:pointer}
+.lsc .qcard{margin-top:8px!important}
 .pfcam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#2a2a2c;border:2px solid #111;color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer;}
 .pfcam svg{width:16px;height:16px;fill:currentColor;display:block;}
 
@@ -1239,9 +1248,10 @@ function renderList(){
   function qb(l,u,m){var p=m?Math.min(100,Math.round(u/m*100)):0;return '<div class="qb"><div class="ql"><span>'+l+'</span><b>'+u+(m?' of '+m:'')+' used</b></div>'+(m?'<div class="qt"><i style="width:'+p+'%"></i></div>':'')+'</div>';}
   var h='',qh='<div class="qcard" style="margin-top:14px"><h3>Your creator space</h3>'+qb('Movies',q.movies.used,q.movies.max)+qb('Series',q.series.used,q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
   h+='<div class="chips">'+[['all','All content'],['movie','Movies'],['series','Series']].map(function(c){return '<button type="button" class="chip'+(L.flt===c[0]?' on':'')+'" data-act="flt" data-v="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>';
+  h=h.replace(/<\/div>$/,'<button type="button" class="libmenu" aria-label="Menu" onclick="document.getElementById(\'libSheet\').classList.add(\'on\')"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button></div>');
   var list=d.titles.filter(function(t){return L.flt==='all'||t.kind===L.flt});
   if(!list.length){
-    h+='<div class="lc"><h3>Your next release starts here</h3><div class="t" style="margin-bottom:14px">Add a movie or create a series to begin building your catalogue.</div><button class="btn gold" data-act="openadd">Upload your first title</button></div>';
+    h+='<p class="sub" style="margin:14px 2px">No titles yet.</p>';
   }
   list.forEach(function(t){
     var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
@@ -1259,8 +1269,8 @@ function renderList(){
     }
     h+='</div>';
   });
-  h+=qh;
-  if(d.tier==='free')h+='<div class="upsell"><h3>Need a bigger catalogue?</h3><p>Verified creators and partners can upload far more movies and series.</p><button class="btn gold" data-act="partner">Become a verified partner</button></div>';
+  var up=d.tier==='free'?'<div class="upsell"><h3>Need a bigger catalogue?</h3><p>Verified creators and partners can upload far more movies and series.</p><button class="btn gold" data-act="partner">Become a verified partner</button></div>':'';
+  h+='<div id="libSheet" class="lsh" onclick="if(event.target===this||event.target.closest(\'[data-act]\'))this.classList.remove(\'on\')"><div class="lsc"><div class="lsh-h"><b>Library menu</b><button type="button" class="lsx" aria-label="Close" onclick="document.getElementById(\'libSheet\').classList.remove(\'on\')"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>'+qh+up+'</div></div>';
   R(h);
 }
 function renderPick(){
