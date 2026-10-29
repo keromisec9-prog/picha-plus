@@ -14288,6 +14288,7 @@ async function submitForceReset() {
 .toast{z-index:100005!important}
 #playerModal{z-index:100002!important}
 #infoModal.pp-lift,#seriesModal.pp-lift{z-index:100002!important}
+#seriesModal.pp-lift.pp-under{z-index:100001!important}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
 #ppCr .crt{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5}
 #ppCr .crb{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
@@ -14378,7 +14379,19 @@ async function submitForceReset() {
     (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){note("Link copied \u2713")},function(){note("Could not copy link","error")});
   }
   function lift(i){var m=document.getElementById(i);if(m)m.classList.add("pp-lift")}
-  function unlift(){["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift")})}
+  function unlift(){["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift","pp-under")})}
+  (function(){
+    var si=window.showInfo,ss=window.showSeries;
+    if(typeof si==="function")window.showInfo=function(){
+      var r=si.apply(this,arguments),sm=document.getElementById("seriesModal");
+      if(ovEl()&&sm&&sm.classList.contains("pp-lift")){lift("infoModal");sm.classList.add("pp-under")}
+      return r;
+    };
+    if(typeof ss==="function")window.showSeries=function(){
+      var sm=document.getElementById("seriesModal");if(sm)sm.classList.remove("pp-under");
+      return ss.apply(this,arguments);
+    };
+  })();
   function ovEl(){return document.getElementById("ppCr")}
   function unhide(){var o=ovEl();if(o)o.style.visibility="";window.__ppDet=false}
   ["closeInfo","closeSeries","closePlayer"].forEach(function(fn){var f=window[fn];if(typeof f!=="function")return;window[fn]=function(){var r=f.apply(this,arguments);unlift();setTimeout(function(){var o=ovEl();if(o&&o.style.visibility==="hidden"&&!document.querySelector("#infoModal.active,#seriesModal.active,#playerModal.active"))unhide()},400);return r}});
