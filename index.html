@@ -4752,6 +4752,7 @@ async function requestCurrentTitle() {
 
 function playFromInfo() {
   const item = currentInfoItem;
+  if (item && session.isLoggedIn() && !session.isSubscribed() && !isStudioFree(item)) { handleCardPlay(item); return; }
   // Close only the info modal; handleCardPlay will snapshot and preserve the pages behind
   closeInfo();
   if (item) handleCardPlay(item);
