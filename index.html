@@ -14162,17 +14162,136 @@ async function submitForceReset() {
   init();
 })();
 </script>
-<style>#ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}</style>
+<style>
+#ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
+#ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
+#ppCr .crt{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:10px;right:10px;z-index:3;display:flex;justify-content:space-between}
+#ppCr .crb{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:0;cursor:pointer}
+#ppCr .crb svg{width:20px;height:20px;fill:#fff}
+#ppCr .crc{aspect-ratio:1.8;max-height:300px;width:100%;background:#000 center/cover no-repeat;-webkit-mask-image:linear-gradient(#000 65%,transparent);mask-image:linear-gradient(#000 65%,transparent)}
+#ppCr .crbody{padding:0 16px 40px}
+#ppCr .crr{display:flex;justify-content:space-between;align-items:flex-end;margin-top:-48px;position:relative}
+#ppCr .cra{width:96px;height:96px;border-radius:50%;border:3px solid var(--gold,#eeb32a);background:#1c1c1e center/cover no-repeat;overflow:hidden;display:grid;place-items:center}
+#ppCr .cra svg{width:44px;height:44px;fill:#888}
+#ppCr .crf{background:var(--gold,#eeb32a);color:#111;border:1px solid var(--gold,#eeb32a);border-radius:999px;font:700 14px system-ui,sans-serif;padding:9px 20px;cursor:pointer;transition:background .3s,color .3s}
+#ppCr .crf.on{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+#ppCr .crn{display:flex;align-items:center;gap:6px;margin-top:10px;font:700 21px system-ui,sans-serif}
+#ppCr .crn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ppCr .crn.open span{white-space:normal}
+#ppCr .crn svg{width:18px;height:18px;fill:var(--gold,#eeb32a);flex:none}
+#ppCr .cru{color:#9a9a9a;font-size:14px;margin:2px 0 6px}
+#ppCr .crbio{font-size:14px;line-height:1.5;color:#d8d1c2;margin:6px 0}
+#ppCr .crs{display:flex;margin:14px 0 4px}
+#ppCr .crs>div{flex:1;text-align:center}
+#ppCr .crs>div+div{border-left:1px solid rgba(255,255,255,.12)}
+#ppCr .crs b{display:block;font-size:18px}
+#ppCr .crs i{font-style:normal;font-size:12px;color:#9a9a9a}
+#ppCr .crtabs{display:flex;gap:22px;border-bottom:1px solid rgba(255,255,255,.1);margin:12px 0}
+#ppCr .crtabs button{background:none;border:0;border-bottom:2px solid transparent;color:#9a9a9a;font:600 15px system-ui,sans-serif;padding:10px 0;cursor:pointer}
+#ppCr .crtabs button.on{color:var(--gold,#eeb32a);border-bottom-color:var(--gold,#eeb32a)}
+#ppCr .crfeat{display:flex;gap:12px;background:rgba(255,255,255,.05);border-radius:14px;padding:10px;margin-bottom:10px}
+#ppCr .crfeat img{width:96px;aspect-ratio:2/3;object-fit:cover;border-radius:10px;flex:none}
+#ppCr .crft{font-weight:700;font-size:17px}
+#ppCr .crm{font-size:13px;color:#9a9a9a;margin:4px 0}
+#ppCr .crsy{font-size:13px;color:#cfc8b8;margin:6px 0 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+#ppCr h3{font-size:16px;margin:16px 0 10px}
+#ppCr .crg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+#ppCr .crg img,#ppCr .crg .np{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;background:#1a1a1a;display:block}
+#ppCr .crg .t{font-size:12px;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ppCr .crg .k{font-size:11px;color:#9a9a9a}
+#ppCr .crmsg{padding:90px 20px;text-align:center;color:#9a9a9a}
+</style>
 <script>
-document.addEventListener("click",function(e){
-  var t=e.target;if(!t||!t.closest)return;
-  if(t.closest("#ppFollowBtn"))return;
-  var c=t.closest("#ppCreator");if(!c||!c.classList.contains("on"))return;
-  if(!t.closest(".pp-av,.pp-cn"))return;
-  var u=c.getAttribute("data-u");if(!u)return;
-  var m=location.pathname.match(/^(.*\/picha-plus\/)/);
-  location.href=location.origin+(m?m[1]:"/")+"studio.html#@"+encodeURIComponent(u);
-},true);
+(function(){
+  var BK='<svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>';
+  var SH='<svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>';
+  var VK='<svg viewBox="0 0 24 24"><path d="M12 2l2.4 1.8 3-.1 1 2.8 2.5 1.7-.9 2.9.9 2.9-2.5 1.7-1 2.8-3-.1L12 22l-2.4-1.8-3 .1-1-2.8-2.5-1.7.9-2.9-.9-2.9 2.5-1.7 1-2.8 3 .1z"/><path d="M10.6 15.6 7.9 12.9l1.1-1.1 1.6 1.6 4.4-4.4 1.1 1.1z" fill="#111"/></svg>';
+  var PS='<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+  var API_=(typeof API!=="undefined")?API:"https://picha-plus-worker.kerosoftz522.workers.dev";
+  var ov=null,pushed=false,C={u:"",f:false,n:0},busy=false;
+  function E(x){return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function tok(){try{return localStorage.getItem("pichaplus_session")||""}catch(e){return ""}}
+  function note(m,k){if(typeof showToast==="function")showToast(m,k||"gold")}
+  function top(share){return '<div class="crt"><button type="button" class="crb" data-a="back" aria-label="Back">'+BK+'</button>'+(share?'<button type="button" class="crb" data-a="share" aria-label="Share">'+SH+'</button>':'')+'</div>'}
+  function shut(){if(ov){ov.remove();ov=null}document.body.style.overflow=""}
+  function back(){if(pushed){history.back()}else shut()}
+  window.addEventListener("popstate",function(){if(ov){pushed=false;shut()}});
+  function tab(k){
+    ["mv","ab"].forEach(function(x){var e=ov.querySelector("#crp-"+x);if(e)e.style.display=x===k?"":"none"});
+    [].forEach.call(ov.querySelectorAll(".crtabs button"),function(b){b.classList.toggle("on",b.getAttribute("data-k")===k)});
+  }
+  function follow(){
+    if(busy)return;
+    if(!tok())return note("Sign in to follow creators","error");
+    busy=true;var want=!C.f;
+    fetch(API_+(want?"/studio/follow":"/studio/unfollow"),{method:"POST",headers:{"Content-Type":"application/json","X-Session-Token":tok()},body:JSON.stringify({username:C.u})})
+      .then(function(r){return r.json()}).then(function(j){
+        busy=false;
+        if(!(j&&j.ok))return note((j&&j.error)||"Please sign in again","error");
+        C.f=!!j.following;C.n=j.followers||0;
+        var b=ov&&ov.querySelector(".crf"),n=ov&&ov.querySelector("#crFers");
+        if(n)n.textContent=C.n;
+        if(b){b.className="crf"+(C.f?" on":"");b.textContent=C.f?"\u2713 Following":"+ Follow";if(C.f)setTimeout(function(){if(b.isConnected&&C.f)b.textContent="Following"},1200)}
+      }).catch(function(){busy=false;note("Network error","error")});
+  }
+  function share(){
+    var url=API_+"/c/"+encodeURIComponent(C.u);
+    if(navigator.share){navigator.share({title:"@"+C.u+" on MyPicha+",url:url}).catch(function(){});return}
+    (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){note("Link copied \u2713")},function(){note("Could not copy link","error")});
+  }
+  function open(u){
+    if(ov)return;
+    ov=document.createElement("div");ov.id="ppCr";
+    ov.innerHTML=top(false)+'<div class="crmsg">Loading\u2026</div>';
+    document.body.appendChild(ov);document.body.style.overflow="hidden";
+    try{history.pushState({ppcr:1},"",location.href);pushed=true}catch(e){pushed=false}
+    ov.addEventListener("click",function(e){
+      var t=e.target,a=t.closest&&t.closest("[data-a]");
+      if(a){var k=a.getAttribute("data-a");if(k==="back")back();else if(k==="share")share();else if(k==="fol")follow();return}
+      var tb=t.closest&&t.closest(".crtabs button");if(tb)return tab(tb.getAttribute("data-k"));
+      var nm=t.closest&&t.closest(".crn span");if(nm)nm.parentNode.classList.toggle("open");
+    });
+    var h={};if(tok())h["X-Session-Token"]=tok();
+    Promise.all([
+      fetch(API_+"/studio/creator/"+encodeURIComponent(u)).then(function(r){return r.json()}),
+      fetch(API_+"/studio/creator-meta/"+encodeURIComponent(u),{headers:h}).then(function(r){return r.json()}).catch(function(){return {}})
+    ]).then(function(rs){
+      if(!ov)return;
+      var b=rs[0],m=rs[1]||{};
+      if(!b||!b.ok){ov.innerHTML=top(false)+'<div class="crmsg"><h3>Creator not found</h3>This profile does not exist or the link is wrong.</div>';return}
+      var c=b.creator,t=c.titles||[];
+      C={u:c.username,f:!!m.isFollowing,n:m.followers||0};
+      var folBtn=m.isSelf?"":(C.f?'<button type="button" class="crf on" data-a="fol">Following</button>':'<button type="button" class="crf" data-a="fol">+ Follow</button>');
+      var x=top(true)+'<div class="crc"'+(c.coverUrl?' style="background-image:url(\''+E(c.coverUrl)+'\')"':'')+'></div><div class="crbody">'
+        +'<div class="crr"><div class="cra"'+(c.avatarUrl?' style="background-image:url(\''+E(c.avatarUrl)+'\')"':'')+'>'+(c.avatarUrl?'':PS)+'</div>'+folBtn+'</div>'
+        +'<div class="crn"><span>'+E(c.displayName||("@"+c.username))+'</span>'+(c.verified?VK:'')+'</div>'
+        +'<div class="cru">@'+E(c.username)+'</div>'+(c.bio?'<p class="crbio">'+E(c.bio)+'</p>':'')
+        +'<div class="crs"><div><b>'+(m.following||0)+'</b><i>Following</i></div><div><b id="crFers">'+C.n+'</b><i>Followers</i></div><div><b>'+t.length+'</b><i>Titles</i></div></div>'
+        +'<div class="crtabs"><button type="button" class="on" data-k="mv">Movies &amp; Series</button><button type="button" data-k="ab">About</button></div>';
+      var mv="";
+      if(!t.length)mv='<p class="crm">No published titles yet.</p>';
+      else{
+        var f=t[0];
+        mv+='<div class="crfeat">'+(f.posterUrl?'<img src="'+E(f.posterUrl)+'" alt="">':'')+'<div><div class="crft">'+E(f.title)+'</div><div class="crm">'+(f.kind==="series"?"Series":"Movie")+(f.genre?" \u00b7 "+E(f.genre):"")+'</div>'+(f.synopsis?'<p class="crsy">'+E(f.synopsis)+'</p>':'')+'</div></div>';
+        mv+='<h3>All Movies &amp; Series</h3><div class="crg">'+t.map(function(y){return '<div>'+(y.posterUrl?'<img src="'+E(y.posterUrl)+'" alt="">':'<div class="np"></div>')+'<div class="t">'+E(y.title)+'</div><div class="k">'+(y.kind==="series"?"Series":"Movie")+'</div></div>'}).join("")+'</div>';
+      }
+      x+='<div id="crp-mv">'+mv+'</div><div id="crp-ab" style="display:none"><p class="crbio">'+(c.bio?E(c.bio):"No bio yet.")+'</p></div></div>';
+      ov.innerHTML=x;
+    }).catch(function(){if(ov)ov.innerHTML=top(false)+'<div class="crmsg">Could not load. Check your connection and try again.</div>'});
+  }
+  window.openCreatorPage=open;
+  document.addEventListener("click",function(e){
+    var t=e.target;if(!t||!t.closest)return;
+    if(t.closest("#ppFollowBtn"))return;
+    var c=t.closest("#ppCreator");if(!c||!c.classList.contains("on"))return;
+    if(!t.closest(".pp-av,.pp-cn"))return;
+    var u=c.getAttribute("data-u");if(u)open(u);
+  },true);
+  try{
+    var q=new URLSearchParams(location.search).get("c");
+    if(q&&/^[A-Za-z0-9_]{3,20}$/.test(q)){history.replaceState(null,"",location.pathname);open(q.toLowerCase())}
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
