@@ -4164,7 +4164,7 @@ setInterval(loadStudioFree, 300000);
 async function handleHeroPlay() {
   if (!currentPlayItem) return;
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed() && !isStudioFree(currentPlayItem)) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed() && !isStudioFree(currentPlayItem)) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
   showInfo(currentPlayItem);
 }
 
@@ -5173,7 +5173,7 @@ function showSessionConflictToast() {
 // ── PLAY ──────────────────────────────────────────────────────────────────────
 async function handleCardPlay(item) {
   if (!session.isLoggedIn()) { openSignin(); return; }
-  if (!session.isSubscribed() && !isStudioFree(item)) { closeInfo(); showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
+  if (!session.isSubscribed() && !isStudioFree(item)) { showPaywall(); showToast('Subscribe to watch 👆', 'error'); return; }
 
   const title = item.title || item.name || '';
 
@@ -7877,7 +7877,7 @@ function closeSeries() {
 
 async function playEpisode(epIndex) {
   if (!session.isLoggedIn()) { closeSeries(); openSignin(); return; }
-  if (!session.isSubscribed()) { closeSeries(); showPaywall(); showToast('Subscribe to watch', 'error'); return; }
+  if (!session.isSubscribed()) { showPaywall(); showToast('Subscribe to watch', 'error'); return; }
 
   const s = currentSeries;
   const ep = s?.episodes?.[epIndex];
