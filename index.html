@@ -14167,6 +14167,7 @@ async function submitForceReset() {
 #ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
 .crcard{cursor:pointer}
 #playerModal{z-index:100002!important}
+body:has(#ppCr) #infoModal.active,body:has(#ppCr) #seriesModal.active{z-index:100002!important}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
 #ppCr .crt{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5}
 #ppCr .crb{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
@@ -14251,10 +14252,10 @@ async function submitForceReset() {
     try{
       if(kind==="series"){
         var si=(window._seriesList||[]).findIndex(function(x){return x._kvKey===key});
-        if(si>-1){window.__ppDet=true;if(o)o.style.visibility="hidden";showSeries(si);opened=true}
+        if(si>-1){window.__ppDet=true;showSeries(si);opened=true}
       }else{
         var it=(window._allCards||[]).filter(function(c){return String(c.id)===key})[0];
-        if(it){window.__ppDet=true;if(o)o.style.visibility="hidden";showInfo(it);opened=true}
+        if(it){window.__ppDet=true;showInfo(it);opened=true}
       }
     }catch(err){}
     if(!opened){unhide();note("Not available yet","error")}
