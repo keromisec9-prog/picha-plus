@@ -14216,8 +14216,7 @@ async function submitForceReset() {
   function note(m,k){if(typeof showToast==="function")showToast(m,k||"gold")}
   function top(){return '<div class="crt"><button type="button" class="crb" data-a="back" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button></div>'}
   function shut(){if(ov){ov.remove();ov=null}document.body.style.overflow=""}
-  function back(){if(pushed){history.back()}else shut()}
-  window.addEventListener("popstate",function(){if(ov){pushed=false;shut()}});
+  function back(){shut()}
   function tab(k){
     ["mv","ab"].forEach(function(x){var e=ov.querySelector("#crp-"+x);if(e)e.style.display=x===k?"":"none"});
     [].forEach.call(ov.querySelectorAll(".crtabs button"),function(b){b.classList.toggle("on",b.getAttribute("data-k")===k)});
@@ -14246,7 +14245,6 @@ async function submitForceReset() {
     ov=document.createElement("div");ov.id="ppCr";
     ov.innerHTML=top(false)+'<div class="crmsg">Loading\u2026</div>';
     document.body.appendChild(ov);document.body.style.overflow="hidden";
-    try{history.pushState({ppcr:1},"",location.href);pushed=true}catch(e){pushed=false}
     ov.addEventListener("click",function(e){
       var t=e.target,a=t.closest&&t.closest("[data-a]");
       if(a){var k=a.getAttribute("data-a");if(k==="back")back();else if(k==="share")share();else if(k==="fol")follow();return}
@@ -14281,7 +14279,13 @@ async function submitForceReset() {
       ov.innerHTML=x;
     }).catch(function(){if(ov)ov.innerHTML=top(false)+'<div class="crmsg">Could not load. Check your connection and try again.</div>'});
   }
-  if(window.addBackFallback)window.addBackFallback(function(){if(!ov)return false;back();return true;});
+  (function(){
+    var orig=window.__ppRunFallbacks;
+    window.__ppRunFallbacks=function(){
+      if(ov){shut();return true}
+      return orig?orig.apply(this,arguments):false;
+    };
+  })();
   window.openCreatorPage=open;
   document.addEventListener("click",function(e){
     var t=e.target;if(!t||!t.closest)return;
