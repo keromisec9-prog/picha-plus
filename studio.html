@@ -412,7 +412,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .qt i{display:block;height:100%;background:var(--gold)}
 /* studio-v30 */
 .pf{margin:0 0 18px}
-.pfc{height:130px;border-radius:14px;background:#1c1409 center/cover no-repeat;position:relative}
+.pfc{height:130px;border-radius:14px;background:#000 center/cover no-repeat;position:relative}
 .pfr{display:flex;justify-content:space-between;align-items:flex-end;padding:0 4px;margin-top:-42px;margin-bottom:10px}
 .pfa{width:84px;height:84px;border-radius:50%;border:3px solid var(--gold);background:#1c1c1e;overflow:hidden;display:grid;place-items:center;position:relative;flex:0 0 84px}
 .pfa img{width:100%;height:100%;object-fit:cover;display:block}
@@ -436,7 +436,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pf .pfa{width:96px;height:96px;flex:0 0 96px;overflow:visible;}
 .pf .pfa>img,.pf .pfa>svg:not(.pfcam svg){border-radius:50%;}
 .pf .pfa>img{width:100%;height:100%;}
-.pf .pfc{background-size:contain;background-repeat:no-repeat;background-position:center;height:190px;}
+
 .page:has(#profHead){padding-top:0!important;}
 @media(min-width:720px){.page:has(#profHead){padding-top:0!important;}}
 .pf{margin-bottom:10px}
@@ -473,13 +473,15 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pf .pfc{background-image:url(assets/studio/hero4.webp);background-size:cover;background-position:center;background-repeat:no-repeat;}
 .crp{position:fixed;inset:0;z-index:10000;background:#0b0f14;display:flex;flex-direction:column;align-items:center}
 .crp-st{flex:1;width:100%;display:flex;align-items:center;justify-content:center;touch-action:none;overflow:hidden}
-.crp-fr{position:relative;overflow:hidden;background:#111;outline:2px solid rgba(255,255,255,.85)}
+.crp-fr{position:relative;overflow:hidden;background:#000;outline:2px solid rgba(255,255,255,.85)}
 .crp-fr.c{border-radius:50%}
 .crp-fr img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none}
 .crp-z{width:min(80vw,360px);margin:12px 0 0}
 .crp-bar{width:100%;display:flex;justify-content:space-around;align-items:center;padding:10px 0 calc(18px + env(safe-area-inset-bottom,0px))}
 .crp-bar button{background:none;border:0;color:var(--gold,#eeb32a);opacity:.9;font:500 16px system-ui,sans-serif;padding:8px 14px;cursor:pointer}
 .crp-bar svg{width:24px;height:24px;fill:var(--gold,#eeb32a);display:block}
+.pf .pfc,.pfed .pfc{background-color:#000;aspect-ratio:1.8;height:auto!important;background-size:cover;background-position:center;background-repeat:no-repeat}
+.pf .pfc{max-height:300px}
 .pfcam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#2a2a2c;border:2px solid #111;color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer;}
 .pfcam svg{width:16px;height:16px;fill:currentColor;display:block;}
 
@@ -1572,7 +1574,7 @@ function fmtD(v){
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
       PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;var sb=(r[3]&&r[3].body)||{};PF.st={following:sb.following||0,followers:sb.followers||0,posts:ts.filter(function(t){return t.status==='approved'}).length};
       h.innerHTML=headHTML(PF.p,ok);
-      l.innerHTML=ts.length?ts.map(function(t){var z=ST[t.status]||[t.status,''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
+      l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
@@ -1663,7 +1665,7 @@ function fmtD(v){
         function done(){
           var ow=outW,oh=Math.round(outW/ratio),k=ow/fw,c=document.createElement("canvas");
           c.width=ow;c.height=oh;
-          var g=c.getContext("2d");g.fillStyle="#111";g.fillRect(0,0,ow,oh);
+          var g=c.getContext("2d");g.fillStyle="#000";g.fillRect(0,0,ow,oh);
           g.translate(ow/2+x*k,oh/2+y*k);g.scale(s*k,s*k);g.drawImage(cur,-nw/2,-nh/2);
           c.toBlob(function(b){
             if(!b)return fin(null,new Error("image"));
