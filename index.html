@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){e.stopImmediatePropagation();window.__ppCrShut();}}catch(x){}},true);</script>
+<script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){var st=e.state||{};if(window.__ppDet&&(st.ppcr||st.type==="title"||st.type==="series")){if(st.ppcr){var o=document.getElementById("ppCr");if(o)o.style.visibility="";window.__ppDet=false}return}window.__ppDet=false;e.stopImmediatePropagation();window.__ppCrShut();}else{window.__ppDet=false}}catch(x){}},true);</script>
   <link rel="canonical" id="canonicalLink" href="https://pichaplus.netlify.app/">
     <script>
       // Single Page Apps for GitHub Pages — decode the redirect from 404.html
@@ -14165,6 +14165,7 @@ async function submitForceReset() {
 </script>
 <style>
 #ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
+.crcard{cursor:pointer}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
 #ppCr .crt{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5}
 #ppCr .crb{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
@@ -14241,6 +14242,22 @@ async function submitForceReset() {
     if(navigator.share){navigator.share({title:"@"+C.u+" on MyPicha+",url:url}).catch(function(){});return}
     (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){note("Link copied \u2713")},function(){note("Could not copy link","error")});
   }
+  function ovEl(){return document.getElementById("ppCr")}
+  function unhide(){var o=ovEl();if(o)o.style.visibility="";window.__ppDet=false}
+  ["closeInfo","closeSeries"].forEach(function(fn){var f=window[fn];if(typeof f!=="function")return;window[fn]=function(){var r=f.apply(this,arguments);setTimeout(function(){var o=ovEl();if(o&&o.style.visibility==="hidden"&&!document.querySelector("#infoModal.active,#seriesModal.active"))unhide()},400);return r}});
+  function openCard(id,kind){
+    var key="studiot_"+id,o=ovEl(),opened=false;
+    try{
+      if(kind==="series"){
+        var si=(window._seriesList||[]).findIndex(function(x){return x._kvKey===key});
+        if(si>-1){window.__ppDet=true;if(o)o.style.visibility="hidden";showSeries(si);opened=true}
+      }else{
+        var it=(window._allCards||[]).filter(function(c){return String(c.id)===key})[0];
+        if(it){window.__ppDet=true;if(o)o.style.visibility="hidden";showInfo(it);opened=true}
+      }
+    }catch(err){}
+    if(!opened){unhide();note("Not available yet","error")}
+  }
   function open(u){
     if(ov)return;
     ov=document.createElement("div");ov.id="ppCr";
@@ -14249,6 +14266,7 @@ async function submitForceReset() {
     try{history.pushState({ppcr:1},"",location.href);pushed=true}catch(e){pushed=false}
     ov.addEventListener("click",function(e){
       var t=e.target,a=t.closest&&t.closest("[data-a]");
+      var cd=t.closest&&t.closest(".crcard");if(cd){openCard(cd.getAttribute("data-id"),cd.getAttribute("data-kind"));return}
       if(a){var k=a.getAttribute("data-a");if(k==="back")back();else if(k==="share")share();else if(k==="fol")follow();return}
       var tb=t.closest&&t.closest(".crtabs button");if(tb)return tab(tb.getAttribute("data-k"));
       var nm=t.closest&&t.closest(".crn span");if(nm)nm.parentNode.classList.toggle("open");
@@ -14274,7 +14292,7 @@ async function submitForceReset() {
       if(!t.length)mv='<p class="crm">No published titles yet.</p>';
       else{
         var f=t[0];
-        mv+='<h3>All Movies &amp; Series</h3><div class="crg">'+t.map(function(y){return '<div>'+(y.posterUrl?'<img src="'+E(y.posterUrl)+'" alt="">':'<div class="np"></div>')+'<div class="t">'+E(y.title)+'</div><div class="k">'+(y.kind==="series"?"Series":"Movie")+'</div></div>'}).join("")+'</div>';
+        mv+='<h3>All Movies &amp; Series</h3><div class="crg">'+t.map(function(y){return '<div class="crcard" data-id="'+E(String(y.id))+'" data-kind="'+E(y.kind)+'">'+(y.posterUrl?'<img src="'+E(y.posterUrl)+'" alt="">':'<div class="np"></div>')+'<div class="t">'+E(y.title)+'</div><div class="k">'+(y.kind==="series"?"Series":"Movie")+'</div></div>'}).join("")+'</div>';
       }
       x+='<div id="crp-mv">'+mv+'</div><div id="crp-ab" style="display:none"><p class="crbio">'+(c.bio?E(c.bio):"No bio yet.")+'</p></div></div>';
       ov.innerHTML=x;
