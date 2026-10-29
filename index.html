@@ -7955,7 +7955,6 @@ async function playEpisode(epIndex) {
     bnSavedOpen: document.getElementById('bnSavedPage')?.style.display !== 'none',
   };
 
-  closeSeries();
   document.getElementById('playerModal').classList.add('active');
   document.body.style.overflow = 'hidden';
 
@@ -14282,6 +14281,7 @@ async function submitForceReset() {
 .crcard{cursor:pointer}
 #ppShareSheet{z-index:100003!important}
 #paywallModal{z-index:100002!important}
+#playerModal{z-index:100003!important}
 #signinModal{z-index:100002!important}
 .african-modal-overlay{z-index:100002!important}
 #paymentModal{z-index:100003!important}
