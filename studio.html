@@ -1830,7 +1830,6 @@ function fmtD(v){
       if(!t.length)mv='<p class="sub">No published titles yet.</p>';
       else{
         var f=t[0];
-        mv+='<div class="pubfeat">'+(f.posterUrl?'<img src="'+E(f.posterUrl)+'" alt="">':'<div class="pubnp"></div>')+'<div><div class="pubft">'+E(f.title)+'</div><div class="sub" style="margin:4px 0">'+(f.kind==='series'?'Series':'Movie')+(f.genre?' \u00b7 '+E(f.genre):'')+'</div>'+(f.synopsis?'<p class="pubsy">'+E(f.synopsis)+'</p>':'')+'</div></div>';
         mv+='<h3 class="dsec">All Movies &amp; Series</h3><div class="pgrid pub3">'+t.map(function(x){
           return '<div class="pcd">'+(x.posterUrl?'<img class="pim" src="'+E(x.posterUrl)+'" alt="">':'<div class="pim"></div>')+'<div class="pt">'+E(x.title)+'</div><div class="pk">'+(x.kind==='series'?'Series':'Movie')+'</div></div>';
         }).join('')+'</div>';

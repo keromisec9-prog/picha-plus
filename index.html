@@ -14274,7 +14274,6 @@ async function submitForceReset() {
       if(!t.length)mv='<p class="crm">No published titles yet.</p>';
       else{
         var f=t[0];
-        mv+='<div class="crfeat">'+(f.posterUrl?'<img src="'+E(f.posterUrl)+'" alt="">':'')+'<div><div class="crft">'+E(f.title)+'</div><div class="crm">'+(f.kind==="series"?"Series":"Movie")+(f.genre?" \u00b7 "+E(f.genre):"")+'</div>'+(f.synopsis?'<p class="crsy">'+E(f.synopsis)+'</p>':'')+'</div></div>';
         mv+='<h3>All Movies &amp; Series</h3><div class="crg">'+t.map(function(y){return '<div>'+(y.posterUrl?'<img src="'+E(y.posterUrl)+'" alt="">':'<div class="np"></div>')+'<div class="t">'+E(y.title)+'</div><div class="k">'+(y.kind==="series"?"Series":"Movie")+'</div></div>'}).join("")+'</div>';
       }
       x+='<div id="crp-mv">'+mv+'</div><div id="crp-ab" style="display:none"><p class="crbio">'+(c.bio?E(c.bio):"No bio yet.")+'</p></div></div>';
