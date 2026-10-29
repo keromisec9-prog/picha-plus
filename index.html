@@ -14420,5 +14420,26 @@ body.pp-in-profile #serCreator{cursor:default}
   };
 })();
 </script>
+<script id="ppCrFallback">
+(function(){
+  function wrap(){
+    var f=window.__ppRunFallbacks;
+    if(typeof f!=='function'||f.__ppw) return false;
+    var w=function(){
+      try{
+        var cr=document.getElementById('ppCr');
+        var pw=document.getElementById('paywallModal');
+        var pm=document.getElementById('paymentModal');
+        var busy=document.querySelector('#infoModal.active,#seriesModal.active,#playerModal.active,#paymentModal.active')
+          || (pw&&getComputedStyle(pw).display!=='none');
+        if(cr&&!busy&&typeof window.__ppCrShut==='function'){ window.__ppCrShut(); return true; }
+      }catch(e){}
+      return f.apply(this,arguments);
+    };
+    w.__ppw=1; window.__ppRunFallbacks=w; return true;
+  }
+  if(!wrap()) window.addEventListener('load',wrap);
+})();
+</script>
 </body>
 </html>
