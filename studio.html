@@ -455,6 +455,11 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .qcard{padding:12px 14px;margin-bottom:12px}
 .qcard h3{margin:0 0 8px;font-size:15px}
 .qcard .bar{margin:6px 0 12px}
+.pfst{display:flex;margin:12px 0 4px}
+.pfst>div{flex:1;text-align:center;padding:2px 0}
+.pfst>div+div{border-left:1px solid rgba(255,255,255,.12)}
+.pfst b{display:block;font-size:18px}
+.pfst span{font-size:12px;color:var(--mute)}
 .pfcam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#2a2a2c;border:2px solid #111;color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer;}
 .pfcam svg{width:16px;height:16px;fill:currentColor;display:block;}
 
@@ -1231,8 +1236,8 @@ function loadLib(cb){
 var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action required','no']};
 function renderList(){
   var d=L.data,q=d.quota,n=d.titles.length;
-  var h='<div class="eyebrow">CREATOR WORKSPACE</div><div class="lh"><h2>My Library</h2><button type="button" class="btn gold lab" data-act="openadd">+ Add Content</button></div><p class="sub" style="margin-bottom:16px">Manage your films and series.</p>';
-  h+='<div class="cat"><div class="cl">YOUR CATALOGUE</div><div class="cn">'+n+' title'+(n===1?'':'s')+'</div><div class="ct"><div><b>'+q.movies.used+'</b><span>Movies</span><i>of '+q.movies.max+' slots</i></div><div><b>'+q.series.used+'</b><span>Series</span><i>of '+q.series.max+' slots</i></div></div></div>';
+  function qb(l,u,m){var p=m?Math.min(100,Math.round(u/m*100)):0;return '<div class="qb"><div class="ql"><span>'+l+'</span><b>'+u+(m?' of '+m:'')+' used</b></div>'+(m?'<div class="qt"><i style="width:'+p+'%"></i></div>':'')+'</div>';}
+  var h='<div class="qcard"><h3>Your creator space</h3>'+qb('Movies',q.movies.used,q.movies.max)+qb('Series',q.series.used,q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
   h+='<div class="chips">'+[['all','All content'],['movie','Movies'],['series','Series']].map(function(c){return '<button type="button" class="chip'+(L.flt===c[0]?' on':'')+'" data-act="flt" data-v="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>';
   var list=d.titles.filter(function(t){return L.flt==='all'||t.kind===L.flt});
   if(!list.length){
@@ -1523,27 +1528,28 @@ function fmtD(v){
     function viaImg(){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){done(im,im.naturalWidth,im.naturalHeight);URL.revokeObjectURL(u)};im.onerror=function(){rej(new Error('image'))};im.src=u}
     if(window.createImageBitmap){createImageBitmap(file,{imageOrientation:'from-image'}).then(function(bm){done(bm,bm.width,bm.height)}).catch(viaImg)}else viaImg();
   })}
+  function statsHTML(){var st=PF.st||{};return '<div class="pfst"><div><b>'+(st.following||0)+'</b><span>Following</span></div><div><b>'+(st.followers||0)+'</b><span>Followers</span></div><div><b>'+(st.posts||0)+'</b><span>Posts</span></div></div>';}
   function headHTML(p,ok){
     var cov='<div class="pfc"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'></div>';
     var av=p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS;
     return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'<button type="button" class="pfcam" aria-label="Change photo" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button></div><div class="pfbt"><button type="button" class="btn pfe pfedit" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span>Edit profile</span></button></div></div>'
       +'<div class="pfnr"><div class="pfn" onclick="this.classList.toggle(\'open\')">'+E(p.displayName||'Creator')+'</div><button type="button" class="pfpen" aria-label="Edit name" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button></div>'
       +'<div class="pfur">'+(p.username?'<span class="pfu">@'+E(p.username)+'</span>':'')+'<span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span></div>'
-      +(p.bio?'<p class="pfb">'+E(p.bio)+'</p>':'')+'</div>';
+      +(p.bio?'<p class="pfb">'+E(p.bio)+'</p>':'')+statsHTML()+'</div>';
   }
   window.renderProfile=function(){
     var h=G('profHead'),l=G('pt-lib'),ab=G('pt-about');
     if(!h||!l||!ab||!token)return;
     if(!PF.p)h.innerHTML=headHTML({},false);
     l.innerHTML='<p class="sub">Loading…</p>';
-    Promise.all([api('/studio/library'),api('/studio/my'),api('/studio/profile')]).then(function(r){
+    Promise.all([api('/studio/library'),api('/studio/my'),api('/studio/profile'),api('/studio/me-stats')]).then(function(r){
       if(isAuthFail(r[0]))return gate();
       var d=r[0].body||{},q=d.quota||{},ts=titlesOf(d),items=(r[1].body&&r[1].body.items)||[];
       var mv=ts.filter(function(t){return t.kind==='movie'}).length,sr=ts.filter(function(t){return t.kind==='series'}).length;
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
-      PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;
+      PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;var sb=(r[3]&&r[3].body)||{};PF.st={following:sb.following||0,followers:sb.followers||0,posts:ts.filter(function(t){return t.status==='approved'}).length};
       h.innerHTML=headHTML(PF.p,ok);
-      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',(q.movies&&q.movies.used!=null)?q.movies.used:mv,q.movies&&q.movies.max)+bar('Series',(q.series&&q.series.used!=null)?q.series.used:sr,q.series&&q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
+      l.innerHTML=ts.length?ts.map(function(t){var z=ST[t.status]||[t.status,''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
