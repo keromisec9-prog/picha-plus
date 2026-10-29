@@ -14166,6 +14166,7 @@ async function submitForceReset() {
 <style>
 #ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
 .crcard{cursor:pointer}
+#ppShareSheet{z-index:100003!important}
 #playerModal{z-index:100002!important}
 #infoModal.pp-lift,#seriesModal.pp-lift{z-index:100002!important}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
@@ -14241,6 +14242,7 @@ async function submitForceReset() {
   }
   function share(){
     var url=API_+"/c/"+encodeURIComponent(C.u);
+    if(window.PichaApp&&typeof PichaApp.getShareTargets==="function"&&typeof window._openShareSheet==="function"){window._openShareSheet(url,"@"+C.u);return}
     if(navigator.share){navigator.share({title:"@"+C.u+" on MyPicha+",url:url}).catch(function(){});return}
     (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){note("Link copied \u2713")},function(){note("Could not copy link","error")});
   }
@@ -14316,6 +14318,47 @@ async function submitForceReset() {
     var q=new URLSearchParams(location.search).get("c");
     if(q&&/^[A-Za-z0-9_]{3,20}$/.test(q)){history.replaceState(null,"",location.pathname);open(q.toLowerCase())}
   }catch(e){}
+})();
+</script>
+<style id="ser-creator-css">
+.ep-bar.ep-cr{justify-content:flex-start;gap:.9rem}
+#serCreator{margin-left:auto;display:flex;align-items:center;gap:.5rem;cursor:pointer;min-width:0}
+#serCreator .sc-av{flex:none;width:34px;height:34px;border-radius:50%;background:#2a2a2a center/cover no-repeat;color:#fff;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+#serCreator .sc-nm{font-size:.72rem;color:#ddd;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.pp-in-profile #serCreator{cursor:default}
+</style>
+<script id="ser-creator-js">
+(function(){
+  var r0=window._renderSeriesPage;
+  if(typeof r0!=="function")return;
+  function tok(){try{return localStorage.getItem("pichaplus_session")||""}catch(e){return ""}}
+  window._renderSeriesPage=function(s){
+    r0.apply(this,arguments);
+    try{
+      var k=s&&s._kvKey;
+      if(!k||!/^studiot_\d+$/.test(k))return;
+      var bar=document.querySelector("#episodeList .ep-bar");
+      if(!bar||bar.querySelector("#serCreator"))return;
+      bar.classList.add("ep-cr");
+      var h={};if(tok())h["X-Session-Token"]=tok();
+      fetch(API+"/studio/creator-of/"+encodeURIComponent(k),{headers:h}).then(function(r){return r.json()}).then(function(j){
+        if(!j||!j.ok||!j.creator||currentSeries!==s)return;
+        var b=document.querySelector("#episodeList .ep-bar");
+        if(!b||b.querySelector("#serCreator"))return;
+        var c=j.creator,d=document.createElement("div");
+        d.id="serCreator";d.setAttribute("data-u",c.username);
+        var a=document.createElement("div");a.className="sc-av";
+        if(c.avatarUrl)a.style.backgroundImage='url("'+c.avatarUrl+'")';else a.textContent=(c.username||"?").charAt(0).toUpperCase();
+        var n=document.createElement("div");n.className="sc-nm";n.textContent="@"+c.username;
+        d.appendChild(a);d.appendChild(n);
+        d.addEventListener("click",function(){
+          if(document.getElementById("ppCr"))return;
+          if(typeof window.openCreatorPage==="function")window.openCreatorPage(c.username);
+        });
+        b.appendChild(d);
+      }).catch(function(){});
+    }catch(e){console.warn(e)}
+  };
 })();
 </script>
 </body>
