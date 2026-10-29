@@ -14301,6 +14301,13 @@ async function submitForceReset() {
 #ppCr .cra svg{width:44px;height:44px;fill:#888}
 #ppCr .crf{background:var(--gold,#eeb32a);color:#111;border:1px solid var(--gold,#eeb32a);border-radius:999px;font:700 14px system-ui,sans-serif;padding:9px 20px;cursor:pointer;transition:background .3s,color .3s}
 #ppCr .crf.on{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+#ppCr .crr{align-items:flex-start;justify-content:flex-start;gap:14px}
+#ppCr .crav{position:relative;flex:none;margin-bottom:16px}
+#ppCr .crav .crf{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);padding:3px 12px;font-size:11px;white-space:nowrap}
+#ppCr .crinfo{flex:1;min-width:0;margin-top:44px}
+#ppCr .crinfo .crn{margin-top:0;font-size:18px}
+#ppCr .crinfo .cru{margin:2px 0 4px}
+#ppCr .crinfo .crbio{margin:4px 0 0;font-size:13px}
 #ppCr .crn{display:flex;align-items:center;gap:6px;margin-top:10px;font:700 21px system-ui,sans-serif}
 #ppCr .crn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ppCr .crn.open span{white-space:normal}
@@ -14408,9 +14415,9 @@ async function submitForceReset() {
       C={u:c.username,f:!!m.isFollowing,n:m.followers||0};
       var folBtn=m.isSelf?"":(C.f?'<button type="button" class="crf on" data-a="fol">Following</button>':'<button type="button" class="crf" data-a="fol">+ Follow</button>');
       var x=top(true)+'<div class="crc"'+(c.coverUrl?' style="background-image:url(\''+E(c.coverUrl)+'\')"':'')+'></div><div class="crbody">'
-        +'<div class="crr"><div class="cra"'+(c.avatarUrl?' style="background-image:url(\''+E(c.avatarUrl)+'\')"':'')+'>'+(c.avatarUrl?'':PS)+'</div>'+folBtn+'</div>'
+        +'<div class="crr"><div class="crav"><div class="cra"'+(c.avatarUrl?' style="background-image:url(\''+E(c.avatarUrl)+'\')"':'')+'>'+(c.avatarUrl?'':PS)+'</div>'+folBtn+'</div><div class="crinfo">'
         +'<div class="crn"><span>'+E(c.displayName||("@"+c.username))+'</span>'+(c.verified?VK:'')+'</div>'
-        +'<div class="cru">@'+E(c.username)+'</div>'+(c.bio?'<p class="crbio">'+E(c.bio)+'</p>':'')
+        +'<div class="cru">@'+E(c.username)+'</div>'+(c.bio?'<p class="crbio">'+E(c.bio)+'</p>':'')+'</div></div>'
         +'<div class="crs"><div><b>'+(m.following||0)+'</b><i>Following</i></div><div><b id="crFers">'+C.n+'</b><i>Followers</i></div><div><b>'+t.length+'</b><i>Titles</i></div></div>'
         +'<div class="crtabs"><button type="button" class="on" data-k="mv">Movies &amp; Series</button><button type="button" data-k="ab">About</button><button type="button" class="crsh" data-a="share">'+SH+'Share</button></div>';
       var mv="";
