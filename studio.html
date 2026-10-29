@@ -498,6 +498,13 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pubsy{font-size:13px;color:#cfc8b8;margin:6px 0 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .pgrid.pub3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pgrid.pub3 .pim{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;background:#1a1a1a;display:block}
+.selrow{position:relative}
+.selrow select{width:100%;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.05);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 40px 13px 14px;font:inherit}
+.selrow:after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;border:solid #9a9a9a;border-width:0 2px 2px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.selrow select option{background:#1a1a1a;color:#fff}
+.epbox{border:1.5px dashed rgba(255,255,255,.2);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px}
+.epbox b{display:block;margin-bottom:4px}
+.epbox span{font-size:13px;color:#9a9a9a}
 .pfcam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#2a2a2c;border:2px solid #111;color:var(--gold);display:grid;place-items:center;padding:0;cursor:pointer;}
 .pfcam svg{width:16px;height:16px;fill:currentColor;display:block;}
 
@@ -1350,6 +1357,20 @@ function renderForm(){
   var movie=L.kind==='movie',f=L.f||{},n=movie?(L.step||1):1,tm=L.src==='tmdb';
   var hasTp=tm&&L.tmdb&&L.tmdb.poster;
   var h=hdr(movie?'Upload Movie':'Create Series','fback');
+  if(!movie){
+    var GL=['Action','Adventure','Animation','Comedy','Crime','Documentary','Drama','Family','Fantasy','Horror','Mystery','Romance','Sci-Fi','Thriller'],gv=f.genre||'';
+    if(gv&&GL.indexOf(gv)<0)GL.unshift(gv);
+    h+=tmdbBlock(false);
+    if(!tm||(L.tmdb&&!L.tmdb.poster))h+=slotHTML('poster','Cover image (optional)','');
+    h+='<h3 class="dsec">Series Details</h3>';
+    h+='<div class="fld"><label>Series title *</label><input id="lf_title" type="text" maxlength="120" placeholder="Enter series title" value="'+esc(f.title||'')+'"></div>';
+    h+='<div class="fld"><label>Description *</label><textarea id="lf_syn" maxlength="2000" placeholder="Tell us about your series..." oninput="document.getElementById(\'lf_cnt\').textContent=this.value.length+\'/2000\'">'+esc(f.syn||'')+'</textarea><div class="uph" style="text-align:right" id="lf_cnt">'+(f.syn||'').length+'/2000</div></div>';
+    h+='<div class="fld"><label>Genre *</label><div class="selrow"><select id="lf_genre"><option value="">Select genre</option>'+GL.map(function(g){return '<option'+(g===gv?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select></div></div>';
+    h+=RIGHTS;
+    h+='<h3 class="dsec">Add episodes</h3><div class="epbox"><b>Add first episode</b><span>After you save, you will add episodes one at a time. You can add more later.</span></div>';
+    h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="submit" style="width:100%">Save &amp; Continue</button></div>';
+    R(h);return;
+  }
   if(movie)h+=stepsBar(n);else h+='<p class="sub">Create the series first, then add episodes.</p>';
   if(n===1){
     h+=tmdbBlock(movie);
@@ -1422,6 +1443,8 @@ function submitTitle(){
   saveF();
   var f=L.f||{},t=(f.title||'').trim(),movie=L.kind==='movie';
   if(!t)return toast('Enter a title');
+  if(!movie&&!(f.syn||'').trim())return toast('Add a description');
+  if(!movie&&!(f.genre||'').trim())return toast('Select a genre');
   if(movie&&!(L.up.video&&L.up.video.key))return toast('Upload your movie file first');
   if(busy())return toast('Please wait for the upload to finish');
   var rc=$('lf_rights');if(!rc||!rc.checked)return toast('Please confirm the declaration');
