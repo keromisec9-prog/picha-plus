@@ -1292,6 +1292,7 @@ function renderList(){
   }
   list.forEach(function(t){
     var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
+    if(isS&&t.status==='pending'&&!(t.episodes&&t.episodes.length))s=['Add an episode to publish','no'];
     h+='<div class="tc"><div class="tr" data-act="view" data-id="'+t.id+'">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><span class="stt '+s[1]+'">'+s[0]+'</span><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
     if(open){
       if(t.status==='rejected'&&t.staffNote)h+='<div class="tm" style="margin-top:8px">'+esc(t.staffNote)+'</div>';
