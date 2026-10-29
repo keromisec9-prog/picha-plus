@@ -69,20 +69,24 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   function fn(n){ return function(){ if(typeof window[n]==='function') window[n](); }; }
   var S=[];
   function sub(layer,test,undo){ S.push({layer:layer,test:test,undo:undo}); }
-  function runSub(layer){
+  function runSub(layer,viaPop){
     for(var i=S.length-1;i>=0;i--){ var q=S[i]; if(q.layer!==layer) continue;
       var ok=false; try{ ok=!!q.test(); }catch(x){}
-      if(ok){ mute++; setTimeout(function(){ mute--; },200);
-        try{ q.undo(); }catch(x){}
-        closedAt=Date.now(); return true; } }
+      if(!ok) continue;
+      var m=true; mute++;
+      var t=setTimeout(function(){ if(m){ m=false; mute--; } },200);
+      var r; try{ r=q.undo(viaPop); }catch(x){}
+      if(r==='pass'){ clearTimeout(t); if(m){ m=false; mute--; } return 'pass'; }
+      closedAt=Date.now(); return true;
+    }
     return false;
   }
-  function closeTop(){
+  function closeTop(viaPop){
     var best=null,bz=-1e9;
     L.forEach(function(l){ var e=find(l); if(!e) return; var v=z(e);
       if(!best||v>bz||(v===bz&&(best.el.compareDocumentPosition(e)&4))){ best={l:l,el:e}; bz=v; } });
     if(!best) return false;
-    if(runSub(best.l.id)) return true;
+    var sr=runSub(best.l.id,viaPop); if(sr) return sr;
     mute++; setTimeout(function(){ mute--; },200);
     try{ best.l.close(best.el); }catch(x){}
     closedAt=Date.now();
@@ -102,10 +106,10 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   reg('info','#infoModal.active',fn('closeInfo'),function(){return true;});
   reg('category','#categoryOverlay.active',fn('closeCategory'),function(){return true;});
   reg('creator','#ppCr',fn('__ppCrShut'),function(){return true;});
-  window.PichaNav={reg:reg,sub:sub,closeTop:closeTop,push:function(st,u){ op.call(history,st,"",u); }};
+  window.PichaNav={reg:reg,sub:sub,closeTop:closeTop,back:function(){ progAt=Date.now(); ob.call(history); },push:function(st,u){ op.call(history,st,"",u); }};
   window.addEventListener('popstate',function(e){
     if(Date.now()-progAt<700) return;
-    if(closeTop()) e.stopImmediatePropagation();
+    if(closeTop(true)===true) e.stopImmediatePropagation();
   },true);
   function wrap(){
     var f=window.__ppRunFallbacks; if(typeof f!=='function'||f.__nav) return;
@@ -118,30 +122,19 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
 <script id="PichaNavSubs">
 (function(){
   var N=window.PichaNav; if(!N||!N.sub) return;
-  var lastTab='details',cmtUrl='',cmtState=null,stack=[],recAt=0;
+  var stack=[],recAt=0;
   function tab(){ var b=document.getElementById('ppBody'); return b?b.dataset.tab:''; }
   function cur(){ try{ return typeof currentInfoItem!=='undefined'?currentInfoItem:null; }catch(e){ return null; } }
 
-  // remember which tab / history entry Comments was entered from
-  document.addEventListener('click',function(){
-    var t=tab();
-    if(t&&t!=='comments'){ lastTab=t; cmtUrl=location.href; cmtState=history.state; }
-  },true);
-
-  // exception 2: title opened from You May Also Like -> Back returns to previous title in place
+  // recommended title -> Back returns to previous title in place
   N.sub('info',function(){ return stack.length>0; },function(){
     var prev=stack.pop(); recAt=Date.now();
     if(typeof window.showInfo==='function') window.showInfo(prev);
   });
 
-  // exception 1: Comments -> Back returns to the tab you came from (checked first)
+  // Comments -> Back: the app's own handler switches the tab, PichaNav steps aside
   function inCmt(){ return tab()==='comments'; }
-  function leaveCmt(){
-    var t=lastTab||'details';
-    var btn=document.querySelector('#ppTabs button[data-t="'+t+'"]');
-    if(btn) btn.click(); else if(typeof window._ppTab==='function') window._ppTab(t);
-    try{ if(cmtUrl) N.push(cmtState,cmtUrl); }catch(e){}
-  }
+  function leaveCmt(viaPop){ if(viaPop) return 'pass'; N.back(); }
   N.sub('info',inCmt,leaveCmt);
   N.sub('series',inCmt,leaveCmt);
 
