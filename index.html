@@ -67,11 +67,22 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
     return getComputedStyle(e).display==='none'?null:e; }
   function z(e){ var n=parseInt(getComputedStyle(e).zIndex,10); return isNaN(n)?0:n; }
   function fn(n){ return function(){ if(typeof window[n]==='function') window[n](); }; }
+  var S=[];
+  function sub(layer,test,undo){ S.push({layer:layer,test:test,undo:undo}); }
+  function runSub(layer){
+    for(var i=S.length-1;i>=0;i--){ var q=S[i]; if(q.layer!==layer) continue;
+      var ok=false; try{ ok=!!q.test(); }catch(x){}
+      if(ok){ mute++; setTimeout(function(){ mute--; },200);
+        try{ q.undo(); }catch(x){}
+        closedAt=Date.now(); return true; } }
+    return false;
+  }
   function closeTop(){
     var best=null,bz=-1e9;
     L.forEach(function(l){ var e=find(l); if(!e) return; var v=z(e);
       if(!best||v>bz||(v===bz&&(best.el.compareDocumentPosition(e)&4))){ best={l:l,el:e}; bz=v; } });
     if(!best) return false;
+    if(runSub(best.l.id)) return true;
     mute++; setTimeout(function(){ mute--; },200);
     try{ best.l.close(best.el); }catch(x){}
     closedAt=Date.now();
@@ -91,7 +102,7 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   reg('info','#infoModal.active',fn('closeInfo'),function(){return true;});
   reg('category','#categoryOverlay.active',fn('closeCategory'),function(){return true;});
   reg('creator','#ppCr',fn('__ppCrShut'),function(){return true;});
-  window.PichaNav={reg:reg,closeTop:closeTop};
+  window.PichaNav={reg:reg,sub:sub,closeTop:closeTop,push:function(st,u){ op.call(history,st,"",u); }};
   window.addEventListener('popstate',function(e){
     if(Date.now()-progAt<700) return;
     if(closeTop()) e.stopImmediatePropagation();
@@ -100,6 +111,51 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
     var f=window.__ppRunFallbacks; if(typeof f!=='function'||f.__nav) return;
     var w=function(){ if(Date.now()-closedAt<300) return true; if(closeTop()) return true; return f.apply(this,arguments); };
     w.__nav=1; window.__ppRunFallbacks=w;
+  }
+  wrap(); window.addEventListener('load',wrap);
+})();
+</script>
+<script id="PichaNavSubs">
+(function(){
+  var N=window.PichaNav; if(!N||!N.sub) return;
+  var lastTab='details',cmtUrl='',cmtState=null,stack=[],recAt=0;
+  function tab(){ var b=document.getElementById('ppBody'); return b?b.dataset.tab:''; }
+  function cur(){ try{ return typeof currentInfoItem!=='undefined'?currentInfoItem:null; }catch(e){ return null; } }
+
+  // remember which tab / history entry Comments was entered from
+  document.addEventListener('click',function(){
+    var t=tab();
+    if(t&&t!=='comments'){ lastTab=t; cmtUrl=location.href; cmtState=history.state; }
+  },true);
+
+  // exception 2: title opened from You May Also Like -> Back returns to previous title in place
+  N.sub('info',function(){ return stack.length>0; },function(){
+    var prev=stack.pop(); recAt=Date.now();
+    if(typeof window.showInfo==='function') window.showInfo(prev);
+  });
+
+  // exception 1: Comments -> Back returns to the tab you came from (checked first)
+  function inCmt(){ return tab()==='comments'; }
+  function leaveCmt(){
+    var t=lastTab||'details';
+    var btn=document.querySelector('#ppTabs button[data-t="'+t+'"]');
+    if(btn) btn.click(); else if(typeof window._ppTab==='function') window._ppTab(t);
+    try{ if(cmtUrl) N.push(cmtState,cmtUrl); }catch(e){}
+  }
+  N.sub('info',inCmt,leaveCmt);
+  N.sub('series',inCmt,leaveCmt);
+
+  function wrap(){
+    var o=window._openRec;
+    if(typeof o==='function'&&!o.__nav){
+      var w=function(){ var c=cur(); recAt=Date.now(); if(c&&c!==stack[stack.length-1]) stack.push(c); return o.apply(this,arguments); };
+      w.__nav=1; window._openRec=w;
+    }
+    var si=window.showInfo;
+    if(typeof si==='function'&&!si.__nav){
+      var w2=function(){ if(Date.now()-recAt>1500) stack.length=0; return si.apply(this,arguments); };
+      w2.__nav=1; window.showInfo=w2;
+    }
   }
   wrap(); window.addEventListener('load',wrap);
 })();
