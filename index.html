@@ -4752,7 +4752,7 @@ async function requestCurrentTitle() {
 
 function playFromInfo() {
   const item = currentInfoItem;
-  if (item && session.isLoggedIn() && !session.isSubscribed() && !isStudioFree(item)) { handleCardPlay(item); return; }
+  if (item && (!session.isLoggedIn() || (!session.isSubscribed() && !isStudioFree(item)))) { handleCardPlay(item); return; }
   // Close only the info modal; handleCardPlay will snapshot and preserve the pages behind
   closeInfo();
   if (item) handleCardPlay(item);
@@ -14282,6 +14282,7 @@ async function submitForceReset() {
 .crcard{cursor:pointer}
 #ppShareSheet{z-index:100003!important}
 #paywallModal{z-index:100002!important}
+#signinModal{z-index:100002!important}
 .african-modal-overlay{z-index:100002!important}
 #paymentModal{z-index:100003!important}
 .toast{z-index:100005!important}
