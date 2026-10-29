@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){var st=e.state||{};["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift")});if(window.__ppDet&&(st.ppcr||st.type==="title"||st.type==="series")){if(st.ppcr){var o=document.getElementById("ppCr");if(o)o.style.visibility="";window.__ppDet=false}return}window.__ppDet=false;e.stopImmediatePropagation();window.__ppCrShut();}else{window.__ppDet=false}}catch(x){}},true);</script>
+<script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){var st=e.state||{};["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift")});var pw=document.getElementById("paywallModal"),pm=document.getElementById("paymentModal"),sg=document.getElementById("signinModal");if((pw&&getComputedStyle(pw).display!=="none")||(pm&&pm.classList.contains("active"))||(sg&&getComputedStyle(sg).display!=="none")||document.querySelector(".african-modal-overlay"))return;if(window.__ppDet&&(st.ppcr||st.type==="title"||st.type==="series")){if(st.ppcr){var o=document.getElementById("ppCr");if(o)o.style.visibility="";window.__ppDet=false}return}window.__ppDet=false;e.stopImmediatePropagation();window.__ppCrShut();}else{window.__ppDet=false}}catch(x){}},true);</script>
   <link rel="canonical" id="canonicalLink" href="https://pichaplus.netlify.app/">
     <script>
       // Single Page Apps for GitHub Pages — decode the redirect from 404.html
@@ -14167,6 +14167,10 @@ async function submitForceReset() {
 #ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
 .crcard{cursor:pointer}
 #ppShareSheet{z-index:100003!important}
+#paywallModal{z-index:100002!important}
+.african-modal-overlay{z-index:100002!important}
+#paymentModal{z-index:100003!important}
+.toast{z-index:100005!important}
 #playerModal{z-index:100002!important}
 #infoModal.pp-lift,#seriesModal.pp-lift{z-index:100002!important}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
