@@ -14356,19 +14356,20 @@ async function submitForceReset() {
     ["mv","ab"].forEach(function(x){var e=ov.querySelector("#crp-"+x);if(e)e.style.display=x===k?"":"none"});
     [].forEach.call(ov.querySelectorAll(".crtabs button"),function(b){b.classList.toggle("on",b.getAttribute("data-k")===k)});
   }
+  function paint(){var b=ov&&ov.querySelector(".crf"),n=ov&&ov.querySelector("#crFers");if(n)n.textContent=C.n;if(b){b.className="crf"+(C.f?" on":"");b.textContent=C.f?"Following":"+ Follow"}}
   function follow(){
     if(busy)return;
     if(!tok())return note("Sign in to follow creators","error");
-    busy=true;var want=!C.f;
+    busy=true;var want=!C.f,prevF=C.f,prevN=C.n;C.f=want;C.n=Math.max(0,C.n+(want?1:-1));paint();
     fetch(API_+(want?"/studio/follow":"/studio/unfollow"),{method:"POST",headers:{"Content-Type":"application/json","X-Session-Token":tok()},body:JSON.stringify({username:C.u})})
       .then(function(r){return r.json()}).then(function(j){
         busy=false;
-        if(!(j&&j.ok))return note((j&&j.error)||"Please sign in again","error");
+        if(!(j&&j.ok)){C.f=prevF;C.n=prevN;paint();return note((j&&j.error)||"Please sign in again","error")}
         C.f=!!j.following;C.n=j.followers||0;
         var b=ov&&ov.querySelector(".crf"),n=ov&&ov.querySelector("#crFers");
         if(n)n.textContent=C.n;
-        if(b){b.className="crf"+(C.f?" on":"");b.textContent=C.f?"\u2713 Following":"+ Follow";if(C.f)setTimeout(function(){if(b.isConnected&&C.f)b.textContent="Following"},1200)}
-      }).catch(function(){busy=false;note("Network error","error")});
+        paint();
+      }).catch(function(){busy=false;C.f=prevF;C.n=prevN;paint();note("Network error","error")});
   }
   function share(){
     var url=API_+"/c/"+encodeURIComponent(C.u);
