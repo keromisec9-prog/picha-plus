@@ -14165,8 +14165,10 @@ async function submitForceReset() {
 <style>
 #ppCreator.on .pp-av,#ppCreator.on .pp-cn{cursor:pointer}
 #ppCr{position:fixed;inset:0;z-index:100001;background:#0f0f0f;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
-#ppCr .crt{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:10px;right:10px;z-index:3;display:flex;justify-content:space-between}
-#ppCr .crb{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:0;cursor:pointer}
+#ppCr .crt{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:5}
+#ppCr .crb{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+#ppCr .crsh{margin-left:auto;display:flex;align-items:center;gap:6px}
+#ppCr .crsh svg{width:18px;height:18px;fill:var(--gold,#eeb32a)}
 #ppCr .crb svg{width:20px;height:20px;fill:#fff}
 #ppCr .crc{aspect-ratio:1.8;max-height:300px;width:100%;background:#000 center/cover no-repeat;-webkit-mask-image:linear-gradient(#000 65%,transparent);mask-image:linear-gradient(#000 65%,transparent)}
 #ppCr .crbody{padding:0 16px 40px}
@@ -14212,7 +14214,7 @@ async function submitForceReset() {
   function E(x){return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   function tok(){try{return localStorage.getItem("pichaplus_session")||""}catch(e){return ""}}
   function note(m,k){if(typeof showToast==="function")showToast(m,k||"gold")}
-  function top(share){return '<div class="crt"><button type="button" class="crb" data-a="back" aria-label="Back">'+BK+'</button>'+(share?'<button type="button" class="crb" data-a="share" aria-label="Share">'+SH+'</button>':'')+'</div>'}
+  function top(){return '<div class="crt"><button type="button" class="crb" data-a="back" aria-label="Back"><span class="material-symbols-rounded" style="font-size:24px;line-height:1;">arrow_back</span></button></div>'}
   function shut(){if(ov){ov.remove();ov=null}document.body.style.overflow=""}
   function back(){if(pushed){history.back()}else shut()}
   window.addEventListener("popstate",function(){if(ov){pushed=false;shut()}});
@@ -14267,7 +14269,7 @@ async function submitForceReset() {
         +'<div class="crn"><span>'+E(c.displayName||("@"+c.username))+'</span>'+(c.verified?VK:'')+'</div>'
         +'<div class="cru">@'+E(c.username)+'</div>'+(c.bio?'<p class="crbio">'+E(c.bio)+'</p>':'')
         +'<div class="crs"><div><b>'+(m.following||0)+'</b><i>Following</i></div><div><b id="crFers">'+C.n+'</b><i>Followers</i></div><div><b>'+t.length+'</b><i>Titles</i></div></div>'
-        +'<div class="crtabs"><button type="button" class="on" data-k="mv">Movies &amp; Series</button><button type="button" data-k="ab">About</button></div>';
+        +'<div class="crtabs"><button type="button" class="on" data-k="mv">Movies &amp; Series</button><button type="button" data-k="ab">About</button><button type="button" class="crsh" data-a="share">'+SH+'Share</button></div>';
       var mv="";
       if(!t.length)mv='<p class="crm">No published titles yet.</p>';
       else{
@@ -14279,6 +14281,7 @@ async function submitForceReset() {
       ov.innerHTML=x;
     }).catch(function(){if(ov)ov.innerHTML=top(false)+'<div class="crmsg">Could not load. Check your connection and try again.</div>'});
   }
+  if(window.addBackFallback)window.addBackFallback(function(){if(!ov)return false;back();return true;});
   window.openCreatorPage=open;
   document.addEventListener("click",function(e){
     var t=e.target;if(!t||!t.closest)return;
