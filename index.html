@@ -67,26 +67,11 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
     return getComputedStyle(e).display==='none'?null:e; }
   function z(e){ var n=parseInt(getComputedStyle(e).zIndex,10); return isNaN(n)?0:n; }
   function fn(n){ return function(){ if(typeof window[n]==='function') window[n](); }; }
-  var S=[];
-  function sub(layer,test,undo){ S.push({layer:layer,test:test,undo:undo}); }
-  function runSub(layer,viaPop){
-    for(var i=S.length-1;i>=0;i--){ var q=S[i]; if(q.layer!==layer) continue;
-      var ok=false; try{ ok=!!q.test(); }catch(x){}
-      if(!ok) continue;
-      var m=true; mute++;
-      var t=setTimeout(function(){ if(m){ m=false; mute--; } },200);
-      var r; try{ r=q.undo(viaPop); }catch(x){}
-      if(r==='pass'){ clearTimeout(t); if(m){ m=false; mute--; } return 'pass'; }
-      closedAt=Date.now(); return true;
-    }
-    return false;
-  }
-  function closeTop(viaPop){
+  function closeTop(){
     var best=null,bz=-1e9;
     L.forEach(function(l){ var e=find(l); if(!e) return; var v=z(e);
       if(!best||v>bz||(v===bz&&(best.el.compareDocumentPosition(e)&4))){ best={l:l,el:e}; bz=v; } });
     if(!best) return false;
-    var sr=runSub(best.l.id,viaPop); if(sr) return sr;
     mute++; setTimeout(function(){ mute--; },200);
     try{ best.l.close(best.el); }catch(x){}
     closedAt=Date.now();
@@ -106,49 +91,15 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   reg('info','#infoModal.active',fn('closeInfo'),function(){return true;});
   reg('category','#categoryOverlay.active',fn('closeCategory'),function(){return true;});
   reg('creator','#ppCr',fn('__ppCrShut'),function(){return true;});
-  window.PichaNav={reg:reg,sub:sub,closeTop:closeTop,back:function(){ progAt=Date.now(); ob.call(history); },push:function(st,u){ op.call(history,st,"",u); }};
+  window.PichaNav={reg:reg,closeTop:closeTop};
   window.addEventListener('popstate',function(e){
     if(Date.now()-progAt<700) return;
-    if(closeTop(true)===true) e.stopImmediatePropagation();
+    if(closeTop()) e.stopImmediatePropagation();
   },true);
   function wrap(){
     var f=window.__ppRunFallbacks; if(typeof f!=='function'||f.__nav) return;
     var w=function(){ if(Date.now()-closedAt<300) return true; if(closeTop()) return true; return f.apply(this,arguments); };
     w.__nav=1; window.__ppRunFallbacks=w;
-  }
-  wrap(); window.addEventListener('load',wrap);
-})();
-</script>
-<script id="PichaNavSubs">
-(function(){
-  var N=window.PichaNav; if(!N||!N.sub) return;
-  var stack=[],recAt=0;
-  function tab(){ var b=document.getElementById('ppBody'); return b?b.dataset.tab:''; }
-  function cur(){ try{ return typeof currentInfoItem!=='undefined'?currentInfoItem:null; }catch(e){ return null; } }
-
-  // recommended title -> Back returns to previous title in place
-  N.sub('info',function(){ return stack.length>0; },function(){
-    var prev=stack.pop(); recAt=Date.now();
-    if(typeof window.showInfo==='function') window.showInfo(prev);
-  });
-
-  // Comments -> Back: the app's own handler switches the tab, PichaNav steps aside
-  function inCmt(){ return tab()==='comments'; }
-  function leaveCmt(viaPop){ if(viaPop) return 'pass'; N.back(); }
-  N.sub('info',inCmt,leaveCmt);
-  N.sub('series',inCmt,leaveCmt);
-
-  function wrap(){
-    var o=window._openRec;
-    if(typeof o==='function'&&!o.__nav){
-      var w=function(){ var c=cur(); recAt=Date.now(); if(c&&c!==stack[stack.length-1]) stack.push(c); return o.apply(this,arguments); };
-      w.__nav=1; window._openRec=w;
-    }
-    var si=window.showInfo;
-    if(typeof si==='function'&&!si.__nav){
-      var w2=function(){ if(Date.now()-recAt>1500) stack.length=0; return si.apply(this,arguments); };
-      w2.__nav=1; window.showInfo=w2;
-    }
   }
   wrap(); window.addEventListener('load',wrap);
 })();
