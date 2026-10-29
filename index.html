@@ -14256,7 +14256,7 @@ async function submitForceReset() {
     try{
       if(kind==="series"){
         var si=(window._seriesList||[]).findIndex(function(x){return x._kvKey===key});
-        if(si>-1){window.__ppDet=true;lift("seriesModal");showSeries(si);opened=true}
+        if(si>-1){window.__ppDet=true;lift("seriesModal");showSeries(si);try{if((history.state||{}).ppcr)history.pushState({type:"series",idx:si},"",location.href)}catch(e){}opened=true}
       }else{
         var it=(window._allCards||[]).filter(function(c){return String(c.id)===key})[0];
         if(it){window.__ppDet=true;lift("infoModal");showInfo(it);opened=true}
