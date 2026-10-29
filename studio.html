@@ -1237,7 +1237,7 @@ var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action
 function renderList(){
   var d=L.data,q=d.quota,n=d.titles.length;
   function qb(l,u,m){var p=m?Math.min(100,Math.round(u/m*100)):0;return '<div class="qb"><div class="ql"><span>'+l+'</span><b>'+u+(m?' of '+m:'')+' used</b></div>'+(m?'<div class="qt"><i style="width:'+p+'%"></i></div>':'')+'</div>';}
-  var h='<div class="qcard"><h3>Your creator space</h3>'+qb('Movies',q.movies.used,q.movies.max)+qb('Series',q.series.used,q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
+  var h='',qh='<div class="qcard" style="margin-top:14px"><h3>Your creator space</h3>'+qb('Movies',q.movies.used,q.movies.max)+qb('Series',q.series.used,q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
   h+='<div class="chips">'+[['all','All content'],['movie','Movies'],['series','Series']].map(function(c){return '<button type="button" class="chip'+(L.flt===c[0]?' on':'')+'" data-act="flt" data-v="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>';
   var list=d.titles.filter(function(t){return L.flt==='all'||t.kind===L.flt});
   if(!list.length){
@@ -1259,6 +1259,7 @@ function renderList(){
     }
     h+='</div>';
   });
+  h+=qh;
   if(d.tier==='free')h+='<div class="upsell"><h3>Need a bigger catalogue?</h3><p>Verified creators and partners can upload far more movies and series.</p><button class="btn gold" data-act="partner">Become a verified partner</button></div>';
   R(h);
 }
