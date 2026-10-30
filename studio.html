@@ -611,7 +611,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <div id="toast"></div>
 
 <script>
-var API='https://picha-plus-worker.kerosoftz522.workers.dev';
+var API='https://api.mypicha.uk';
 var token=localStorage.getItem('pichaplus_session');
 function did(){var i=localStorage.getItem('picha_device_id');if(!i){i=crypto.randomUUID();localStorage.setItem('picha_device_id',i)}return i}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show')},2200)}
