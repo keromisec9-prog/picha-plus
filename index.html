@@ -80,7 +80,7 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
     closedAt=Date.now();
     try{
       if(location.pathname.indexOf('/title/')>-1 && !document.querySelector('#seriesModal.active,#infoModal.active'))
-        or.call(history,history.state,'','/picha-plus/');
+        or.call(history,history.state,'','/');
     }catch(x){}
     return true;
   }
@@ -142,8 +142,8 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   <meta id="ogTitle" property="og:title" content="Picha+ | Luganda Translated Movies & Series"/>
   <meta id="ogDescription" property="og:description" content="Uganda's #1 Luganda movie streaming platform. Watch movies & series translated by VJ Junior, VJ Ice P, VJ Uncle T and more. No ads, HD quality."/>
   <meta id="ogType" property="og:type" content="website"/>
-  <meta id="ogUrl" property="og:url" content="https://keromisec9-prog.github.io/picha-plus/"/>
-  <meta id="ogImage" property="og:image" content="https://keromisec9-prog.github.io/picha-plus/icon-512.png"/>
+  <meta id="ogUrl" property="og:url" content="https://mypicha.uk/"/>
+  <meta id="ogImage" property="og:image" content="https://mypicha.uk/icon-512.png"/>
   <meta name="robots" content="index, follow"/>
   <link rel="manifest" href="manifest.json"/>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -3217,7 +3217,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
           <h4>More</h4>
           <ul>
             <li><a href="https://keromisec9-prog.github.io/Contact-Form/" target="_blank">Contact</a></li>
-            <li><a href="/picha-plus/sitemap.xml">Sitemap</a></li>
+            <li><a href="/sitemap.xml">Sitemap</a></li>
             <li><a href="studio.html"><svg width="1.2em" height="1.2em" fill="currentColor" style="vertical-align:-0.25em;margin-right:6px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M475-160q4 0 8-2t6-4l328-328q12-12 17.5-27t5.5-30q0-16-5.5-30.5T817-607L647-777q-11-12-25.5-17.5T591-800q-15 0-30 5.5T534-777l-11 11 74 75q15 14 22 32t7 38q0 42-28.5 70.5T527-522q-20 0-38.5-7T456-550l-75-74-175 175q-3 3-4.5 6.5T200-435q0 8 6 14.5t14 6.5q4 0 8-2t6-4l108-108q11-11 27.5-11.5T398-528q11 11 11 28t-11 28L291-364q-3 3-4.5 6.5T285-350q0 8 6 14t14 6q4 0 8-2t6-4l108-107q11-11 27.5-11.5T483-443q11 11 11 28t-11 28L376-279q-3 2-4.5 6t-1.5 8q0 8 6 14t14 6q4 0 7.5-1.5t6.5-4.5l108-107q11-11 27.5-11.5T568-358q11 11 11 28t-11 28L460-194q-3 3-4.5 6.5T454-180q0 8 6.5 14t14.5 6Zm-1 80q-37 0-65.5-24.5T375-166q-34-5-57-28t-28-57q-34-5-56.5-28.5T206-336q-38-5-62-33t-24-66q0-20 7.5-38.5T149-506l175-175q23-23 56.5-23t56.5 23l75 75q2 3 6 4.5t8 1.5q9 0 15-5.5t6-14.5q0-4-1.5-8t-4.5-6L398-777q-11-12-25.5-17.5T342-800q-15 0-30 5.5T285-777L144-635q-14 14-20 33t-3 38q3 17-7 30t-27 15q-17 2-30-7.5T42-553q-6-38 5.5-74.5T87-692l141-141q24-23 53.5-35t60.5-12q31 0 60.5 12t52.5 35l11 11 11-11q24-23 53.5-35t60.5-12q31 0 60.5 12t52.5 35l169 169q23 23 35 53t12 61q0 31-12 60.5T873-437L545-110q-14 14-32.5 22T474-80Zm-98-560Z"/></svg>Partner with us</a></li>
           </ul>
         </div>
@@ -3907,7 +3907,7 @@ window.addEventListener('load', async () => {
 
 // ── DEEP LINKS (/title/<id>-<slug>) ────────────────────────────────────────────
 // [SHORTS SUB-TAB previews] Opens For You → Shorts on a shared title.
-// Link format: /picha-plus/shorts/<id>/<slug>. Logged-out visitors are sent to
+// Link format: /shorts/<id>/<slug>. Logged-out visitors are sent to
 // sign-in first; the title id is remembered (1h) and opened after they return.
 async function handleDeepLinkShort() {
   const PEND = 'pichaplus_pending_short';
@@ -3924,12 +3924,12 @@ async function handleDeepLinkShort() {
   if (!id) return;
   if (!session.isLoggedIn()) {
     try { localStorage.setItem(PEND, JSON.stringify({ id, t: Date.now() })); } catch (e) {}
-    history.replaceState({}, '', '/picha-plus/');
+    history.replaceState({}, '', '/');
     openSignin();
     return;
   }
   try { localStorage.removeItem(PEND); } catch (e) {}
-  history.replaceState({}, '', '/picha-plus/');
+  history.replaceState({}, '', '/');
   const pool = window._allCards || [];
   const item = pool.find(c => String(c.id) === id) || pool.find(c => String(c.tmdbId) === id);
   if (!item) { showToast('That title is no longer available', 'error'); return; }
@@ -4371,8 +4371,8 @@ const DEFAULT_PAGE_TITLE = "Picha+ | Luganda Translated Movies & Series Uganda";
 const DEFAULT_PAGE_DESC = "Watch the latest movies and series translated to Luganda by top VJs — VJ Junior, VJ Ice P, VJ Uncle T, VJ Arafa and more. Uganda's #1 Luganda streaming platform. No ads, HD quality.";
 const DEFAULT_OG_TITLE = "Picha+ | Luganda Translated Movies & Series";
 const DEFAULT_OG_DESC = "Uganda's #1 Luganda movie streaming platform. Watch movies & series translated by VJ Junior, VJ Ice P, VJ Uncle T and more. No ads, HD quality.";
-const DEFAULT_OG_IMAGE = "https://keromisec9-prog.github.io/picha-plus/icon-512.png";
-const DEFAULT_OG_URL = "https://keromisec9-prog.github.io/picha-plus/";
+const DEFAULT_OG_IMAGE = "https://mypicha.uk/icon-512.png";
+const DEFAULT_OG_URL = "https://mypicha.uk/";
 
 function updatePageMeta({ title, description, image, path, type, releaseYear }) {
   const fullTitle = `${title} | Picha+`;
@@ -4418,7 +4418,7 @@ function resetPageMeta() {
 function _leaveTitleEntry() {
   const t = history.state && history.state.type;
   if (t === 'title' || t === 'series') history.back();
-  else history.replaceState({}, '', '/picha-plus/');
+  else history.replaceState({}, '', '/');
 }
 function _clearInfoRecs() {
   const r = document.getElementById('infoRecs');
@@ -4533,7 +4533,7 @@ async function showInfo(item) {
 
   // Update URL for shareable/indexable link without navigating away
   const infoId = encodeURIComponent(String(item.id || item.tmdbId));
-  const infoUrlPath = `/picha-plus/title/${infoId}/${slugify(title)}`;
+  const infoUrlPath = `/title/${infoId}/${slugify(title)}`;
   if (window.location.pathname !== infoUrlPath) {
     history.pushState({ type: 'title', id: item.id }, '', infoUrlPath);
   }
@@ -7899,7 +7899,7 @@ function showSeries(idx) {
 
   const seriesId = encodeURIComponent(String(s.tmdbId));
   const seriesReadable = slugify(s.title) + (s.vj ? '-' + slugify(s.vj) : '');
-  const seriesUrlPath = `/picha-plus/title/${seriesId}/${seriesReadable}`;
+  const seriesUrlPath = `/title/${seriesId}/${seriesReadable}`;
   if (window.location.pathname !== seriesUrlPath) {
     history.pushState({ type: 'series', idx }, '', seriesUrlPath);
   }
@@ -12884,7 +12884,7 @@ window.addEventListener('focus', clearStrayFocus);
       if (on('infoModal')) { done = call('closeInfo'); }
       else if (on('seriesModal')) { done = call('closeSeries'); }
     } finally { setTimeout(function () { history.back = hb; }, 400); }
-    if (done) { try { if (location.pathname.indexOf('/title/') > -1) history.replaceState({}, '', '/picha-plus/'); } catch (e) {} }
+    if (done) { try { if (location.pathname.indexOf('/title/') > -1) history.replaceState({}, '', '/'); } catch (e) {} }
     return done;
   });
   add(function () { return on('categoryOverlay') && call('closeCategory'); });
