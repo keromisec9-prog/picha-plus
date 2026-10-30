@@ -14518,5 +14518,18 @@ body.pp-in-profile #serCreator{cursor:default}
   window.addEventListener('popstate',function(){ setTimeout(fix,0); setTimeout(fix,150); });
 })();
 </script>
+<script id="ppLiftObs">
+(function(){
+  function fix(m){
+    if(!document.getElementById('ppCr')) return;
+    var st=history.state||{}; if(st.ppcr) return;
+    if(m.classList.contains('active')&&!m.classList.contains('pp-lift')) m.classList.add('pp-lift');
+  }
+  ['infoModal','seriesModal'].forEach(function(i){
+    var m=document.getElementById(i); if(!m) return;
+    new MutationObserver(function(){ fix(m); }).observe(m,{attributes:true,attributeFilter:['class']});
+  });
+})();
+</script>
 </body>
 </html>
