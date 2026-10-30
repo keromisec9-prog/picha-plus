@@ -14531,5 +14531,20 @@ body.pp-in-profile #serCreator{cursor:default}
   });
 })();
 </script>
+<script id="ppUnderObs">
+(function(){
+  var ids=['infoModal','seriesModal'];
+  function fix(m){
+    if(!document.getElementById('ppCr')) return;
+    if(!m.classList.contains('pp-under')) return;
+    var other=document.getElementById(m.id==='infoModal'?'seriesModal':'infoModal');
+    if(!other||!other.classList.contains('active')||m.id==='seriesModal'&&document.getElementById('infoModal')&&!document.getElementById('infoModal').classList.contains('active')) m.classList.remove('pp-under');
+  }
+  ids.forEach(function(i){
+    var m=document.getElementById(i); if(!m) return;
+    new MutationObserver(function(){ fix(m); }).observe(m,{attributes:true,attributeFilter:['class']});
+  });
+})();
+</script>
 </body>
 </html>
