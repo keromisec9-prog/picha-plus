@@ -14505,5 +14505,18 @@ body.pp-in-profile #serCreator{cursor:default}
   };
 })();
 </script>
+<script id="ppLiftKeep">
+(function(){
+  function fix(){
+    var cr=document.getElementById('ppCr'); if(!cr) return;
+    var st=history.state||{}; if(st.ppcr) return;
+    ['infoModal','seriesModal'].forEach(function(i){
+      var m=document.getElementById(i);
+      if(m&&m.classList.contains('active')&&!m.classList.contains('pp-lift')) m.classList.add('pp-lift');
+    });
+  }
+  window.addEventListener('popstate',function(){ setTimeout(fix,0); setTimeout(fix,150); });
+})();
+</script>
 </body>
 </html>
