@@ -31,7 +31,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
   // Always network-first for API calls
-  if (url.hostname.includes('workers.dev') || url.hostname.includes('tmdb.org')) {
+  if (url.hostname.includes('workers.dev') || url.hostname === 'api.mypicha.uk' || url.hostname.includes('tmdb.org')) {
     return;
   }
 
