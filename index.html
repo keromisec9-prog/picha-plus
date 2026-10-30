@@ -114,7 +114,7 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   wrap(); window.addEventListener('load',wrap);
 })();
 </script>
-<script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){var st=e.state||{};["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift")});if(window.__ppDet&&(st.ppcr||st.type==="title"||st.type==="series")){if(st.ppcr){var o=document.getElementById("ppCr");if(o)o.style.visibility="";window.__ppDet=false}return}window.__ppDet=false;e.stopImmediatePropagation();window.__ppCrShut();}else{window.__ppDet=false}}catch(x){}},true);</script>
+<script>window.addEventListener("popstate",function(e){try{if(window.__ppCrOpen&&window.__ppCrOpen()){var st=e.state||{};var stay=!!(window.__ppDet&&(st.ppview||st.serview||st.type==="title"||st.type==="series"));if(!stay)["infoModal","seriesModal"].forEach(function(i){var m=document.getElementById(i);if(m)m.classList.remove("pp-lift")});if(window.__ppDet&&(st.ppcr||st.ppview||st.serview||st.type==="title"||st.type==="series")){if(st.ppcr){var o=document.getElementById("ppCr");if(o)o.style.visibility="";window.__ppDet=false}return}window.__ppDet=false;e.stopImmediatePropagation();window.__ppCrShut();}else{window.__ppDet=false}}catch(x){}},true);</script>
   <link rel="canonical" id="canonicalLink" href="https://pichaplus.netlify.app/">
     <script>
       // Single Page Apps for GitHub Pages — decode the redirect from 404.html
