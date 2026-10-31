@@ -584,6 +584,20 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .hwc{border:1px solid rgba(255,255,255,.07);background:#15110b}
 .hbc{border:0;background:linear-gradient(135deg,rgba(245,184,0,.10),rgba(255,255,255,.03))}
 .hjr{border:0;background:linear-gradient(90deg,rgba(245,184,0,.16),rgba(255,255,255,.02))}
+
+.tc{border:1px solid rgba(245,184,0,.32);background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(245,184,0,.05));box-shadow:0 0 14px rgba(245,184,0,.1)}
+.tr{position:relative}
+.tr::before{content:"";position:absolute;left:14px;bottom:6px;width:26px;height:26px;border-radius:50%;pointer-events:none;background:rgba(0,0,0,.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/14px no-repeat}
+.qa{margin:6px 0 18px;padding:14px;border-radius:14px;background:rgba(255,255,255,.04)}
+.qat{font-weight:700;font-size:16px;margin-bottom:10px}
+.qag{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qab{text-align:left;border:0;border-radius:12px;padding:12px;background:rgba(255,255,255,.06);color:inherit;cursor:pointer}
+.qab b{display:block;font-size:14px;color:var(--gold)}
+.qab span{font-size:11.5px;opacity:.75}
+.dz{margin:22px 0 10px;padding:14px;border-radius:14px;border:1px solid rgba(224,102,102,.5);background:rgba(224,102,102,.06)}
+.dzt{color:#e06666;font-weight:700;margin-bottom:4px}
+.dz p{font-size:12.5px;opacity:.8;margin:0 0 10px}
+.dzb{width:100%;border:1px solid #e06666;background:transparent;color:#e06666}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
@@ -1402,7 +1416,7 @@ function renderList(){
   list.forEach(function(t){
     var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
     if(isS&&t.status==='pending'&&!(t.episodes&&t.episodes.length))s=['Add an episode to publish','no'];
-    h+='<div class="tc"><div class="tr" data-act="view" data-id="'+t.id+'">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><span class="stt '+s[1]+'">'+s[0]+'</span><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
+    h+='<div class="tc"><div class="tr" data-act="view" data-id="'+t.id+'">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><span class="stt '+s[1]+'">'+s[0]+'</span><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+(t.updatedAt?' &middot; Updated '+fmtD(t.updatedAt):'')+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
     if(open){
       if(t.status==='rejected'&&t.staffNote)h+='<div class="tm" style="margin-top:8px">'+esc(t.staffNote)+'</div>';
       if(isS&&t.episodes.length){
@@ -1418,6 +1432,7 @@ function renderList(){
   });
   var up='';
   if(d.hasMore)h+='<button type="button" class="btn" style="width:100%;margin:10px 0 14px" onclick="libMore(this)">Load more</button>';
+  h+='<div class="qa"><div class="qat">Quick actions</div><div class="qag"><button type="button" class="qab" data-act="openadd"><b>Upload content</b><span>Publish a new movie</span></button><button type="button" class="qab" data-act="openadd"><b>Create series</b><span>Start an episodic title</span></button></div></div>';
   h+='<div id="libSheet" class="lsh" onclick="if(event.target===this||event.target.closest(\'[data-act]\'))this.classList.remove(\'on\')"><div class="lsc"><div class="lsh-h"><b>Library menu</b><button type="button" class="lsx" aria-label="Close" onclick="document.getElementById(\'libSheet\').classList.remove(\'on\')"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>'+qh+up+'</div></div>';
   R(h);
 }
@@ -1512,19 +1527,19 @@ function renderDetail(){
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
   var d=t.createdAt?new Date(t.createdAt):null;
-  h+='<div class="inf"><div><span>Status</span><b>'+s[0]+'</b></div><div><span>Type</span><b>'+(isS?'Series':'Movie')+'</b></div>'+(d&&!isNaN(d)?'<div><span>Added</span><b>'+d.toLocaleDateString()+'</b></div>':'')+'</div>';
+  h+='<h3 class="dsec">Content information</h3><div class="inf"><div><span>Status</span><b>'+s[0]+'</b></div><div><span>Type</span><b>'+(isS?'Series':'Movie')+'</b></div>'+(d&&!isNaN(d)?'<div><span>Added</span><b>'+d.toLocaleDateString()+'</b></div>':'')+(t.updatedAt?'<div><span>Updated</span><b>'+fmtD(t.updatedAt)+'</b></div>':'')+'</div>';
   if(isS){
-    h+='<h3 class="dsec">Episodes <span class="tm" style="font-weight:400">('+eps.length+' of '+q.episodesPerSeries+')</span></h3>';
+    h+='<h3 class="dsec">Episodes <span class="tm" style="font-weight:400">('+eps.length+')</span></h3>';
     if(!eps.length)h+='<div class="lc"><div class="t">No episodes yet. Add your first episode to get started.</div></div>';
     else{
       h+='<div class="eps" style="border:0">';
       eps.forEach(function(e){h+='<div class="ep"><span>S'+e.season+' &middot; E'+e.number+(e.name?' &middot; '+esc(e.name):'')+'</span><button class="pill dng" data-act="del" data-type="episode" data-id="'+e.id+'">'+(L.armed==='episode'+e.id?'Tap again to confirm':'Delete')+'</button></div>'});
       h+='</div>';
     }
-    if(eps.length<q.episodesPerSeries)h+='<div class="acts"><button class="btn gold" data-act="addep" data-id="'+t.id+'">+ Add episode</button></div>';
-    else h+='<p class="uph" style="margin-top:10px">You have reached the episode limit for this series.</p>';
+    h+='<div class="acts"><button class="btn gold" data-act="addep" data-id="'+t.id+'">+ Add episode</button></div>';
+
   }
-  h+='<div class="acts" style="margin-top:22px"><button class="pill dng" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':(isS?'Delete series':'Delete movie'))+'</button></div>';
+  h+='<div class="dz"><div class="dzt">Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your published library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':(isS?'Delete series':'Delete movie'))+'</button></div>';
   R(h);
 }
 window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderDetail)};
