@@ -1404,6 +1404,24 @@ window.libMore=function(btn){
     L.data.titles=L.data.titles.concat(res.body.titles||[]);L.data.hasMore=!!res.body.hasMore;renderList();
   }).catch(function(){toast('Connection problem');renderList()});
 };
+function renderEdit(t){
+  var h='<div class="eyebrow">EDIT DETAILS</div><h2>'+esc(t.title)+'</h2>';
+  h+='<div class="fld"><label>Title *</label><input id="lf_title" type="text" maxlength="120" value="'+esc(t.title||'')+'"></div>';
+  h+='<div class="fld"><label>Description</label><textarea id="lf_syn" maxlength="2000">'+esc(t.synopsis||'')+'</textarea></div>';
+  h+='<div class="fld"><label>Genre</label><input id="lf_genre" type="text" maxlength="80" placeholder="e.g. Drama, Crime" value="'+esc(t.genre||'')+'"></div>';
+  h+='<p class="uph">Changes to a published title go live straight away.</p>';
+  h+='<div class="nav"><button class="btn" data-act="back">Cancel</button><button class="btn gold" id="lf_go" data-act="esave" data-id="'+t.id+'">Save changes</button></div>';
+  R(h);
+}
+document.getElementById('libRoot').addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-act="edit"],[data-act="esave"]');if(!el)return;
+  if(el.dataset.act==='edit'){var t=findT(el.dataset.id);if(t){L.tid=t.id;setMode('ep');renderEdit(t);window.scrollTo(0,0)}}
+  else{
+    var ti=($('lf_title').value||'').trim();if(!ti)return toast('Enter a title');
+    var id=el.dataset.id;
+    post('/studio/edit',{id:id,title:ti,genre:($('lf_genre').value||'').trim(),synopsis:($('lf_syn').value||'').trim()},el,'Save changes',function(){toast('Saved');openDetail(id)});
+  }
+});
 var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action required','no']};
 function renderList(){
   var d=L.data,q=d.quota,n=d.titles.length;
@@ -1434,7 +1452,7 @@ function renderList(){
   });
   var up='';
   if(d.hasMore)h+='<button type="button" class="btn" style="width:100%;margin:10px 0 14px" onclick="libMore(this)">Load more</button>';
-  h+='<div class="qa"><div class="qat">Quick actions</div><div class="qag"><button type="button" class="qab" data-act="openadd"><b>Upload content</b><span>Publish a new movie</span></button><button type="button" class="qab" data-act="openadd"><b>Create series</b><span>Start an episodic title</span></button></div></div>';
+  h+='<div class="qa"><div class="qat">Quick actions</div><div class="qag"><button type="button" class="qab" data-act="choose" data-kind="movie"><b>Upload content</b><span>Publish a new movie</span></button><button type="button" class="qab" data-act="choose" data-kind="series"><b>Create series</b><span>Start an episodic title</span></button></div></div>';
   h+='<div id="libSheet" class="lsh" onclick="if(event.target===this||event.target.closest(\'[data-act]\'))this.classList.remove(\'on\')"><div class="lsc"><div class="lsh-h"><b>Library menu</b><button type="button" class="lsx" aria-label="Close" onclick="document.getElementById(\'libSheet\').classList.remove(\'on\')"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>'+qh+up+'</div></div>';
   R(h);
 }
@@ -1526,6 +1544,7 @@ function renderDetail(){
   if(isS&&t.status==='pending'&&!eps.length)s=['Add an episode to publish','no'];
   var h='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>';
   h+='<div class="dh">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><h2 style="font-size:22px;margin:0 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
+  h+='<div class="acts" style="margin:0 0 14px"><button class="pill" data-act="edit" data-id="'+t.id+'">Edit details</button></div>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
   var d=t.createdAt?new Date(t.createdAt):null;
