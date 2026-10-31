@@ -642,6 +642,12 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 #libRoot .pill.dng{border:0!important;background:rgba(255,255,255,.06)!important}
 #libRoot .dz{border:0!important;background:rgba(229,72,77,.08)!important}
 #libRoot .dzb{border:0!important;background:rgba(229,72,77,.14)!important;color:#e5484d!important;font-size:13px;font-weight:600}
+
+/* performance card */
+#libRoot .perf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#libRoot .pc{background:rgba(255,255,255,.05);border-radius:14px;padding:12px 14px}
+#libRoot .pc b{display:block;font-size:20px;font-weight:700}
+#libRoot .pc span{font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -1593,6 +1599,15 @@ function renderForm(){
   h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?'submit':'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?'Submit for review':'Next'))+'</button></div>';
   R(h);
 }
+function loadPerf(id){
+  api('/studio/performance?id='+encodeURIComponent(id),{method:'GET'}).then(function(res){
+    var b=res.body||{},box=$('perfBox');
+    if(!box||String(L.did)!==String(id)||!b.ok||!b.live)return;
+    var c=function(v,l){return '<div class="pc"><b>'+v+'</b><span>'+l+'</span></div>'};
+    var ic='<svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>';
+    box.innerHTML='<h3 class="dsec dic">'+ic+'Performance</h3><div class="perf">'+c(b.viewers,'Viewers')+c(b.viewers7,'Last 7 days')+c(b.completion+'%','Avg. watched')+c(b.hours+' h','Watch time')+'</div>';
+  }).catch(function(){});
+}
 function renderDetail(){
   L.editId=null;
   var t=findT(L.did);
@@ -1626,6 +1641,7 @@ function renderDetail(){
     +(t.updatedAt?row('Updated',fmtD(t.updatedAt)):'')
     +(live?row('Visibility',IC.globe+'Public')+row('Availability',IC.tv+'Streaming'):'')
     +'</div>';
+  if(live)h+='<div id="perfBox"></div>';
   if(isS){
     h+='<h3 class="dsec">Episodes <span class="tm" style="font-weight:400">('+eps.length+')</span></h3>';
     if(!eps.length)h+='<div class="lc"><div class="t">No episodes yet. Add your first episode to get started.</div></div>';
@@ -1639,6 +1655,7 @@ function renderDetail(){
   }
   h+='<div class="dz"><div class="dzt">'+IC.warn+'Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your published library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':IC.trash+(isS?'Delete series':'Delete movie'))+'</button></div>';
   R(h);
+  if(live)loadPerf(t.id);
 }
 document.getElementById('libRoot').addEventListener('click',function(ev){var el=ev.target.closest('[data-act="preview"]');if(el)toast('Preview is coming soon')});
 window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderDetail)};
