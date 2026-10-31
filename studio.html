@@ -1605,7 +1605,7 @@ function loadPerf(id){
     if(!box||String(L.did)!==String(id)||!b.ok||!b.live)return;
     var c=function(v,l){return '<div class="pfc"><b>'+v+'</b><span>'+l+'</span></div>'};
     var ic='<svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>';
-    box.innerHTML='<h3 class="dsec dic">'+ic+'Performance</h3><div class="pfg">'+c(b.viewers,'Viewers')+c(b.viewers7,'Last 7 days')+c(b.completion==null?'&ndash;':b.completion+'%','Avg. watched')+c(b.hours+' h','Watch time')+'</div><p class="tm" style="margin:8px 0 0;font-size:12px">Estimated. Counts viewers with 30+ seconds watched'+(b.since?', since '+b.since:'')+'.</p>';
+    box.innerHTML='<h3 class="dsec dic">'+ic+'Performance</h3><div class="pfg">'+c(b.viewers,'Viewers')+c(b.viewers7,'Last 7 days')+c(b.completion==null?'&ndash;':b.completion+'%','Avg. watched')+c(b.secs<3600?(Math.round(b.secs/6)/10)+' min':(Math.round(b.secs/360)/10)+' h','Watch time')+'</div><p class="tm" style="margin:8px 0 0;font-size:12px">Estimated. Counts viewers with 30+ seconds watched'+(b.since?', since '+b.since:'')+'.</p>';
   }).catch(function(){});
 }
 function renderDetail(){
