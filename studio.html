@@ -512,6 +512,19 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pcd .pim{width:100%;aspect-ratio:2/3;border-radius:10px;object-fit:cover;background:#1c1409;display:block}
 .pcd .pt{font-size:13px;font-weight:600;margin-top:6px;line-height:1.3}
 .pcd .pk{font-size:11px;color:var(--mute)}
+
+.ceco{margin:22px 0 8px;padding:18px;border:1px solid rgba(245,184,0,.55);border-radius:18px;background:rgba(255,255,255,.04)}
+.ceco-k{color:#f5b800;font-weight:700;font-size:14px;margin-bottom:8px}
+.ceco h3{font-size:22px;margin-bottom:6px}
+.ceco p{opacity:.8;font-size:14px;margin-bottom:14px}
+.ceco-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.1)}
+.ceco-r b{display:block;font-size:15px;font-family:system-ui,sans-serif}
+.ceco-r span{display:block;font-size:12.5px;opacity:.75;margin-top:2px}
+.ceco-r em{font-style:normal;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.1);white-space:nowrap}
+.ceco-r em.v{color:#4aa3ff}
+.ceco .btn{width:100%;margin-top:12px}
+.projlink{text-align:center;font-size:13.5px;opacity:.85;margin:14px 0}
+.projlink a{color:#f5b800;font-weight:600;text-decoration:underline}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
@@ -530,8 +543,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <div class="view on" id="v-home">
   <div class="hero"><div class="hero-bg"><i class="on" style="background-image:url(assets/studio/hero1.webp)"></i><i style="background-image:url(assets/studio/hero2.webp)"></i><i style="background-image:url(assets/studio/hero3.webp)"></i><i style="background-image:url(assets/studio/hero4.webp)"></i><i style="background-image:url(assets/studio/hero5.webp)"></i><i style="background-image:url(assets/studio/hero6.webp)"></i><i style="background-image:url(assets/studio/hero7.webp)"></i></div><div class="wrap">
     <div class="eyebrow">MYPICHA+ STUDIO</div>
-    <h1>Your stories deserve a <span>bigger screen.</span></h1>
-    <p>MyPicha+ Studio connects filmmakers, VJs, creators and production companies with opportunities to promote, distribute and monetize their content through MyPicha+.</p>
+    <h1>Your creativity.<br><span>Your audience.</span><br>Your earnings.</h1>
+    <p>Upload, grow and earn from your content on MyPicha+ Studio.</p>
     <button class="hero-more" aria-label="Read more" onclick="this.closest('.hero').classList.toggle('open')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="btns">
       <button class="btn gold" onclick="go('partner')">Start a partnership</button>
@@ -543,10 +556,21 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
     <h2>Choose your opportunity</h2>
     <p class="sub">Promote your latest release, share an upcoming project, or build a long-term partnership.</p>
     <div class="cards">
+      <div class="card" onclick="openLib()"><div class="ic" data-i="upload"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zm0-10h4v6h6v-6h4l-7-7-7 7z"/></svg></div><h3>Create &amp; Earn</h3><div class="t">Movies, series, trailers and videos</div><p>Upload your movies and series, build your audience and earn from your content.</p><span class="more">Start uploading</span></div>
       <div class="card" onclick="go('promote-content')"><div class="ic" data-i="campaign"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M840-440h-80q-17 0-28.5-11.5T720-480q0-17 11.5-28.5T760-520h80q17 0 28.5 11.5T880-480q0 17-11.5 28.5T840-440ZM664-288q10-14 26-16t30 8l64 48q14 10 16 26t-8 30q-10 14-26 16t-30-8l-64-48q-14-10-16-26t8-30Zm120-424-64 48q-14 10-30 8t-26-16q-10-14-8-30t16-26l64-48q14-10 30-8t26 16q10 14 8 30t-16 26ZM200-360h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l139-84q20-12 40.5 0t20.5 35v338q0 23-20.5 35t-40.5 0l-139-84h-40v120q0 17-11.5 28.5T240-200q-17 0-28.5-11.5T200-240v-120Zm240-22v-196l-98 58H160v80h182l98 58Zm120 36v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346ZM300-480Z"/></svg></div><h3>Promote My Content</h3><div class="t">Movies, series and trailers</div><p>Get your existing content in front of more viewers with a targeted promotional campaign.</p><span class="more">Submit now</span></div>
-      <div class="card" onclick="go('promote-project')"><div class="ic" data-i="movie"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m160-800 65 130q7 14 20 22t28 8q30 0 46-25.5t2-52.5l-41-82h80l65 130q7 14 20 22t28 8q30 0 46-25.5t2-52.5l-41-82h80l65 130q7 14 20 22t28 8q30 0 46-25.5t2-52.5l-41-82h120q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Zm0 240v320h640v-320H160Zm0 0v320-320Z"/></svg></div><h3>Promote My Project</h3><div class="t">Upcoming releases and ideas</div><p>Build awareness for your upcoming films, series, trailers or creative projects.</p><span class="more">Submit now</span></div>
+      
       <div class="card" onclick="go('partner')"><div class="ic" data-i="handshake"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M475-160q4 0 8-2t6-4l328-328q12-12 17.5-27t5.5-30q0-16-5.5-30.5T817-607L647-777q-11-12-25.5-17.5T591-800q-15 0-30 5.5T534-777l-11 11 74 75q15 14 22 32t7 38q0 42-28.5 70.5T527-522q-20 0-38.5-7T456-550l-75-74-175 175q-3 3-4.5 6.5T200-435q0 8 6 14.5t14 6.5q4 0 8-2t6-4l108-108q11-11 27.5-11.5T398-528q11 11 11 28t-11 28L291-364q-3 3-4.5 6.5T285-350q0 8 6 14t14 6q4 0 8-2t6-4l108-107q11-11 27.5-11.5T483-443q11 11 11 28t-11 28L376-279q-3 2-4.5 6t-1.5 8q0 8 6 14t14 6q4 0 7.5-1.5t6.5-4.5l108-107q11-11 27.5-11.5T568-358q11 11 11 28t-11 28L460-194q-3 3-4.5 6.5T454-180q0 8 6.5 14t14.5 6Zm-1 80q-37 0-65.5-24.5T375-166q-34-5-57-28t-28-57q-34-5-56.5-28.5T206-336q-38-5-62-33t-24-66q0-20 7.5-38.5T149-506l175-175q23-23 56.5-23t56.5 23l75 75q2 3 6 4.5t8 1.5q9 0 15-5.5t6-14.5q0-4-1.5-8t-4.5-6L398-777q-11-12-25.5-17.5T342-800q-15 0-30 5.5T285-777L144-635q-14 14-20 33t-3 38q3 17-7 30t-27 15q-17 2-30-7.5T42-553q-6-38 5.5-74.5T87-692l141-141q24-23 53.5-35t60.5-12q31 0 60.5 12t52.5 35l11 11 11-11q24-23 53.5-35t60.5-12q31 0 60.5 12t52.5 35l169 169q23 23 35 53t12 61q0 31-12 60.5T873-437L545-110q-14 14-32.5 22T474-80Zm-98-560Z"/></svg></div><h3>Partner with MyPicha+</h3><div class="t">VJs, filmmakers, producers and more</div><p>Apply for creator programs, distribution partnerships, licensing and production opportunities.</p><span class="more">Apply now</span></div>
     </div>
+    <div class="ceco">
+      <div class="ceco-k">&#9733; The MyPicha+ Creator Economy</div>
+      <h3>Upload freely. Monetize when you&rsquo;re ready.</h3>
+      <p>No arbitrary upload limits. Earn from real performance, not empty promises.</p>
+      <div class="ceco-r"><div><b>Hustler</b><span>Reach 500 followers to unlock monetization.</span></div><em>500+</em></div>
+      <div class="ceco-r"><div><b>Verified VJ</b><span>Monetize from day one.</span></div><em class="v">Verified</em></div>
+      <div class="ceco-r"><div><b>Production Company</b><span>Monetize from day one.</span></div><em class="v">Verified</em></div>
+      <button class="btn gold" onclick="show('v-how');window.scrollTo(0,0)">Learn more</button>
+    </div>
+    <p class="projlink">Have an upcoming project? <a onclick="go('promote-project')">Promote it</a></p>
     <a class="how-link" onclick="show('v-how');window.scrollTo(0,0)">How MyPicha+ Studio works</a>
   </div></section>
   
