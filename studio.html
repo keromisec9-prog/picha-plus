@@ -1375,12 +1375,19 @@ function start(slot,file){
 function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;if(st.xhr)st.xhr.abort()}});L.up={}}
 
 function loadLib(cb){
-  api('/studio/library',{method:'GET'}).then(function(res){
+  api('/studio/library?limit=50',{method:'GET'}).then(function(res){
     if(isAuthFail(res))return gate();
     if(!(res.body&&res.body.ok)){R('<p class="sub">Could not load your library. Try again.</p>');return}
     L.data=res.body;cb();
   }).catch(function(){R('<p class="sub">Connection problem. Try again.</p>')});
 }
+window.libMore=function(btn){
+  if(btn){btn.disabled=true;btn.textContent='Loading...'}
+  api('/studio/library?offset='+L.data.titles.length+'&limit=50',{method:'GET'}).then(function(res){
+    if(!(res.body&&res.body.ok)){toast('Could not load more');renderList();return}
+    L.data.titles=L.data.titles.concat(res.body.titles||[]);L.data.hasMore=!!res.body.hasMore;renderList();
+  }).catch(function(){toast('Connection problem');renderList()});
+};
 var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action required','no']};
 function renderList(){
   var d=L.data,q=d.quota,n=d.titles.length;
@@ -1409,7 +1416,8 @@ function renderList(){
     }
     h+='</div>';
   });
-  var up=d.tier==='free'?'<div class="upsell"><h3>Need a bigger catalogue?</h3><p>Verified creators and partners can upload far more movies and series.</p><button class="btn gold" data-act="partner">Become a verified partner</button></div>':'';
+  var up='';
+  if(d.hasMore)h+='<button type="button" class="btn" style="width:100%;margin:10px 0 14px" onclick="libMore(this)">Load more</button>';
   h+='<div id="libSheet" class="lsh" onclick="if(event.target===this||event.target.closest(\'[data-act]\'))this.classList.remove(\'on\')"><div class="lsc"><div class="lsh-h"><b>Library menu</b><button type="button" class="lsx" aria-label="Close" onclick="document.getElementById(\'libSheet\').classList.remove(\'on\')"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>'+qh+up+'</div></div>';
   R(h);
 }
@@ -1418,8 +1426,8 @@ function renderPick(){
   R('<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div><h2 style="margin-bottom:6px">What would you like to upload?</h2><p class="sub">Choose the type of content you want to add to your MyPicha+ library.</p>'
    +'<div class="pc" data-act="choose" data-kind="movie" style="--bg:url(assets/studio/hero2.webp)"><div class="pcb"><h3>Upload a movie</h3><p>Add a full-length film, poster and details.</p></div></div>'
    +'<div class="pc" data-act="choose" data-kind="series" style="--bg:url(assets/studio/hero6.webp)"><div class="pcb"><h3>Create a series</h3><p>Set up a series and add episodes over time.</p></div></div>'
-   +'<div class="allow"><h3>Your free publishing allowance</h3><ul><li>'+q.movies.max+' full movies ('+q.movies.used+' used)</li><li>'+q.series.max+' series, up to '+q.episodesPerSeries+' episodes each ('+q.series.used+' used)</li></ul>'
-   +(free?'<p>Need more uploads?</p><a data-act="partner">Become a verified partner</a>':'')+'</div>');
+   
+   );
 }
 function renderUpsell(kind){
   setMode('pick');
