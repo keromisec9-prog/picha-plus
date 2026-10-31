@@ -603,7 +603,35 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
-<style>.pfchg{background:none;border:0;color:var(--gold,#e6b422);font-size:.8rem;padding:0 .5rem;cursor:pointer}</style>
+<style>.pfchg{background:none;border:0;color:var(--gold,#e6b422);font-size:.8rem;padding:0 .5rem;cursor:pointer}
+/* detail redesign */
+.top{background:#0a0a0a!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.top #myBtn::after{content:"";display:inline-block;width:6px;height:6px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);margin:-3px 0 0 8px}
+.bnav button.on:not(.plus){color:var(--gold);border:1.5px solid var(--gold);border-radius:16px;background:rgba(246,196,69,.08);box-shadow:0 0 14px rgba(246,196,69,.25);margin:4px 6px;height:50px}
+#libRoot .dpw{position:relative;flex:0 0 auto;line-height:0}
+#libRoot .dpw .dp{display:block}
+#libRoot .dplay{position:absolute;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:0;cursor:pointer}
+#libRoot .dplay svg{width:20px;height:20px;fill:#fff}
+#libRoot .kpill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px;font-weight:700;letter-spacing:.08em}
+#libRoot .kpill svg{width:15px;height:15px;fill:currentColor}
+#libRoot .stt{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-weight:700}
+#libRoot .stt svg{width:16px;height:16px;fill:currentColor}
+#libRoot .dbt{display:flex;gap:10px;margin:0 0 16px}
+#libRoot .dbt button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:12px;font:700 14px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+#libRoot .dbt svg{width:18px;height:18px;fill:currentColor}
+#libRoot .dbp{border:0;background:linear-gradient(180deg,#f6c445,#d99a1c);color:#111;box-shadow:0 4px 16px rgba(246,196,69,.25)}
+#libRoot .dbe{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--text)}
+#libRoot .dic{display:flex;align-items:center;gap:8px}
+#libRoot .dic svg{width:20px;height:20px;fill:var(--gold)}
+#libRoot .inf b{display:inline-flex;align-items:center;justify-content:flex-end;gap:6px}
+#libRoot .inf b svg{width:16px;height:16px;fill:currentColor}
+#libRoot .inf b.g{color:#5fd28a}
+#libRoot .dz{border:1px solid rgba(229,72,77,.6);background:rgba(229,72,77,.07)}
+#libRoot .dzt{display:flex;align-items:center;gap:8px;color:#e5484d}
+#libRoot .dzt svg{width:20px;height:20px;fill:#e5484d}
+#libRoot .dzb{display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid #e5484d!important;color:#e5484d!important;background:transparent!important}
+#libRoot .dzb svg{width:18px;height:18px;fill:currentColor}
+</style>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -1561,13 +1589,32 @@ function renderDetail(){
   var isS=t.kind==='series',s=ST[t.status]||[t.status,''],q=L.data.quota,eps=t.episodes||[];
   if(isS&&t.status==='pending'&&!eps.length)s=['Add an episode to publish','no'];
   var h='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>';
-  h+='<div class="dh">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><h2 style="font-size:22px;margin:0 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
-  h+='<div class="acts" style="margin:0 0 14px"><button class="pill" data-act="edit" data-id="'+t.id+'">Edit details</button></div>';
+  var IC={
+    play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+    film:'<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>',
+    ok:'<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
+    edit:'<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+    info:'<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>',
+    warn:'<svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>',
+    trash:'<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+    globe:'<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>',
+    tv:'<svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>'
+  };
+  var live=t.status==='approved';
+  h+='<div class="dh"><div class="dpw">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<button type="button" class="dplay" aria-label="Preview" data-act="preview" data-id="'+t.id+'">'+IC.play+'</button></div><div class="tcb"><span class="kpill">'+IC.film+(isS?'SERIES':'MOVIE')+'</span><h2 style="font-size:22px;margin:8px 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+(live?IC.ok:'')+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
+  h+='<div class="dbt"><button type="button" class="dbp" data-act="preview" data-id="'+t.id+'">'+IC.play+'Preview '+(isS?'series':'movie')+'</button><button type="button" class="dbe" data-act="edit" data-id="'+t.id+'">'+IC.edit+'Edit details</button></div>';
   if(t.pendingArt)h+='<p class="tm" style="margin:-6px 0 12px">A new poster is waiting for review.</p>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
   var d=t.createdAt?new Date(t.createdAt):null;
-  h+='<h3 class="dsec">Content information</h3><div class="inf"><div><span>Status</span><b>'+s[0]+'</b></div><div><span>Type</span><b>'+(isS?'Series':'Movie')+'</b></div>'+(d&&!isNaN(d)?'<div><span>Added</span><b>'+d.toLocaleDateString()+'</b></div>':'')+(t.updatedAt?'<div><span>Updated</span><b>'+fmtD(t.updatedAt)+'</b></div>':'')+'</div>';
+  var row=function(l,v,c){return '<div><span>'+l+'</span><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>'};
+  h+='<h3 class="dsec dic">'+IC.info+'Content information</h3><div class="inf">'
+    +row('Publishing status',(live?IC.ok:'')+s[0],live?'g':'')
+    +row('Content type',isS?'Series':'Movie')
+    +(d&&!isNaN(d)?row('Date added',d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})):'')
+    +(t.updatedAt?row('Updated',fmtD(t.updatedAt)):'')
+    +(live?row('Visibility',IC.globe+'Public')+row('Availability',IC.tv+'Streaming'):'')
+    +'</div>';
   if(isS){
     h+='<h3 class="dsec">Episodes <span class="tm" style="font-weight:400">('+eps.length+')</span></h3>';
     if(!eps.length)h+='<div class="lc"><div class="t">No episodes yet. Add your first episode to get started.</div></div>';
@@ -1579,9 +1626,10 @@ function renderDetail(){
     h+='<div class="acts"><button class="btn gold" data-act="addep" data-id="'+t.id+'">+ Add episode</button></div>';
 
   }
-  h+='<div class="dz"><div class="dzt">Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your published library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':(isS?'Delete series':'Delete movie'))+'</button></div>';
+  h+='<div class="dz"><div class="dzt">'+IC.warn+'Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your published library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':IC.trash+(isS?'Delete series':'Delete movie'))+'</button></div>';
   R(h);
 }
+document.getElementById('libRoot').addEventListener('click',function(ev){var el=ev.target.closest('[data-act="preview"]');if(el)toast('Preview is coming soon')});
 window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderDetail)};
 function renderEp(t){
   var ms=1,mn=0;
