@@ -970,7 +970,7 @@ function renderS(){
   h+=sfld('releaseStatus','Release status','select');
   if(proj)h+=sfld('releaseDate','Expected release (e.g. December 2026)','text');
   h+=sfld('synopsis','Brief synopsis','area');
-  h+=upHTML('video','Upload a preview or trailer (optional)','MP4 only, up to 3 GB. Large files upload in parts.');
+  h+=upHTML('video','Upload a preview or trailer (optional)','MP4 only, up to 2.5 GB. Large files upload in parts.');
   h+=sfld('trailerLink','Trailer or preview link','url','https://');
   h+=sfld('posterLink','Poster link (optional)','url','https://');
   h+=upHTML('poster','Or upload a poster image (optional)','JPG, PNG or WebP, up to 8 MB.');
@@ -983,7 +983,7 @@ function renderS(){
   root.innerHTML=h;
 }
 (function(){
-var LIM={video:3*1024*1024*1024,poster:8*1024*1024};
+var LIM={video:2.5*1024*1024*1024,poster:8*1024*1024};
 function U(){S.up=S.up||{};return S.up}
 function upBusy(){if(!S)return false;var u=U();return !!((u.video&&u.video.busy)||(u.poster&&u.poster.busy))}
 window.upBusy=upBusy;
@@ -1360,7 +1360,7 @@ function run(slot,file,st,preview){
 function start(slot,file){
   if(slot==='video'){
     if(!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
-    if(file.size>3221225472)return toast('Video must be 3 GB or smaller');
+    if(file.size>2684354560)return toast('Video must be 2.5 GB or smaller');
     var sv=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
     return run(slot,file,sv,null);
   }
@@ -1483,7 +1483,7 @@ function renderForm(){
     h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
     if(!movie)h+=RIGHTS;
   }else if(n===2){
-    h+=slotHTML('video','Movie file','MP4 only, up to 3 GB. Large files upload in parts.');
+    h+=slotHTML('video','Movie file','MP4 only, up to 2.5 GB. Large files upload in parts.');
   }else{
     var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
     h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+'</div></div>';
@@ -1526,7 +1526,7 @@ function renderEp(t){
   var h='<div class="eyebrow">ADD EPISODE</div><h2>'+esc(t.title)+'</h2><p class="sub">Upload one episode at a time.</p>';
   h+='<div class="two"><div class="fld"><label>Season</label><input id="lf_season" type="number" inputmode="numeric" value="'+ms+'"></div><div class="fld"><label>Episode</label><input id="lf_num" type="number" inputmode="numeric" value="'+(mn+1)+'"></div></div>';
   h+='<div class="fld"><label>Episode name (optional)</label><input id="lf_name" type="text" maxlength="120"></div>';
-  h+=slotHTML('video','Episode file','MP4 only, up to 3 GB.');
+  h+=slotHTML('video','Episode file','MP4 only, up to 2.5 GB.');
   h+='<div class="nav"><button class="btn" data-act="back">Cancel</button><button class="btn gold" id="lf_go" data-act="esubmit">Add episode</button></div>';
   R(h);
 }
