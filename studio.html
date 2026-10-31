@@ -644,10 +644,10 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 #libRoot .dzb{border:0!important;background:rgba(229,72,77,.14)!important;color:#e5484d!important;font-size:13px;font-weight:600}
 
 /* performance card */
-#libRoot .perf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-#libRoot .pc{background:rgba(255,255,255,.05);border-radius:14px;padding:12px 14px}
-#libRoot .pc b{display:block;font-size:20px;font-weight:700}
-#libRoot .pc span{font-size:12px;color:var(--mute)}
+#libRoot .pfg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#libRoot .pfc{display:block;height:auto;min-height:0;background:rgba(255,255,255,.05);border-radius:14px;padding:12px 14px}
+#libRoot .pfc b{display:block;font-size:20px;font-weight:700}
+#libRoot .pfc span{font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -1603,9 +1603,9 @@ function loadPerf(id){
   api('/studio/performance?id='+encodeURIComponent(id),{method:'GET'}).then(function(res){
     var b=res.body||{},box=$('perfBox');
     if(!box||String(L.did)!==String(id)||!b.ok||!b.live)return;
-    var c=function(v,l){return '<div class="pc"><b>'+v+'</b><span>'+l+'</span></div>'};
+    var c=function(v,l){return '<div class="pfc"><b>'+v+'</b><span>'+l+'</span></div>'};
     var ic='<svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>';
-    box.innerHTML='<h3 class="dsec dic">'+ic+'Performance</h3><div class="perf">'+c(b.viewers,'Viewers')+c(b.viewers7,'Last 7 days')+c(b.completion+'%','Avg. watched')+c(b.hours+' h','Watch time')+'</div>';
+    box.innerHTML='<h3 class="dsec dic">'+ic+'Performance</h3><div class="pfg">'+c(b.viewers,'Viewers')+c(b.viewers7,'Last 7 days')+c(b.completion+'%','Avg. watched')+c(b.hours+' h','Watch time')+'</div>';
   }).catch(function(){});
 }
 function renderDetail(){
