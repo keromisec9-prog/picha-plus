@@ -574,6 +574,12 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .hjr p{font-size:12px;opacity:.85;margin:0}
 @media(min-width:600px){
 .hwi{height:150px}.hwc p{display:block}.hwt{font-size:17px}.hwg{font-size:11px}.hwc li{font-size:13px}.hwbtn{font-size:13px;padding:10px}.hwp{padding:18px}.hwp>h2{font-size:24px}.hbc b{font-size:17px}.hbc p{font-size:13px}.hjr h3{font-size:22px}.hjr p{font-size:14px}}
+
+.hwp{border:0;background:none;padding:0 0 4px;margin-bottom:12px}
+.hwg{border-radius:3px}
+.hwbtn{border-radius:6px}
+.hlm{border-radius:6px}
+@media(min-width:600px){.hwp{padding:0 0 4px}}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
@@ -624,28 +630,28 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
   <button class="hero-more" aria-label="Read more" onclick="this.closest('.hero').classList.toggle('open')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
 </div></div>
 <section class="hw"><div class="wrap">
-  <div class="hwp"><h2>Three Ways to Participate</h2>
+  <div class="hwp">
     <div class="hw3">
       <div class="hwc" style="--ph:url(assets/studio/hero2.webp)"><div class="hwi"></div><div class="hwb">
         <div class="hwt">1. Hustler Creator</div><span class="hwg">Open to Everyone</span>
         <p>Upload freely, build your audience and qualify for monetization at 500 followers.</p>
         <ul><li>Unlimited uploads</li><li>Earn from performance</li><li>Promote your content</li></ul>
-        <button class="hwbtn" onclick="openLib()">Start Creating &rarr;</button></div></div>
+        <button class="hwbtn" onclick="openLib()">Start Creating</button></div></div>
       <div class="hwc v" style="--ph:url(assets/studio/hero1.webp)"><div class="hwi"></div><div class="hwb">
         <div class="hwt">2. Verified VJ</div><span class="hwg v">Verified Professional</span>
         <p>Get verified and monetize from day one.</p>
         <ul><li>Day-one earnings</li><li>Professional badge</li><li>More privileges</li></ul>
-        <button class="hwbtn" onclick="go('partner')">Apply Now &rarr;</button></div></div>
+        <button class="hwbtn" onclick="go('partner')">Apply Now</button></div></div>
       <div class="hwc" style="--ph:url(assets/studio/hero4.webp)"><div class="hwi"></div><div class="hwb">
         <div class="hwt">3. Production Company</div><span class="hwg">Verified Partner</span>
         <p>Partner with MyPicha+ and monetize from day one.</p>
         <ul><li>Publish premium content</li><li>Grow your brand</li><li>Explore partnerships</li></ul>
-        <button class="hwbtn" onclick="go('partner')">Apply Now &rarr;</button></div></div>
+        <button class="hwbtn" onclick="go('partner')">Apply Now</button></div></div>
     </div></div>
   <div class="hwp"><h2>More Ways to Get Noticed</h2>
     <div class="hw2">
-      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Content</b><p>Pay to reach more viewers with promoted videos, movies or trailers.</p><span class="hlm">Learn More &rarr;</span></div>
-      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Profile</b><p>Increase your visibility and attract more followers.</p><span class="hlm">Learn More &rarr;</span></div>
+      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Content</b><p>Pay to reach more viewers with promoted videos, movies or trailers.</p><span class="hlm">Learn More</span></div>
+      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Profile</b><p>Increase your visibility and attract more followers.</p><span class="hlm">Learn More</span></div>
     </div></div>
   <div class="hjr"><h3>Your Journey, <span>Your Opportunities</span></h3>
     <p>Whether you&rsquo;re a creator, a professional or a company, MyPicha+ Studio gives you the tools to share, grow and earn.</p></div>
@@ -1375,7 +1381,7 @@ var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action
 function renderList(){
   var d=L.data,q=d.quota,n=d.titles.length;
   function qb(l,u,m){var p=m?Math.min(100,Math.round(u/m*100)):0;return '<div class="qb"><div class="ql"><span>'+l+'</span><b>'+u+(m?' of '+m:'')+' used</b></div>'+(m?'<div class="qt"><i style="width:'+p+'%"></i></div>':'')+'</div>';}
-  var h='',qh='<div class="qcard" style="margin-top:14px"><h3>Your creator space</h3>'+qb('Movies',q.movies.used,q.movies.max)+qb('Series',q.series.used,q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
+  var h='',qh='<div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
   h+='<div class="chips">'+[['all','All content'],['movie','Movies'],['series','Series']].map(function(c){return '<button type="button" class="chip'+(L.flt===c[0]?' on':'')+'" data-act="flt" data-v="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>';
   h=h.replace(/<\/div>$/,'<button type="button" class="libmenu" aria-label="Menu" onclick="document.getElementById(\'libSheet\').classList.add(\'on\')"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button></div>');
   var list=d.titles.filter(function(t){return L.flt==='all'||t.kind===L.flt});
@@ -1585,7 +1591,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='uclear'){L.up[slot]=null;paint(slot)}
   else if(a==='choose'){
     var k=el.dataset.kind,q=L.data.quota[k==='movie'?'movies':'series'];
-    if(q.used>=q.max)return renderUpsell(k);
+    /* upload limits removed */
     L.kind=k;L.up={};L.f={};L.tmdb=null;L.src='tmdb';L.step=1;setMode('form');renderForm();window.scrollTo(0,0);
   }
   else if(a==='src'){saveF();L.src=el.dataset.v;renderForm()}
@@ -1651,7 +1657,7 @@ function fmtD(v){
       var mv=ts.filter(function(t){return t.kind==='movie'}).length,sr=ts.filter(function(t){return t.kind==='series'}).length;
       var ok=items.some(function(a){return a.status==='approved'})||(d.tier&&d.tier!=='free');
       h.innerHTML='<div class="ph">'+AV+'<div><div class="pn">Creator</div><span class="pbd'+(ok?' ok':'')+'">'+(ok?'Verified partner':'Creator')+'</span></div></div>';
-      l.innerHTML='<div class="qcard"><h3>Your creator space</h3>'+bar('Movies',(q.movies&&q.movies.used!=null)?q.movies.used:mv,q.movies&&q.movies.max)+bar('Series',(q.series&&q.series.used!=null)?q.series.used:sr,q.series&&q.series.max)+'<p class="uph" style="margin:0">Free limits reset only when you remove content.</p></div><div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
+      l.innerHTML='<div class="acts"><button class="btn gold" onclick="openLib()" style="width:100%">+ Add content</button></div>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
