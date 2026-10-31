@@ -192,8 +192,8 @@ background:linear-gradient(180deg,rgba(10,10,10,.3),rgba(10,10,10,.88) 70%),var(
 .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.6),rgba(10,10,10,.25) 50%,rgba(10,10,10,.85))}
 .hero>.wrap{position:relative;z-index:1}
 /* studio-v10 */
-.cards .card:nth-child(1){--img:url(assets/studio/hero2.webp) center/cover no-repeat,linear-gradient(135deg,#3a2a14,#120d07)}
-.cards .card:nth-child(2){--img:url(assets/studio/hero1.webp) center/cover no-repeat,linear-gradient(180deg,#2a2438,#1b1209 70%,#4a2a10)}
+.cards .card:nth-child(1){--img:url(assets/studio/hero1.webp) center/cover no-repeat,linear-gradient(135deg,#3a2a14,#120d07)}
+.cards .card:nth-child(2){--img:url(assets/studio/hero2.webp) center/cover no-repeat,linear-gradient(180deg,#2a2438,#1b1209 70%,#4a2a10)}
 .cards .card:nth-child(3){--img:url(assets/studio/hero4.webp) center/cover no-repeat,linear-gradient(135deg,#2e220f,#0f0b06)}
 /* studio-v11 */
 .hero-more{margin:0 auto}
@@ -545,8 +545,35 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .journey h3{font-size:18px;margin-bottom:4px}
 .journey h3 span{color:#f5b800}
 @media(min-width:720px){.ways{grid-template-columns:repeat(3,1fr)}.mw{grid-template-columns:1fr 1fr}}
-.cards .card:nth-child(1){--img:url(assets/studio/card0.jpg) center/cover,radial-gradient(circle at 70% 30%,rgba(255,190,60,.6) 0,transparent 40%),linear-gradient(135deg,#4a3410,#120d07)}
-.cards .card:nth-child(2){--img:url(assets/studio/card1.jpg) center/cover,radial-gradient(circle at 30% 40%,rgba(255,170,70,.5) 0,transparent 30%),linear-gradient(135deg,#3a2a14,#120d07)}
+
+.how-proc,.how-cta .cta2{display:none}
+.hw{padding:16px 0 4px}
+.hwp{border:1px solid rgba(245,184,0,.5);border-radius:16px;padding:12px;margin-bottom:14px;background:linear-gradient(160deg,rgba(245,184,0,.08),rgba(255,255,255,.02))}
+.hwp>h2{font-size:18px;margin:2px 4px 10px}
+.hw3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hwc{border:1px solid rgba(245,184,0,.4);border-radius:12px;overflow:hidden;background:#14100a;display:flex;flex-direction:column}
+.hwi{height:84px;background:linear-gradient(180deg,transparent 45%,#14100a),var(--ph) center/cover no-repeat,#1c1409}
+.hwb{padding:0 8px 10px;display:flex;flex-direction:column;flex:1}
+.hwt{font-family:Georgia,serif;font-weight:700;font-size:12px;line-height:1.2;margin:-6px 0 5px}
+.hwg{align-self:flex-start;font-size:8.5px;font-weight:700;padding:3px 7px;border-radius:999px;background:#f5b800;color:#1a1204;margin-bottom:6px;line-height:1.2}
+.hwg.v{background:#1e7bff;color:#fff}
+.hwc p{display:none;font-size:12px;opacity:.88;margin:0 0 8px}
+.hwc ul{list-style:none;margin:0 0 8px;padding:0}
+.hwc li{font-size:9.5px;line-height:1.3;padding:2px 0 2px 13px;position:relative}
+.hwc li::before{content:"\2713";position:absolute;left:0;color:#f5b800;font-weight:700}
+.hwc.v li::before{color:#1e7bff}
+.hwbtn{margin-top:auto;width:100%;border:0;border-radius:999px;background:#f5b800;color:#1a1204;font-weight:700;font-size:9.5px;padding:8px 2px;cursor:pointer;white-space:nowrap}
+.hw2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hbc{border:1px solid rgba(245,184,0,.4);border-radius:12px;padding:10px;cursor:pointer;background:linear-gradient(135deg,rgba(245,184,0,.14),rgba(255,255,255,.02))}
+.hbc b{display:block;color:#f5b800;font-size:13px;margin-bottom:3px}
+.hbc p{font-size:10.5px;opacity:.85;margin:0 0 8px;line-height:1.35}
+.hlm{display:inline-block;border:1px solid #f5b800;color:#f5b800;border-radius:999px;font-size:10px;font-weight:700;padding:4px 9px}
+.hjr{border:1px solid rgba(245,184,0,.5);border-radius:14px;padding:14px;margin-bottom:10px;background:linear-gradient(90deg,rgba(245,184,0,.2),rgba(255,255,255,.03))}
+.hjr h3{font-size:17px;margin-bottom:4px}
+.hjr h3 span{color:#f5b800}
+.hjr p{font-size:12px;opacity:.85;margin:0}
+@media(min-width:600px){
+.hwi{height:150px}.hwc p{display:block}.hwt{font-size:17px}.hwg{font-size:11px}.hwc li{font-size:13px}.hwbtn{font-size:13px;padding:10px}.hwp{padding:18px}.hwp>h2{font-size:24px}.hbc b{font-size:17px}.hbc p{font-size:13px}.hjr h3{font-size:22px}.hjr p{font-size:14px}}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
@@ -593,36 +620,35 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <div class="hero how-hero"><div class="hero-bg" id="howBg"></div><div class="wrap">
   <div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="show('v-home');window.scrollTo(0,0)"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>
   <h1>How MyPicha+ <span>Studio</span> works</h1>
-  <p>Turn your ideas into great content. We connect filmmakers, VJs, creators and production companies with real opportunities.</p>
+  <p><b>Create. Grow. Earn.</b> Turn your ideas into great content. We connect filmmakers, VJs, creators and production companies with real opportunities.</p>
   <button class="hero-more" aria-label="Read more" onclick="this.closest('.hero').classList.toggle('open')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
 </div></div>
-<section class="how-ways"><div class="wrap">
-  <div class="eyebrow">THREE WAYS TO PARTICIPATE</div>
-  <h2>Upload freely. <span>Monetize when you&rsquo;re ready.</span></h2>
-  <p class="sub">No arbitrary upload limits. Earn from real performance, not empty promises.</p>
-  <div class="ways">
-    <div class="way"><div class="wt">1. Hustler Creator</div><div class="wb">Open to everyone</div>
-      <p>Upload freely, build your audience and qualify for monetization at 500 followers.</p>
-      <ul><li>Unlimited uploads</li><li>Earn from performance</li><li>Promote your content</li></ul>
-      <button class="btn gold" onclick="openLib()">Start creating</button></div>
-    <div class="way"><div class="wt">2. Verified VJ</div><div class="wb v">Verified Professional</div>
-      <p>Get verified and monetize from day one.</p>
-      <ul><li>Day-one earnings</li><li>Professional badge</li><li>More privileges</li></ul>
-      <button class="btn gold" onclick="go('partner')">Apply now</button></div>
-    <div class="way"><div class="wt">3. Production Company</div><div class="wb">Verified Partner</div>
-      <p>Partner with MyPicha+ and monetize from day one.</p>
-      <ul><li>Publish premium content</li><li>Grow your brand</li><li>Explore partnerships</li></ul>
-      <button class="btn gold" onclick="go('partner')">Apply now</button></div>
-  </div>
-</div></section>
-<section class="how-more"><div class="wrap">
-  <h2>More ways to <span>get noticed</span></h2>
-  <div class="mw">
-    <div class="mwc" onclick="go('promote-content')"><b>Boost Your Content</b><span>Pay to reach more viewers with promoted videos, movies or trailers.</span></div>
-    <div class="mwc" onclick="go('promote-content')"><b>Boost Your Profile</b><span>Increase your visibility and attract more followers.</span></div>
-  </div>
-  <div class="journey"><h3>Your Journey, <span>Your Opportunities</span></h3>
-    <p class="sub" style="margin:0">Whether you&rsquo;re a creator, a professional or a company, MyPicha+ Studio gives you the tools to share, grow and earn.</p></div>
+<section class="hw"><div class="wrap">
+  <div class="hwp"><h2>Three Ways to Participate</h2>
+    <div class="hw3">
+      <div class="hwc" style="--ph:url(assets/studio/hero2.webp)"><div class="hwi"></div><div class="hwb">
+        <div class="hwt">1. Hustler Creator</div><span class="hwg">Open to Everyone</span>
+        <p>Upload freely, build your audience and qualify for monetization at 500 followers.</p>
+        <ul><li>Unlimited uploads</li><li>Earn from performance</li><li>Promote your content</li></ul>
+        <button class="hwbtn" onclick="openLib()">Start Creating &rarr;</button></div></div>
+      <div class="hwc v" style="--ph:url(assets/studio/hero1.webp)"><div class="hwi"></div><div class="hwb">
+        <div class="hwt">2. Verified VJ</div><span class="hwg v">Verified Professional</span>
+        <p>Get verified and monetize from day one.</p>
+        <ul><li>Day-one earnings</li><li>Professional badge</li><li>More privileges</li></ul>
+        <button class="hwbtn" onclick="go('partner')">Apply Now &rarr;</button></div></div>
+      <div class="hwc" style="--ph:url(assets/studio/hero4.webp)"><div class="hwi"></div><div class="hwb">
+        <div class="hwt">3. Production Company</div><span class="hwg">Verified Partner</span>
+        <p>Partner with MyPicha+ and monetize from day one.</p>
+        <ul><li>Publish premium content</li><li>Grow your brand</li><li>Explore partnerships</li></ul>
+        <button class="hwbtn" onclick="go('partner')">Apply Now &rarr;</button></div></div>
+    </div></div>
+  <div class="hwp"><h2>More Ways to Get Noticed</h2>
+    <div class="hw2">
+      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Content</b><p>Pay to reach more viewers with promoted videos, movies or trailers.</p><span class="hlm">Learn More &rarr;</span></div>
+      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Profile</b><p>Increase your visibility and attract more followers.</p><span class="hlm">Learn More &rarr;</span></div>
+    </div></div>
+  <div class="hjr"><h3>Your Journey, <span>Your Opportunities</span></h3>
+    <p>Whether you&rsquo;re a creator, a professional or a company, MyPicha+ Studio gives you the tools to share, grow and earn.</p></div>
 </div></section>
 <section class="how-proc"><div class="wrap">
   <div class="eyebrow">THE PROCESS</div>
