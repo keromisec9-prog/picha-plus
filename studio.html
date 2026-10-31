@@ -1405,25 +1405,41 @@ window.libMore=function(btn){
   }).catch(function(){toast('Connection problem');renderList()});
 };
 function renderEdit(t){
-  var h='<div class="eyebrow">EDIT DETAILS</div><h2>'+esc(t.title)+'</h2>';
-  h+='<div class="fld"><label>Title *</label><input id="lf_title" type="text" maxlength="120" value="'+esc(t.title||'')+'"></div>';
-  h+='<div class="fld"><label>Description</label><textarea id="lf_syn" maxlength="2000">'+esc(t.synopsis||'')+'</textarea></div>';
-  h+='<div class="fld"><label>Genre</label><input id="lf_genre" type="text" maxlength="80" placeholder="e.g. Drama, Crime" value="'+esc(t.genre||'')+'"></div>';
-  h+='<p class="uph">Changes to a published title go live straight away.</p>';
-  h+='<div class="nav"><button class="btn" data-act="back">Cancel</button><button class="btn gold" id="lf_go" data-act="esave" data-id="'+t.id+'">Save changes</button></div>';
+  var f=L.f||{},tm=L.src==='tmdb';
+  var h=hdr('Edit details','back');
+  h+=tmdbBlock(t.kind==='movie');
+  if(!tm||(L.tmdb&&!L.tmdb.poster))h+=slotHTML('poster','New poster image (optional)','Replaces the current poster.');
+  h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
+  h+='<div class="fld"><label>Genre</label><input id="lf_genre" type="text" maxlength="80" placeholder="e.g. Drama, Crime" value="'+esc(f.genre||'')+'"></div>';
+  h+='<div class="fld"><label>Description</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
+  h+='<p class="uph">Text changes go live straight away.'+(t.status==='approved'?' A new poster is reviewed before it replaces the current one.':'')+'</p>';
+  h+='<div class="nav"><button class="btn" data-act="back">Cancel</button><button class="btn gold" id="lf_go" data-act="esave">Save changes</button></div>';
   R(h);
 }
+window.startEdit=function(id){
+  var t=findT(id);if(!t)return;
+  L.editId=t.id;L.tid=t.id;L.up={};L.tmdb=null;L.src='manual';
+  L.f={title:t.title||'',genre:t.genre||'',syn:t.synopsis||''};
+  setMode('ep');renderEdit(t);window.scrollTo(0,0);
+};
 document.getElementById('libRoot').addEventListener('click',function(ev){
   var el=ev.target.closest('[data-act="edit"],[data-act="esave"]');if(!el)return;
-  if(el.dataset.act==='edit'){var t=findT(el.dataset.id);if(t){L.tid=t.id;setMode('ep');renderEdit(t);window.scrollTo(0,0)}}
-  else{
-    var ti=($('lf_title').value||'').trim();if(!ti)return toast('Enter a title');
-    var id=el.dataset.id;
-    post('/studio/edit',{id:id,title:ti,genre:($('lf_genre').value||'').trim(),synopsis:($('lf_syn').value||'').trim()},el,'Save changes',function(){toast('Saved');openDetail(id)});
-  }
+  if(el.dataset.act==='edit'){startEdit(el.dataset.id);return}
+  saveF();
+  var f=L.f||{},ti=(f.title||'').trim();
+  if(!ti)return toast('Enter a title');
+  if(busy())return toast('Please wait for the upload to finish');
+  var body={id:L.editId,title:ti,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim()};
+  if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
+  if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
+  post('/studio/edit',body,el,'Save changes',function(b){
+    toast(b.artPending?'Saved. New poster is in review':'Saved');
+    var id=L.editId;L.editId=null;L.up={};openDetail(id);
+  });
 });
 var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action required','no']};
 function renderList(){
+  L.editId=null;
   var d=L.data,q=d.quota,n=d.titles.length;
   function qb(l,u,m){var p=m?Math.min(100,Math.round(u/m*100)):0;return '<div class="qb"><div class="ql"><span>'+l+'</span><b>'+u+(m?' of '+m:'')+' used</b></div>'+(m?'<div class="qt"><i style="width:'+p+'%"></i></div>':'')+'</div>';}
   var h='',qh='<div class="acts" style="margin-bottom:14px"><button type="button" class="btn gold" data-act="openadd" style="width:100%">+ Add content</button></div>';
@@ -1500,6 +1516,7 @@ function tmdbBlock(movie){
 }
 function hdr(title,act){return '<div class="sh"><button type="button" class="bkb" aria-label="Back" data-act="'+act+'"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><span>'+title+'</span></div>'}
 function renderForm(){
+  if(L.editId){var _et=findT(L.editId);if(_et){renderEdit(_et);return}}
   var movie=L.kind==='movie',f=L.f||{},n=movie?(L.step||1):1,tm=L.src==='tmdb';
   var hasTp=tm&&L.tmdb&&L.tmdb.poster;
   var h=hdr(movie?'Upload Movie':'Create Series','fback');
@@ -1538,6 +1555,7 @@ function renderForm(){
   R(h);
 }
 function renderDetail(){
+  L.editId=null;
   var t=findT(L.did);
   if(!t){openLib();return}
   var isS=t.kind==='series',s=ST[t.status]||[t.status,''],q=L.data.quota,eps=t.episodes||[];
@@ -1545,6 +1563,7 @@ function renderDetail(){
   var h='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>';
   h+='<div class="dh">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><h2 style="font-size:22px;margin:0 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
   h+='<div class="acts" style="margin:0 0 14px"><button class="pill" data-act="edit" data-id="'+t.id+'">Edit details</button></div>';
+  if(t.pendingArt)h+='<p class="tm" style="margin:-6px 0 12px">A new poster is waiting for review.</p>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
   var d=t.createdAt?new Date(t.createdAt):null;
