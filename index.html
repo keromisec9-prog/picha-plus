@@ -4046,13 +4046,30 @@ window.addEventListener('popstate', (_pe) => {
 });
 
 // ── LOAD CONTENT ──────────────────────────────────────────────────────────────
+// ---- slow connection notice ----
+(function () {
+  var shown = false;
+  function notify(msg) {
+    if (shown) return;
+    shown = true;
+    try { if (typeof showToast === 'function') showToast(msg, 'gold'); } catch (e) {}
+  }
+  var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  function weak() { return !!c && (c.effectiveType === 'slow-2g' || c.effectiveType === '2g'); }
+  window.addEventListener('load', function () { if (weak()) notify('Weak connection detected. Loading may take a little longer.'); });
+  if (c && c.addEventListener) c.addEventListener('change', function () { if (weak()) notify('Your connection just got weaker. Things may load slowly.'); });
+  var t = setTimeout(function () { notify('Slow connection. Still loading, please hold on.'); }, 4000);
+  window._slowDone = function () { clearTimeout(t); };
+})();
 async function loadContent() {
   let cards = [];
   window._itemRegistry = []; // reset on each content load
   let catalogData = {};
   try {
     // Fetch your catalog
-    const catalogRes = await fetch(`${API}/videos/list`);
+    let _cachedRaw = null, _cachedAt = 0;
+    try { _cachedRaw = localStorage.getItem('pp_cat'); _cachedAt = Number(localStorage.getItem('pp_cat_t')) || 0; } catch (e) {}
+    const _catP = (window._ppCatReloaded || (_cachedRaw && Date.now() - _cachedAt < 180000)) ? null : fetch(`${API}/videos/list`).then(r => r.text());
     let _cs = {};
     try { _cs = JSON.parse(localStorage.getItem('pp_settings') || '{}'); } catch (e) {}
     window._africanCinemaEnabled = _cs.africanCinemaEnabled !== false;
@@ -4064,7 +4081,29 @@ async function loadContent() {
       const _sb = document.getElementById('bit-shortfilm');
       if (_sb) _sb.style.display = window._shortFilmEnabled ? '' : 'none';
     }).catch(() => {});
-    catalogData = await catalogRes.json();
+    const _valid = j => !!j && typeof j === 'object' && !!(j.movies || j.series);
+    const _save = txt => { try { localStorage.setItem('pp_cat', txt); localStorage.setItem('pp_cat_t', String(Date.now())); } catch (e) {} };
+    if (_cachedRaw) {
+      try { catalogData = JSON.parse(_cachedRaw); if (!_valid(catalogData)) throw 0; } catch (e) { _cachedRaw = null; catalogData = {}; }
+    }
+    if (!_cachedRaw) {
+      const _fr = await (_catP || fetch(`${API}/videos/list`).then(r => r.text()));
+      catalogData = JSON.parse(_fr);
+      if (_valid(catalogData)) _save(_fr);
+    } else if (_catP) {
+      const _old = _cachedRaw;
+      _catP.then(txt => {
+        let j = null;
+        try { j = JSON.parse(txt); } catch (e) {}
+        if (!_valid(j)) return;
+        _save(txt);
+        if (txt !== _old) {
+          window._ppCatReloaded = true;
+          try { clearInterval(heroTimer); } catch (e) {}
+          loadContent();
+        }
+      }).catch(() => {});
+    }
     {
       const shortFilmTabBtn = document.getElementById('bit-shortfilm');
       if (shortFilmTabBtn) shortFilmTabBtn.style.display = window._shortFilmEnabled ? '' : 'none';
@@ -4193,6 +4232,7 @@ async function loadContent() {
       renderRow('newRow', cards);
     }
 
+    if (window._slowDone) window._slowDone();
     renderPromotedRow(cards).catch(function () {});
     // Continue watching — needs cards, call here
     renderContinueWatching();
@@ -4382,7 +4422,7 @@ async function renderPromotedRow(cards) {
   sec.className = 'content-section';
   sec.id = 'promoSection';
   sec.innerHTML = '<div class="row-header"><div class="row-title"><span class="row-title-accent">Promoted</span> <span style="font-size:0.6rem;letter-spacing:0.08em;color:#999;border:1px solid #444;border-radius:4px;padding:0.1rem 0.35rem;margin-left:0.4rem;vertical-align:middle;">SPONSORED</span></div></div><div class="scroll-row" id="row-promoted"></div>';
-  anchor.parentNode.insertBefore(sec, anchor);
+  anchor.parentNode.insertBefore(sec, anchor.nextSibling);
   renderRow('row-promoted', items);
   _promoCardMap = map;
   sec.addEventListener('click', function (ev) {

@@ -1756,13 +1756,13 @@ function renderEp(t){
   if(document.getElementById('pmCss'))return;
   var s=document.createElement('style');s.id='pmCss';
   s.textContent=[
-    '.pm-card{background:linear-gradient(160deg,#1b1810,#121212);border:1px solid rgba(229,185,60,.28);border-radius:18px;padding:18px;margin:0 0 6px}',
+    '.pm-card{background:linear-gradient(160deg,#1b1810,#121212);border-radius:18px;padding:18px;margin:0 0 6px}',
     '.pm-h{font-size:17px;font-weight:700;color:#fff}',
     '.pm-s{margin:6px 0 14px;color:#9a9a9a;font-size:13px;line-height:1.45}',
     '.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}',
-    '.pm-t{appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;border-radius:14px;padding:14px 6px;text-align:center;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}',
+    '.pm-t{appearance:none;-webkit-appearance:none;border:0;background:rgba(255,255,255,.05);color:#fff;border-radius:14px;padding:14px 6px;text-align:center;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}',
     '.pm-t:active{transform:scale(.97)}',
-    '.pm-t:hover{border-color:rgba(229,185,60,.6)}',
+    '.pm-t:hover{background:rgba(229,185,60,.12)}',
     '.pm-t b{display:block;font-size:24px;line-height:1.1}',
     '.pm-t span{display:block;font-size:11px;color:#9a9a9a;margin-top:2px}',
     '.pm-t i{display:block;font-style:normal;font-size:12.5px;color:var(--gold,#e5b93c);margin-top:9px;font-weight:600}',
@@ -1783,7 +1783,7 @@ function renderEp(t){
     '.pm-row b{color:#fff}',
     '.pm-note{font-size:12px;color:#7d7d7d;line-height:1.5;margin:12px 0 16px}',
     '.pm-go{width:100%;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:700;font-size:15px;background:var(--gold,#e5b93c);color:#1a1405;cursor:pointer}',
-    '.pm-go:disabled{opacity:.6}',
+    '.pm-go:disabled{opacity:.9}','@keyframes pmspin{to{transform:rotate(360deg)}}','.pm-sp{display:inline-block;width:15px;height:15px;border:2px solid rgba(26,20,5,.25);border-top-color:#1a1405;border-radius:50%;animation:pmspin .7s linear infinite;vertical-align:-2px;margin-right:9px}',
     '.pm-x{width:100%;border:0;background:none;color:#9a9a9a;font:inherit;padding:14px 0 0;cursor:pointer}'
   ].join('');
   document.head.appendChild(s);
@@ -1826,7 +1826,7 @@ function pmSheet(t,el){
   document.getElementById('pmX').onclick=close;
   var go=document.getElementById('pmGo');
   go.onclick=function(){
-    go.disabled=true;go.textContent='Opening Pesapal...';
+    go.disabled=true;go.innerHTML='<span class="pm-sp"></span>Opening Pesapal...';
     api('/studio/promote/checkout',{method:'POST',body:JSON.stringify({titleId:el.dataset.id,packageId:el.dataset.pkg})}).then(function(res){
       if(isAuthFail(res)){close();return gate()}
       var b=res.body||{};
