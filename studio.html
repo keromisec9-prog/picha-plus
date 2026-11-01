@@ -299,7 +299,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .lc .t{font-size:13px;color:var(--mute)}
 .tc{background:rgba(255,255,255,.05);border-radius:14px;padding:12px;margin-bottom:12px}
 .tr{display:flex;gap:12px}
-.tth{width:64px;height:92px;border-radius:8px;object-fit:cover;background:#1c1409;flex:0 0 64px;display:block}
+.tth{width:64px;height:92px;border-radius:8px;object-fit:cover;background:#000;flex:0 0 64px;display:block}
 .tcb{flex:1;min-width:0}
 .tt{font-size:16px;font-weight:700;word-break:break-word}
 .tm{font-size:12px;color:var(--mute);margin:2px 0 6px}
@@ -1516,7 +1516,7 @@ function renderList(){
   list.forEach(function(t){
     var s=ST[t.status]||[t.status,''],isS=t.kind==='series',open=String(L.open)===String(t.id);
     if(isS&&t.status==='pending'&&!(t.episodes&&t.episodes.length))s=['Add an episode to publish','no'];
-    h+='<div class="tc"><div class="tr" data-act="view" data-id="'+t.id+'">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+(t.updatedAt?' &middot; Updated '+fmtD(t.updatedAt):'')+'</div></div><button type="button" class="dots" aria-label="Actions" data-act="menu" data-id="'+t.id+'">&#8942;</button></div>';
+    h+='<div class="tc"><div class="tr" data-act="view" data-id="'+t.id+'">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title)+'</div><div class="tm" style="margin:6px 0 0">'+(isS?t.episodes.length+' episode'+(t.episodes.length===1?'':'s'):(t.genre?esc(t.genre):'Movie'))+(t.updatedAt?' &middot; Updated '+fmtD(t.updatedAt):'')+'</div></div></div>';
     if(open){
       if(t.status==='rejected'&&t.staffNote)h+='<div class="tm" style="margin-top:8px">'+esc(t.staffNote)+'</div>';
       if(isS&&t.episodes.length){
