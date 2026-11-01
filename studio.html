@@ -651,6 +651,23 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 
 /* solid nav */
 #bnav,.bnav{background:#0a0a0a!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+/* hero preview */
+#libRoot .dhero{position:relative;overflow:hidden;box-sizing:border-box;min-height:370px;display:flex;flex-direction:column;justify-content:flex-end;margin:0 0 14px;background:#0a0a0a}
+#libRoot .dbg{position:absolute;left:-14px;top:-14px;width:calc(100% + 28px);height:calc(100% + 28px);object-fit:cover;filter:blur(14px) brightness(.55);opacity:0;transition:opacity 1.4s ease}
+#libRoot .dbg.on{opacity:1}
+#libRoot .dvid{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;transition:opacity .9s ease}
+#libRoot .dsc{position:absolute;left:0;top:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(10,10,10,.6) 0%,rgba(10,10,10,.12) 45%,rgba(10,10,10,.92) 100%);transition:opacity .9s ease;pointer-events:none}
+#libRoot .dtp{position:absolute;top:12px;left:16px;z-index:4}
+#libRoot .dtp .bkb{background:rgba(0,0,0,.5)}
+#libRoot .dov{position:relative;z-index:3;padding:0 16px 18px}
+#libRoot .dhero .dh{margin:0;transition:opacity .8s ease}
+#libRoot .dhero.pl .dvid{opacity:1}
+#libRoot .dhero.pl .dsc{opacity:.4}
+#libRoot .dhero.pl .dh{opacity:0;pointer-events:none}
+#libRoot .eac{display:flex;gap:8px;align-items:center}
+#libRoot .epv{width:36px;height:32px;padding:0;display:grid;place-items:center;border:0!important;background:rgba(246,196,69,.14)!important;color:var(--gold)!important}
+#libRoot .epv svg{width:16px;height:16px;fill:currentColor}
 </style>
 </head>
 <body>
@@ -1603,6 +1620,44 @@ function renderForm(){
   R(h);
 }
 function fmtWT(n){n=Math.max(0,Math.floor(Number(n)||0));return Math.floor(n/3600)+'h '+Math.floor(n%3600/60)+'m '+(n%60)+'s'}
+function fitHero(){
+  var h=$('dhero'),tp=document.querySelector('header.top');
+  if(!h||!tp)return;
+  h.style.margin='0 0 14px';h.style.width='auto';
+  var r=h.getBoundingClientRect(),y=window.pageYOffset||0;
+  h.style.marginTop=(-(r.top+y-tp.getBoundingClientRect().bottom))+'px';
+  h.style.marginLeft=(-r.left)+'px';
+  h.style.width=document.documentElement.clientWidth+'px';
+}
+window.addEventListener('resize',fitHero);
+function stopPreview(){
+  L.pvGen=(L.pvGen||0)+1;
+  clearTimeout(L.pvT);
+  var h=$('dhero'),v=$('dvid');
+  if(h)h.classList.remove('pl');
+  if(v){try{v.pause()}catch(_e){}v.removeAttribute('src');try{v.load()}catch(_e){}}
+}
+function startPreview(titleId,ep){
+  var h=$('dhero'),v=$('dvid');
+  if(!h||!v)return;
+  stopPreview();
+  var gen=L.pvGen,key=encodeURIComponent('studiot_'+titleId);
+  var path=ep==null?'/preview?id='+key:'/episode-preview?seriesId='+key+'&ep='+ep;
+  window.scrollTo(0,0);
+  toast('Loading preview...');
+  api(path,{method:'GET'}).then(function(res){
+    if(gen!==L.pvGen)return;
+    var d=res.body||{};
+    if(!d.url){toast(d.error||'Preview unavailable');return}
+    v.addEventListener('loadedmetadata',function(){if(gen===L.pvGen&&v.duration&&isFinite(v.duration))v.currentTime=v.duration*0.27},{once:true});
+    v.addEventListener('playing',function(){if(gen!==L.pvGen)return;h.classList.add('pl');L.pvT=setTimeout(function(){if(gen===L.pvGen)stopPreview()},30000)},{once:true});
+    v.addEventListener('ended',function(){if(gen===L.pvGen)stopPreview()},{once:true});
+    v.addEventListener('error',function(){if(gen===L.pvGen){stopPreview();toast('Preview unavailable')}},{once:true});
+    v.muted=false;v.src=d.url;
+    var pr=v.play();
+    if(pr&&pr.catch)pr.catch(function(){if(gen!==L.pvGen)return;v.muted=true;v.play().catch(function(){stopPreview();toast('Preview unavailable')})});
+  }).catch(function(){if(gen===L.pvGen)toast('Connection problem')});
+}
 function loadPerf(id){
   api('/studio/performance?id='+encodeURIComponent(id),{method:'GET'}).then(function(res){
     var b=res.body||{},box=$('perfBox');
@@ -1618,7 +1673,7 @@ function renderDetail(){
   if(!t){openLib();return}
   var isS=t.kind==='series',s=ST[t.status]||[t.status,''],q=L.data.quota,eps=t.episodes||[];
   if(isS&&t.status==='pending'&&!eps.length)s=['Add an episode to publish','no'];
-  var h='<div class="bk"><button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>';
+  var BK='<button type="button" class="bkb" aria-label="Back" data-act="back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>',h='';
   var IC={
     play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
     film:'<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>',
@@ -1631,8 +1686,16 @@ function renderDetail(){
     tv:'<svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>'
   };
   var live=t.status==='approved';
-  h+='<div class="dh"><div class="dpw">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<button type="button" class="dplay" aria-label="Preview" data-act="preview" data-id="'+t.id+'">'+IC.play+'</button></div><div class="tcb"><span class="kpill">'+IC.film+(isS?'SERIES':'MOVIE')+'</span><h2 style="font-size:22px;margin:8px 0 8px">'+esc(t.title)+'</h2>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
-  h+='<div class="dbt"><button type="button" class="dbp" data-act="preview" data-id="'+t.id+'">'+IC.play+'Preview '+(isS?'series':'movie')+'</button><button type="button" class="dbe" data-act="edit" data-id="'+t.id+'">'+IC.edit+'Edit details</button></div>';
+  var bd=t.backdropUrl||t.posterUrl||'';
+  L.pvGen=(L.pvGen||0)+1;
+  var canPv=live&&!isS;
+  h+='<div class="dhero" id="dhero">'
+    +(bd?'<img class="dbg" src="'+esc(bd)+'" alt="" onload="this.classList.add(\'on\')">':'')
+    +'<video class="dvid" id="dvid" playsinline preload="none"></video>'
+    +'<div class="dsc"></div>'
+    +'<div class="dtp">'+BK+'</div>'
+    +'<div class="dov"><div class="dh"><div class="dpw">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+(canPv?'<button type="button" class="dplay" aria-label="Preview" data-act="preview" data-id="'+t.id+'">'+IC.play+'</button>':'')+'</div><div class="tcb"><span class="kpill">'+IC.film+(isS?'SERIES':'MOVIE')+'</span><h2 style="font-size:22px;margin:8px 0 8px">'+esc(t.title)+'</h2>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div></div></div>';
+  h+='<div class="dbt">'+(canPv?'<button type="button" class="dbp" data-act="preview" data-id="'+t.id+'">'+IC.play+'Preview movie</button>':'')+'<button type="button" class="dbe" data-act="edit" data-id="'+t.id+'">'+IC.edit+'Edit details</button></div>';
   if(t.pendingArt)h+='<p class="tm" style="margin:-6px 0 12px">A new poster is waiting for review.</p>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
   if(t.synopsis)h+='<h3 class="dsec">Overview</h3><p class="dov">'+esc(t.synopsis)+'</p>';
@@ -1651,7 +1714,8 @@ function renderDetail(){
     if(!eps.length)h+='<div class="lc"><div class="t">No episodes yet. Add your first episode to get started.</div></div>';
     else{
       h+='<div class="eps" style="border:0">';
-      eps.forEach(function(e){h+='<div class="ep"><span>S'+e.season+' &middot; E'+e.number+(e.name?' &middot; '+esc(e.name):'')+'</span><button class="pill dng" data-act="del" data-type="episode" data-id="'+e.id+'">'+(L.armed==='episode'+e.id?'Tap again to confirm':'Delete')+'</button></div>'});
+      var sorted=eps.slice().sort(function(a,b){return (a.season-b.season)||(a.number-b.number)});
+      eps.forEach(function(e){h+='<div class="ep"><span>S'+e.season+' &middot; E'+e.number+(e.name?' &middot; '+esc(e.name):'')+'</span><span class="eac">'+(live?'<button type="button" class="pill epv" aria-label="Preview episode" data-act="eprev" data-id="'+t.id+'" data-ep="'+sorted.indexOf(e)+'">'+IC.play+'</button>':'')+'<button class="pill dng" data-act="del" data-type="episode" data-id="'+e.id+'">'+(L.armed==='episode'+e.id?'Tap again to confirm':'Delete')+'</button></span></div>'});
       h+='</div>';
     }
     h+='<div class="acts"><button class="btn gold" data-act="addep" data-id="'+t.id+'">+ Add episode</button></div>';
@@ -1659,9 +1723,14 @@ function renderDetail(){
   }
   h+='<div class="dz"><div class="dzt">'+IC.warn+'Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your published library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':IC.trash+(isS?'Delete series':'Delete movie'))+'</button></div>';
   R(h);
+  fitHero();
   if(live)loadPerf(t.id);
 }
-document.getElementById('libRoot').addEventListener('click',function(ev){var el=ev.target.closest('[data-act="preview"]');if(el)toast('Preview is coming soon')});
+document.getElementById('libRoot').addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-act="preview"],[data-act="eprev"]');
+  if(el){startPreview(el.dataset.id,el.dataset.act==='eprev'?Number(el.dataset.ep):null);return}
+  if(ev.target.closest('#dhero.pl')&&!ev.target.closest('.bkb'))stopPreview();
+});
 window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderDetail)};
 function renderEp(t){
   var ms=1,mn=0;
