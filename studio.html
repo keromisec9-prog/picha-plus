@@ -648,6 +648,9 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 #libRoot .pfc{display:block;height:auto;min-height:0;background:rgba(255,255,255,.05);border-radius:14px;padding:12px 14px}
 #libRoot .pfc b{display:block;font-size:20px;font-weight:700}
 #libRoot .pfc span{font-size:12px;color:var(--mute)}
+
+/* solid nav */
+#bnav,.bnav{background:#0a0a0a!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 </style>
 </head>
 <body>
@@ -1628,7 +1631,7 @@ function renderDetail(){
     tv:'<svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>'
   };
   var live=t.status==='approved';
-  h+='<div class="dh"><div class="dpw">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<button type="button" class="dplay" aria-label="Preview" data-act="preview" data-id="'+t.id+'">'+IC.play+'</button></div><div class="tcb"><span class="kpill">'+IC.film+(isS?'SERIES':'MOVIE')+'</span><h2 style="font-size:22px;margin:8px 0 8px">'+esc(t.title)+'</h2><span class="stt '+s[1]+'">'+(live?IC.ok:'')+s[0]+'</span>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
+  h+='<div class="dh"><div class="dpw">'+(t.posterUrl?'<img class="dp" src="'+esc(t.posterUrl)+'" alt="">':'<div class="dp"></div>')+'<button type="button" class="dplay" aria-label="Preview" data-act="preview" data-id="'+t.id+'">'+IC.play+'</button></div><div class="tcb"><span class="kpill">'+IC.film+(isS?'SERIES':'MOVIE')+'</span><h2 style="font-size:22px;margin:8px 0 8px">'+esc(t.title)+'</h2>'+(t.genre?'<div class="tm" style="margin-top:8px">'+esc(t.genre)+'</div>':'')+'</div></div>';
   h+='<div class="dbt"><button type="button" class="dbp" data-act="preview" data-id="'+t.id+'">'+IC.play+'Preview '+(isS?'series':'movie')+'</button><button type="button" class="dbe" data-act="edit" data-id="'+t.id+'">'+IC.edit+'Edit details</button></div>';
   if(t.pendingArt)h+='<p class="tm" style="margin:-6px 0 12px">A new poster is waiting for review.</p>';
   if(t.status==='rejected'&&t.staffNote)h+='<div class="upsell" style="margin:0 0 14px"><h3>Note from our team</h3><p style="margin:0">'+esc(t.staffNote)+'</p></div>';
