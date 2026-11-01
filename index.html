@@ -4311,7 +4311,7 @@ function renderTop10(rowId, items) {
 function _pc(u){
   if(!u)return u;
   var m=/^https:\/\/f\d+\.backblazeb2\.com\/file\/picha-plus-videos\/posters\/([^?#]+)/.exec(u);
-  return m?'https://api.mypicha.uk/poster/'+m[1]:u;
+  return m?'https://api.mypicha.uk/poster/'+m[1]+'?v=2':u;
 }
 function createCard(item, showProgress = false, extraBadgeHTML = '') {
   const title = item.title || item.name || '';
