@@ -4052,19 +4052,19 @@ async function loadContent() {
   let catalogData = {};
   try {
     // Fetch your catalog
-    const [catalogRes, settingsRes] = await Promise.all([
-      fetch(`${API}/videos/list`),
-      fetch(`${API}/settings`).catch(() => null)
-    ]);
+    const catalogRes = await fetch(`${API}/videos/list`);
+    let _cs = {};
+    try { _cs = JSON.parse(localStorage.getItem('pp_settings') || '{}'); } catch (e) {}
+    window._africanCinemaEnabled = _cs.africanCinemaEnabled !== false;
+    window._shortFilmEnabled = _cs.shortFilmEnabled !== false;
+    fetch(`${API}/settings`).then(r => r.json()).then(s => {
+      try { localStorage.setItem('pp_settings', JSON.stringify({ africanCinemaEnabled: s.africanCinemaEnabled !== false, shortFilmEnabled: s.shortFilmEnabled !== false })); } catch (e) {}
+      window._africanCinemaEnabled = s.africanCinemaEnabled !== false;
+      window._shortFilmEnabled = s.shortFilmEnabled !== false;
+      const _sb = document.getElementById('bit-shortfilm');
+      if (_sb) _sb.style.display = window._shortFilmEnabled ? '' : 'none';
+    }).catch(() => {});
     catalogData = await catalogRes.json();
-    try {
-      const settings = settingsRes ? await settingsRes.json() : {};
-      window._africanCinemaEnabled = settings.africanCinemaEnabled !== false;
-      window._shortFilmEnabled = settings.shortFilmEnabled !== false;
-    } catch (e) {
-      window._africanCinemaEnabled = true; // default to enabled if the settings fetch fails
-      window._shortFilmEnabled = true;
-    }
     {
       const shortFilmTabBtn = document.getElementById('bit-shortfilm');
       if (shortFilmTabBtn) shortFilmTabBtn.style.display = window._shortFilmEnabled ? '' : 'none';
@@ -4293,7 +4293,6 @@ function isStudioFree(item) {
 }
 loadStudioFree();
 setInterval(loadStudioFree, 300000);
-window._promoP = fetch(API + '/promoted').then(function (r) { return r.json(); }).catch(function () { return { items: [] }; });
 
 async function handleHeroPlay() {
   if (!currentPlayItem) return;
@@ -4367,7 +4366,7 @@ async function renderPromotedRow(cards) {
   var old = document.getElementById('promoSection');
   if (old) old.remove();
   var d;
-  try { var _pp = window._promoP; window._promoP = null; d = _pp ? await _pp : await (await fetch(API + '/promoted')).json(); } catch (e) { return; }
+  try { d = await (await fetch(API + '/promoted')).json(); } catch (e) { return; }
   var list = (d && d.items) || [];
   if (!list.length) return;
   var items = [], map = {};
