@@ -14844,8 +14844,8 @@ body.pp-in-profile #serCreator{cursor:default}
       if (dy < DEAD) return;
       if (!homeActive() || !atTop(e.target)) { armed = false; return; }
       pulling = true;
+      document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     }
-    if (dy < DEAD) { pulling = false; armed = false; ready = false; pull = 0; place(0, true); return; }
     if (e.cancelable) e.preventDefault();
     pull = Math.max(0, Math.min(MAX, (dy - DEAD) * RES));
     var nowReady = pull >= TH;
@@ -14855,6 +14855,7 @@ body.pp-in-profile #serCreator{cursor:default}
   }, { passive: false });
   function end() {
     var was = pulling; armed = false; pulling = false;
+    document.documentElement.style.overflow = ''; document.body.style.overflow = '';
     if (!was) return;
     if (ready && homeActive()) go(); else { place(0, true); pull = 0; ready = false; }
   }
