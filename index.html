@@ -14863,10 +14863,28 @@ body.pp-in-profile #serCreator{cursor:default}
     busy = true;
     ring.style.display = 'none'; arrow.style.display = 'none'; spin.style.display = 'block';
     place(TH * 0.8, true);
-    try {
-      if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {});
-    } catch (x) {}
-    setTimeout(function () { location.reload(); }, 400);
+    var fired = false;
+    function reloadNow() { if (fired) return; fired = true; location.reload(); }
+    setTimeout(reloadNow, 2500);
+    (async function () {
+      var t0 = Date.now();
+      try {
+        Object.keys(localStorage).forEach(function (k) { if (k.indexOf('pp_cat') === 0) localStorage.removeItem(k); });
+      } catch (x) {}
+      try {
+        if ('serviceWorker' in navigator) {
+          var r = await navigator.serviceWorker.getRegistration();
+          if (r) r.update().catch(function () {});
+        }
+        if (window.caches) {
+          var keys = await caches.keys();
+          await Promise.all(keys.filter(function (k) { return k.indexOf('picha-plus-') === 0; }).map(function (k) { return caches.delete(k); }));
+        }
+      } catch (x) {}
+      var wait = 400 - (Date.now() - t0);
+      if (wait > 0) await new Promise(function (r2) { setTimeout(r2, wait); });
+      reloadNow();
+    })();
     setTimeout(function () {
       busy = false; ready = false;
       ring.style.display = ''; arrow.style.display = ''; spin.style.display = 'none';
