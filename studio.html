@@ -1752,6 +1752,43 @@ function renderEp(t){
   R(h);
 }
 // ---- promotions (paid) ----
+(function(){
+  if(document.getElementById('pmCss'))return;
+  var s=document.createElement('style');s.id='pmCss';
+  s.textContent=[
+    '.pm-card{background:linear-gradient(160deg,#1b1810,#121212);border:1px solid rgba(229,185,60,.28);border-radius:18px;padding:18px;margin:0 0 6px}',
+    '.pm-h{font-size:17px;font-weight:700;color:#fff}',
+    '.pm-s{margin:6px 0 14px;color:#9a9a9a;font-size:13px;line-height:1.45}',
+    '.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}',
+    '.pm-t{appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;border-radius:14px;padding:14px 6px;text-align:center;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}',
+    '.pm-t:active{transform:scale(.97)}',
+    '.pm-t:hover{border-color:rgba(229,185,60,.6)}',
+    '.pm-t b{display:block;font-size:24px;line-height:1.1}',
+    '.pm-t span{display:block;font-size:11px;color:#9a9a9a;margin-top:2px}',
+    '.pm-t i{display:block;font-style:normal;font-size:12.5px;color:var(--gold,#e5b93c);margin-top:9px;font-weight:600}',
+    '.pm-f{margin-top:12px;font-size:11.5px;color:#7d7d7d}',
+    '.pm-live{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#6fe3a2;background:rgba(111,227,162,.1);border:1px solid rgba(111,227,162,.3);border-radius:20px;padding:3px 10px}',
+    '.pm-st{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}',
+    '.pm-st div{background:rgba(255,255,255,.04);border-radius:12px;padding:12px}',
+    '.pm-st b{display:block;font-size:20px;color:#fff}',
+    '.pm-st span{font-size:11.5px;color:#8a8a8a}',
+    '.pm-ov{position:fixed;left:0;right:0;top:0;bottom:0;z-index:99998;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}',
+    '.pm-ov.on{opacity:1}',
+    '.pm-sh{width:100%;max-width:520px;box-sizing:border-box;background:#161616;border-radius:22px 22px 0 0;border:1px solid rgba(255,255,255,.08);border-bottom:0;padding:10px 20px calc(22px + env(safe-area-inset-bottom,0px));transform:translateY(24px);transition:transform .22s ease}',
+    '.pm-ov.on .pm-sh{transform:none}',
+    '.pm-grab{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);margin:0 auto 16px}',
+    '.pm-ttl{font-size:12px;letter-spacing:.08em;color:var(--gold,#e5b93c);font-weight:700}',
+    '.pm-nm{font-size:20px;font-weight:700;color:#fff;margin:6px 0 16px}',
+    '.pm-row{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(255,255,255,.07);font-size:14px;color:#a8a8a8}',
+    '.pm-row b{color:#fff}',
+    '.pm-note{font-size:12px;color:#7d7d7d;line-height:1.5;margin:12px 0 16px}',
+    '.pm-go{width:100%;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:700;font-size:15px;background:var(--gold,#e5b93c);color:#1a1405;cursor:pointer}',
+    '.pm-go:disabled{opacity:.6}',
+    '.pm-x{width:100%;border:0;background:none;color:#9a9a9a;font:inherit;padding:14px 0 0;cursor:pointer}'
+  ].join('');
+  document.head.appendChild(s);
+})();
+function pmMoney(n){return 'UGX '+Number(n).toLocaleString('en-US')}
 function loadPromo(tid){
   Promise.all([api('/studio/promote/packages'),api('/studio/promote/mine')]).then(function(r){
     var box=document.getElementById('promoBox');
@@ -1761,31 +1798,47 @@ function loadPromo(tid){
     var h='<h3 class="dsec">Promote</h3>';
     if(act){
       var ed=new Date(Number(act.ends_ms)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-      h+='<div class="lc"><div class="t">Promoted until '+esc(ed)+'</div><div class="tm">'+Number(act.impressions||0)+' impressions &middot; '+Number(act.clicks||0)+' clicks</div></div>';
+      h+='<div class="pm-card"><span class="pm-live">&#9679; LIVE</span><div class="pm-h" style="margin-top:10px">Promoted until '+esc(ed)+'</div><div class="pm-st"><div><b>'+Number(act.impressions||0).toLocaleString('en-US')+'</b><span>Impressions</span></div><div><b>'+Number(act.clicks||0).toLocaleString('en-US')+'</b><span>Clicks</span></div></div></div>';
     }else{
-      h+='<p class="tm" style="margin:0 0 10px">Show this title in the Promoted row on the home page. Pick a duration and pay with Pesapal.</p><div class="acts">';
+      h+='<div class="pm-card"><div class="pm-h">Get more viewers</div><p class="pm-s">Feature this title in the Sponsored row on the home page. Choose how long it runs.</p><div class="pm-grid">';
       pk.forEach(function(p){
-        h+='<button type="button" class="btn" data-act="promote" data-id="'+esc(String(tid))+'" data-pkg="'+esc(p.id)+'" data-label="'+esc(p.label)+'" data-amount="'+Number(p.amount)+'">'+esc(p.label)+' &middot; UGX '+Number(p.amount).toLocaleString('en-US')+'</button>';
+        h+='<button type="button" class="pm-t" data-act="promote" data-id="'+esc(String(tid))+'" data-pkg="'+esc(p.id)+'" data-label="'+esc(p.label)+'" data-amount="'+Number(p.amount)+'"><b>'+Number(p.days)+'</b><span>days</span><i>'+esc(pmMoney(p.amount))+'</i></button>';
       });
-      h+='</div>';
+      h+='</div><div class="pm-f">Secure payment with Pesapal</div></div>';
     }
     box.innerHTML=h;
   }).catch(function(){});
 }
+function pmSheet(t,el){
+  var old=document.getElementById('pmOv');if(old)old.remove();
+  var amt=Number(el.dataset.amount);
+  var ov=document.createElement('div');ov.className='pm-ov';ov.id='pmOv';
+  ov.innerHTML='<div class="pm-sh" role="dialog" aria-modal="true"><div class="pm-grab"></div><div class="pm-ttl">PROMOTE</div><div class="pm-nm">'+esc(t?t.title:'This title')+'</div>'
+    +'<div class="pm-row"><span>Duration</span><b>'+esc(el.dataset.label)+'</b></div>'
+    +'<div class="pm-row"><span>Placement</span><b>Sponsored row &middot; Home</b></div>'
+    +'<div class="pm-row"><span>Total</span><b>'+esc(pmMoney(amt))+'</b></div>'
+    +'<p class="pm-note">Your title appears in the Sponsored row on the home page once payment is confirmed. You will pay securely on Pesapal.</p>'
+    +'<button type="button" class="pm-go" id="pmGo">Pay '+esc(pmMoney(amt))+'</button><button type="button" class="pm-x" id="pmX">Cancel</button></div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(function(){ov.classList.add('on')});
+  function close(){ov.classList.remove('on');setTimeout(function(){ov.remove()},200)}
+  ov.addEventListener('click',function(e){if(e.target===ov)close()});
+  document.getElementById('pmX').onclick=close;
+  var go=document.getElementById('pmGo');
+  go.onclick=function(){
+    go.disabled=true;go.textContent='Opening Pesapal...';
+    api('/studio/promote/checkout',{method:'POST',body:JSON.stringify({titleId:el.dataset.id,packageId:el.dataset.pkg})}).then(function(res){
+      if(isAuthFail(res)){close();return gate()}
+      var b=res.body||{};
+      if(b.ok&&b.redirectUrl){location.href=b.redirectUrl;return}
+      go.disabled=false;go.textContent='Pay '+pmMoney(amt);toast(b.error||'Could not start payment');
+    }).catch(function(){go.disabled=false;go.textContent='Pay '+pmMoney(amt);toast('Network problem, try again')});
+  };
+}
 document.getElementById('libRoot').addEventListener('click',function(ev){
   var el=ev.target.closest('[data-act="promote"]');
-  if(!el||el.disabled)return;
-  var t=findT(el.dataset.id);
-  var msg='Promote "'+(t?t.title:'this title')+'" for '+el.dataset.label+' at UGX '+Number(el.dataset.amount).toLocaleString('en-US')+'? You will be taken to Pesapal to pay.';
-  if(!confirm(msg))return;
-  var old=el.textContent;
-  el.disabled=true;el.textContent='Please wait...';
-  api('/studio/promote/checkout',{method:'POST',body:JSON.stringify({titleId:el.dataset.id,packageId:el.dataset.pkg})}).then(function(res){
-    if(isAuthFail(res))return gate();
-    var b=res.body||{};
-    if(b.ok&&b.redirectUrl){location.href=b.redirectUrl;return}
-    el.disabled=false;el.textContent=old;toast(b.error||'Could not start payment');
-  }).catch(function(){el.disabled=false;el.textContent=old;toast('Network problem, try again')});
+  if(!el)return;
+  pmSheet(findT(el.dataset.id),el);
 });
 setTimeout(function(){
   var m=/[?&]promo=([^&]+)/.exec(location.search);
