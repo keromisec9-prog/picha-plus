@@ -667,6 +667,11 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 #libRoot .eac{display:flex;gap:8px;align-items:center}
 #libRoot .epv{width:36px;height:32px;padding:0;display:grid;place-items:center;border:0!important;background:rgba(246,196,69,.14)!important;color:var(--gold)!important}
 #libRoot .epv svg{width:16px;height:16px;fill:currentColor}
+
+.stspin{width:1.5rem;height:1.5rem;border:2px solid rgba(255,255,255,.1);border-top-color:var(--gold);border-radius:50%;animation:stspin .8s linear infinite;margin:48px auto}
+@keyframes stspin{to{transform:rotate(360deg)}}
+.ptr{position:fixed;top:76px;left:50%;transform:translate(-50%,0);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.ptr .stspin{margin:0;background:#141414;box-shadow:0 0 0 6px #141414}
 </style>
 </head>
 <body>
@@ -800,6 +805,7 @@ function esc(s){var d=document.createElement('div');d.textContent=s==null?'':Str
 function show(id){document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});document.getElementById(id).classList.add('on');window.scrollTo(0,0)}
 function api(path,opt){
   opt=opt||{};
+  if(opt.method&&opt.method!=='GET')window.__mut=(window.__mut||0)+1;
   opt.headers=Object.assign({'Content-Type':'application/json','X-Session-Token':token,'X-Device-Id':did()},opt.headers||{});
   return fetch(API+path,opt).then(function(r){return r.json().then(function(j){return {status:r.status,body:j}})});
 }
@@ -813,7 +819,7 @@ var TYPES={vj:'VJ / Creator',filmmaker:'Filmmaker / Director',producer:'Producer
 function openApps(){
   if(!token)return gate();
   show('v-apps');
-  var box=document.getElementById('appsList');box.innerHTML='<p class="sub">Loading…</p>';
+  var box=document.getElementById('appsList');box.innerHTML='<div class="stspin"></div>';
   api('/studio/my').then(function(res){
     if(isAuthFail(res))return gate();
     var items=(res.body&&res.body.items)||[];
@@ -976,7 +982,7 @@ window.openPartner=function(){
   if(!token)return gate();
   show('v-partner');
   var root=document.getElementById('partnerRoot');
-  root.innerHTML='<p class="sub">Loading…</p>';
+  root.innerHTML='<div class="stspin"></div>';
   api('/studio/my').then(function(res){
     if(isAuthFail(res))return gate();
     var items=(res.body&&res.body.items)||[];
@@ -1454,15 +1460,17 @@ function start(slot,file){
 }
 function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;if(st.xhr)st.xhr.abort()}});L.up={}}
 
-function loadLib(cb){
+function loadLib(cb,force){
+  var m0=window.__mut||0;
+  if(L.data&&!force&&L.dm===m0){cb();return}
   api('/studio/library?limit=50',{method:'GET'}).then(function(res){
     if(isAuthFail(res))return gate();
     if(!(res.body&&res.body.ok)){R('<p class="sub">Could not load your library. Try again.</p>');return}
-    L.data=res.body;cb();
+    L.data=res.body;L.dm=m0;cb();
   }).catch(function(){R('<p class="sub">Connection problem. Try again.</p>')});
 }
 window.libMore=function(btn){
-  if(btn){btn.disabled=true;btn.textContent='Loading...'}
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="stspin" style="width:16px;height:16px;margin:0 auto"></span>'}
   api('/studio/library?offset='+L.data.titles.length+'&limit=50',{method:'GET'}).then(function(res){
     if(!(res.body&&res.body.ok)){toast('Could not load more');renderList();return}
     L.data.titles=L.data.titles.concat(res.body.titles||[]);L.data.hasMore=!!res.body.hasMore;renderList();
@@ -1730,7 +1738,7 @@ document.getElementById('libRoot').addEventListener('click',function(ev){
   if(el){startPreview(el.dataset.id,el.dataset.act==='eprev'?Number(el.dataset.ep):null);return}
   if(ev.target.closest('#dhero.pl')&&!ev.target.closest('.bkb'))stopPreview();
 });
-window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderDetail)};
+window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<div class="stspin"></div>');loadLib(renderDetail)};
 function renderEp(t){
   var ms=1,mn=0;
   t.episodes.forEach(function(e){if(e.season>ms){ms=e.season;mn=0}if(e.season===ms&&e.number>mn)mn=e.number});
@@ -1794,8 +1802,33 @@ function del(el){
   }).catch(function(){el.disabled=false;toast('Connection problem')});
 }
 
-window.openLib=function(){cancelAll();L.armed=null;setMode('list');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderList)};
-window.openAdd=function(){cancelAll();setMode('pick');show('v-lib');R('<p class="sub">Loading…</p>');loadLib(renderPick)};
+var ptrEl=null,ptrY=null,ptrD=0;
+function ptrInd(){if(!ptrEl){ptrEl=document.createElement('div');ptrEl.className='ptr';ptrEl.innerHTML='<div class="stspin"></div>';document.body.appendChild(ptrEl)}return ptrEl}
+document.addEventListener('touchstart',function(e){
+  var v=document.getElementById('v-lib');
+  if(!v||!v.classList.contains('on')||(window.pageYOffset||0)>0||e.touches.length!==1||(L.mode!=='list'&&L.mode!=='detail')){ptrY=null;return}
+  ptrY=e.touches[0].clientY;ptrD=0;
+},{passive:true});
+document.addEventListener('touchmove',function(e){
+  if(ptrY==null)return;
+  ptrD=e.touches[0].clientY-ptrY;
+  var i=ptrInd();
+  if(ptrD<=0){i.style.opacity=0;return}
+  i.style.opacity=Math.min(1,ptrD/80);
+  i.style.transform='translate(-50%,'+Math.min(ptrD/3,40)+'px)';
+},{passive:true});
+document.addEventListener('touchend',function(){
+  if(ptrY==null)return;
+  var go=ptrD>80;ptrY=null;
+  var i=ptrInd();
+  if(!go){i.style.opacity=0;return}
+  i.style.opacity=1;i.style.transform='translate(-50%,40px)';
+  var done=function(){i.style.opacity=0};
+  setTimeout(done,8000);
+  loadLib(function(){(L.mode==='detail'?renderDetail:renderList)();done()},true);
+});
+window.openLib=function(){cancelAll();L.armed=null;setMode('list');show('v-lib');R('<div class="stspin"></div>');loadLib(renderList)};
+window.openAdd=function(){cancelAll();setMode('pick');show('v-lib');R('<div class="stspin"></div>');loadLib(renderPick)};
 
 var rt=$('libRoot');
 rt.addEventListener('click',function(ev){
@@ -1865,7 +1898,7 @@ function fmtD(v){
     var h=document.getElementById('profHead'),l=document.getElementById('pt-lib'),ab=document.getElementById('pt-about');
     if(!h||!l||!ab||!token)return;
     h.innerHTML='<div class="ph">'+AV+'<div><div class="pn">Creator</div><span class="pbd">Creator</span></div></div>';
-    l.innerHTML='<p class="sub">Loading…</p>';
+    l.innerHTML='<div class="stspin"></div>';
     Promise.all([api('/studio/library'),api('/studio/my')]).then(function(r){
       if(isAuthFail(r[0]))return gate();
       var d=r[0].body||{},q=d.quota||{},ts=titlesOf(d),items=(r[1].body&&r[1].body.items)||[];
@@ -1920,7 +1953,7 @@ function fmtD(v){
     var h=G('profHead'),l=G('pt-lib'),ab=G('pt-about');
     if(!h||!l||!ab||!token)return;
     if(!PF.p)h.innerHTML=headHTML({},false);
-    l.innerHTML='<p class="sub">Loading…</p>';
+    l.innerHTML='<div class="stspin"></div>';
     Promise.all([api('/studio/library'),api('/studio/my'),api('/studio/profile'),api('/studio/me-stats')]).then(function(r){
       if(isAuthFail(r[0]))return gate();
       var d=r[0].body||{},q=d.quota||{},ts=titlesOf(d),items=(r[1].body&&r[1].body.items)||[];
@@ -2119,7 +2152,7 @@ function fmtD(v){
   };
   function render(u){
     show('v-creator');window.scrollTo(0,0);
-    root(head()+'<p class="sub">Loading…</p>');
+    root(head()+'<div class="stspin"></div>');
     var h1={};if(tk())h1['X-Session-Token']=tk();
     Promise.all([
       fetch(API+'/studio/creator/'+encodeURIComponent(u)).then(function(r){return r.json()}),

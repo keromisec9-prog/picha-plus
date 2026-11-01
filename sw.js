@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-v61';
+const CACHE_NAME = 'picha-plus-v63';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -20,7 +20,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'picha-img-v1').map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -32,6 +32,20 @@ self.addEventListener('fetch', e => {
 
   // Always network-first for API calls
   if (url.hostname.includes('workers.dev') || url.hostname === 'api.mypicha.uk' || url.hostname.includes('tmdb.org')) {
+    return;
+  }
+
+  // Posters on B2: presigned URLs change signature every fetch, so cache by path only
+  if (e.request.destination === 'image' && url.hostname.includes('backblazeb2.com') && !e.request.headers.has('Range')) {
+    const key = url.origin + url.pathname;
+    e.respondWith(
+      caches.open('picha-img-v1').then(c =>
+        c.match(key).then(hit => hit || fetch(e.request.url, { mode: 'cors' }).then(res => {
+          if (res.ok) c.put(key, res.clone());
+          return res;
+        }).catch(() => fetch(e.request)))
+      )
+    );
     return;
   }
 
