@@ -4193,6 +4193,7 @@ async function loadContent() {
       renderRow('newRow', cards);
     }
 
+    renderPromotedRow(cards).catch(function () {});
     // Continue watching — needs cards, call here
     renderContinueWatching();
 
@@ -4332,6 +4333,75 @@ function _appendRowBatch(row, batchSize, sentinel) {
     row.insertAdjacentHTML('beforeend', html);
   }
   row._renderedCount += next.length;
+}
+
+// ---- promoted row (paid placements) ----
+var _promoQ = {}, _promoTimer = null, _promoMem = {}, _promoCardMap = {};
+function _promoSeen(kind, id) {
+  var k = 'pr_' + kind + '_' + id + '_' + new Date().toISOString().slice(0, 10);
+  if (_promoMem[k]) return true;
+  _promoMem[k] = 1;
+  try { if (sessionStorage.getItem(k)) return true; sessionStorage.setItem(k, '1'); } catch (e) {}
+  return false;
+}
+function _promoCount(kind, id) {
+  if (_promoSeen(kind, id)) return;
+  var e = _promoQ[id] || (_promoQ[id] = { id: id, i: 0, c: 0 });
+  if (kind === 'i') e.i = 1; else e.c = 1;
+  clearTimeout(_promoTimer);
+  _promoTimer = setTimeout(_promoFlush, 5000);
+}
+function _promoFlush() {
+  var ids = Object.keys(_promoQ);
+  if (!ids.length) return;
+  var events = ids.map(function (k) { return _promoQ[k]; });
+  _promoQ = {};
+  try {
+    fetch(API + '/promoted/track', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ events: events }) }).catch(function () {});
+  } catch (e) {}
+}
+window.addEventListener('pagehide', _promoFlush);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') _promoFlush(); });
+async function renderPromotedRow(cards) {
+  var old = document.getElementById('promoSection');
+  if (old) old.remove();
+  var d;
+  try { d = await (await fetch(API + '/promoted')).json(); } catch (e) { return; }
+  var list = (d && d.items) || [];
+  if (!list.length) return;
+  var items = [], map = {};
+  list.forEach(function (p) {
+    var c = cards.find(function (x) { return [x.id, x.tmdbId, x.movieId].some(function (v) { return v != null && String(v) === p.key; }); });
+    if (c) { items.push(c); map[String(c.id)] = p.id; }
+  });
+  if (!items.length) return;
+  var anchorRow = document.getElementById('newRow');
+  var anchor = anchorRow && (anchorRow.closest('.content-section') || anchorRow.parentElement);
+  if (!anchor || !anchor.parentNode) return;
+  var sec = document.createElement('div');
+  sec.className = 'content-section';
+  sec.id = 'promoSection';
+  sec.innerHTML = '<div class="row-header"><div class="row-title"><span class="row-title-accent">Promoted</span> <span style="font-size:0.6rem;letter-spacing:0.08em;color:#999;border:1px solid #444;border-radius:4px;padding:0.1rem 0.35rem;margin-left:0.4rem;vertical-align:middle;">SPONSORED</span></div></div><div class="scroll-row" id="row-promoted"></div>';
+  anchor.parentNode.insertBefore(sec, anchor);
+  renderRow('row-promoted', items);
+  _promoCardMap = map;
+  sec.addEventListener('click', function (ev) {
+    var c = ev.target.closest('.card');
+    if (!c) return;
+    var pid = _promoCardMap[c.getAttribute('data-preview-id')];
+    if (pid) _promoCount('c', pid);
+  });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var pid = _promoCardMap[en.target.getAttribute('data-preview-id')];
+        if (pid) _promoCount('i', pid);
+        io.unobserve(en.target);
+      });
+    }, { threshold: 0.5 });
+    sec.querySelectorAll('.card').forEach(function (c) { io.observe(c); });
+  }
 }
 
 function renderRow(rowId, items) {
