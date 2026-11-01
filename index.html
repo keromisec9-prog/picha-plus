@@ -3504,6 +3504,34 @@ function saveProgress(id, pos, dur, forceSync, title) {
           document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh();});
         })();
         </script>
+        <div id="acctPtrWrap" style="display:none;">
+          <div class="acct-label">App</div>
+          <div class="acct-card acct-row">
+            <div>
+              <div style="font-size:0.9rem;font-weight:600;">Pull to refresh</div>
+              <div style="font-size:0.78rem;color:#888;margin-top:0.15rem;">Pull down on Home to reload the page</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+              <input type="checkbox" id="acctPtrToggle" style="opacity:0;width:0;height:0;">
+              <span id="acctPtrSlider" style="position:absolute;cursor:pointer;inset:0;background:#333;border-radius:24px;transition:0.2s;"><span id="acctPtrKnob" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:0.2s;"></span></span>
+            </label>
+          </div>
+        </div>
+        <script>
+        (function(){
+          if(!window.PichaApp)return;
+          var wrap=document.getElementById('acctPtrWrap'),cb=document.getElementById('acctPtrToggle'),sl=document.getElementById('acctPtrSlider'),kn=document.getElementById('acctPtrKnob');
+          if(!wrap||!cb)return;
+          wrap.style.display='';
+          function paint(){sl.style.background=cb.checked?'#f0c030':'#333';kn.style.transform=cb.checked?'translateX(20px)':'none';}
+          try{cb.checked=localStorage.getItem('pp_ptr')!=='off';}catch(e){cb.checked=true;}
+          paint();
+          cb.addEventListener('change',function(){
+            try{localStorage.setItem('pp_ptr',cb.checked?'on':'off');}catch(e){}
+            paint();
+          });
+        })();
+        </script>
         <div class="acct-label">Security &amp; Privacy</div>
         <div class="acct-card">
           <div class="acct-h">Sign-in &amp; password</div>
