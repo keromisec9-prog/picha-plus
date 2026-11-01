@@ -4421,7 +4421,7 @@ async function renderPromotedRow(cards) {
   var sec = document.createElement('div');
   sec.className = 'content-section';
   sec.id = 'promoSection';
-  sec.innerHTML = '<div class="row-header"><div class="row-title"><span class="row-title-accent">Promoted</span> <span style="font-size:0.6rem;letter-spacing:0.08em;color:#999;border:1px solid #444;border-radius:4px;padding:0.1rem 0.35rem;margin-left:0.4rem;vertical-align:middle;">SPONSORED</span></div></div><div class="scroll-row" id="row-promoted"></div>';
+  sec.innerHTML = '<div class="row-header"><div class="row-title"><span style="font-size:0.6rem;letter-spacing:0.08em;color:#999;border:1px solid #444;border-radius:4px;padding:0.1rem 0.35rem;vertical-align:middle;">SPONSORED</span></div></div><div class="scroll-row" id="row-promoted"></div>';
   anchor.parentNode.insertBefore(sec, anchor.nextSibling);
   renderRow('row-promoted', items);
   _promoCardMap = map;
