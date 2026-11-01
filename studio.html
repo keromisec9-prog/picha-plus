@@ -1599,7 +1599,7 @@ function renderForm(){
   h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?'submit':'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?'Submit for review':'Next'))+'</button></div>';
   R(h);
 }
-function fmtWT(n){n=Math.max(0,Math.floor(Number(n)||0));return Math.floor(n/3600)+'h '+Math.floor(n%3600/60)+'m'}
+function fmtWT(n){n=Math.max(0,Math.floor(Number(n)||0));return Math.floor(n/3600)+'h '+Math.floor(n%3600/60)+'m '+(n%60)+'s'}
 function loadPerf(id){
   api('/studio/performance?id='+encodeURIComponent(id),{method:'GET'}).then(function(res){
     var b=res.body||{},box=$('perfBox');
