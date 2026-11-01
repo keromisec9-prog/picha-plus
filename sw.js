@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-v73';
+const CACHE_NAME = 'picha-plus-v74';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -12,7 +12,7 @@ const APP_SHELL = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c => c.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then(c => c.addAll(APP_SHELL.map(function (u) { return new Request(u, { cache: 'reload' }); })))
   );
   self.skipWaiting();
 });
