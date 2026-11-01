@@ -3030,7 +3030,16 @@ function unqueueProgress(movieId) {
   });
   if (ch) _pqSet(q);
 }
-async function flushProgress() {
+function flushProgress() {
+  if (navigator.locks && navigator.locks.request) {
+    return navigator.locks.request('pq_flush', { ifAvailable: true }, function (lock) {
+      if (!lock) return;
+      return _flushProgressInner();
+    });
+  }
+  return _flushProgressInner();
+}
+async function _flushProgressInner() {
   if (_pqBusy) return;
   var q = _pqGet();
   var keys = Object.keys(q).filter(function (k) { return q[k] && q[k].tok; });
