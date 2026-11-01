@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-v68';
+const CACHE_NAME = 'picha-plus-v69';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -118,3 +118,6 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+self.addEventListener('install', function () { self.skipWaiting(); });
+self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });

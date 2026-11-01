@@ -158,7 +158,7 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
     // Register service worker for PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('sw.js').catch(function(err) {
+        navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(function(err) {
           console.log('SW registration failed: ', err);
         });
       });
@@ -14733,6 +14733,97 @@ body.pp-in-profile #serCreator{cursor:default}
     new MutationObserver(function(){ fix(m); }).observe(m,{attributes:true,attributeFilter:['class']});
   });
 })();
+</script>
+<script>
+(function () {
+  if (window._ptrInit) return; window._ptrInit = true;
+  var TH = 80, MAX = 150, TOP = 70;
+  var startY = 0, startX = 0, armed = false, pulling = false, busy = false, pull = 0;
+  var st = document.createElement('style');
+  st.textContent = 'html{overscroll-behavior-y:contain}@keyframes ptrspin{to{transform:rotate(360deg)}}#ptrIndicator.spin svg{animation:ptrspin .7s linear infinite}';
+  document.head.appendChild(st);
+  var el = document.createElement('div');
+  el.id = 'ptrIndicator';
+  el.style.cssText = 'position:fixed;left:50%;top:0;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.5);z-index:2147483000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;will-change:transform;transform:translateY(' + (TOP - 50) + 'px)';
+  el.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>';
+  document.body.appendChild(el);
+  var icon = el.firstChild;
+
+  function atTop(t) {
+    if ((window.scrollY || document.documentElement.scrollTop || 0) > 0) return false;
+    for (var n = t; n && n !== document.body && n.nodeType === 1; n = n.parentNode) {
+      if (n.scrollTop > 0) return false;
+    }
+    return true;
+  }
+  function place(p, animate) {
+    el.style.transition = animate ? 'transform .25s ease, opacity .25s ease' : 'none';
+    el.style.transform = 'translateY(' + (TOP - 50 + p) + 'px) scale(' + (p >= TH ? 1.1 : 1) + ')';
+    el.style.opacity = Math.min(1, p / (TH * 0.5));
+    if (!busy) icon.style.transform = 'rotate(' + Math.round(p / TH * 270) + 'deg)';
+  }
+  document.addEventListener('touchstart', function (e) {
+    if (busy || e.touches.length !== 1) return;
+    armed = atTop(e.target); pulling = false; pull = 0;
+    startY = e.touches[0].clientY; startX = e.touches[0].clientX;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (!armed || busy) return;
+    var dy = e.touches[0].clientY - startY, dx = e.touches[0].clientX - startX;
+    if (!pulling) {
+      if (dy < -8 || Math.abs(dx) > Math.abs(dy) + 4 && Math.abs(dx) > 8) { armed = false; return; }
+      if (dy < 10) return;
+      if (!atTop(e.target)) { armed = false; return; }
+      pulling = true;
+    }
+    if (e.cancelable) e.preventDefault();
+    pull = Math.min(MAX, dy * 0.5);
+    place(pull, false);
+  }, { passive: false });
+  function end() {
+    if (!pulling) { armed = false; return; }
+    armed = false; pulling = false;
+    if (pull >= TH) refresh(); else { place(0, true); pull = 0; }
+  }
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+
+  function refresh() {
+    busy = true; el.classList.add('spin'); icon.style.transform = '';
+    place(TH * 0.6, true);
+    var done = false;
+    function go() { if (done) return; done = true; location.reload(); }
+    setTimeout(go, 4000);
+    (async function () {
+      try {
+        Object.keys(localStorage).forEach(function (k) { if (k.indexOf('pp_cat') === 0) localStorage.removeItem(k); });
+      } catch (e) {}
+      try {
+        if ('serviceWorker' in navigator) {
+          var regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(function (r) { return r.unregister(); }));
+        }
+        if (window.caches) {
+          var keys = await caches.keys();
+          await Promise.all(keys.filter(function (k) { return k !== 'picha-img-v1'; }).map(function (k) { return caches.delete(k); }));
+        }
+      } catch (e) {}
+      go();
+    })();
+  }
+
+  // keep the service worker fresh without user action
+  if ('serviceWorker' in navigator) {
+    var hadCtl = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (hadCtl && !reloaded && !busy) { reloaded = true; location.reload(); }
+    });
+    var chk = function () { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {}); };
+    chk();
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) chk(); });
+  }
+})();
+
 </script>
 </body>
 </html>
