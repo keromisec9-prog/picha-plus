@@ -1716,6 +1716,7 @@ function renderDetail(){
     +(live?row('Visibility',IC.globe+'Public')+row('Availability',IC.tv+'Streaming'):'')
     +'</div>';
   if(live)h+='<div id="perfBox"></div>';
+  if(live)h+='<div id="promoBox"></div>';
   if(isS){
     h+='<h3 class="dsec">Episodes <span class="tm" style="font-weight:400">('+eps.length+')</span></h3>';
     if(!eps.length)h+='<div class="lc"><div class="t">No episodes yet. Add your first episode to get started.</div></div>';
@@ -1732,6 +1733,7 @@ function renderDetail(){
   R(h);
   fitHero();
   if(live)loadPerf(t.id);
+  if(live)loadPromo(t.id);
 }
 document.getElementById('libRoot').addEventListener('click',function(ev){
   var el=ev.target.closest('[data-act="preview"],[data-act="eprev"]');
@@ -1749,6 +1751,58 @@ function renderEp(t){
   h+='<div class="nav"><button class="btn" data-act="back">Cancel</button><button class="btn gold" id="lf_go" data-act="esubmit">Add episode</button></div>';
   R(h);
 }
+// ---- promotions (paid) ----
+function loadPromo(tid){
+  Promise.all([api('/studio/promote/packages'),api('/studio/promote/mine')]).then(function(r){
+    var box=document.getElementById('promoBox');
+    if(!box||String(L.did)!==String(tid))return;
+    var pk=((r[0].body||{}).packages)||[],items=((r[1].body||{}).items)||[];
+    var act=items.filter(function(i){return String(i.title_id)===String(tid)&&i.status==='active'})[0];
+    var h='<h3 class="dsec">Promote</h3>';
+    if(act){
+      var ed=new Date(Number(act.ends_ms)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      h+='<div class="lc"><div class="t">Promoted until '+esc(ed)+'</div><div class="tm">'+Number(act.impressions||0)+' impressions &middot; '+Number(act.clicks||0)+' clicks</div></div>';
+    }else{
+      h+='<p class="tm" style="margin:0 0 10px">Show this title in the Promoted row on the home page. Pick a duration and pay with Pesapal.</p><div class="acts">';
+      pk.forEach(function(p){
+        h+='<button type="button" class="btn" data-act="promote" data-id="'+esc(String(tid))+'" data-pkg="'+esc(p.id)+'" data-label="'+esc(p.label)+'" data-amount="'+Number(p.amount)+'">'+esc(p.label)+' &middot; UGX '+Number(p.amount).toLocaleString('en-US')+'</button>';
+      });
+      h+='</div>';
+    }
+    box.innerHTML=h;
+  }).catch(function(){});
+}
+document.getElementById('libRoot').addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-act="promote"]');
+  if(!el||el.disabled)return;
+  var t=findT(el.dataset.id);
+  var msg='Promote "'+(t?t.title:'this title')+'" for '+el.dataset.label+' at UGX '+Number(el.dataset.amount).toLocaleString('en-US')+'? You will be taken to Pesapal to pay.';
+  if(!confirm(msg))return;
+  var old=el.textContent;
+  el.disabled=true;el.textContent='Please wait...';
+  api('/studio/promote/checkout',{method:'POST',body:JSON.stringify({titleId:el.dataset.id,packageId:el.dataset.pkg})}).then(function(res){
+    if(isAuthFail(res))return gate();
+    var b=res.body||{};
+    if(b.ok&&b.redirectUrl){location.href=b.redirectUrl;return}
+    el.disabled=false;el.textContent=old;toast(b.error||'Could not start payment');
+  }).catch(function(){el.disabled=false;el.textContent=old;toast('Network problem, try again')});
+});
+setTimeout(function(){
+  var m=/[?&]promo=([^&]+)/.exec(location.search);
+  if(!m)return;
+  var ref=decodeURIComponent(m[1]);
+  history.replaceState(null,'',location.pathname+location.hash);
+  var tries=0;
+  (function chk(){
+    api('/studio/promote/verify?ref='+encodeURIComponent(ref)).then(function(res){
+      var b=res.body||{};
+      if(b.status==='active'){toast('Payment received. Your promotion is live.');return}
+      if(b.payment==='Failed'||b.payment==='Invalid'){toast('Payment was not completed.');return}
+      if(b.status==='pending'&&tries++<8){setTimeout(chk,3000);return}
+      toast(b.status==='pending'?'Payment not confirmed yet. It activates automatically once it clears.':'Promotion is not active ('+(b.status||'unknown')+').');
+    }).catch(function(){});
+  })();
+},1200);
 function findT(id){return (L.data.titles||[]).filter(function(t){return String(t.id)===String(id)})[0]}
 
 function post(path,body,btn,label,ok){
