@@ -14845,6 +14845,7 @@ body.pp-in-profile #serCreator{cursor:default}
       if (!homeActive() || !atTop(e.target)) { armed = false; return; }
       pulling = true;
     }
+    if (dy < DEAD) { pulling = false; armed = false; ready = false; pull = 0; place(0, true); return; }
     if (e.cancelable) e.preventDefault();
     pull = Math.max(0, Math.min(MAX, (dy - DEAD) * RES));
     var nowReady = pull >= TH;
