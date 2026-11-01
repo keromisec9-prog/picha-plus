@@ -14764,5 +14764,72 @@ body.pp-in-profile #serCreator{cursor:default}
   chk();
 })();
 </script>
+<script>
+(function () {
+  if (window._homePtr) return; window._homePtr = true;
+  var TH = 70, MAX = 120, TOP = 96, RES = 0.45;
+  var y0 = 0, x0 = 0, armed = false, pulling = false, busy = false, pull = 0;
+  document.documentElement.style.overscrollBehaviorY = 'contain';
+  var el = document.createElement('div');
+  el.id = 'homePtr';
+  el.style.cssText = 'position:fixed;left:50%;top:0;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#1c1c1c;box-shadow:0 2px 10px rgba(0,0,0,.6);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;will-change:transform;transform:translateY(' + (TOP - 50) + 'px)';
+  el.innerHTML = '<div class="spinner" style="animation-play-state:paused;"></div>';
+  document.body.appendChild(el);
+  var sp = el.firstChild;
+  function homeActive() {
+    var h = document.getElementById('bn-home');
+    if (!h || !h.classList.contains('active')) return false;
+    if (document.querySelector('.modal-overlay.active, #categoryOverlay.active, #playerModal.active, #infoModal.active')) return false;
+    return true;
+  }
+  function atTop(t) {
+    if ((window.scrollY || document.documentElement.scrollTop || 0) > 0) return false;
+    for (var n = t; n && n !== document.body && n.nodeType === 1; n = n.parentNode) {
+      if (n.scrollTop > 0) return false;
+    }
+    return true;
+  }
+  function place(p, anim) {
+    el.style.transition = anim ? 'transform .25s ease, opacity .25s ease' : 'none';
+    el.style.transform = 'translateY(' + (TOP - 50 + p) + 'px) scale(' + (0.6 + 0.4 * Math.min(1, p / TH)) + ')';
+    el.style.opacity = Math.min(1, p / (TH * 0.6));
+  }
+  document.addEventListener('touchstart', function (e) {
+    pulling = false; pull = 0;
+    if (busy || e.touches.length !== 1) { armed = false; return; }
+    armed = homeActive() && atTop(e.target);
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (!armed || busy) return;
+    var dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+    if (!pulling) {
+      if (dy < -6 || (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy))) { armed = false; return; }
+      if (dy < 12) return;
+      if (!homeActive() || !atTop(e.target)) { armed = false; return; }
+      pulling = true;
+    }
+    if (e.cancelable) e.preventDefault();
+    pull = Math.min(MAX, dy * RES);
+    place(pull, false);
+  }, { passive: false });
+  function end() {
+    var was = pulling; armed = false; pulling = false;
+    if (!was) return;
+    if (pull >= TH && homeActive()) go(); else { place(0, true); pull = 0; }
+  }
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+  function go() {
+    busy = true; sp.style.animationPlayState = 'running';
+    place(TH * 0.7, true);
+    try {
+      if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {});
+    } catch (e) {}
+    setTimeout(function () { location.reload(); }, 350);
+    setTimeout(function () { busy = false; sp.style.animationPlayState = 'paused'; place(0, true); }, 6000);
+  }
+})();
+</script>
 </body>
 </html>
