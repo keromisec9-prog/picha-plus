@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-v74';
+const CACHE_NAME = 'picha-plus-v75';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -62,7 +62,7 @@ self.addEventListener('fetch', e => {
   // Cache-first for app shell
   e.respondWith(
     caches.match(e.request).then(cached => {
-      const network = fetch(e.request).then(res => {
+      const network = fetch(url.origin === self.location.origin ? new Request(url.href, { cache: 'no-cache' }) : e.request).then(res => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(c => c.put(e.request, clone));

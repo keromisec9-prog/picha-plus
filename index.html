@@ -14778,6 +14778,7 @@ body.pp-in-profile #serCreator{cursor:default}
     '<div id="homePtrSpin" style="display:none"><div class="spinner"></div></div>';
   document.body.appendChild(el);
   var ring = el.querySelector('#homePtrRing'), arrow = el.querySelector('#homePtrArrow'), spin = el.querySelector('#homePtrSpin');
+  function ptrOn() { try { return localStorage.getItem('pp_ptr') !== 'off'; } catch (x) { return true; } }
   function homeActive() {
     var h = document.getElementById('bn-home');
     if (!h || !h.classList.contains('active')) return false;
@@ -14804,7 +14805,7 @@ body.pp-in-profile #serCreator{cursor:default}
   document.addEventListener('touchstart', function (e) {
     pulling = false; pull = 0; ready = false;
     if (busy || e.touches.length !== 1) { armed = false; return; }
-    armed = homeActive() && atTop(e.target);
+    armed = ptrOn() && homeActive() && atTop(e.target);
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
