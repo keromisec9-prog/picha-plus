@@ -1784,27 +1784,56 @@ function renderEp(t){
     '.pm-note{font-size:12px;color:#7d7d7d;line-height:1.5;margin:12px 0 16px}',
     '.pm-go{width:100%;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:700;font-size:15px;background:var(--gold,#e5b93c);color:#1a1405;cursor:pointer}',
     '.pm-go:disabled{opacity:.9}','@keyframes pmspin{to{transform:rotate(360deg)}}','.pm-sp{display:inline-block;width:15px;height:15px;border:2px solid rgba(26,20,5,.25);border-top-color:#1a1405;border-radius:50%;animation:pmspin .7s linear infinite;vertical-align:-2px;margin-right:9px}',
-    '.pm-x{width:100%;border:0;background:none;color:#9a9a9a;font:inherit;padding:14px 0 0;cursor:pointer}'
+    '.pm-x{width:100%;border:0;background:none;color:#9a9a9a;font:inherit;padding:14px 0 0;cursor:pointer}',
+    '.pm-info{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(229,185,60,.35);background:rgba(229,185,60,.07);border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:13px;line-height:1.45;color:#e9dfbd}',
+    '.pm-info svg{flex:0 0 18px;margin-top:1px}'
   ].join('');
   document.head.appendChild(s);
 })();
 function pmMoney(n){return 'UGX '+Number(n).toLocaleString('en-US')}
+function pmDur(ms){var h=Math.max(1,Math.ceil(ms/3600000));if(h<24)return h+(h===1?' hour':' hours');var d=Math.round(h/24);return d+(d===1?' day':' days')}
+var PM={tid:null,act:null,queued:[]};
+function pmNotice(el){
+  var a=PM.act;
+  if(!a||String(PM.tid)!==String(el.dataset.id))return '';
+  var pick=Number(el.dataset.amount),cur=Number(a.amount),left=Math.max(0,Number(a.ends_ms)-Date.now()),msg;
+  if(pick>cur){
+    msg='This one starts right away. Your current '+a.days+'-day promotion is not lost. It pauses and resumes automatically, with its remaining '+pmDur(left)+', once this one ends.';
+  }else{
+    var wait=left;
+    PM.queued.forEach(function(q){if(Number(q.amount)>=pick)wait+=Number(q.remaining_ms||0)});
+    msg='Your '+a.days+'-day promotion is still running. This one starts automatically after it ends, in about '+pmDur(wait)+'. Nothing you pay for is lost.';
+  }
+  return '<div class="pm-info"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e5b93c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg><span>'+esc(msg)+'</span></div>';
+}
 function loadPromo(tid){
   Promise.all([api('/studio/promote/packages'),api('/studio/promote/mine')]).then(function(r){
     var box=document.getElementById('promoBox');
     if(!box||String(L.did)!==String(tid))return;
     var pk=((r[0].body||{}).packages)||[],items=((r[1].body||{}).items)||[];
-    var act=items.filter(function(i){return String(i.title_id)===String(tid)&&i.status==='active'})[0];
+    var mine=items.filter(function(i){return String(i.title_id)===String(tid)});
+    var act=mine.filter(function(i){return i.status==='active'})[0];
+    var queued=mine.filter(function(i){return i.status==='queued'}).sort(function(x,y){return Number(y.amount)-Number(x.amount)});
+    PM.tid=tid;PM.act=act||null;PM.queued=queued;
+    var grid='<div class="pm-grid">';
+    pk.forEach(function(p){
+      grid+='<button type="button" class="pm-t" data-act="promote" data-id="'+esc(String(tid))+'" data-pkg="'+esc(p.id)+'" data-label="'+esc(p.label)+'" data-amount="'+Number(p.amount)+'"><b>'+Number(p.days)+'</b><span>days</span><i>'+esc(pmMoney(p.amount))+'</i></button>';
+    });
+    grid+='</div><div class="pm-f">Secure payment with Pesapal</div>';
     var h='<h3 class="dsec">Promote</h3>';
     if(act){
       var ed=new Date(Number(act.ends_ms)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
       h+='<div class="pm-card"><span class="pm-live">&#9679; LIVE</span><div class="pm-h" style="margin-top:10px">Promoted until '+esc(ed)+'</div><div class="pm-st"><div><b>'+Number(act.impressions||0).toLocaleString('en-US')+'</b><span>Impressions</span></div><div><b>'+Number(act.clicks||0).toLocaleString('en-US')+'</b><span>Clicks</span></div></div></div>';
+    }
+    if(queued.length){
+      h+='<div class="pm-card" style="margin-top:12px"><div class="pm-h">Up next</div>';
+      queued.forEach(function(q){h+='<div class="pm-row"><span>'+esc(pmDur(Number(q.remaining_ms||0)))+' of promotion</span><b>Waiting</b></div>'});
+      h+='</div>';
+    }
+    if(act){
+      h+='<div class="pm-card" style="margin-top:12px"><div class="pm-h">Add more time</div><p class="pm-s">A longer package starts right away and your current one resumes after it. A shorter one starts when the current one ends. Nothing you pay for is lost.</p>'+grid+'</div>';
     }else{
-      h+='<div class="pm-card"><div class="pm-h">Get more viewers</div><p class="pm-s">Feature this title in the Sponsored row on the home page. Choose how long it runs.</p><div class="pm-grid">';
-      pk.forEach(function(p){
-        h+='<button type="button" class="pm-t" data-act="promote" data-id="'+esc(String(tid))+'" data-pkg="'+esc(p.id)+'" data-label="'+esc(p.label)+'" data-amount="'+Number(p.amount)+'"><b>'+Number(p.days)+'</b><span>days</span><i>'+esc(pmMoney(p.amount))+'</i></button>';
-      });
-      h+='</div><div class="pm-f">Secure payment with Pesapal</div></div>';
+      h+='<div class="pm-card"><div class="pm-h">Get more viewers</div><p class="pm-s">Feature this title in the Sponsored row on the home page. Choose how long it runs.</p>'+grid+'</div>';
     }
     box.innerHTML=h;
   }).catch(function(){});
@@ -1813,7 +1842,7 @@ function pmSheet(t,el){
   var old=document.getElementById('pmOv');if(old)old.remove();
   var amt=Number(el.dataset.amount);
   var ov=document.createElement('div');ov.className='pm-ov';ov.id='pmOv';
-  ov.innerHTML='<div class="pm-sh" role="dialog" aria-modal="true"><div class="pm-grab"></div><div class="pm-ttl">PROMOTE</div><div class="pm-nm">'+esc(t?t.title:'This title')+'</div>'
+  ov.innerHTML='<div class="pm-sh" role="dialog" aria-modal="true"><div class="pm-grab"></div><div class="pm-ttl">PROMOTE</div><div class="pm-nm">'+esc(t?t.title:'This title')+'</div>'+pmNotice(el)
     +'<div class="pm-row"><span>Duration</span><b>'+esc(el.dataset.label)+'</b></div>'
     +'<div class="pm-row"><span>Placement</span><b>Sponsored row &middot; Home</b></div>'
     +'<div class="pm-row"><span>Total</span><b>'+esc(pmMoney(amt))+'</b></div>'
@@ -1849,7 +1878,7 @@ setTimeout(function(){
   (function chk(){
     api('/studio/promote/verify?ref='+encodeURIComponent(ref)).then(function(res){
       var b=res.body||{};
-      if(b.status==='active'){toast('Payment received. Your promotion is live.');return}
+      if(b.status==='active'){toast(b.queued?'Payment received. It starts automatically when your current promotion ends.':'Payment received. Your promotion is live.');return}
       if(b.payment==='Failed'||b.payment==='Invalid'){toast('Payment was not completed.');return}
       if(b.status==='pending'&&tries++<8){setTimeout(chk,3000);return}
       toast(b.status==='pending'?'Payment not confirmed yet. It activates automatically once it clears.':'Promotion is not active ('+(b.status||'unknown')+').');
