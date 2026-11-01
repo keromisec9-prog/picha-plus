@@ -14734,5 +14734,35 @@ body.pp-in-profile #serCreator{cursor:default}
   });
 })();
 </script>
+<script>
+(function () {
+  if (window._swAutoUpdate || !('serviceWorker' in navigator)) return;
+  window._swAutoUpdate = true;
+  var hadCtl = !!navigator.serviceWorker.controller, pending = false;
+  function playing() {
+    var v = document.querySelectorAll('video');
+    for (var i = 0; i < v.length; i++) if (!v[i].paused && !v[i].ended) return true;
+    return false;
+  }
+  function tryReload() {
+    if (!pending) return;
+    if (playing()) return;
+    pending = false;
+    location.reload();
+  }
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!hadCtl) { hadCtl = true; return; }
+    pending = true; tryReload();
+  });
+  function chk() {
+    navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {});
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { chk(); tryReload(); }
+  });
+  setInterval(tryReload, 5000);
+  chk();
+})();
+</script>
 </body>
 </html>
