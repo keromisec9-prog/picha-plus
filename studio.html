@@ -1380,22 +1380,29 @@ function setP(slot,f){
   var i=b.querySelector('.upb i'),t=b.querySelector('.upr span');
   if(i)i.style.width=st.pct+'%';if(t)t.textContent=st.pct+'%';
 }
-var PU_KEY='picha_pending_upload_v1',PU_DAYS=30;
-function puGet(){
+var PU_KEY='picha_pending_uploads_v2',PU_MAX=3,PU_DAYS=30;
+function fatal(m){var e=new Error(m);e.fatal=true;return e}
+function puAll(){
   try{
-    var r=JSON.parse(localStorage.getItem(PU_KEY)||'null');
-    if(!r)return null;
-    if(Date.now()-r.t>PU_DAYS*864e5){puAbort(r);return null}
-    return r;
-  }catch(e){return null}
+    var a=JSON.parse(localStorage.getItem(PU_KEY)||'null');
+    if(!a){
+      var o=JSON.parse(localStorage.getItem('picha_pending_upload_v1')||'null');
+      a=o?[o]:[];
+      localStorage.removeItem('picha_pending_upload_v1');
+      localStorage.setItem(PU_KEY,JSON.stringify(a));
+    }
+    var now=Date.now();
+    return a.filter(function(r){return r&&now-r.t<=PU_DAYS*864e5});
+  }catch(e){return[]}
 }
-function puSet(r){try{localStorage.setItem(PU_KEY,JSON.stringify(r))}catch(e){}}
-function puClear(){try{localStorage.removeItem(PU_KEY)}catch(e){}}
-function puAbort(r){
-  puClear();
-  api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:r.key,uploadId:r.uploadId})}).catch(function(){});
+function puSaveAll(a){try{localStorage.setItem(PU_KEY,JSON.stringify(a))}catch(e){}}
+function puPut(r){var a=puAll().filter(function(x){return !(x.key===r.key&&x.uploadId===r.uploadId)});a.push(r);puSaveAll(a)}
+function puDel(key,uid){puSaveAll(puAll().filter(function(x){return !(x.key===key&&x.uploadId===uid)}))}
+function puFind(f){
+  var a=puAll();
+  for(var i=0;i<a.length;i++){var r=a[i];if(r.name===f.name&&r.size===f.size&&(!r.lm||!f.lastModified||r.lm===f.lastModified))return r}
+  return null;
 }
-function puSame(r,f){return r&&r.name===f.name&&r.size===f.size&&(!r.lm||!f.lastModified||r.lm===f.lastModified)}
 function nuSave(file,key,uid,frac){
   if(!window.PichaTemp||!PichaTemp.saveUpload)return;
   try{PichaTemp.saveUpload(JSON.stringify({key:key,uploadId:uid,name:file.name,size:file.size,pct:Math.round(frac*100),t:Date.now()}))}catch(e){}
@@ -1405,64 +1412,148 @@ function nuCall(fn,key,uid){
   try{PichaTemp[fn](key,uid);return true}catch(e){return false}
 }
 function cancelPendingUpload(st){
-  var r=puGet(),key=st.pendKey||(r&&r.key),uid=st.uploadId||(r&&r.uploadId);
-  puClear();
+  var key=st.pendKey,uid=st.uploadId;
   if(!key||!uid)return;
-  if(!nuCall('cancelUpload',key,uid))api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:key,uploadId:uid})}).catch(function(){});
+  puDel(key,uid);
+  if(!nuCall('cancelUpload',key,uid))api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:key,uploadId:uid,reason:'user'})}).catch(function(){});
+}
+function netOk(st){
+  if(st.force)return true;
+  try{if(window.PichaTemp&&PichaTemp.uploadAllowedNow)return !!PichaTemp.uploadAllowedNow()}catch(e){}
+  return navigator.onLine!==false;
+}
+function pauseWait(slot,st){
+  st.pc=(st.pc||0)+1;
+  var t0=Date.now(),back=Math.min(30000,st.pc*3000);
+  return new Promise(function(res,rej){
+    function setWhy(w){
+      if(st.pauseWhy!==w||!st.paused){
+        st.pauseWhy=w;st.paused=true;
+        try{st.needNet=(window.PichaTemp&&PichaTemp.getUploadNet)?PichaTemp.getUploadNet():'both'}catch(e){}
+        paint(slot);
+      }
+    }
+    function tick(){
+      if(st.cancel){clearInterval(iv);return rej(new Error('cancelled'))}
+      if(st.resumeNow){clearInterval(iv);st.resumeNow=false;st.userPause=false;st.paused=false;paint(slot);return res()}
+      if(st.userPause)return setWhy('user');
+      if(navigator.onLine===false)return setWhy('offline');
+      if(!netOk(st))return setWhy('net');
+      if(Date.now()-t0<back)return setWhy('retry');
+      clearInterval(iv);st.paused=false;paint(slot);res();
+    }
+    var iv=setInterval(tick,1000);
+    tick();
+  });
+}
+function putPart(st,url,blob,onp){
+  return new Promise(function(res,rej){
+    var x=new XMLHttpRequest(),last=Date.now(),iv;
+    st.xhr=x;
+    x.open('PUT',url);
+    x.upload.onprogress=function(e){last=Date.now();onp(e.loaded)};
+    x.onload=function(){clearInterval(iv);if(x.status>=200&&x.status<300){var et=x.getResponseHeader('ETag');res(et?et.replace(/"/g,''):null)}else rej(new Error('http '+x.status))};
+    x.onerror=function(){clearInterval(iv);rej(new Error('network'))};
+    x.onabort=function(){clearInterval(iv);rej(new Error('paused'))};
+    iv=setInterval(function(){if(Date.now()-last>60000)x.abort()},5000);
+    x.send(blob);
+  });
+}
+function busyHTML(st,slot){
+  var why='';
+  if(st.paused)why=st.pauseWhy==='user'?'Paused':st.pauseWhy==='offline'?'Paused \u00b7 waiting for connection':st.pauseWhy==='net'?'Paused \u00b7 waiting for '+(st.needNet==='mobile'?'mobile data':'Wi-Fi'):'Paused \u00b7 reconnecting';
+  var main=st.paused?'<button type="button" class="pill" data-act="uresume" data-slot="'+slot+'">Resume</button> ':(slot==='video'&&st.uploadId?'<button type="button" class="pill" data-act="upause" data-slot="'+slot+'">Pause</button> ':'');
+  return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%'+(why?' \u00b7 '+why:'')+'</span>'+main+'<button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
 }
 function upFile(slot,file,st){
-  var multi=slot==='video'&&file.size>20*1024*1024,rec=multi?puGet():null;
-  if(rec&&!puSame(rec,file)){puAbort(rec);rec=null}
-  function fin(b,done,urls,ps){
-    st.pendKey=b.key;st.uploadId=b.uploadId;
-    var parts=done.slice(),sent=0,todo=[],have={},n=Math.ceil(file.size/ps),k,i=0;
+  var multi=slot==='video'&&file.size>20*1024*1024,rec=multi?puFind(file):null;
+  function finish(r,k){puDel(r.key,r.uploadId);nuCall('finishUpload',r.key,r.uploadId);return k}
+  function headDone(r){
+    return api('/studio/upload/head',{method:'POST',body:JSON.stringify({key:r.key})}).then(function(res){
+      var b=res.body||{};
+      return (b.ok&&b.exists&&Number(b.size)===file.size)?r.key:null;
+    });
+  }
+  function fin(r,done,urls){
+    var ps=r.partSize,parts=done.slice(),sent=0,todo=[],have={},n=Math.ceil(file.size/ps),k,i=0;
     done.forEach(function(p){have[p.partNumber]=1;sent+=Math.min(ps,file.size-(p.partNumber-1)*ps)});
     for(k=1;k<=n;k++)if(!have[k])todo.push(k);
     setP(slot,sent/file.size);
     function next(){
       if(st.cancel)throw new Error('cancelled');
       if(i>=todo.length)return Promise.resolve();
-      var num=todo[i++],blob=file.slice((num-1)*ps,Math.min(file.size,num*ps)),base=sent;
-      return putRetry(st,urls[num],blob,function(l){setP(slot,(base+l)/file.size)},3).then(function(et){
-        if(!et)throw new Error('Cannot read ETag - storage CORS must expose ETag');
-        parts.push({partNumber:num,etag:et});sent+=blob.size;nuSave(file,b.key,b.uploadId,sent/file.size);return next();
+      if(st.userPause||!netOk(st))throw new Error('paused');
+      var num=todo[i],blob=file.slice((num-1)*ps,Math.min(file.size,num*ps)),base=sent;
+      if(!urls[num])throw new Error('retry');
+      return putPart(st,urls[num],blob,function(l){setP(slot,(base+l)/file.size)}).then(function(et){
+        if(!et)throw fatal('Cannot read ETag - storage CORS must expose ETag');
+        i++;st.pc=0;parts.push({partNumber:num,etag:et});sent+=blob.size;nuSave(file,r.key,r.uploadId,sent/file.size);return next();
       });
     }
     return next().then(function(){
       parts.sort(function(x,y){return x.partNumber-y.partNumber});
-      return api('/studio/upload/complete',{method:'POST',body:JSON.stringify({key:b.key,uploadId:b.uploadId,parts:parts})});
-    }).then(function(r){
-      if(!(r.body&&r.body.ok))throw new Error('Could not finish upload');
-      puClear();nuCall('finishUpload',b.key,b.uploadId);return b.key;
+      return api('/studio/upload/complete',{method:'POST',body:JSON.stringify({key:r.key,uploadId:r.uploadId,parts:parts})});
+    }).then(function(res){
+      if(!(res.body&&res.body.ok))throw new Error('Could not finish upload');
+      return finish(r,r.key);
     });
   }
-  function resume(r){
-    return api('/studio/upload/resume',{method:'POST',body:JSON.stringify({key:r.key,uploadId:r.uploadId,size:file.size,partSize:r.partSize})}).then(function(res){
-      if(isAuthFail(res))throw new Error('auth');
+  function drive(r,initial,pre){
+    var first=!st.uploadId;
+    st.pendKey=r.key;st.uploadId=r.uploadId;
+    if(first)paint(slot);
+    var p=pre?Promise.resolve(pre):api('/studio/upload/resume',{method:'POST',body:JSON.stringify({key:r.key,uploadId:r.uploadId,size:file.size,partSize:r.partSize})}).then(function(res){
+      if(isAuthFail(res))throw fatal('auth');
       var b=res.body||{};
-      if(!b.ok){throw new Error(b.error||'Could not resume upload')}
-      if(b.gone){puClear();nuCall('dropRecord',r.key,r.uploadId);return null}
-      st.resumed=true;
-      return fin({key:r.key,uploadId:r.uploadId},b.done||[],b.urls||{},r.partSize);
+      if(!b.ok)throw new Error(b.error||'retry');
+      return b;
+    });
+    return p.then(function(b){
+      if(b.gone)return headDone(r).then(function(k){
+        if(k)return finish(r,k);
+        puDel(r.key,r.uploadId);nuCall('dropRecord',r.key,r.uploadId);
+        if(initial)return null;
+        throw fatal('This upload was cancelled or has expired');
+      });
+      return fin(r,b.done||[],b.urls||{});
+    }).catch(function(e){
+      var m=(e&&e.message)||'';
+      if(st.cancel)throw new Error('cancelled');
+      if(e&&e.fatal)throw e;
+      if(/^http 4/.test(m)&&(st.pc||0)>=4)throw e;
+      if(m==='Could not finish upload'&&(st.pc||0)>=5)throw e;
+      return pauseWait(slot,st).then(function(){return drive(r,initial)});
     });
   }
   function fresh(){
     var body={kind:slot,fileName:file.name,size:file.size};
-    if(multi){body.multipart=true;body.partSize=10*1024*1024}
+    if(multi){
+      if(puAll().length>=PU_MAX)return Promise.reject(fatal('You already have '+PU_MAX+' unfinished uploads. Open Manage my uploads to finish or cancel one'));
+      body.multipart=true;body.partSize=10*1024*1024;
+    }
     return api('/studio/upload/init',{method:'POST',body:JSON.stringify(body)}).then(function(res){
-      if(isAuthFail(res))throw new Error('auth');
-      var b=res.body||{};if(!b.ok)throw new Error(b.error||'Could not start upload');
+      if(isAuthFail(res))throw fatal('auth');
+      var b=res.body||{};if(!b.ok)throw fatal(b.error||'Could not start upload');
       st.pendKey=b.key;
       if(!b.multipart)return xput(st,b.uploadUrl,file,function(l){setP(slot,l/file.size)}).then(function(){return b.key});
       var urls={};b.parts.forEach(function(u,j){urls[j+1]=u});
-      puSet({slot:slot,key:b.key,uploadId:b.uploadId,partSize:b.partSize,name:file.name,size:file.size,lm:file.lastModified||0,t:Date.now()});nuSave(file,b.key,b.uploadId,0);
-      return fin(b,[],urls,b.partSize);
+      var r={slot:slot,key:b.key,uploadId:b.uploadId,partSize:b.partSize,name:file.name,size:file.size,lm:file.lastModified||0,t:Date.now()};
+      puPut(r);nuSave(file,b.key,b.uploadId,0);
+      return drive(r,false,{ok:true,done:[],urls:urls});
     });
   }
-  if(rec)return resume(rec).then(function(k){return k||fresh()});
-  return fresh();
+  function freshLoop(){
+    return fresh().catch(function(e){
+      if(st.cancel)throw new Error('cancelled');
+      if(e&&e.fatal)throw e;
+      return pauseWait(slot,st).then(freshLoop);
+    });
+  }
+  if(rec)return drive(rec,true).then(function(k){return k||freshLoop()});
+  return freshLoop();
 }
 function slotInner(slot){
+  var _s=L.up[slot];if(_s&&_s.busy)return busyHTML(_s,slot);
   var st=L.up[slot],acc=slot==='video'?'video/*':'image/jpeg,image/png,image/webp';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
   if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
@@ -1493,13 +1584,14 @@ function shrink(file){
 function run(slot,file,st,preview){
   st.preview=preview||null;
   upFile(slot,file,st).then(function(k){
-    st.key=k;st.busy=false;st.pct=100;paint(slot);
-    if(!puGet()&&window.PichaTemp){try{PichaTemp.clearUploadTemp()}catch(e){}}
+    st.key=k;st.busy=false;st.paused=false;st.pct=100;paint(slot);
+    if(!puAll().length&&window.PichaTemp){try{PichaTemp.clearUploadTemp()}catch(e){}}
   }).catch(function(e){
-    st.busy=false;
-    if(e.message==='auth'){L.up[slot]=null;paint(slot);return gate()}
+    st.busy=false;st.paused=false;
+    var m=(e&&e.message)||'';
+    if(m==='auth'){L.up[slot]=null;paint(slot);return gate()}
     if(st.cancel){if(!st.leave)cancelPendingUpload(st);L.up[slot]=null;paint(slot);return}
-    L.up[slot]={err:(slot==='video'&&puGet())?'Upload paused. Choose the same video again to continue where it stopped.':(e.message||'Upload failed')};
+    L.up[slot]={err:(st.uploadId?'Upload stopped: ':'')+(m||'Upload failed')+(st.uploadId?'. Choose the same video again to continue where it stopped.':'')};
     paint(slot);
   });
 }
@@ -2102,6 +2194,8 @@ rt.addEventListener('click',function(ev){
   var a=el.dataset.act,slot=el.dataset.slot,st=slot&&L.up[slot];
   if(a==='pick'){var fi=document.querySelector('#lu_'+slot+' input[type=file]');if(fi)fi.click()}
   else if(a==='ucancel'&&st){if(slot==='video')askCancel(st);else{st.cancel=true;if(st.xhr)st.xhr.abort()}}
+  else if(a==='upause'&&st){st.userPause=true;st.force=false;if(st.xhr){try{st.xhr.abort()}catch(e){}}}
+  else if(a==='uresume'&&st){st.userPause=false;st.resumeNow=true;st.force=true}
   else if(a==='uclear'){L.up[slot]=null;paint(slot)}
   else if(a==='choose'){
     var k=el.dataset.kind,q=L.data.quota[k==='movie'?'movies':'series'];
