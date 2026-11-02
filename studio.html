@@ -1075,7 +1075,7 @@ function upBusy(){if(!S)return false;var u=U();return !!((u.video&&u.video.busy)
 window.upBusy=upBusy;
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function inner(slot){
-  var st=U()[slot],acc=slot==='video'?'video/mp4':'image/jpeg,image/png,image/webp';
+  var st=U()[slot],acc=slot==='video'?'video/*':'image/jpeg,image/png,image/webp';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="upcancel" data-slot="'+slot+'">Cancel</button></div>';
   if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="upclear" data-slot="'+slot+'">Remove</button></div>';
   return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<button type="button" class="btn upc" data-act="uppick" data-slot="'+slot+'">Choose '+(slot==='video'?'video (MP4)':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
@@ -1406,7 +1406,7 @@ function upFile(slot,file,st){
   });
 }
 function slotInner(slot){
-  var st=L.up[slot],acc=slot==='video'?'video/mp4':'image/jpeg,image/png,image/webp';
+  var st=L.up[slot],acc=slot==='video'?'video/*':'image/jpeg,image/png,image/webp';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
   if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
   return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<button type="button" class="btn upc" data-act="pick" data-slot="'+slot+'">Choose '+(slot==='video'?'video (MP4)':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
