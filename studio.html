@@ -1507,7 +1507,7 @@ function start(slot,file){
   if(slot==='video'){
     if(!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
     if(file.size>2684354560)return toast('Video must be 2.5 GB or smaller');
-    var sv=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
+    var sv=L.up[slot]={name:file.name,size:file.size,pct:0,busy:true,preview:null};paint(slot);
     return run(slot,file,sv,null);
   }
   if(file.size>60*1024*1024)return toast('That image is too large. Please pick a smaller one.');
@@ -1517,6 +1517,25 @@ function start(slot,file){
     var f=new File([r.blob],'poster.'+r.ext,{type:r.blob.type});
     run(slot,f,st,URL.createObjectURL(r.blob));
   }).catch(function(){L.up[slot]={err:'That image could not be used. Please try another one.'};paint(slot)});
+}
+function cxMB(n){return n>=1073741824?(n/1073741824).toFixed(1)+' GB':Math.max(1,Math.round(n/1048576))+' MB'}
+function askCancel(st){
+  var old=document.getElementById('cxo');if(old)old.remove();
+  var off=!navigator.onLine,o=document.createElement('div');
+  o.id='cxo';
+  o.setAttribute('style','position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box');
+  o.innerHTML='<div style="background:#1c1c1c;color:#f2f2f2;border-radius:18px;max-width:420px;width:100%;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.6)">'
+   +'<div style="font-size:20px;font-weight:700;margin-bottom:6px">Cancel this upload?</div>'
+   +'<div style="font-size:14px;opacity:.7;margin-bottom:14px;word-break:break-word">'+esc(st.name)+' \u00b7 '+st.pct+'% uploaded'+(st.size?' \u00b7 '+cxMB(st.size):'')+'</div>'
+   +'<div style="font-size:14px;line-height:1.55;margin-bottom:18px">'
+   +'\u2022 The saved copy of this video in the app is deleted permanently.<br>'
+   +'\u2022 The part already uploaded is removed from our servers'+(off?' as soon as you are back online.':'.')+'<br>'
+   +'\u2022 Your original video on the phone is not touched.</div>'
+   +'<button type="button" id="cx_no" style="width:100%;padding:13px;border:0;border-radius:12px;background:#f0b429;color:#111;font-weight:700;font-size:15px;margin-bottom:10px">Keep uploading</button>'
+   +'<button type="button" id="cx_yes" style="width:100%;padding:13px;border:0;border-radius:12px;background:#2a2a2a;color:#ff6b6b;font-weight:700;font-size:15px">Cancel and delete</button></div>';
+  document.body.appendChild(o);
+  o.querySelector('#cx_no').onclick=function(){o.remove()};
+  o.querySelector('#cx_yes').onclick=function(){o.remove();if(st.busy){st.cancel=true;if(st.xhr)st.xhr.abort()}};
 }
 function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;st.leave=true;if(st.xhr)st.xhr.abort()}});L.up={}}
 
@@ -2082,7 +2101,7 @@ rt.addEventListener('click',function(ev){
   var el=ev.target.closest('[data-act]');if(!el)return;
   var a=el.dataset.act,slot=el.dataset.slot,st=slot&&L.up[slot];
   if(a==='pick'){var fi=document.querySelector('#lu_'+slot+' input[type=file]');if(fi)fi.click()}
-  else if(a==='ucancel'&&st){st.cancel=true;if(st.xhr)st.xhr.abort()}
+  else if(a==='ucancel'&&st){if(slot==='video')askCancel(st);else{st.cancel=true;if(st.xhr)st.xhr.abort()}}
   else if(a==='uclear'){L.up[slot]=null;paint(slot)}
   else if(a==='choose'){
     var k=el.dataset.kind,q=L.data.quota[k==='movie'?'movies':'series'];
