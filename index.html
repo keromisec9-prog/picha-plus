@@ -2295,6 +2295,38 @@ log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.le
   });
 })();
 </script>
+<script id="picha-uprow">
+(function(){
+  if(!window.PichaApp)return;
+  function inject(m){
+    if(m.querySelector('#ppUpRow'))return;
+    var body=m.querySelector('.modal-body');
+    if(!body)return;
+    var lbl=[].slice.call(body.querySelectorAll('.acct-label')).filter(function(l){return /security/i.test(l.textContent);})[0];
+    if(!lbl)return;
+    var head=document.createElement('div');
+    head.className='acct-label';
+    head.id='ppUpLbl';
+    head.textContent='Uploads & downloads';
+    var row=document.createElement('div');
+    row.className='acct-card';
+    row.id='ppUpRow';
+    row.style.marginBottom='.8rem';
+    row.style.cursor='pointer';
+    row.setAttribute('role','button');
+    row.innerHTML='<div class="acct-row"><div><div style="font-size:.9rem;font-weight:600">Uploads &amp; downloads</div><div style="font-size:.76rem;color:#a0a0a0;margin-top:.2rem;line-height:1.4">Unfinished uploads, upload settings and storage cleanup</div></div><svg viewBox="0 0 24 24" width="22" height="22" fill="#a0a0a0" aria-hidden="true"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></div>';
+    lbl.insertAdjacentElement('beforebegin',head);
+    lbl.insertAdjacentElement('beforebegin',row);
+    row.addEventListener('click',function(){try{if(PichaApp.openUploads)PichaApp.openUploads();else if(PichaApp.openDownloads)PichaApp.openDownloads();}catch(e){}});
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    var m=document.getElementById('accountSettingsModal');
+    if(!m)return;
+    inject(m);
+    new MutationObserver(function(){inject(m);}).observe(m,{childList:true,subtree:true});
+  });
+})();
+</script>
 <style id="series-page-css">
 #serPlayBtn{display:inline-flex;align-items:center;gap:.35rem;background:var(--gold);color:#000;border:none;border-radius:30px;padding:.7rem 1.7rem;font-size:.95rem;font-weight:700;cursor:pointer;margin:.2rem 0 1.3rem;}
 .ep-bar{display:flex;align-items:center;justify-content:space-between;padding-bottom:.55rem;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:.8rem;}
