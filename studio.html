@@ -1396,6 +1396,20 @@ function puAbort(r){
   api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:r.key,uploadId:r.uploadId})}).catch(function(){});
 }
 function puSame(r,f){return r&&r.name===f.name&&r.size===f.size&&(!r.lm||!f.lastModified||r.lm===f.lastModified)}
+function nuSave(file,key,uid,frac){
+  if(!window.PichaTemp||!PichaTemp.saveUpload)return;
+  try{PichaTemp.saveUpload(JSON.stringify({key:key,uploadId:uid,name:file.name,size:file.size,pct:Math.round(frac*100),t:Date.now()}))}catch(e){}
+}
+function nuCall(fn,key,uid){
+  if(!window.PichaTemp||!PichaTemp[fn])return false;
+  try{PichaTemp[fn](key,uid);return true}catch(e){return false}
+}
+function cancelPendingUpload(st){
+  var r=puGet(),key=st.pendKey||(r&&r.key),uid=st.uploadId||(r&&r.uploadId);
+  puClear();
+  if(!key||!uid)return;
+  if(!nuCall('cancelUpload',key,uid))api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:key,uploadId:uid})}).catch(function(){});
+}
 function upFile(slot,file,st){
   var multi=slot==='video'&&file.size>20*1024*1024,rec=multi?puGet():null;
   if(rec&&!puSame(rec,file)){puAbort(rec);rec=null}
@@ -1411,7 +1425,7 @@ function upFile(slot,file,st){
       var num=todo[i++],blob=file.slice((num-1)*ps,Math.min(file.size,num*ps)),base=sent;
       return putRetry(st,urls[num],blob,function(l){setP(slot,(base+l)/file.size)},3).then(function(et){
         if(!et)throw new Error('Cannot read ETag - storage CORS must expose ETag');
-        parts.push({partNumber:num,etag:et});sent+=blob.size;return next();
+        parts.push({partNumber:num,etag:et});sent+=blob.size;nuSave(file,b.key,b.uploadId,sent/file.size);return next();
       });
     }
     return next().then(function(){
@@ -1419,7 +1433,7 @@ function upFile(slot,file,st){
       return api('/studio/upload/complete',{method:'POST',body:JSON.stringify({key:b.key,uploadId:b.uploadId,parts:parts})});
     }).then(function(r){
       if(!(r.body&&r.body.ok))throw new Error('Could not finish upload');
-      puClear();return b.key;
+      puClear();nuCall('finishUpload',b.key,b.uploadId);return b.key;
     });
   }
   function resume(r){
@@ -1427,7 +1441,7 @@ function upFile(slot,file,st){
       if(isAuthFail(res))throw new Error('auth');
       var b=res.body||{};
       if(!b.ok){throw new Error(b.error||'Could not resume upload')}
-      if(b.gone){puClear();return null}
+      if(b.gone){puClear();nuCall('dropRecord',r.key,r.uploadId);return null}
       st.resumed=true;
       return fin({key:r.key,uploadId:r.uploadId},b.done||[],b.urls||{},r.partSize);
     });
@@ -1441,7 +1455,7 @@ function upFile(slot,file,st){
       st.pendKey=b.key;
       if(!b.multipart)return xput(st,b.uploadUrl,file,function(l){setP(slot,l/file.size)}).then(function(){return b.key});
       var urls={};b.parts.forEach(function(u,j){urls[j+1]=u});
-      puSet({slot:slot,key:b.key,uploadId:b.uploadId,partSize:b.partSize,name:file.name,size:file.size,lm:file.lastModified||0,t:Date.now()});
+      puSet({slot:slot,key:b.key,uploadId:b.uploadId,partSize:b.partSize,name:file.name,size:file.size,lm:file.lastModified||0,t:Date.now()});nuSave(file,b.key,b.uploadId,0);
       return fin(b,[],urls,b.partSize);
     });
   }
@@ -1484,7 +1498,7 @@ function run(slot,file,st,preview){
   }).catch(function(e){
     st.busy=false;
     if(e.message==='auth'){L.up[slot]=null;paint(slot);return gate()}
-    if(st.cancel){L.up[slot]=null;paint(slot);return}
+    if(st.cancel){if(!st.leave)cancelPendingUpload(st);L.up[slot]=null;paint(slot);return}
     L.up[slot]={err:(slot==='video'&&puGet())?'Upload paused. Choose the same video again to continue where it stopped.':(e.message||'Upload failed')};
     paint(slot);
   });
@@ -1504,7 +1518,7 @@ function start(slot,file){
     run(slot,f,st,URL.createObjectURL(r.blob));
   }).catch(function(){L.up[slot]={err:'That image could not be used. Please try another one.'};paint(slot)});
 }
-function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;if(st.xhr)st.xhr.abort()}});L.up={}}
+function cancelAll(){['video','poster'].forEach(function(k){var st=L.up[k];if(st&&st.busy){st.cancel=true;st.leave=true;if(st.xhr)st.xhr.abort()}});L.up={}}
 
 function loadLib(cb,force){
   var m0=window.__mut||0;
