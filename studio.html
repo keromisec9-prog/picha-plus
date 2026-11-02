@@ -801,7 +801,7 @@ var API='https://api.mypicha.uk';
 var token=localStorage.getItem('pichaplus_session');
 function did(){var i=localStorage.getItem('picha_device_id');if(!i){i=crypto.randomUUID();localStorage.setItem('picha_device_id',i)}return i}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show')},2200)}
-function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function show(id){document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});document.getElementById(id).classList.add('on');window.scrollTo(0,0)}
 function api(path,opt){
   opt=opt||{};
@@ -1073,7 +1073,7 @@ var LIM={video:2.5*1024*1024*1024,poster:5*1024*1024};
 function U(){S.up=S.up||{};return S.up}
 function upBusy(){if(!S)return false;var u=U();return !!((u.video&&u.video.busy)||(u.poster&&u.poster.busy))}
 window.upBusy=upBusy;
-function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function inner(slot){
   var st=U()[slot],acc=slot==='video'?'video/mp4':'image/jpeg,image/png,image/webp';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="upcancel" data-slot="'+slot+'">Cancel</button></div>';
@@ -1353,7 +1353,7 @@ loadSubs=function(){
 var L={mode:'list',data:null,kind:'movie',tid:null,up:{},armed:null,tm:null,src:'tmdb',tmdb:null,f:{},res:[],flt:'all',open:null};
 function $(i){return document.getElementById(i)}
 function R(h){$('libRoot').innerHTML=h}
-function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function busy(){return !!((L.up.video&&L.up.video.busy)||(L.up.poster&&L.up.poster.busy))}
 var _show=window.show;
 function nav(id){
