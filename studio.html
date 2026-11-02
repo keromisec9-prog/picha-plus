@@ -2210,7 +2210,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='ucancel'&&st){if(slot==='video')askCancel(st);else{st.cancel=true;if(st.xhr)st.xhr.abort()}}
   else if(a==='upause'&&st){st.userPause=true;st.force=false;if(st.xhr){try{st.xhr.abort()}catch(e){}}}
   else if(a==='uresume'&&st){st.userPause=false;st.resumeNow=true;st.force=true}
-  else if(a==='uclear'){L.up[slot]=null;paint(slot)}
+  else if(a==='uclear'){var cs=L.up[slot];if(cs&&cs.ready&&!cs.key&&!cs.busy&&cs.file&&window.PichaTemp&&PichaTemp.deleteCopy){try{PichaTemp.deleteCopy(cs.file.name,cs.file.size)}catch(e){}}L.up[slot]=null;paint(slot)}
   else if(a==='choose'){
     var k=el.dataset.kind,q=L.data.quota[k==='movie'?'movies':'series'];
     /* upload limits removed */
