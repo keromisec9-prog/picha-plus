@@ -1555,6 +1555,7 @@ function upFile(slot,file,st){
 function slotInner(slot){
   var _s=L.up[slot];if(_s&&_s.busy)return busyHTML(_s,slot);
   var st=L.up[slot],acc=slot==='video'?'video/*':'image/jpeg,image/png,image/webp';
+  if(st&&st.ready&&!st.key)return '<div class="upn">'+esc(st.shown||st.name)+'</div><div class="upr"><span>Ready to upload'+(st.size?' &middot; '+cxMB(st.size):'')+'</span><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
   if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
   return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<button type="button" class="btn upc" data-act="pick" data-slot="'+slot+'">Choose '+(slot==='video'?'video':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
@@ -1584,14 +1585,14 @@ function shrink(file){
 function run(slot,file,st,preview){
   st.preview=preview||null;
   upFile(slot,file,st).then(function(k){
-    st.key=k;st.busy=false;st.paused=false;st.pct=100;paint(slot);
+    st.key=k;st.busy=false;st.paused=false;st.pct=100;paint(slot);if(st.autoSubmit){st.autoSubmit=false;if(L.up.video===st&&L.step===3){try{submitTitle()}catch(e){}}}
     if(!puAll().length&&window.PichaTemp){try{PichaTemp.clearUploadTemp()}catch(e){}}
   }).catch(function(e){
     st.busy=false;st.paused=false;
     var m=(e&&e.message)||'';
     if(m==='auth'){L.up[slot]=null;paint(slot);return gate()}
     if(st.cancel){if(!st.leave)cancelPendingUpload(st);L.up[slot]=null;paint(slot);return}
-    L.up[slot]={err:(st.uploadId?'Upload stopped: ':'')+(m||'Upload failed')+(st.uploadId?'. Choose the same video again to continue where it stopped.':'')};
+    L.up[slot]={err:(st.uploadId?'Upload stopped: ':'')+(m||'Upload failed')+(st.uploadId?'. Choose the same video again to continue where it stopped.':'')};if(L.kind==='movie'&&slot==='video'&&L.step===3){L.step=1;renderForm();return}
     paint(slot);
   });
 }
@@ -1601,7 +1602,7 @@ function start(slot,file){
     if(file.size>2684354560)return toast('Video must be 2.5 GB or smaller');
     var sv=L.up[slot]={name:file.name,size:file.size,pct:0,busy:true,preview:null};paint(slot);
     if(L.kind==='movie'){L.f=L.f||{};var cur=(L.f.title||'').trim();if(!L.tmdb&&(!cur||cur===L.autoT)){var tt=titleFromFile(file.name);if(tt){L.f.title=tt;L.autoT=tt}}}
-    return run(slot,file,sv,null);
+    var pn='';try{if(window.PichaTemp&&PichaTemp.getPickedName)pn=PichaTemp.getPickedName()||''}catch(e){}sv.shown=pn||file.name;sv.name=sv.shown;sv.busy=false;sv.ready=true;sv.file=file;paint(slot);return;
   }
   if(file.size>60*1024*1024)return toast('That image is too large. Please pick a smaller one.');
   var st=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
@@ -1801,11 +1802,13 @@ function renderForm(){
   }else{
     var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
     h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+'</div></div>';
-    h+='<div class="inf"><div><span>Movie file</span><b>'+esc(L.up.video?L.up.video.name:'')+'</b></div><div><span>Details from</span><b>'+(L.tmdb?'TMDB':'Entered manually')+'</b></div><div><span>Poster</span><b>'+(hasTp?'TMDB':(L.up.poster&&L.up.poster.key?'Uploaded':'None'))+'</b></div></div></div>';
+    h+='<div class="inf"><div><span>Movie file</span><b>'+esc(L.up.video?(L.up.video.shown||L.up.video.name):'')+'</b></div><div><span>Details from</span><b>'+(L.tmdb?'TMDB':'Entered manually')+'</b></div><div><span>Poster</span><b>'+(hasTp?'TMDB':(L.up.poster&&L.up.poster.key?'Uploaded':'None'))+'</b></div></div></div>';
     h+=RIGHTS;
   }
-  var last=!movie||n===3;
-  h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?'submit':'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?'Submit for review':'Next'))+'</button></div>';
+  if(movie&&n===3&&!L.up.video){L.step=1;return renderForm()}
+  if(movie&&n===3&&L.up.video.busy)h+=slotHTML('video','Uploading','');
+  var last=!movie||n===3;var pend=movie&&n===3&&L.up.video&&!L.up.video.key&&(L.up.video.ready||L.up.video.busy);
+  h+='<div class="nav"><button class="btn gold" id="lf_go" data-act="'+(last?(pend?'upload':'submit'):'next')+'" style="width:100%">'+(!movie?'Save &amp; Continue':(n===3?(pend?(L.up.video.busy?'Uploading...':'Upload'):'Submit for review'):'Next'))+'</button></div>';
   R(h);
 }
 function fmtWT(n){n=Math.max(0,Math.floor(Number(n)||0));return Math.floor(n/3600)+'h '+Math.floor(n%3600/60)+'m '+(n%60)+'s'}
@@ -2217,6 +2220,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='tsearch')tsearch();
   else if(a==='tpick'){var r=L.res[parseInt(el.dataset.i,10)];if(r){var gn=(r.genre_ids||[]).map(function(g){return GN[g]}).filter(Boolean).slice(0,2).join(', ');L.tmdb={id:r.id,poster:r.poster_path||null,backdrop:r.backdrop_path||null,year:(r.release_date||r.first_air_date||'').slice(0,4)||null,name:r.title||r.name||'',gids:r.genre_ids||[]};L.f={title:L.tmdb.name,genre:gn,syn:r.overview||''};renderForm();window.scrollTo(0,0)}}
   else if(a==='tclear'){saveF();L.tmdb=null;renderForm()}
+  else if(a==='upload'){var sv=L.up.video;if(!sv)return;if(sv.busy)return toast('Uploading...');if(!sv.ready||!sv.file)return;sv.ready=false;sv.busy=true;sv.pct=0;sv.autoSubmit=true;var fl=sv.file;sv.file=null;renderForm();run('video',fl,sv,null)}
   else if(a==='submit')submitTitle();
   else if(a==='esubmit')submitEp();
   else if(a==='back'){if(L.mode==='ep'&&L.tid)openDetail(L.tid);else openLib()}
@@ -2225,7 +2229,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='fback'){saveFm();if(L.kind==='movie'&&(L.step||1)>1){L.step=L.step-1;renderForm();window.scrollTo(0,0)}else openLib()}
   else if(a==='next'){saveFm();var ff=L.f||{};
     if((L.step||1)===1){var uv=L.up.video;if(!uv||uv.err)return toast('Choose your movie file first');L.step=2}
-    else if(L.step===2){if(!(ff.title||'').trim())return toast('Enter a title');if(!(L.up.video&&L.up.video.key))return toast(busy()?'Please wait for the upload to finish':'Upload your movie file first');L.step=3}
+    else if(L.step===2){if(!(ff.title||'').trim())return toast('Enter a title');if(!L.up.video||!(L.up.video.key||L.up.video.ready))return toast('Choose your movie file first');L.step=3}
     renderForm();window.scrollTo(0,0)}
   else if(a==='flt'){L.flt=el.dataset.v;renderList()}
   else if(a==='menu'){L.open=String(L.open)===el.dataset.id?null:el.dataset.id;renderList()}
