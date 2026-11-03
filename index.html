@@ -14722,6 +14722,9 @@ async function submitForceReset() {
 #serCreator{margin-left:auto;display:flex;align-items:center;gap:.5rem;cursor:pointer;min-width:0}
 #serCreator .sc-av{flex:none;width:34px;height:34px;border-radius:50%;background:#2a2a2a center/cover no-repeat;color:#fff;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center}
 #serCreator .sc-nm{font-size:.72rem;color:#ddd;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#serCreator .sc-rl{display:flex;align-items:center;justify-content:center;gap:3px;max-width:96px;margin-top:1px;font-size:.66rem;font-weight:600;color:var(--gold,#eeb32a);white-space:nowrap}
+#serCreator .sc-rl span{overflow:hidden;text-overflow:ellipsis}
+#serCreator .sc-rl svg{width:13px;height:13px;fill:#1d9bf0;flex:none}
 body.pp-in-profile #serCreator{cursor:default}
 </style>
 <script id="ser-creator-js">
@@ -14747,7 +14750,7 @@ body.pp-in-profile #serCreator{cursor:default}
         var a=document.createElement("div");a.className="sc-av";
         if(c.avatarUrl)a.style.backgroundImage='url("'+c.avatarUrl+'")';else a.textContent=(c.username||"?").charAt(0).toUpperCase();
         var n=document.createElement("div");n.className="sc-nm";n.textContent="@"+c.username;
-        d.appendChild(a);d.appendChild(n);
+        d.appendChild(a);d.appendChild(n);if(c.verified){var rl=document.createElement("div");rl.className="sc-rl";rl.innerHTML='<svg viewBox="0 0 24 24"><path d="M23,12l-2.44-2.79l0.34-3.69l-3.61-0.82L15.4,1.5L12,2.96L8.6,1.5L6.71,4.69L3.1,5.5L3.44,9.2L1,12l2.44,2.79l-0.34,3.7 l3.61,0.82L8.6,22.5l3.4-1.47l3.4,1.46l1.89-3.19l3.61-0.82l-0.34-3.69L23,12z M10.09,16.72l-3.8-3.81l1.48-1.48l2.32,2.33 l5.85-5.87l1.48,1.48L10.09,16.72z"/></svg><span></span>';rl.lastChild.textContent=({vj:"VJ",filmmaker:"Filmmaker",producer:"Production company"})[c.role]||"Verified";d.appendChild(rl);}
         d.addEventListener("click",function(){
           if(document.getElementById("ppCr"))return;
           if(typeof window.openCreatorPage==="function")window.openCreatorPage(c.username);
