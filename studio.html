@@ -1810,14 +1810,14 @@ function renderForm(){
     h+=tmdbBlock(movie);
     if(!tm||(L.tmdb&&!L.tmdb.poster))h+=slotHTML('poster','Poster image (optional)','');
     h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
-    h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
-    h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
+    if(!tm)h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
+    if(!tm)h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
     if(!movie)h+=RIGHTS;
   }else if(n===1){
     h+=slotHTML('video','Movie file','In the app: MP4, MKV, MOV or WebM (converted to MP4 for you). On the web: MP4 only. Up to 2.5 GB. Large files upload in parts and resume if your connection drops.');
   }else{
     var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
-    h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+'</div></div>';
+    h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+(f.syn?'<div class="tm" style="margin-top:6px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">'+esc(f.syn)+'</div>':'')+'</div></div>';
     h+='<div class="inf"><div><span>Movie file</span><b>'+esc(L.up.video?(L.up.video.shown||L.up.video.name):'')+'</b></div><div><span>Details from</span><b>'+(L.tmdb?'TMDB':'Entered manually')+'</b></div><div><span>Poster</span><b>'+(hasTp?'TMDB':(L.up.poster&&L.up.poster.key?'Uploaded':'None'))+'</b></div></div></div>';
     h+=RIGHTS;
   }
