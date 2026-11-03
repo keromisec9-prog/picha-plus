@@ -849,11 +849,11 @@ function openApps(){
   api('/studio/my').then(function(res){
     if(isAuthFail(res))return gate();
     var items=(res.body&&res.body.items)||[];
-    if(!items.length){box.innerHTML='<p class="sub">No applications yet.</p><button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>';return}
+    window._apps=items;if(!items.length){box.innerHTML='<p class="sub">No applications yet.</p><button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>';return}
     box.innerHTML=items.map(function(a){
       var t=(a.types||[]).map(function(x){return TYPES[x]||x}).join(' · ');
       var d=fmtD(a.created_at||a.createdAt||a.submitted_at);
-      return '<div class="app"><div class="row"><h3>'+esc(t)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+'</div>';
+      return '<div class="app"><div class="row"><h3>'+esc(t)+'</h3><span class="badge s-'+esc(a.status)+'">'+esc(STATUS[a.status]||a.status)+'</span></div><div class="d">Submitted '+esc(d)+'</div>'+(a.staff_note?'<div class="staff">'+esc(a.staff_note)+'</div>':'')+((a.status==='received'||a.status==='in_review'||a.status==='action_required')?'<button class="btn gold" style="margin-top:12px;padding:9px 16px;font-size:13px" onclick="editApp(\''+esc(a.id)+'\')">Edit and resend</button>':'')+'</div>';
     }).join('');
   }).catch(function(){box.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
 }
@@ -982,7 +982,7 @@ function submitP(){
   if((P.portfolio.message||'').trim())port.message=P.portfolio.message.trim();
   Object.keys(P.profile).forEach(function(k){var v=(P.profile[k]||'').trim();if(v&&!(k==='role'&&!has('producer')))prof[k]=v});
   function fail(m){btn.disabled=false;btn.textContent='Submit application';toast(m)}
-  api('/studio/apply',{method:'POST',body:JSON.stringify({types:P.types,rightsConfirmed:true,profile:prof,interests:P.interests,portfolio:port})}).then(function(res){
+  api(P.editId?'/studio/apply-update':'/studio/apply',{method:'POST',body:JSON.stringify({id:P.editId,types:P.types,rightsConfirmed:true,profile:prof,interests:P.interests,portfolio:port})}).then(function(res){
     if(isAuthFail(res))return gate();
     if(res.body&&res.body.ok){P.done=true;render();window.scrollTo(0,0);return}
     fail((res.body&&res.body.error)||'Could not submit. Try again.');
@@ -1010,6 +1010,7 @@ function submitP(){
   root.addEventListener('input',onField);
   root.addEventListener('change',onField);
 })();
+window.editApp=function(id){var a=(window._apps||[]).filter(function(x){return String(x.id)===String(id)})[0];if(!a)return;window.PEDIT=a;openPartner()};
 window.openPartner=function(){
   if(!token)return gate();
   show('v-partner');
@@ -1026,7 +1027,7 @@ window.openPartner=function(){
       return;
     }
     root.onclick=null;
-    initP();render();
+    initP();if(window.PEDIT){var ea=window.PEDIT;window.PEDIT=null;P.editId=ea.id;P.types=(ea.types||[]).slice(0,1);P.profile=Object.assign({},P.profile,ea.profile||{});P.interests=(ea.interests||[]).slice();P.portfolio=Object.assign({},P.portfolio,ea.portfolio||{});P.rights=false}render();
   }).catch(function(){root.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
 };
 </script>
