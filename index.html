@@ -52,7 +52,6 @@ r.innerHTML='<button id="__bkt" style="position:fixed;top:2px;left:50%;transform
 document.body.appendChild(r);pill=r.querySelector('#__bkt');panel=r.querySelector('#__bks');pre=r.querySelector('#__bkpre');var w=r.querySelector('#__bkw');
 r.addEventListener('click',function(e){e.stopPropagation();var k=e.target.getAttribute&&e.target.getAttribute('data-k');if(e.target.id==='__bkt'){isOpen=!isOpen;w.style.display=isOpen?'flex':'none';render()}else if(k==='x'){L=[];dropped=0;render();save()}else if(k==='c')copy()});render()}
 function copy(){var t=L.join('\n');function fb(){var ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');log('(copied '+L.length+' lines)')}catch(e){log('copy failed')}ta.remove()}try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){log('(copied '+L.length+' lines)')},fb);return}}catch(e){}fb()}
-ui();
 log('START '+location.pathname+'  state='+lab(history.state)+'  len='+history.length);
 })();
 </script>
