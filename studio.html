@@ -613,6 +613,14 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .po.on{border-color:var(--gold);background:rgba(240,180,41,.07)}
 .po.on .ps{color:var(--gold)}
 .btn.dis{opacity:.45}
+
+#partnerRoot{zoom:.88}
+#partnerRoot h2{font-size:24px;line-height:1.2}
+#partnerRoot .sub{font-size:14px}
+#partnerRoot .po{padding:11px 14px;margin-bottom:8px}
+#partnerRoot .po .pt b{font-size:15px}
+#partnerRoot .po .pt span{font-size:12px}
+#partnerRoot .po .pi .msr{font-size:24px}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=check_circle,groups,movie,radio_button_unchecked,video_camera_front&display=block">
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
@@ -867,6 +875,7 @@ var FIELDS={
 };
 function escA(s){return esc(s).replace(/"/g,'&quot;')}
 function has(t){return P.types.indexOf(t)>-1}
+function cleanRole(s){return String(s||'').replace(/^Producer \/ /,'').replace(/ \/ (Director|Entertainment Creator)$/,'')}
 function toggle(arr,v){var i=arr.indexOf(v);if(i>-1)arr.splice(i,1);else arr.push(v)}
 function initP(){
   var u=null;try{u=JSON.parse(localStorage.getItem('pichaplus_user')||'null')}catch(e){}
@@ -887,7 +896,7 @@ function sType(){
   var h='<h2>Let\u2019s work together.</h2><p class="sub">Select the option that best represents your primary role.</p>';
   TLIST.forEach(function(t,i){
     var on=has(t[0]);
-    h+='<div class="po'+(on?' on':'')+'" data-act="type" data-v="'+t[0]+'"><span class="pi"><span class="msr f">'+(IC[i]||'movie')+'</span></span><span class="pt"><b>'+t[1]+'</b><span>'+t[2]+'</span></span><span class="ps"><span class="msr'+(on?' f':'')+'">'+(on?'check_circle':'radio_button_unchecked')+'</span></span></div>';
+    h+='<div class="po'+(on?' on':'')+'" data-act="type" data-v="'+t[0]+'"><span class="pi"><span class="msr f">'+(IC[i]||'movie')+'</span></span><span class="pt"><b>'+cleanRole(t[1])+'</b><span>'+t[2]+'</span></span><span class="ps"><span class="msr'+(on?' f':'')+'">'+(on?'check_circle':'radio_button_unchecked')+'</span></span></div>';
   });
   setTimeout(function(){var b=document.getElementById('nextBtn');if(b)b.classList.toggle('dis',!P.types.length)},0);
   return h;
@@ -913,7 +922,7 @@ function sInterests(){
 function sPortfolio(){
   var h='<h2>Showcase your work</h2><p class="sub">A trailer, portfolio or catalog link is enough to start. Full movies are requested later, only if needed.</p>';
   P.types.forEach(function(t){
-    h+='<div class="ph">'+FIELDS[t].title.toUpperCase()+'</div>';
+    h+='<div class="ph">'+cleanRole(FIELDS[t].title).toUpperCase()+'</div>';
     FIELDS[t].items.forEach(function(it){h+=fld('portfolio',it[0],it[1],it[2],it[2]==='url'?'https://':'')});
   });
   return h;
@@ -923,7 +932,7 @@ function sReview(){
   var pr=P.profile;
   var h='<h2>Ready to submit?</h2><p class="sub">Review your partnership details.</p>';
   h+=sum('Applicant',pr.fullName)+sum('Brand / company',pr.brand)+sum('Role',has('producer')?pr.role:'')+sum('Email',pr.email)+sum('Phone',pr.phone)+sum('Location',pr.location)+sum('Experience',pr.experience);
-  h+=sum('Partnership',P.types.map(function(t){return FIELDS[t].title}).join(', '));
+  h+=sum('Partnership',P.types.map(function(t){return cleanRole(FIELDS[t].title)}).join(', '));
   h+=sum('Interests',P.interests.join(', '))+sum('Message',P.portfolio.message);
   P.types.forEach(function(t){FIELDS[t].items.forEach(function(it){h+=sum(it[1],P.portfolio[it[0]])})});
   h+='<label class="chk"><input type="checkbox" id="rights"'+(P.rights?' checked':'')+'><span>I confirm that the information provided is accurate and that I have the necessary rights or permissions for any submitted materials.</span></label>';
