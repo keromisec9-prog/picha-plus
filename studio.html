@@ -1974,6 +1974,17 @@ document.getElementById('libRoot').addEventListener('click',function(ev){
   if(el){startPreview(el.dataset.id,el.dataset.act==='eprev'?Number(el.dataset.ep):null);return}
   if(ev.target.closest('#dhero.pl')&&!ev.target.closest('.bkb'))stopPreview();
 });
+window.pfCards=function(ts){
+  if(!ts||!ts.length)return '<p class="sub" style="margin:14px 2px">No titles yet.</p>';
+  var SM={pending:'In review',approved:'Published',rejected:'Action required'};
+  return ts.map(function(t){
+    var isS=t.kind==='series',eps=t.episodes||[];
+    var sub=isS?eps.length+' episode'+(eps.length===1?'':'s'):(t.genre?esc(t.genre):'Movie');
+    var st=SM[t.status]||t.status||'';
+    if(isS&&t.status==='pending'&&!eps.length)st='Add an episode to publish';
+    return '<div class="tc"><div class="tr" onclick="openDetail(\''+esc(t.id)+'\')">'+(t.posterUrl?'<img class="tth" src="'+esc(t.posterUrl)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tk">'+(isS?'SERIES':'MOVIE')+'</div><div class="tt">'+esc(t.title||t.name||'Untitled')+'</div><div class="tm" style="margin:6px 0 0">'+sub+(t.updatedAt?' &middot; Updated '+fmtD(t.updatedAt):'')+'</div><div class="tm" style="margin:4px 0 0">'+esc(st)+'</div></div></div></div>';
+  }).join('');
+};
 window.openDetail=function(id){cancelAll();L.armed=null;L.did=id;setMode('detail');show('v-lib');R('<div class="stspin"></div>');loadLib(renderDetail)};
 function renderEp(t){
   var ms=1,mn=0;
@@ -2386,7 +2397,7 @@ function fmtD(v){
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
       window.PFROLE=(function(){var ap=items.filter(function(x){return x.status==='approved'})[0];var k=ap&&ap.types&&ap.types[0];return k?(window.ROLE_LBL||{})[k]||'':''})();PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;var sb=(r[3]&&r[3].body)||{};PF.st={following:sb.following||0,followers:sb.followers||0,posts:ts.filter(function(t){return t.status==='approved'}).length};
       h.innerHTML=headHTML(PF.p,ok);
-      l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
+      l.innerHTML=pfCards(ts);if(0)l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
