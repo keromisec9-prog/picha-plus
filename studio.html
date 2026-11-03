@@ -600,7 +600,21 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 
 .tc{border:0;box-shadow:none;background:rgba(255,255,255,.05)}
 #tres{max-height:min(440px,max(410px,52vh));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
+.msr{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0}
+.msr.f{font-variation-settings:'FILL' 1}
+.po{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid transparent;border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer}
+.po .pi{color:var(--gold);flex:none;display:flex}
+.po .pi .msr{font-size:28px}
+.po .pt{flex:1;min-width:0}
+.po .pt b{display:block;font-size:16px}
+.po .pt span{display:block;font-size:13px;color:var(--mute);margin-top:2px}
+.po .ps{color:#5a5a66;flex:none;display:flex}
+.po.on{border-color:var(--gold);background:rgba(240,180,41,.07)}
+.po.on .ps{color:var(--gold)}
+.btn.dis{opacity:.45}
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=check_circle,groups,movie,radio_button_unchecked,video_camera_front&display=block">
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
 <style>.pfchg{background:none;border:0;color:var(--gold,#e6b422);font-size:.8rem;padding:0 .5rem;cursor:pointer}
@@ -869,8 +883,13 @@ function fld(g,k,label,type,ph){
   return h+'</div>';
 }
 function sType(){
-  var h='<h2>Let’s work together.</h2><p class="sub">Choose how you’d like to partner with MyPicha+ Studio. You can select more than one.</p>';
-  TLIST.forEach(function(t){h+='<div class="opt'+(has(t[0])?' on':'')+'" data-act="type" data-v="'+t[0]+'"><b>'+t[1]+'</b><span>'+t[2]+'</span></div>'});
+  var IC=['video_camera_front','movie','groups'];
+  var h='<h2>Let\u2019s work together.</h2><p class="sub">Select the option that best represents your primary role.</p>';
+  TLIST.forEach(function(t,i){
+    var on=has(t[0]);
+    h+='<div class="po'+(on?' on':'')+'" data-act="type" data-v="'+t[0]+'"><span class="pi"><span class="msr f">'+(IC[i]||'movie')+'</span></span><span class="pt"><b>'+t[1]+'</b><span>'+t[2]+'</span></span><span class="ps"><span class="msr'+(on?' f':'')+'">'+(on?'check_circle':'radio_button_unchecked')+'</span></span></div>';
+  });
+  setTimeout(function(){var b=document.getElementById('nextBtn');if(b)b.classList.toggle('dis',!P.types.length)},0);
   return h;
 }
 function sProfile(){
@@ -962,7 +981,7 @@ function submitP(){
   root.addEventListener('click',function(ev){
     var el=ev.target.closest('[data-act]');if(!el||!P)return;
     var a=el.dataset.act,v=el.dataset.v;
-    if(a==='type'){toggle(P.types,v);render()}
+    if(a==='type'){P.types=[v];render()}
     else if(a==='opp'){toggle(P.interests,v);render()}
     else if(a==='exp'){P.profile.experience=(P.profile.experience===v?'':v);render()}
     else if(a==='next'){var e=validate(P.step);if(e)return toast(e);P.step++;render();window.scrollTo(0,0)}
