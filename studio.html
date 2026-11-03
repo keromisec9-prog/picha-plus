@@ -599,7 +599,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .dzb{width:100%;border:1px solid #e06666;background:transparent;color:#e06666}
 
 .tc{border:0;box-shadow:none;background:rgba(255,255,255,.05)}
-#tres{max-height:calc(100vh - 430px);min-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#tres{max-height:42vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
@@ -1749,6 +1749,7 @@ function tsearch(){
     L.res=j.results||[];
     if(!L.res.length){box.innerHTML='<p class="uph">No matches. Try another spelling, or switch to Enter manually.</p>';return}
     box.innerHTML=rows(L.res,0);
+    try{var sq=$('tq');if(sq)window.scrollTo({top:sq.getBoundingClientRect().top+(window.pageYOffset||0)-150,behavior:'smooth'})}catch(e){}
     var tp=Math.min(j.total_pages||1,500);
     (function next(p){
       if(p>tp||tok!==L.tsTok)return;
