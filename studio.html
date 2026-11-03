@@ -1019,7 +1019,7 @@ window.openPartner=function(){
     if(isAuthFail(res))return gate();
     var items=(res.body&&res.body.items)||[];
     var open=items.some(function(a){return a.status==='received'||a.status==='in_review'||a.status==='action_required'});
-    if(open){
+    if(false){
       P=null;
       root.innerHTML='<h2>You already have an application</h2><p class="sub">Your application is still being handled. You can follow its status, or see if we asked for anything.</p><button class="btn gold" data-act="apps">View my applications</button>';
       root.onclick=function(ev){if(ev.target.closest('[data-act="apps"]'))openApps()};
