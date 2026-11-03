@@ -599,6 +599,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .dzb{width:100%;border:1px solid #e06666;background:transparent;color:#e06666}
 
 .tc{border:0;box-shadow:none;background:rgba(255,255,255,.05)}
+#tres{max-height:calc(100vh - 430px);min-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 </style>
 <link rel="preload" as="image" href="assets/studio/hero1.webp">
 <link rel="preload" as="image" href="assets/studio/hero4.webp">
@@ -1736,13 +1737,28 @@ function saveF(){var f=L.f=L.f||{};['title','genre','syn'].forEach(function(k){v
 function tsearch(){
   var q=($('tq').value||'').trim();if(q.length<2)return toast('Type at least 2 letters');
   var box=$('tres');box.innerHTML='<p class="uph">Searching…</p>';
-  fetch('https://api.themoviedb.org/3/search/'+(L.kind==='movie'?'movie':'tv')+'?include_adult=false&query='+encodeURIComponent(q)+'&api_key='+TMK).then(function(r){return r.json()}).then(function(j){
-    L.res=(j.results||[]).slice(0,8);
-    if(!L.res.length){box.innerHTML='<p class="uph">No matches. Try another spelling, or switch to Enter manually.</p>';return}
-    box.innerHTML=L.res.map(function(r,i){
-      var y=(r.release_date||r.first_air_date||'').slice(0,4);
-      return '<div class="tsr" data-act="tpick" data-i="'+i+'">'+(r.poster_path?'<img class="tsi" src="https://image.tmdb.org/t/p/w92'+r.poster_path+'" alt="">':'<div class="tsi"></div>')+'<div class="tcb"><div class="tt">'+esc(r.title||r.name)+'</div><div class="tm">'+(y||'Year unknown')+'</div></div></div>';
+  var base='https://api.themoviedb.org/3/search/'+(L.kind==='movie'?'movie':'tv')+'?include_adult=false&query='+encodeURIComponent(q)+'&api_key='+TMK;
+  var tok=L.tsTok=(L.tsTok||0)+1;
+  function rows(list,off){
+    return list.map(function(r,k){
+      var i=off+k,y=(r.release_date||r.first_air_date||'').slice(0,4);
+      return '<div class="tsr" data-act="tpick" data-i="'+i+'">'+(r.poster_path?'<img class="tsi" src="https://image.tmdb.org/t/p/w92'+r.poster_path+'" alt="" loading="lazy">':'<div class="tsi"></div>')+'<div class="tcb"><div class="tt">'+esc(r.title||r.name)+'</div><div class="tm">'+(y||'Year unknown')+'</div></div></div>';
     }).join('');
+  }
+  fetch(base).then(function(r){return r.json()}).then(function(j){
+    L.res=j.results||[];
+    if(!L.res.length){box.innerHTML='<p class="uph">No matches. Try another spelling, or switch to Enter manually.</p>';return}
+    box.innerHTML=rows(L.res,0);
+    var tp=Math.min(j.total_pages||1,500);
+    (function next(p){
+      if(p>tp||tok!==L.tsTok)return;
+      fetch(base+'&page='+p).then(function(r){return r.json()}).then(function(k){
+        var b=$('tres');if(tok!==L.tsTok||!b)return;
+        var more=k.results||[],off=L.res.length;
+        if(more.length){L.res=L.res.concat(more);b.insertAdjacentHTML('beforeend',rows(more,off))}
+        next(p+1);
+      }).catch(function(){});
+    })(2);
   }).catch(function(){box.innerHTML='<p class="upe">Could not reach TMDB. Use Enter manually instead.</p>'});
 }
 function stepsBar(n){return '<div class="stp">'+['Details','Media','Review'].map(function(x,i){return '<div class="'+(i+1<n?'dn':(i+1===n?'on':''))+'"><b>'+(i+1)+'</b><span>'+x+'</span></div>'}).join('')+'</div>'}
