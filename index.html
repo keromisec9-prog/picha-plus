@@ -11412,36 +11412,35 @@ function _fpFollow(p, btn) {
     })
     .catch(function () { btn.disabled = false; try { showToast('Network error', 'error'); } catch (e) {} });
 }
-function _fpSync() {
+function _fpApply(username, following) {
   var list = window._fpList || [];
-  if (!list.some(function (p) { return p._done; })) return;
-  var tk = _fpTok();
-  if (!tk) return;
-  fetch(API + '/promoted-profiles', { headers: { 'X-Session-Token': tk } })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-      var items = (d && d.items) || [];
-      list.forEach(function (p, i) {
-        if (!p._done) return;
-        var s = items.filter(function (x) { return x.username === p.username; })[0];
-        if (!s || s.following) return;
-        p._done = false; p.following = false;
-        var b = document.querySelector('#vrFeat .fp-card[data-i="' + i + '"] .fp-fb');
-        if (b) { b.textContent = 'Follow'; b.classList.remove('on'); b.disabled = false; }
-      });
-    })
-    .catch(function () {});
+  list.forEach(function (p, i) {
+    if (String(p.username).toLowerCase() !== username) return;
+    p.following = following; p._done = following;
+    var b = document.querySelector('#vrFeat .fp-card[data-i="' + i + '"] .fp-fb');
+    if (!b) return;
+    b.disabled = false;
+    b.textContent = following ? 'Following' : 'Follow';
+    b.classList.toggle('on', following);
+  });
 }
 function _fpWatch() {
-  if (window._fpWatching) return;
-  window._fpWatching = true;
-  var wasOpen = false;
-  setInterval(function () {
-    var cr = document.getElementById('ppCr');
-    var open = !!cr && cr.getClientRects().length > 0;
-    if (wasOpen && !open) setTimeout(_fpSync, 300);
-    wasOpen = open;
-  }, 700);
+  if (window._fpHooked || !window.fetch) return;
+  window._fpHooked = true;
+  var orig = window.fetch;
+  window.fetch = function (input, init) {
+    var pr = orig.apply(this, arguments);
+    try {
+      var u = typeof input === 'string' ? input : ((input && input.url) || '');
+      if (/\/studio\/(un)?follow(\?|$)/.test(u) && init && typeof init.body === 'string') {
+        var name = String(JSON.parse(init.body).username || '').toLowerCase().replace(/^@/, '');
+        pr.then(function (r) { return r.clone().json(); }).then(function (j) {
+          if (j && j.ok && typeof j.following === 'boolean') _fpApply(name, j.following);
+        }).catch(function () {});
+      }
+    } catch (e) {}
+    return pr;
+  };
 }
 function _bnLoadFeatured() {
   _fpWatch();
