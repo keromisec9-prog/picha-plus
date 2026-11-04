@@ -15344,5 +15344,20 @@ setInterval(function () {
   } catch (e) {}
 }, 800);
 </script>
+<script>
+setInterval(function () {
+  try {
+    var it = typeof currentInfoItem !== 'undefined' ? currentInfoItem : null;
+    var id = it && it.id ? String(it.id) : '';
+    if (id === window._dbgLast) return;
+    window._dbgLast = id;
+    if (!id) return;
+    fetch(API + '/saves?itemId=' + encodeURIComponent(id))
+      .then(function (r) { return r.text(); })
+      .then(function (x) { showToast('id=' + id + ' ' + x + ' el=' + (!!document.getElementById('infoSaveCount')), 'gold'); })
+      .catch(function (e) { showToast('fetch err ' + e, 'gold'); });
+  } catch (e) { showToast('poll err ' + e.message, 'gold'); }
+}, 800);
+</script>
 </body>
 </html>
