@@ -1763,11 +1763,11 @@
     }
     .gc-card,.vc-card{border:0.5px solid rgba(255,255,255,0.12)!important;outline:none!important;box-shadow:none!important}
     .vr-top{padding:4px 0 12px;display:flex;flex-direction:column;gap:10px}
-    .vr-search{display:flex;align-items:center;gap:10px;padding:0 14px;height:46px;border-radius:23px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.14);color:#aaa}
+    .vr-search{display:flex;align-items:center;gap:10px;padding:0 14px;height:46px;border-radius:8px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.14);color:#aaa}
     .vr-search input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;font-size:15px}
     .vr-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
     .vr-chips::-webkit-scrollbar{display:none}
-    .vr-chip{flex:none;padding:9px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.18);background:none;color:#fff;font-size:14px;font-weight:600}
+    .vr-chip{flex:none;padding:9px 16px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.18);background:none;color:#fff;font-size:14px;font-weight:600}
     .vr-chip.on{background:var(--gold,#eeb32a);color:#000;border-color:transparent}
     .vr-row{display:flex;align-items:center;gap:14px;padding:10px 14px;margin-bottom:10px;border-radius:18px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;-webkit-tap-highlight-color:transparent}
     .vr-row:active{background:rgba(255,255,255,0.07)}
@@ -11301,7 +11301,7 @@ function _bnRenderVJCards() {
   });
   const _rk = (window._vjRank || []).map(n => String(n).toLowerCase());
   const _ri = n => { const i = _rk.indexOf(n.toLowerCase()); return i < 0 ? 9999 : i; };
-  const f = window._vjFilter || 'all';
+  const f = window._vjFilter || 'popular';
   const q = (window._vjQuery || '').toLowerCase().trim();
   let vjs = Object.keys(vjMap);
   if (q) vjs = vjs.filter(v => v.toLowerCase().indexOf(q) > -1);
@@ -11316,7 +11316,7 @@ function _bnRenderVJCards() {
     el.innerHTML =
       '<div class="vr-top"><div class="vr-search"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>' +
       '<input id="vrSearch" type="text" placeholder="Search Veejays..." autocomplete="off"></div>' +
-      '<div class="vr-chips">' + chip('all', 'All') + chip('popular', 'Popular') + chip('titles', 'Most titles') + chip('new', 'Newest') + '</div></div>' +
+      '<div class="vr-chips">' + chip('popular', 'Popular') + chip('titles', 'Most titles') + chip('all', 'All') + '</div></div>' +
       '<div id="vrList"></div>';
     const inp = el.querySelector('#vrSearch');
     inp.value = window._vjQuery || '';
@@ -11348,11 +11348,12 @@ function _bnRenderVJCards() {
     return '<div class="vr-row" onclick="bnOpenVJ(\'' + esc(vj) + '\')">' +
       '<div class="vr-av' + top + '">' + art + '</div>' +
       '<div class="vr-tx"><div class="vr-nm"><span>' + esc(vj) + '</span>' + (pr && pr.verified ? TICK : '') + '</div>' +
-      '<div class="vr-ct">' + vjMap[vj] + ' title' + (vjMap[vj] !== 1 ? 's' : '') + '</div></div>' + CHEV + '</div>';
+      '<div class="vr-ct">' + vjMap[vj] + ' title' + (vjMap[vj] !== 1 ? 's' : '') + '</div></div>' + '</div>';
   }).join('');
 }
 
 function bnBuildVJList() {
+  window._vjFilter = 'popular';
   _bnRenderVJCards();
   if (!window._vjProfLoading) {
     window._vjProfLoading = true;
