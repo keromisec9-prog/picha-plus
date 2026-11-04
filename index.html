@@ -11412,11 +11412,14 @@ function _fpFollow(p, btn) {
     })
     .catch(function () { btn.disabled = false; try { showToast('Network error', 'error'); } catch (e) {} });
 }
-function _fpApply(username, following) {
+function _fpApply(username, following, followers) {
   var list = window._fpList || [];
   list.forEach(function (p, i) {
     if (String(p.username).toLowerCase() !== username) return;
     p.following = following; p._done = following;
+    if (typeof followers === 'number') p.fans = followers;
+    var fl = document.querySelector('#vrFeat .fp-card[data-i="' + i + '"] .fp-fl');
+    if (fl) fl.textContent = _fpNum(p.fans) + ' follower' + (Number(p.fans) !== 1 ? 's' : '');
     var b = document.querySelector('#vrFeat .fp-card[data-i="' + i + '"] .fp-fb');
     if (!b) return;
     b.disabled = false;
@@ -11435,7 +11438,7 @@ function _fpWatch() {
       if (/\/studio\/(un)?follow(\?|$)/.test(u) && init && typeof init.body === 'string') {
         var name = String(JSON.parse(init.body).username || '').toLowerCase().replace(/^@/, '');
         pr.then(function (r) { return r.clone().json(); }).then(function (j) {
-          if (j && j.ok && typeof j.following === 'boolean') _fpApply(name, j.following);
+          if (j && j.ok && typeof j.following === 'boolean') _fpApply(name, j.following, typeof j.followers === 'number' ? j.followers : undefined);
         }).catch(function () {});
       }
     } catch (e) {}
@@ -11462,7 +11465,7 @@ function _bnLoadFeatured() {
           return '<div class="fp-card' + (i === 0 ? ' first' : '') + '" data-i="' + i + '"><div class="fp-av">' + av + '</div>' +
             '<div class="fp-bd"><div class="fp-nm"><span>' + esc(p.displayName || p.username) + '</span>' + (p.verified ? _FP_TICK : '') + '</div>' +
             '<div class="fp-ct">' + p.titles + ' title' + (p.titles !== 1 ? 's' : '') + '</div>' +
-            '<div class="fp-ct">' + _fpNum(p.fans) + ' follower' + (Number(p.fans) !== 1 ? 's' : '') + '</div>' + fb + '</div></div>';
+            '<div class="fp-ct fp-fl">' + _fpNum(p.fans) + ' follower' + (Number(p.fans) !== 1 ? 's' : '') + '</div>' + fb + '</div></div>';
         }).join('') + '</div>';
       b.onclick = function (e) {
         var c = e.target.closest('.fp-card');
