@@ -2377,6 +2377,78 @@ function fmtD(v){
     if(window.createImageBitmap){createImageBitmap(file,{imageOrientation:'from-image'}).then(function(bm){done(bm,bm.width,bm.height)}).catch(viaImg)}else viaImg();
   })}
   function statsHTML(){var st=PF.st||{};return '<div class="pfst"><div><b>'+(st.following||0)+'</b><span>Following</span></div><div><b>'+(st.followers||0)+'</b><span>Followers</span></div><div><b>'+(st.posts||0)+'</b><span>Posts</span></div></div>';}
+  var BX={};
+  function bxE(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function bxMoney(n){return 'UGX '+Number(n).toLocaleString('en-US')}
+  function bxDur(ms){var m=Math.max(1,Math.round(Number(ms)/60000));if(m<60)return m+' min';var h=Math.round(m/60);if(h<48)return h+' hours';return Math.round(h/24)+' days'}
+  function bxToast(m){if(typeof toast==='function')toast(m);else alert(m)}
+  function loadBoost(){
+    api('/studio/boost/mine').then(function(r){
+      var box=G('boostBox'),b=r.body||{};
+      if(!box||!b.ok||!b.username)return;
+      var pk=b.packages||[],items=b.items||[];
+      var act=items.filter(function(i){return i.status==='active'})[0];
+      var q=items.filter(function(i){return i.status==='queued'});
+      var grid='<div class="pm-grid">';
+      pk.forEach(function(p){grid+='<button type="button" class="pm-t" data-bx="'+bxE(p.id)+'" data-label="'+bxE(p.label)+'" data-amount="'+Number(p.amount)+'"><b>'+Number(p.days)+'</b><span>days</span><i>'+bxE(bxMoney(p.amount))+'</i></button>'});
+      grid+='</div><div class="pm-f">Secure payment with Pesapal</div>';
+      var h='<h3 class="dsec">Boost my profile</h3>';
+      if(act){
+        var ed=new Date(Number(act.ends_ms)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+        h+='<div class="pm-card"><span class="pm-live">&#9679; LIVE</span><div class="pm-h" style="margin-top:10px">Featured until '+bxE(ed)+'</div><p class="pm-s">Your profile is showing in Featured Profiles on the Veejays tab.</p></div>';
+      }
+      if(q.length){
+        h+='<div class="pm-card" style="margin-top:12px"><div class="pm-h">Up next</div>';
+        q.forEach(function(x){h+='<div class="pm-row"><span>'+bxE(bxDur(x.remaining_ms))+' of boost</span><b>Waiting</b></div>'});
+        h+='</div>';
+      }
+      h+='<div class="pm-card" style="margin-top:'+(act?12:0)+'px"><div class="pm-h">'+(act?'Add more time':'Get more followers')+'</div><p class="pm-s">'+(act?'A longer package starts right away and your current one resumes after it. A shorter one starts when the current one ends. Nothing you pay for is lost.':'Show your profile in the Featured Profiles row on the Veejays tab. Choose how long it runs.')+'</p>'+grid+'</div>';
+      box.innerHTML=h;
+      box.onclick=function(ev){var el=ev.target.closest('[data-bx]');if(el)bxSheet(el)};
+    }).catch(function(){});
+  }
+  function bxSheet(el){
+    var old=document.getElementById('pmOv');if(old)old.remove();
+    var amt=Number(el.dataset.amount);
+    var ov=document.createElement('div');ov.className='pm-ov';ov.id='pmOv';
+    ov.innerHTML='<div class="pm-sh" role="dialog" aria-modal="true"><div class="pm-grab"></div><div class="pm-ttl">BOOST MY PROFILE</div>'
+      +'<div class="pm-row"><span>Duration</span><b>'+bxE(el.dataset.label)+'</b></div>'
+      +'<div class="pm-row"><span>Placement</span><b>Featured Profiles &middot; Veejays</b></div>'
+      +'<div class="pm-row"><span>Total</span><b>'+bxE(bxMoney(amt))+'</b></div>'
+      +'<p class="pm-note">Your profile appears in Featured Profiles once payment is confirmed. You will pay securely on Pesapal.</p>'
+      +'<button type="button" class="pm-go" id="pmGo">Pay '+bxE(bxMoney(amt))+'</button><button type="button" class="pm-x" id="pmX">Cancel</button></div>';
+    document.body.appendChild(ov);
+    requestAnimationFrame(function(){ov.classList.add('on')});
+    function close(){ov.classList.remove('on');setTimeout(function(){ov.remove()},200)}
+    ov.addEventListener('click',function(e){if(e.target===ov)close()});
+    document.getElementById('pmX').onclick=close;
+    var go=document.getElementById('pmGo');
+    go.onclick=function(){
+      go.disabled=true;go.innerHTML='<span class="pm-sp"></span>Opening Pesapal...';
+      api('/studio/boost/checkout',{method:'POST',body:JSON.stringify({packageId:el.dataset.bx})}).then(function(res){
+        if(isAuthFail(res)){close();return gate()}
+        var b=res.body||{};
+        if(b.ok&&b.redirectUrl){location.href=b.redirectUrl;return}
+        go.disabled=false;go.textContent='Pay '+bxMoney(amt);bxToast(b.error||'Could not start payment');
+      }).catch(function(){go.disabled=false;go.textContent='Pay '+bxMoney(amt);bxToast('Network problem, try again')});
+    };
+  }
+  setTimeout(function(){
+    var m=/[?&]boost=([^&]+)/.exec(location.search);
+    if(!m)return;
+    var ref=decodeURIComponent(m[1]);
+    history.replaceState(null,'',location.pathname+location.hash);
+    var tries=0;
+    (function chk(){
+      api('/studio/boost/verify?ref='+encodeURIComponent(ref)).then(function(res){
+        var b=res.body||{};
+        if(b.status==='active'){bxToast(b.queued?'Payment received. Your boost starts automatically when the current one ends.':'Payment received. Your profile is now featured.');loadBoost();return}
+        if(b.payment==='Failed'||b.payment==='Invalid'){bxToast('Payment was not completed.');return}
+        if(b.status==='pending'&&tries++<8){setTimeout(chk,3000);return}
+        bxToast(b.status==='pending'?'Payment not confirmed yet. It activates automatically once it clears.':'Boost is not active ('+(b.status||'unknown')+').');
+      }).catch(function(){});
+    })();
+  },1200);
   function headHTML(p,ok){
     var cov='<div class="pfc"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'></div>';
     var av=p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS;
@@ -2396,7 +2468,7 @@ function fmtD(v){
       var mv=ts.filter(function(t){return t.kind==='movie'}).length,sr=ts.filter(function(t){return t.kind==='series'}).length;
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
       window.PFROLE=(function(){var ap=items.filter(function(x){return x.status==='approved'})[0];var k=ap&&ap.types&&ap.types[0];return k?(window.ROLE_LBL||{})[k]||'':''})();PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;var sb=(r[3]&&r[3].body)||{};PF.st={following:sb.following||0,followers:sb.followers||0,posts:ts.filter(function(t){return t.status==='approved'}).length};
-      h.innerHTML=headHTML(PF.p,ok);
+      h.innerHTML=headHTML(PF.p,ok)+'<div id="boostBox"></div>';loadBoost();
       l.innerHTML=pfCards(ts);if(0)l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});

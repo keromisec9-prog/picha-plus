@@ -1780,6 +1780,24 @@
     .vr-tick{width:18px;height:18px;fill:#1d9bf0;flex:none}
     .vr-ct{margin-top:2px;font-size:14px;color:#9a9a9a}
     .vr-chev{flex:none;color:#9a9a9a}
+    #vrFeat{margin:0 0 14px}
+    #vrFeat:empty{display:none}
+    .fp-h{display:flex;align-items:center;gap:8px;margin:2px 0 10px;font-size:18px;font-weight:700;color:#fff}
+    .fp-tag{font-size:.6rem;letter-spacing:.08em;color:#999;border:1px solid #444;border-radius:4px;padding:.1rem .35rem;font-weight:600}
+    .fp-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+    .fp-row::-webkit-scrollbar{display:none}
+    .fp-card{position:relative;flex:none;width:44vw;max-width:190px;aspect-ratio:3/4.1;border-radius:14px;overflow:hidden;background:#161616;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .fp-card.first{border-color:rgba(238,179,42,.6);box-shadow:0 0 14px rgba(238,179,42,.25)}
+    .fp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .fp-ini{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700;color:#fff;background:#2a2a2a}
+    .fp-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.55) 38%,rgba(0,0,0,0) 62%)}
+    .fp-tx{position:absolute;left:10px;right:10px;bottom:10px}
+    .fp-nm{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:700;color:#fff}
+    .fp-nm span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .fp-nm svg{width:16px;height:16px;fill:#1d9bf0;flex:none}
+    .fp-ct{margin:2px 0 8px;font-size:12px;color:#cfcfcf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fp-fb{width:100%;padding:7px 0;border-radius:8px;border:1px solid var(--gold,#eeb32a);background:rgba(0,0,0,.35);color:var(--gold,#eeb32a);font-size:13px;font-weight:700}
+    .fp-fb.on{color:#ccc;border-color:rgba(255,255,255,.3)}
     .vr-top{flex-direction:row!important;align-items:center;gap:5px!important}
     .vr-chips{order:-1;flex:none;overflow:visible!important;gap:5px!important}
     .vr-chip{padding:9px 9px!important;font-size:13px!important;white-space:nowrap}
@@ -11319,7 +11337,7 @@ function _bnRenderVJCards() {
   if (!el.querySelector('#vrList')) {
     const chip = (k, l) => '<button type="button" class="vr-chip" data-f="' + k + '">' + l + '</button>';
     el.innerHTML =
-      '<div class="vr-top"><div class="vr-search"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>' +
+      '<div id="vrFeat"></div><div class="vr-top"><div class="vr-search"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>' +
       '<input id="vrSearch" type="text" placeholder="Search" autocomplete="off"></div>' +
       '<div class="vr-chips">' + chip('popular', 'Popular') + chip('titles', 'Most titles') + '</div></div>' +
       '<div id="vrList"></div>';
@@ -11357,9 +11375,68 @@ function _bnRenderVJCards() {
   }).join('');
 }
 
+const _FP_TICK = '<svg viewBox="0 0 24 24"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>';
+function _fpNum(n) {
+  n = Number(n) || 0;
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+function _fpOpen(p) {
+  if (p && typeof window.openCreatorPage === 'function') window.openCreatorPage(p.username);
+}
+function _fpFollow(p, btn) {
+  var h = null;
+  try { if (typeof hdr === 'function') h = hdr(true); } catch (e) {}
+  if (!h || p.isSelf) { _fpOpen(p); return; }
+  if (btn.disabled) return;
+  btn.disabled = true;
+  var want = !p.following;
+  fetch(API + (want ? '/studio/follow' : '/studio/unfollow'), { method: 'POST', headers: h, body: JSON.stringify({ username: p.username }) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      btn.disabled = false;
+      if (j && j.ok) { p.following = !!j.following; btn.textContent = p.following ? 'Following' : 'Follow'; btn.classList.toggle('on', p.following); }
+      else _fpOpen(p);
+    })
+    .catch(function () { btn.disabled = false; });
+}
+function _bnLoadFeatured() {
+  var box = document.getElementById('vrFeat');
+  if (!box) return;
+  var t = '';
+  try { if (typeof tok === 'function') t = tok() || ''; } catch (e) {}
+  fetch(API + '/promoted-profiles', { headers: t ? { 'X-Session-Token': t } : {} })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var b = document.getElementById('vrFeat');
+      if (!b) return;
+      var list = (d && d.items) || [];
+      if (!list.length) { b.innerHTML = ''; return; }
+      window._fpList = list;
+      b.innerHTML = '<div class="fp-h"><span>Featured Profiles</span><span class="fp-tag">SPONSORED</span></div><div class="fp-row">' +
+        list.map(function (p, i) {
+          var img = p.avatarUrl ? '<img class="fp-img" src="' + esc(p.avatarUrl) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : '<div class="fp-ini">' + esc((p.username || '?').charAt(0).toUpperCase()) + '</div>';
+          var fb = p.isSelf ? '' : '<button type="button" class="fp-fb' + (p.following ? ' on' : '') + '">' + (p.following ? 'Following' : 'Follow') + '</button>';
+          return '<div class="fp-card' + (i === 0 ? ' first' : '') + '" data-i="' + i + '">' + img + '<div class="fp-shade"></div><div class="fp-tx">' +
+            '<div class="fp-nm"><span>' + esc(p.displayName || p.username) + '</span>' + (p.verified ? _FP_TICK : '') + '</div>' +
+            '<div class="fp-ct">' + p.titles + ' title' + (p.titles !== 1 ? 's' : '') + ' &bull; ' + _fpNum(p.fans) + ' followers</div>' + fb + '</div></div>';
+        }).join('') + '</div>';
+      b.onclick = function (e) {
+        var c = e.target.closest('.fp-card');
+        if (!c) return;
+        var p = (window._fpList || [])[Number(c.getAttribute('data-i'))];
+        if (!p) return;
+        var fbtn = e.target.closest('.fp-fb');
+        if (fbtn) _fpFollow(p, fbtn); else _fpOpen(p);
+      };
+    })
+    .catch(function () {});
+}
 function bnBuildVJList() {
   window._vjFilter = 'popular';
   _bnRenderVJCards();
+  _bnLoadFeatured();
   if (!window._vjProfLoading) {
     window._vjProfLoading = true;
     fetch(API + '/vj-ranking').then(r => r.json())
