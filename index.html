@@ -3533,6 +3533,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
       </div>
       <h2 class="info-title" id="infoTitle"></h2>
       <div class="info-meta" id="infoMeta"></div>
+      <div id="infoSaveCount" style="font-size:0.8rem;font-weight:600;color:var(--gold);margin:0.25rem 0 0;"></div>
       <button id="infoDownloadBtn" onclick="downloadFromInfo()"
         style="display:none;width:100%;margin:0.6rem 0 0;padding:0.75rem;background:#2a2a2a;color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;align-items:center;justify-content:center;gap:0.5rem;transition:background 0.2s;"
         onmouseover="this.style.background='#333'" onmouseout="this.style.background='#2a2a2a'">
@@ -12249,6 +12250,7 @@ function _mpfSlideHTML(idx) {
         <div onclick="_mpfSaveToggle(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span id="mpfSaveIcon_${idx}" style="display:inline-flex;">${_mpfBookmarkSVG(false)}</span>
           <span id="mpfSaveLbl_${idx}" style="font-size:0.68rem;font-weight:600;">Save</span>
+          <span id="mpfSaveCount_${idx}" style="font-size:0.62rem;font-weight:600;opacity:0.85;margin-top:-2px;"></span>
         </div>
         <div onclick="_mpfToggleAutoScroll()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span class="mpf-auto-icon" style="display:inline-flex;">${window._mpfAutoScroll !== false ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`}</span>
@@ -12613,6 +12615,7 @@ async function _mpfMountSlide(idx, autoplay) {
       else if (!likesData.isLiked && liked.includes(item.id)) liked.splice(liked.indexOf(item.id), 1);
     }
   } catch (e) {}
+  _saveCountLoad(item.id, 'mpfSaveCount_' + idx);
   _mpfWireEdgeLongPress(idx);
   _mpfWireSeekBar(idx);
 
@@ -15279,6 +15282,52 @@ body.pp-in-profile #serCreator{cursor:default}
     } catch (e) {}
   }
   setInterval(tick, 700);
+})();
+</script>
+<script>
+async function _saveCountLoad(id, elId) {
+  try {
+    const el = document.getElementById(elId);
+    if (!el || !id) return;
+    const r = await fetch(`${API}/saves?itemId=${encodeURIComponent(id)}`);
+    const d = await r.json();
+    const n = d && d.saves > 0 ? d.saves : 0;
+    el.textContent = n > 0 ? (elId === 'infoSaveCount' ? _formatLikeCount(n) + (n === 1 ? ' save' : ' saves') : _formatLikeCount(n)) : '';
+  } catch (e) {}
+}
+(function () {
+  const title = document.getElementById('infoTitle');
+  if (title) {
+    new MutationObserver(function () {
+      const el = document.getElementById('infoSaveCount');
+      if (el) el.textContent = '';
+      const it = typeof currentInfoItem !== 'undefined' ? currentInfoItem : null;
+      if (it && it.id) _saveCountLoad(it.id, 'infoSaveCount');
+    }).observe(title, { childList: true, characterData: true, subtree: true });
+  }
+  const origInfo = window.toggleMyListFromInfo;
+  if (typeof origInfo === 'function') {
+    window.toggleMyListFromInfo = function () {
+      const r = origInfo.apply(this, arguments);
+      setTimeout(function () {
+        const it = typeof currentInfoItem !== 'undefined' ? currentInfoItem : null;
+        if (it && it.id) _saveCountLoad(it.id, 'infoSaveCount');
+      }, 2500);
+      return r;
+    };
+  }
+  const origFeed = window._mpfSaveToggle;
+  if (typeof origFeed === 'function') {
+    window._mpfSaveToggle = function (idx) {
+      const r = origFeed.apply(this, arguments);
+      setTimeout(function () {
+        const meta = window._mpfSlideMeta && window._mpfSlideMeta[idx];
+        const it = meta && meta.item;
+        if (it && it.id) _saveCountLoad(it.id, 'mpfSaveCount_' + idx);
+      }, 2500);
+      return r;
+    };
+  }
 })();
 </script>
 </body>
