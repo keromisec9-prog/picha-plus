@@ -13051,7 +13051,7 @@ window.addEventListener('focus', clearStrayFocus);
       var now=Date.now();
       if(now-armedAt<2000){
         if(window.PichaApp&&PichaApp.exitApp){ try{ PichaApp.exitApp(); return; }catch(x){} }
-      } else { armedAt=now; note('Press again to exit'); }
+      } else { armedAt=now; if(!window._ppReloading)note('Press again to exit'); }
     }
     if(done&&from&&from.ppplayer) return;
     rearm();
@@ -13098,7 +13098,7 @@ window.addEventListener('focus', clearStrayFocus);
         var now = Date.now();
         if (now - armedAt < 2000) { exitNow(); return; }
         armedAt = now;
-        note('Press again to exit');
+        if(!window._ppReloading)note('Press again to exit');
       }
     }
     try {
@@ -14914,11 +14914,11 @@ body.pp-in-profile #serCreator{cursor:default}
   document.addEventListener('touchend', end, { passive: true });
   document.addEventListener('touchcancel', end, { passive: true });
   function go() {
-    busy = true;
+    window._ppReloading = true; busy = true;
     ring.style.display = 'none'; arrow.style.display = 'none'; spin.style.display = 'block';
     place(TH * 0.8, true);
     var fired = false;
-    function reloadNow() { if (fired) return; fired = true; location.reload(); }
+    function reloadNow() { if (fired) return; fired = true; window._ppReloading = true; try { location.replace(location.href.split('#')[0]); } catch (e) { location.reload(); } }
     setTimeout(reloadNow, 2500);
     (async function () {
       var t0 = Date.now();
