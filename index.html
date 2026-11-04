@@ -12653,6 +12653,7 @@ function _mpfSaveToggle(idx) {
   if (!meta || !meta.item) return;
   toggleMyList(meta.item, null);
   _mpfRefreshSave(idx);
+  setTimeout(function () { _saveCountLoad(meta.item.id, 'mpfSaveCount_' + idx); }, 1800);
 }
 
 setInterval(function () {
