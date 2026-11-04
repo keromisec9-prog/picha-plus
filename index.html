@@ -1798,6 +1798,14 @@
     .fp-ct{margin:2px 0 8px;font-size:12px;color:#cfcfcf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .fp-fb{width:100%;padding:7px 0;border-radius:8px;border:1px solid var(--gold,#eeb32a);background:rgba(0,0,0,.35);color:var(--gold,#eeb32a);font-size:13px;font-weight:700}
     .fp-fb.on{color:#ccc;border-color:rgba(255,255,255,.3)}
+    .fp-card{width:calc((100% - 30px)/3.5)!important;max-width:none!important;aspect-ratio:auto!important;padding:12px 6px 9px;display:flex;flex-direction:column;align-items:center;text-align:center}
+    .fp-av{flex:none;width:58px;height:58px;border-radius:50%;overflow:hidden;background:#2a2a2a;border:2px solid var(--gold,#eeb32a);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px}
+    .fp-av img{width:100%;height:100%;object-fit:cover;display:block}
+    .fp-bd{width:100%;min-width:0;margin-top:8px}
+    .fp-nm{justify-content:center;font-size:12px!important}
+    .fp-nm svg{width:13px!important;height:13px!important}
+    .fp-ct{font-size:10.5px!important;margin:1px 0 0!important;color:#9a9a9a!important}
+    .fp-fb{margin-top:7px;padding:5px 0!important;font-size:11px!important}
     .vr-top{flex-direction:row!important;align-items:center;gap:5px!important}
     .vr-chips{order:-1;flex:none;overflow:visible!important;gap:5px!important}
     .vr-chip{padding:9px 9px!important;font-size:13px!important;white-space:nowrap}
@@ -11416,11 +11424,12 @@ function _bnLoadFeatured() {
       window._fpList = list;
       b.innerHTML = '<div class="fp-h"><span>Featured Profiles</span><span class="fp-tag">SPONSORED</span></div><div class="fp-row">' +
         list.map(function (p, i) {
-          var img = p.avatarUrl ? '<img class="fp-img" src="' + esc(p.avatarUrl) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : '<div class="fp-ini">' + esc((p.username || '?').charAt(0).toUpperCase()) + '</div>';
+          var av = p.avatarUrl ? '<img src="' + esc(p.avatarUrl) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : esc((p.username || '?').charAt(0).toUpperCase());
           var fb = p.isSelf ? '' : '<button type="button" class="fp-fb' + (p.following ? ' on' : '') + '">' + (p.following ? 'Following' : 'Follow') + '</button>';
-          return '<div class="fp-card' + (i === 0 ? ' first' : '') + '" data-i="' + i + '">' + img + '<div class="fp-shade"></div><div class="fp-tx">' +
-            '<div class="fp-nm"><span>' + esc(p.displayName || p.username) + '</span>' + (p.verified ? _FP_TICK : '') + '</div>' +
-            '<div class="fp-ct">' + p.titles + ' title' + (p.titles !== 1 ? 's' : '') + ' &bull; ' + _fpNum(p.fans) + ' followers</div>' + fb + '</div></div>';
+          return '<div class="fp-card' + (i === 0 ? ' first' : '') + '" data-i="' + i + '"><div class="fp-av">' + av + '</div>' +
+            '<div class="fp-bd"><div class="fp-nm"><span>' + esc(p.displayName || p.username) + '</span>' + (p.verified ? _FP_TICK : '') + '</div>' +
+            '<div class="fp-ct">' + p.titles + ' title' + (p.titles !== 1 ? 's' : '') + '</div>' +
+            '<div class="fp-ct">' + _fpNum(p.fans) + ' follower' + (Number(p.fans) !== 1 ? 's' : '') + '</div>' + fb + '</div></div>';
         }).join('') + '</div>';
       b.onclick = function (e) {
         var c = e.target.closest('.fp-card');
