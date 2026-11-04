@@ -15330,5 +15330,19 @@ async function _saveCountLoad(id, elId) {
   }
 })();
 </script>
+<script>
+setInterval(function () {
+  try {
+    var it = typeof currentInfoItem !== 'undefined' ? currentInfoItem : null;
+    var id = it && it.id ? String(it.id) : '';
+    if (id !== window._scLast) {
+      window._scLast = id;
+      var el = document.getElementById('infoSaveCount');
+      if (el) el.textContent = '';
+      if (id) _saveCountLoad(id, 'infoSaveCount');
+    }
+  } catch (e) {}
+}, 800);
+</script>
 </body>
 </html>
