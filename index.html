@@ -4477,8 +4477,11 @@ async function renderPromotedRow(cards) {
     if (c) { items.push(c); map[String(c.id)] = p.id; }
   });
   if (!items.length) return;
-  var anchorRow = document.getElementById('newRow');
-  var anchor = anchorRow && (anchorRow.closest('.content-section') || anchorRow.parentElement);
+  var anchor = document.getElementById('continueSection');
+  if (!anchor) {
+    var anchorRow = document.getElementById('newRow');
+    anchor = anchorRow && (anchorRow.closest('.content-section') || anchorRow.parentElement);
+  }
   if (!anchor || !anchor.parentNode) return;
   var sec = document.createElement('div');
   sec.className = 'content-section';
