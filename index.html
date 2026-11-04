@@ -11396,27 +11396,25 @@ function _fpNum(n) {
 function _fpOpen(p) {
   if (p && typeof window.openCreatorPage === 'function') window.openCreatorPage(p.username);
 }
+function _fpTok() { try { return localStorage.getItem('pichaplus_session') || ''; } catch (e) { return ''; } }
 function _fpFollow(p, btn) {
-  var h = null;
-  try { if (typeof hdr === 'function') h = hdr(true); } catch (e) {}
-  if (!h || p.isSelf) { _fpOpen(p); return; }
-  if (btn.disabled) return;
+  if (p._done || btn.disabled) return;
+  if (!_fpTok()) { try { showToast('Sign in to follow creators', 'error'); } catch (e) {} return; }
+  function shown() { p._done = true; btn.disabled = false; btn.textContent = 'Following'; btn.classList.add('on'); }
+  if (p.following) { shown(); return; }
   btn.disabled = true;
-  var want = !p.following;
-  fetch(API + (want ? '/studio/follow' : '/studio/unfollow'), { method: 'POST', headers: h, body: JSON.stringify({ username: p.username }) })
+  fetch(API + '/studio/follow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': _fpTok() }, body: JSON.stringify({ username: p.username }) })
     .then(function (r) { return r.json(); })
     .then(function (j) {
-      btn.disabled = false;
-      if (j && j.ok) { p.following = !!j.following; btn.textContent = p.following ? 'Following' : 'Follow'; btn.classList.toggle('on', p.following); }
-      else _fpOpen(p);
+      if (j && j.ok) { p.following = true; shown(); }
+      else { btn.disabled = false; try { showToast((j && j.error) || 'Please sign in again', 'error'); } catch (e) {} }
     })
-    .catch(function () { btn.disabled = false; });
+    .catch(function () { btn.disabled = false; try { showToast('Network error', 'error'); } catch (e) {} });
 }
 function _bnLoadFeatured() {
   var box = document.getElementById('vrFeat');
   if (!box) return;
-  var t = '';
-  try { if (typeof tok === 'function') t = tok() || ''; } catch (e) {}
+  var t = _fpTok();
   fetch(API + '/promoted-profiles', { headers: t ? { 'X-Session-Token': t } : {} })
     .then(function (r) { return r.json(); })
     .then(function (d) {
@@ -11428,7 +11426,7 @@ function _bnLoadFeatured() {
       b.innerHTML = '<div class="fp-h"><span>Featured Profiles</span><span class="fp-tag">SPONSORED</span></div><div class="fp-row">' +
         list.map(function (p, i) {
           var av = p.avatarUrl ? '<img src="' + esc(p.avatarUrl) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : esc((p.username || '?').charAt(0).toUpperCase());
-          var fb = p.isSelf ? '' : '<button type="button" class="fp-fb' + (p.following ? ' on' : '') + '">' + (p.following ? 'Following' : 'Follow') + '</button>';
+          var fb = p.isSelf ? '' : '<button type="button" class="fp-fb">Follow</button>';
           return '<div class="fp-card' + (i === 0 ? ' first' : '') + '" data-i="' + i + '"><div class="fp-av">' + av + '</div>' +
             '<div class="fp-bd"><div class="fp-nm"><span>' + esc(p.displayName || p.username) + '</span>' + (p.verified ? _FP_TICK : '') + '</div>' +
             '<div class="fp-ct">' + p.titles + ' title' + (p.titles !== 1 ? 's' : '') + '</div>' +
