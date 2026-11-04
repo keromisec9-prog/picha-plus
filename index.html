@@ -3052,7 +3052,7 @@ function _mlSyncSoon() {
 }
 window._mlSyncSoon = _mlSyncSoon;
 function _mlApply(j) {
-  try { localStorage.setItem('pichaplus_ml_uid', String(j.userId)); } catch (e) {}
+  try { localStorage.setItem('pichaplus_ml_uid', String(j.userId)); if (j.v) localStorage.setItem('pichaplus_ml_v', String(j.v)); } catch (e) {}
   var byId = {}, local = {};
   (window._allCards || []).forEach(function (c) { byId[String(c.id)] = c; });
   myList.forEach(function (x) { local[String(x.id)] = x; });
@@ -3073,7 +3073,8 @@ function _mlSync(rebuild) {
   if (!q.length && !rebuild) return;
   var uid = ''; try { uid = localStorage.getItem('pichaplus_ml_uid') || ''; } catch (e) {}
   var body = { ops: q, list: !!rebuild };
-  if (uid) body.uid = uid;
+  var cv = ''; try { cv = localStorage.getItem('pichaplus_ml_v') || ''; } catch (e) {}
+  if (uid) { body.uid = uid; if (cv && !q.length) body.v = cv; }
   else if (rebuild) {
     var n = myList.length, base = Date.now();
     body.seed = myList.map(function (it, i) { return { id: String(it.id), t: _mlType(it), at: base - (n - i) * 1000 }; });
@@ -3086,6 +3087,7 @@ function _mlSync(rebuild) {
       if (!j || !j.ok) return;
       var left = j.mismatch ? [] : _mlQ().filter(function (o) { return !q.some(function (s) { return s.id === o.id && s.at === o.at; }); });
       _mlSaveQ(left);
+      if (j.unchanged) { _ML.synced = true; return; }
       if ((rebuild || j.mismatch) && j.items) {
         if (left.length) setTimeout(function () { _mlSync(true); }, 1500);
         else _mlApply(j);
