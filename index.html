@@ -5005,7 +5005,7 @@ async function shareCurrentTitle() {
   const s = currentSeries;
   const title = item ? (item.title || item.name) : (s ? s.title : 'Picha+');
   const _tm = window.location.pathname.match(/\/title\/([^/]+)/);
-  const url = _tm ? `${API}/t/${_tm[1]}?to=title` : window.location.href;
+  const url = _tm ? `https://mypicha.uk/t/${_tm[1]}?to=title` : window.location.href;
   if (_tm && window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
@@ -12950,7 +12950,7 @@ async function _mpfShare(idx) {
   if (!meta) return;
   const title = meta.item.title || meta.item.name || 'Picha+';
   const _sid = meta.item.id || meta.item.tmdbId;
-  const url = _sid ? `${API}/t/${encodeURIComponent(String(_sid))}` : window.location.href;
+  const url = _sid ? `https://mypicha.uk/t/${encodeURIComponent(String(_sid))}` : window.location.href;
   if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
