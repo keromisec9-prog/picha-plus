@@ -1762,6 +1762,24 @@
       .shorts-grid { grid-template-columns: repeat(4, 1fr); }
     }
     .gc-card,.vc-card{border:0.5px solid rgba(255,255,255,0.12)!important;outline:none!important;box-shadow:none!important}
+    .vr-top{padding:4px 0 12px;display:flex;flex-direction:column;gap:10px}
+    .vr-search{display:flex;align-items:center;gap:10px;padding:0 14px;height:46px;border-radius:23px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.14);color:#aaa}
+    .vr-search input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;font-size:15px}
+    .vr-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+    .vr-chips::-webkit-scrollbar{display:none}
+    .vr-chip{flex:none;padding:9px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.18);background:none;color:#fff;font-size:14px;font-weight:600}
+    .vr-chip.on{background:var(--gold,#eeb32a);color:#000;border-color:transparent}
+    .vr-row{display:flex;align-items:center;gap:14px;padding:10px 14px;margin-bottom:10px;border-radius:18px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .vr-row:active{background:rgba(255,255,255,0.07)}
+    .vr-av{flex:none;width:54px;height:54px;border-radius:50%;overflow:hidden;background:#2a2a2a;border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .vr-av.top{border-color:var(--gold,#eeb32a)}
+    .vr-av img{width:100%;height:100%;object-fit:cover;display:block}
+    .vr-tx{flex:1;min-width:0}
+    .vr-nm{display:flex;align-items:center;gap:6px;font-size:17px;font-weight:600;color:#fff}
+    .vr-nm span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .vr-tick{width:18px;height:18px;fill:#1d9bf0;flex:none}
+    .vr-ct{margin-top:2px;font-size:14px;color:#9a9a9a}
+    .vr-chev{flex:none;color:#9a9a9a}
     .gc-ico{display:none!important}
     .vc-mic{display:none!important}
     .category-card {
@@ -11272,28 +11290,66 @@ function bnBuildGenreList() {
 
 function _bnRenderVJCards() {
   const el = document.getElementById('bnVjList');
+  if (!el) return;
   const cards = (window._allCards || []).filter(c => !c.isUgandan);
-  const vjMap = {};
-  cards.forEach(c => { if (c._vj) { vjMap[c._vj] = (vjMap[c._vj] || 0) + 1; } });
+  const vjMap = {}, newest = {};
+  cards.forEach(c => {
+    if (!c._vj) return;
+    vjMap[c._vj] = (vjMap[c._vj] || 0) + 1;
+    const dt = Date.parse(c.created_at || c.added_at || c.date_added || '') || 0;
+    if (dt > (newest[c._vj] || 0)) newest[c._vj] = dt;
+  });
   const _rk = (window._vjRank || []).map(n => String(n).toLowerCase());
   const _ri = n => { const i = _rk.indexOf(n.toLowerCase()); return i < 0 ? 9999 : i; };
-  const vjs = Object.keys(vjMap).sort((x, y) => (_ri(x) - _ri(y)) || (vjMap[y] - vjMap[x]) || x.localeCompare(y));
-  if (!vjs.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">No VJs yet</div>'; return; }
+  const f = window._vjFilter || 'all';
+  const q = (window._vjQuery || '').toLowerCase().trim();
+  let vjs = Object.keys(vjMap);
+  if (q) vjs = vjs.filter(v => v.toLowerCase().indexOf(q) > -1);
+  const byRank = (x, y) => (_ri(x) - _ri(y)) || (vjMap[y] - vjMap[x]) || x.localeCompare(y);
+  if (f === 'titles') vjs.sort((x, y) => (vjMap[y] - vjMap[x]) || x.localeCompare(y));
+  else if (f === 'new') vjs.sort((x, y) => ((newest[y] || 0) - (newest[x] || 0)) || byRank(x, y));
+  else if (f === 'popular') vjs.sort(byRank);
+  else vjs.sort((x, y) => x.localeCompare(y));
+
+  if (!el.querySelector('#vrList')) {
+    const chip = (k, l) => '<button type="button" class="vr-chip" data-f="' + k + '">' + l + '</button>';
+    el.innerHTML =
+      '<div class="vr-top"><div class="vr-search"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>' +
+      '<input id="vrSearch" type="text" placeholder="Search Veejays..." autocomplete="off"></div>' +
+      '<div class="vr-chips">' + chip('all', 'All') + chip('popular', 'Popular') + chip('titles', 'Most titles') + chip('new', 'Newest') + '</div></div>' +
+      '<div id="vrList"></div>';
+    const inp = el.querySelector('#vrSearch');
+    inp.value = window._vjQuery || '';
+    inp.addEventListener('input', function () { window._vjQuery = this.value; _bnRenderVJCards(); });
+    el.querySelector('.vr-chips').addEventListener('click', function (e) {
+      const b = e.target.closest('.vr-chip');
+      if (!b) return;
+      window._vjFilter = b.getAttribute('data-f');
+      _bnRenderVJCards();
+    });
+  }
+  el.querySelectorAll('.vr-chip').forEach(b => b.classList.toggle('on', b.getAttribute('data-f') === f));
+
+  const list = el.querySelector('#vrList');
+  if (!vjs.length) {
+    list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--gray);">' + (q ? 'No Veejays found' : 'No VJs yet') + '</div>';
+    return;
+  }
   const profiles = window._vjProfiles || {};
-  const MIC = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>';
-  const html = vjs.map(vj => {
+  const TICK = '<svg class="vr-tick" viewBox="0 0 24 24"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>';
+  const CHEV = '<svg class="vr-chev" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M9.5 6l6 6-6 6-1.4-1.4 4.6-4.6-4.6-4.6z"/></svg>';
+  list.innerHTML = vjs.map(vj => {
     const pr = profiles[vj];
     const ini = vj.replace(/^VJ\s+/i, '').trim().slice(0, 2).toUpperCase() || '?';
     const art = pr && pr.photo
-      ? '<img class="gc-img" src="' + esc(pr.photo) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">'
-      : '<div class="vc-ini">' + esc(ini) + '</div>';
-    return '<div class="gc-card vc-card" onclick="bnOpenVJ(\'' + esc(vj) + '\')">' + art +
-      '<div class="gc-shade"></div>' +
-      '<div class="vc-mic">' + MIC + '</div>' +
-      '<div class="gc-txt" style="right:10px;"><div class="gc-name">' + esc(vj) + '</div>' +
-      '<div class="gc-count">' + vjMap[vj] + ' titles</div></div></div>';
+      ? '<img src="' + esc(pr.photo) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">'
+      : '<span>' + esc(ini) + '</span>';
+    const top = _ri(vj) < 5 ? ' top' : '';
+    return '<div class="vr-row" onclick="bnOpenVJ(\'' + esc(vj) + '\')">' +
+      '<div class="vr-av' + top + '">' + art + '</div>' +
+      '<div class="vr-tx"><div class="vr-nm"><span>' + esc(vj) + '</span>' + (pr && pr.verified ? TICK : '') + '</div>' +
+      '<div class="vr-ct">' + vjMap[vj] + ' title' + (vjMap[vj] !== 1 ? 's' : '') + '</div></div>' + CHEV + '</div>';
   }).join('');
-  el.innerHTML = '<div class="gc-grid">' + html + '</div>';
 }
 
 function bnBuildVJList() {
