@@ -2986,7 +2986,7 @@ const session = {
   user: JSON.parse(localStorage.getItem('pichaplus_user') || 'null'),
   save(token, user) {
     this.token = token; this.user = user;
-    localStorage.setItem('pichaplus_session', token);
+    localStorage.setItem('pichaplus_session', token); try { setTimeout(function () { window._mlSyncSoon && window._mlSyncSoon(); }, 1000); } catch (e) {}
     localStorage.setItem('pichaplus_user', JSON.stringify(user));
   },
   clear() {
@@ -3030,6 +3030,73 @@ function _cleanOldSeriesProgress() {
 }
 
 function saveMyList() { localStorage.setItem('pichaplus_mylist', JSON.stringify(myList)); }
+
+var _ML = { busy: false, timer: null, synced: false };
+function _mlTok() { try { return localStorage.getItem('pichaplus_session') || ''; } catch (e) { return ''; } }
+function _mlQ() { try { return JSON.parse(localStorage.getItem('pichaplus_ml_q') || '[]'); } catch (e) { return []; } }
+function _mlSaveQ(q) { try { localStorage.setItem('pichaplus_ml_q', JSON.stringify(q)); } catch (e) {} }
+function _mlType(it) { return it && it.media_type === 'tv' ? 'tv' : 'movie'; }
+function _mlPush(item, added) {
+  if (!item || item.id == null) return;
+  var id = String(item.id);
+  var q = _mlQ().filter(function (o) { return o.id !== id; });
+  q.push({ id: id, t: _mlType(item), add: !!added, at: Date.now() });
+  _mlSaveQ(q);
+  clearTimeout(_ML.timer);
+  _ML.timer = setTimeout(function () { _mlSync(false); }, 1200);
+}
+function _mlSyncSoon() {
+  _ML.synced = false;
+  clearTimeout(_ML.timer);
+  _ML.timer = setTimeout(function () { _mlSync(true); }, 800);
+}
+window._mlSyncSoon = _mlSyncSoon;
+function _mlApply(j) {
+  try { localStorage.setItem('pichaplus_ml_uid', String(j.userId)); } catch (e) {}
+  var byId = {}, local = {};
+  (window._allCards || []).forEach(function (c) { byId[String(c.id)] = c; });
+  myList.forEach(function (x) { local[String(x.id)] = x; });
+  var next = [];
+  (j.items || []).forEach(function (s) { var it = byId[String(s.id)] || local[String(s.id)]; if (it) next.push(it); });
+  myList.length = 0;
+  next.forEach(function (it) { myList.push(it); });
+  saveMyList();
+  try { renderMyListRow(); } catch (e) {}
+  _ML.synced = true;
+}
+function _mlSync(rebuild) {
+  var tk = _mlTok();
+  if (!tk || _ML.busy) return;
+  if (!_ML.synced) rebuild = true;
+  if (rebuild && !(window._allCards && window._allCards.length)) return;
+  var q = _mlQ();
+  if (!q.length && !rebuild) return;
+  var uid = ''; try { uid = localStorage.getItem('pichaplus_ml_uid') || ''; } catch (e) {}
+  var body = { ops: q, list: !!rebuild };
+  if (uid) body.uid = uid;
+  else if (rebuild) {
+    var n = myList.length, base = Date.now();
+    body.seed = myList.map(function (it, i) { return { id: String(it.id), t: _mlType(it), at: base - (n - i) * 1000 }; });
+  }
+  _ML.busy = true;
+  fetch(API + '/saved/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': tk }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      _ML.busy = false;
+      if (!j || !j.ok) return;
+      var left = j.mismatch ? [] : _mlQ().filter(function (o) { return !q.some(function (s) { return s.id === o.id && s.at === o.at; }); });
+      _mlSaveQ(left);
+      if ((rebuild || j.mismatch) && j.items) {
+        if (left.length) setTimeout(function () { _mlSync(true); }, 1500);
+        else _mlApply(j);
+      }
+    })
+    .catch(function () { _ML.busy = false; });
+}
+var _mlTries = 0, _mlBoot = setInterval(function () {
+  if (_ML.synced || ++_mlTries > 60) { clearInterval(_mlBoot); return; }
+  if (_mlTok() && window._allCards && window._allCards.length) _mlSync(true);
+}, 2000);
 function saveLiked() { localStorage.setItem('pichaplus_liked', JSON.stringify(liked)); }
 const _lastServerSync = {};
 function _syncProgressToServer(id, pos, dur, force, title) {
@@ -6123,6 +6190,7 @@ function toggleMyList(item, btn) {
     showToast('Added to My List ✓', 'gold');
   }
   saveMyList();
+  try { _mlPush(item, idx === -1); } catch (e) {}
   renderMyListRow();
   // If the Saved page is currently open, refresh it immediately so
   // the card disappears (or appears) without needing a tab switch.
