@@ -13812,7 +13812,7 @@ function _serHeroPolish(s) {
     var s = currentSeries;
     var title = s ? s.title : 'Picha+';
     var m = window.location.pathname.match(/\/title\/([^\/]+)/);
-    var url = m ? (API + '/t/' + m[1] + '?to=title') : window.location.href;
+    var url = m ? ('https://mypicha.uk/t/' + m[1] + '?to=title') : window.location.href;
     if (m && window.PichaApp && typeof PichaApp.getShareTargets === 'function' && typeof _openShareSheet === 'function') { _openShareSheet(url, title); return; }
     var data = { title: title + ' \u2014 Picha+', text: 'Watch ' + title + ' on Picha+', url: url };
     if (navigator.share) { try { await navigator.share(data); return; } catch (e) {} }
