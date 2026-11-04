@@ -15359,5 +15359,32 @@ setInterval(function () {
   } catch (e) { showToast('poll err ' + e.message, 'gold'); }
 }, 800);
 </script>
+<script>
+(function () {
+  function dbg(msg) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#c00;color:#fff;font:12px monospace;padding:8px;border-radius:6px;word-break:break-all;';
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 8000);
+  }
+  setTimeout(function () {
+    dbg('DBG loaded | cur=' + (typeof currentInfoItem) + ' API=' + (typeof API) + ' toast=' + (typeof showToast) + ' el=' + (!!document.getElementById('infoSaveCount')));
+  }, 3000);
+  setInterval(function () {
+    try {
+      var it = typeof currentInfoItem !== 'undefined' ? currentInfoItem : null;
+      var id = it && it.id ? String(it.id) : '';
+      if (id === window._dbgLast) return;
+      window._dbgLast = id;
+      if (!id) return;
+      fetch(API + '/saves?itemId=' + encodeURIComponent(id))
+        .then(function (r) { return r.text(); })
+        .then(function (x) { dbg('id=' + id + ' ' + x); })
+        .catch(function (e) { dbg('fetch err ' + e); });
+    } catch (e) { dbg('poll err ' + e.message); }
+  }, 800);
+})();
+</script>
 </body>
 </html>
