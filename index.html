@@ -11398,7 +11398,8 @@ function _fpOpen(p) {
 }
 function _fpTok() { try { return localStorage.getItem('pichaplus_session') || ''; } catch (e) { return ''; } }
 function _fpFollow(p, btn) {
-  if (p._done || btn.disabled) return;
+  if (btn.disabled) return;
+  if (p._done) { _fpOpen(p); return; }
   if (!_fpTok()) { try { showToast('Sign in to follow creators', 'error'); } catch (e) {} return; }
   function shown() { p._done = true; btn.disabled = false; btn.textContent = 'Following'; btn.classList.add('on'); }
   if (p.following) { shown(); return; }
