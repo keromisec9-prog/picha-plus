@@ -3073,7 +3073,12 @@ function _mpfRevert(list) {
     el.textContent = n > 0 ? _formatLikeCount(n) : '';
   });
 }
+function _mlFail() {
+  window._mlFails = (window._mlFails || 0) + 1;
+  window._mlNext = Date.now() + Math.min(60000, 2000 * Math.pow(2, window._mlFails));
+}
 function _mlSync(rebuild) {
+  if ((window._mlFails || 0) >= 5 || Date.now() < (window._mlNext || 0)) return;
   var tk = _mlTok();
   if (!tk || _ML.busy) return;
   if (!_ML.synced) rebuild = true;
@@ -3094,7 +3099,8 @@ function _mlSync(rebuild) {
     .then(function (r) { return r.json(); })
     .then(function (j) {
       _ML.busy = false;
-      if (!j || !j.ok) { _mpfRevert(_pend); return; }
+      if (!j || !j.ok) { _mlFail(); _mpfRevert(_pend); return; }
+      window._mlFails = 0; window._mlNext = 0;
       var left = j.mismatch ? [] : _mlQ().filter(function (o) { return !q.some(function (s) { return s.id === o.id && s.at === o.at; }); });
       _mlSaveQ(left);
       if (j.unchanged) { _ML.synced = true; return; }
@@ -3103,7 +3109,7 @@ function _mlSync(rebuild) {
         else _mlApply(j);
       }
     })
-    .catch(function () { _ML.busy = false; _mpfRevert(_pend); });
+    .catch(function () { _ML.busy = false; _mlFail(); _mpfRevert(_pend); });
 }
 var _mlTries = 0, _mlBoot = setInterval(function () {
   if (_ML.synced || ++_mlTries > 60) { clearInterval(_mlBoot); return; }
@@ -5003,7 +5009,7 @@ async function shareCurrentTitle() {
   if (_tm && window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
-    try { await navigator.share(shareData); return; } catch (e) { /* user cancelled or unsupported, fall through */ }
+    try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* user cancelled or unsupported, fall through */ }
   }
   try {
     await navigator.clipboard.writeText(url);
@@ -6837,7 +6843,7 @@ async function shareHistoryItem(title) {
   const url = window.location.href;
   const shareData = { title: `${title} \u2014 Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
-    try { await navigator.share(shareData); return; } catch (e) { /* fall through */ }
+    try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* fall through */ }
   }
   try {
     await navigator.clipboard.writeText(url);
@@ -12662,6 +12668,7 @@ function _mpfSaveToggle(idx) {
   var meta = _mpfSlideMeta[idx];
   if (!meta || !meta.item) return;
   var wasOn = myList.some(function (m) { return m.id === meta.item.id; });
+  window._mlFails = 0; window._mlNext = 0;
   (window._mpfPend = window._mpfPend || []).push({ id: 'mpfSaveCount_' + idx, d: wasOn ? -1 : 1 });
   toggleMyList(meta.item, null);
   _mpfRefreshSave(idx);
@@ -12926,7 +12933,7 @@ async function _pagerShare() {
   const url = `${API}/s/${encodeURIComponent(key)}`;
   const shareData = { title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url };
   if (navigator.share) {
-    try { await navigator.share(shareData); return; } catch (e) { /* cancelled or unsupported */ }
+    try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* cancelled or unsupported */ }
   }
   try {
     await navigator.clipboard.writeText(url);
@@ -12947,7 +12954,7 @@ async function _mpfShare(idx) {
   if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
   if (navigator.share) {
-    try { await navigator.share(shareData); return; } catch (e) { /* cancelled or unsupported */ }
+    try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* cancelled or unsupported */ }
   }
   try {
     await navigator.clipboard.writeText(url);
@@ -12965,6 +12972,23 @@ function _getShareTargets() {
   return _shareTargetsCache;
 }
 function _closeShareSheet() { const el = document.getElementById('ppShareSheet'); if (el) el.remove(); }
+function _countShare(url, dest) {
+  try {
+    var m = String(url || '').match(/\/t\/([^/?#]+)/);
+    if (!m) return;
+    var id = decodeURIComponent(m[1]);
+    var day = new Date().toISOString().slice(0, 10);
+    window._shSeen = window._shSeen || {};
+    var k = id + '|' + day;
+    if (window._shSeen[k]) return;
+    window._shSeen[k] = 1;
+    var tk = (typeof session !== 'undefined' && session && session.token) || '';
+    var dev = ''; try { dev = localStorage.getItem('picha_device_id') || ''; } catch (e) {}
+    var h = { 'Content-Type': 'application/json' };
+    if (tk) h['X-Session-Token'] = tk;
+    fetch(API + '/share/count', { method: 'POST', headers: h, keepalive: true, body: JSON.stringify({ itemId: id, dest: dest || '', dev: dev }) }).catch(function () {});
+  } catch (e) {}
+}
 function _openShareSheet(url, title) {
   _closeShareSheet();
   const text = `Watch "${title}" on Picha+ 🎬\n${url}`;
@@ -12995,7 +13019,7 @@ function _openShareSheet(url, title) {
   _getShareTargets().forEach(t => {
     const img = document.createElement('img');
     img.src = t.i; img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-    addCell(img, t.l, () => { try { PichaApp.shareTo(t.p, t.c, text); } catch (e) {} _closeShareSheet(); });
+    addCell(img, t.l, () => { _countShare(url, t.l); try { PichaApp.shareTo(t.p, t.c, text); } catch (e) {} _closeShareSheet(); });
   });
   // Inline SVGs on purpose: the self-hosted icon font is a subset and lacks some glyphs.
   const _SVG = {
