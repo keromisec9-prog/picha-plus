@@ -3064,6 +3064,15 @@ function _mlApply(j) {
   try { renderMyListRow(); } catch (e) {}
   _ML.synced = true;
 }
+function _mpfRevert(list) {
+  (list || []).forEach(function (p) {
+    var el = document.getElementById(p.id);
+    if (!el) return;
+    var n = Math.max(0, (parseInt(el.dataset.n || '0', 10) || 0) - p.d);
+    el.dataset.n = String(n);
+    el.textContent = n > 0 ? _formatLikeCount(n) : '';
+  });
+}
 function _mlSync(rebuild) {
   var tk = _mlTok();
   if (!tk || _ML.busy) return;
@@ -3080,11 +3089,12 @@ function _mlSync(rebuild) {
     body.seed = myList.map(function (it, i) { return { id: String(it.id), t: _mlType(it), at: base - (n - i) * 1000 }; });
   }
   _ML.busy = true;
+  var _pend = window._mpfPend || []; window._mpfPend = [];
   fetch(API + '/saved/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': tk }, body: JSON.stringify(body) })
     .then(function (r) { return r.json(); })
     .then(function (j) {
       _ML.busy = false;
-      if (!j || !j.ok) return;
+      if (!j || !j.ok) { _mpfRevert(_pend); return; }
       var left = j.mismatch ? [] : _mlQ().filter(function (o) { return !q.some(function (s) { return s.id === o.id && s.at === o.at; }); });
       _mlSaveQ(left);
       if (j.unchanged) { _ML.synced = true; return; }
@@ -3093,7 +3103,7 @@ function _mlSync(rebuild) {
         else _mlApply(j);
       }
     })
-    .catch(function () { _ML.busy = false; });
+    .catch(function () { _ML.busy = false; _mpfRevert(_pend); });
 }
 var _mlTries = 0, _mlBoot = setInterval(function () {
   if (_ML.synced || ++_mlTries > 60) { clearInterval(_mlBoot); return; }
@@ -12651,9 +12661,16 @@ function _mpfRefreshAllSave() {
 function _mpfSaveToggle(idx) {
   var meta = _mpfSlideMeta[idx];
   if (!meta || !meta.item) return;
+  var wasOn = myList.some(function (m) { return m.id === meta.item.id; });
+  (window._mpfPend = window._mpfPend || []).push({ id: 'mpfSaveCount_' + idx, d: wasOn ? -1 : 1 });
   toggleMyList(meta.item, null);
   _mpfRefreshSave(idx);
-  setTimeout(function () { _saveCountLoad(meta.item.id, 'mpfSaveCount_' + idx); }, 1800);
+  var el = document.getElementById('mpfSaveCount_' + idx);
+  if (!el) return;
+  var cur = parseInt(el.dataset.n || '0', 10) || 0;
+  var n = Math.max(0, cur + (wasOn ? -1 : 1));
+  el.dataset.n = String(n);
+  el.textContent = n > 0 ? _formatLikeCount(n) : '';
 }
 
 setInterval(function () {
