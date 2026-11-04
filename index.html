@@ -1780,6 +1780,11 @@
     .vr-tick{width:18px;height:18px;fill:#1d9bf0;flex:none}
     .vr-ct{margin-top:2px;font-size:14px;color:#9a9a9a}
     .vr-chev{flex:none;color:#9a9a9a}
+    .vr-top{flex-direction:row!important;align-items:center;gap:8px!important}
+    .vr-chips{order:-1;flex:none;overflow:visible!important}
+    .vr-chip{padding:9px 13px!important;white-space:nowrap}
+    .vr-search{flex:1;min-width:0;height:40px!important;padding:0 10px!important;gap:6px!important}
+    .vr-search svg{width:20px;height:20px;flex:none}
     .gc-ico{display:none!important}
     .vc-mic{display:none!important}
     .category-card {
@@ -11315,8 +11320,8 @@ function _bnRenderVJCards() {
     const chip = (k, l) => '<button type="button" class="vr-chip" data-f="' + k + '">' + l + '</button>';
     el.innerHTML =
       '<div class="vr-top"><div class="vr-search"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>' +
-      '<input id="vrSearch" type="text" placeholder="Search Veejays..." autocomplete="off"></div>' +
-      '<div class="vr-chips">' + chip('popular', 'Popular') + chip('titles', 'Most titles') + chip('all', 'All') + '</div></div>' +
+      '<input id="vrSearch" type="text" placeholder="Search" autocomplete="off"></div>' +
+      '<div class="vr-chips">' + chip('popular', 'Popular') + chip('titles', 'Most titles') + '</div></div>' +
       '<div id="vrList"></div>';
     const inp = el.querySelector('#vrSearch');
     inp.value = window._vjQuery || '';
