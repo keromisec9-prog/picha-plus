@@ -3109,6 +3109,8 @@ html[data-theme="light"] #paymentModal :is(div,header,section,aside,footer,nav,f
 html[data-theme="light"] #paymentModal :is(div,span,p,small,b,strong,h1,h2,h3,h4,label,a,li,button,i,em):not([class*="btn"]):not([class*="back"]){color:#111!important}
 html[data-theme="light"] .pay-back-btn{background:rgba(0,0,0,0.07)!important}
 html[data-theme="light"] .pay-back-btn,html[data-theme="light"] .pay-back-btn *{color:#111!important}
+.category-card-vj,.card-badge.card-badge-vj{background:rgba(0,0,0,0.6)!important;border-color:transparent!important;color:rgba(255,255,255,0.92)!important;font-weight:500!important;letter-spacing:0!important}
+html[data-theme="light"] .category-card-vj,html[data-theme="light"] .card-badge.card-badge-vj{background:rgba(0,0,0,0.35)!important;color:rgba(255,255,255,0.85)!important}
 </style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
@@ -8379,7 +8381,7 @@ function loadSeries(catalog) {
       <div class="card" onclick="showSeries(${idx})" data-series-idx="${idx}">
         ${poster ? `<img class="card-poster" src="${poster}" alt="${esc(s.title)}" loading="lazy">` : `<div class="card-poster-placeholder"><span class="material-symbols-rounded" style="color:rgba(255,255,255,0.25);">movie</span></div>`}
         <div class="card-badge" style="background:var(--gold);color:#000;">SERIES</div>
-        ${s.vj ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${s.vj}</div>` : ''}
+        ${s.vj ? `<div class="card-badge card-badge-vj" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${s.vj}</div>` : ''}
         <div class="card-overlay">
           <div class="card-title">${esc(s.title)}</div>
           <div style="font-size:0.65rem;color:var(--gray);">${(Array.isArray(s.episodes) ? s.episodes.length : Object.keys(s.episodes || {}).length)} Episodes</div>
