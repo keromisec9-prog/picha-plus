@@ -3087,6 +3087,28 @@ html[data-theme="light"] #ppActions button:not(#infoPlayBtn){border-color:#fff!i
 html[data-theme="light"] #ppActions .info-add-btn{border-color:#fff!important}
 html[data-theme="light"] #ppActions #infoDownloadBtn svg{border-color:#fff!important}
 html[data-theme="light"] #ppActions button:not(#infoPlayBtn) svg{border-color:#fff!important}
+.category-card-vj,.card-badge.card-badge-vj{background:rgba(0,0,0,0.35)!important;border-color:transparent!important;color:rgba(255,255,255,0.85)!important;font-weight:500!important;letter-spacing:0!important}
+html[data-theme="light"] #subStatusItem :is(div,span)[style*="border-radius:50%"],html[data-theme="light"] #subStatusItem :is(div,span)[style*="border-radius: 50%"]{background:#fff!important}
+html[data-theme="light"] .fp-card{background:#fff!important;border:1px solid rgba(0,0,0,0.15)!important;box-shadow:none!important}
+html[data-theme="light"] .fp-card :is(div,span,p,small,b,strong,a){color:#111!important}
+html[data-theme="light"] .fp-shade{background:#fff!important;border:1px solid rgba(0,0,0,0.15)!important;box-shadow:none!important}
+html[data-theme="light"] .fp-shade :is(div,span,p,small,b,strong,a){color:#111!important}
+html[data-theme="light"] [class*="fp-"]:has(> .fp-fb){background:#fff!important;border:1px solid rgba(0,0,0,0.15)!important;box-shadow:none!important}
+html[data-theme="light"] [class*="fp-"]:has(> .fp-fb) :is(div,span,p,small,b,strong,a){color:#111!important}
+html[data-theme="light"] .fp-fb{border:1px solid #111!important;color:#111!important;background:#fff!important}
+html[data-theme="light"] .fp-av{border-color:#fff!important}
+html[data-theme="light"] .fp-av,html[data-theme="light"] .fp-av *{color:#fff!important}
+html[data-theme="light"] .african-modal-overlay{background-image:none!important;background-color:#fff!important}
+html[data-theme="light"] .african-modal-overlay :is(div,header,section,aside,footer,nav,form):not([class*="btn"]):not([class*="cta"]):not([class*="back"]):not([class*="best"]):not([class*="badge"]):not([class*="radio"]):not([class*="dot"]):not([class*="check"]):not([class*="spinner"]){background:#fff!important;background-image:none!important}
+html[data-theme="light"] .african-modal-overlay :is(div,span,p,small,b,strong,h1,h2,h3,h4,label,a,li,button,i,em):not([class*="btn"]):not([class*="back"]){color:#111!important}
+html[data-theme="light"] #paywallModal{background-image:none!important;background-color:#fff!important}
+html[data-theme="light"] #paywallModal :is(div,header,section,aside,footer,nav,form):not([class*="btn"]):not([class*="cta"]):not([class*="back"]):not([class*="best"]):not([class*="badge"]):not([class*="radio"]):not([class*="dot"]):not([class*="check"]):not([class*="spinner"]){background:#fff!important;background-image:none!important}
+html[data-theme="light"] #paywallModal :is(div,span,p,small,b,strong,h1,h2,h3,h4,label,a,li,button,i,em):not([class*="btn"]):not([class*="back"]){color:#111!important}
+html[data-theme="light"] #paymentModal{background-image:none!important;background-color:#fff!important}
+html[data-theme="light"] #paymentModal :is(div,header,section,aside,footer,nav,form):not([class*="btn"]):not([class*="cta"]):not([class*="back"]):not([class*="best"]):not([class*="badge"]):not([class*="radio"]):not([class*="dot"]):not([class*="check"]):not([class*="spinner"]){background:#fff!important;background-image:none!important}
+html[data-theme="light"] #paymentModal :is(div,span,p,small,b,strong,h1,h2,h3,h4,label,a,li,button,i,em):not([class*="btn"]):not([class*="back"]){color:#111!important}
+html[data-theme="light"] .pay-back-btn{background:rgba(0,0,0,0.07)!important}
+html[data-theme="light"] .pay-back-btn,html[data-theme="light"] .pay-back-btn *{color:#111!important}
 </style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
@@ -4813,7 +4835,7 @@ function createCard(item, showProgress = false, extraBadgeHTML = '') {
       ${isLockedAfrican ? `<div style="position:absolute;top:0.4rem;left:0.4rem;z-index:3;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:4px;padding:0.15rem 0.25rem;"><span class="material-symbols-rounded" style="font-size:1rem;color:#fff;display:block;line-height:1;">lock</span></div>` : ''}
       ${extraBadgeHTML}
       ${isNew ? '<div class="card-badge new">NEW</div>' : ''}
-      ${item._vj && !isLockedAfrican ? `<div class="card-badge" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
+      ${item._vj && !isLockedAfrican ? `<div class="card-badge card-badge-vj" style="top:auto;bottom:3.5rem;left:0.4rem;background:rgba(0,0,0,0.8);color:var(--gold);border:1px solid var(--gold);">${item._vj}</div>` : ''}
       ${item._part ? `<div class="card-badge" style="top:auto;bottom:0.5rem;left:0.4rem;background:rgba(229,185,60,0.15);color:var(--gold);border:1px solid var(--gold);font-size:0.6rem;">${item._part}</div>` : ''}
       ${item.isUgandan && item.media_type === 'tv' ? '<div class="card-badge" style="top:0.4rem;right:0.4rem;background:rgba(0,0,0,0.85);color:#fff;border:1px solid #555;font-size:0.6rem;">SERIES</div>' : ''}
       ${prog && progPct > 0 ? `<div class="card-progress"><div class="card-progress-fill" style="width:${progPct}%"></div></div>` : ''}
