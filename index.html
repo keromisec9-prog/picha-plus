@@ -5696,23 +5696,23 @@ function renderSavedDownloads() {
     } else if (d.failed || d.paused) {
       actionBtn = `
         <button onclick="retryDownload(${d.id})" title="Retry"
-          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(229,185,60,0.15);border:1px solid rgba(229,185,60,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
+          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(229,185,60,0.15);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
         </button>`;
     } else {
       // In progress — show pause
       actionBtn = `
         <button onclick="pauseDownload(${d.id})" title="Pause"
-          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;">
+          style="flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(255,255,255,0.08);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;">
           <svg width="12" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
         </button>`;
     }
 
     const _stl = 'flex-shrink:0;width:2.4rem;height:2.4rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;';
     if (d._native && d.paused) {
-      actionBtn = `<button onclick="_dlNativeAct(${d.dmId},'resume')" title="Resume" style="${_stl}background:rgba(229,185,60,0.15);border:1px solid rgba(229,185,60,0.5);color:var(--gold);"><span class="material-symbols-rounded" style="font-size:1.5rem;line-height:1;font-variation-settings:'FILL' 1">play_arrow</span></button>`;
+      actionBtn = `<button onclick="_dlNativeAct(${d.dmId},'resume')" title="Resume" style="${_stl}background:rgba(229,185,60,0.15);border:none;color:var(--gold);"><span class="material-symbols-rounded" style="font-size:1.5rem;line-height:1;font-variation-settings:'FILL' 1">play_arrow</span></button>`;
     } else if (d._native) {
-      actionBtn = `<button onclick="_dlNativeAct(${d.dmId},'pause')" title="Pause" style="${_stl}background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;"><svg width="12" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>`;
+      actionBtn = `<button onclick="_dlNativeAct(${d.dmId},'pause')" title="Pause" style="${_stl}background:rgba(255,255,255,0.08);border:none;color:#fff;"><svg width="12" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>`;
     }
     const delBtn = `<button class="dl-trash" onclick="_dlAskDelete(${d.id})" title="Delete" style="flex-shrink:0;width:2.4rem;height:2.4rem;background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-symbols-rounded" style="font-size:1.6rem;line-height:1;">delete</span></button>`;
 
@@ -5766,9 +5766,27 @@ function _dlLive(d) {
   if (!n || (n.status !== 'running' && n.status !== 'paused')) return d;
   return Object.assign({}, d, { done: false, failed: false, paused: n.status === 'paused', progress: _dlPct(n), _native: true });
 }
+window._dlOpt = {};
 function _dlNativeAct(dm, act) {
-  try { if (act === 'pause') PichaApp.pauseDownload(dm); else PichaApp.resumeDownload(dm); } catch (e) {}
-  setTimeout(_dlPoll, 350);
+  const cur = window._nativeDl[dm];
+  if (!cur) return;
+  const want = act === 'pause' ? 'paused' : 'running';
+  if (cur.status === want) return;
+  // optimistic: flip the UI immediately
+  window._dlOpt[dm] = { want: want, prev: cur.status, act: act, until: Date.now() + 3500 };
+  window._nativeDl[dm] = Object.assign({}, cur, { status: want });
+  renderSavedDownloads();
+  try {
+    if (act === 'pause') PichaApp.pauseDownload(dm); else PichaApp.resumeDownload(dm);
+  } catch (e) { _dlOptFail(dm); return; }
+  setTimeout(_dlPoll, 500);
+}
+function _dlOptFail(dm) {
+  const o = window._dlOpt[dm];
+  delete window._dlOpt[dm];
+  if (o && window._nativeDl[dm]) window._nativeDl[dm] = Object.assign({}, window._nativeDl[dm], { status: o.prev });
+  try { showToast("Couldn't " + (o ? o.act : 'update') + ' download'); } catch (e) {}
+  renderSavedDownloads();
 }
 function _dlPoll() {
   if (document.hidden || !(window.PichaApp && PichaApp.getProgress)) return;
@@ -5777,6 +5795,14 @@ function _dlPoll() {
   try { arr = JSON.parse(PichaApp.getProgress() || '[]'); } catch (e) { return; }
   const next = {};
   arr.forEach(p => { next[p.id] = { status: p.status, bytes: +p.bytes || 0, got: +p.got || 0 }; });
+  Object.keys(window._dlOpt).forEach(dm => {
+    const o = window._dlOpt[dm], n = next[dm];
+    if (!n || n.status === o.want) { delete window._dlOpt[dm]; return; }
+    if (Date.now() < o.until) { next[dm] = Object.assign({}, n, { status: o.want }); return; }
+    delete window._dlOpt[dm];
+    try { showToast("Couldn't " + o.act + ' download'); } catch (e) {}
+    window._dlNeedsRender = true;
+  });
   const sig = o => Object.keys(o).sort().map(k => k + ':' + o[k].status).join(',');
   if (sig(next) !== sig(window._nativeDl)) window._dlNeedsRender = true;
   window._nativeDl = next;
@@ -6974,7 +7000,7 @@ function _renderHistoryRow(m) {
         style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:0.3rem;display:flex;align-items:center;justify-content:center;">
         <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">more_vert</span>
       </button>
-      <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:1px solid rgba(255,255,255,0.15);border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
+      <div class="history-menu" data-key="${removeKey}" style="display:none;position:absolute;top:2.6rem;right:0;z-index:6;background:#222;border:none;border-radius:6px;min-width:10rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);overflow:hidden;">
         <button onclick="event.stopPropagation();${playFn};document.querySelectorAll('.history-menu').forEach(m=>m.style.display='none');" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;"><span class="material-symbols-rounded" style="font-size:16px;font-variation-settings:'FILL' 1">play_circle</span>Play</button>
         <button onclick="removeHistoryItem('${removeKey}',event)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;border-top:1px solid rgba(255,255,255,0.08);"><span class="material-symbols-rounded" style="font-size:16px;">delete</span>Remove</button>
         ${m.card ? `<button onclick="event.stopPropagation();saveHistoryItemToList(${registerItem(m.card)},this)" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.65rem 0.9rem;background:none;border:none;color:#fff;font-size:0.8rem;text-align:left;cursor:pointer;font-family:inherit;border-top:1px solid rgba(255,255,255,0.08);white-space:nowrap;">${myList.some(x => x.id === m.card.id)
