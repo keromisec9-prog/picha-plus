@@ -4808,7 +4808,7 @@ async function renderPromotedRow(cards) {
   if (!items.length) return;
   var anchor = document.getElementById('continueSection');
   if (!anchor) {
-    var anchorRow = document.getElementById('newRow');
+    var anchorRow = document.getElementById('latestRow');
     anchor = anchorRow && (anchorRow.closest('.content-section') || anchorRow.parentElement);
   }
   if (!anchor || !anchor.parentNode) return;
