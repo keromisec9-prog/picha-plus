@@ -10540,6 +10540,7 @@ async function _onPagerSlideCommitted(prevIdx, newIdx) {
   _pagerIdx = newIdx;
   _pagerPlayedIndices.add(newIdx);
   if (_pagerMode === 'feed') window._shortsFeedIndex = newIdx;
+  if (_pagerMode === 'feed') _shortSeen((window._shortsFeedData || [])[newIdx]);
   else _shortEpisodeIndex = newIdx;
 
   const newVideo = document.getElementById('pgVid_' + newIdx);
@@ -10968,6 +10969,26 @@ function _shortCardHTML(s, idx) {
       <div style="font-size:0.68rem;color:#999;margin-top:2px;">${_shortMetaLabel(s)}</div>
     </div>`;
 }
+
+// ---- report shown Shorts so the feed stops repeating them ----
+var _seenQ = {};
+function _shortSeen(s) {
+  if (!s || !s._key) return;
+  _seenQ[String(s._key)] = 1;
+}
+function _seenFlush() {
+  var keys = Object.keys(_seenQ);
+  if (!keys.length) return;
+  _seenQ = {};
+  try {
+    var h = { 'Content-Type': 'application/json', 'X-Device-Id': getDeviceId() };
+    if (session.isLoggedIn()) h['X-Session-Token'] = session.token;
+    fetch(API + '/shorts-seen', { method: 'POST', keepalive: true, headers: h, body: JSON.stringify({ keys: keys.slice(0, 50) }) }).catch(function () {});
+  } catch (e) {}
+}
+setInterval(_seenFlush, 6000);
+window.addEventListener('pagehide', _seenFlush);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') _seenFlush(); });
 
 let _shortsFeedLoadPromise = null;
 function ensureShortsFeedData() {
