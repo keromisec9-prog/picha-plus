@@ -11252,6 +11252,39 @@ function _fyJit(id) {
   if (!(k in window._fySessJit)) window._fySessJit[k] = Math.random() * 10 - 5;
   return window._fySessJit[k];
 }
+// ---- For You rotation: seen penalty + per-open shuffle + no repeat leader ----
+var FY_JIT = 4, FY_PEN = 4, FY_DAYS = 5, FY_TOP = 15;
+var _fySeed = null, _fySnap = null;
+function _fyH(s) { var h = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; }
+function _fyRoll() {
+  _fySeed = String(Math.random());
+  var seen = {}, lead = {};
+  try { seen = JSON.parse(localStorage.getItem('fySeen') || '{}'); lead = JSON.parse(localStorage.getItem('fyLead') || '{}'); } catch (e) {}
+  _fySnap = { seen: seen, lead: lead };
+}
+function _fyRot(id) {
+  var j = (_fyH(id + '|' + _fySeed) * 2 - 1) * FY_JIT;
+  var ts = _fySnap.seen[id], p = 0;
+  if (ts) { var d = (Date.now() - ts) / 86400000; if (d < FY_DAYS) p = (1 - d / FY_DAYS) * FY_PEN; }
+  return j - p;
+}
+function _fyAfterSort(scored, isTV) {
+  try {
+    var k = isTV ? 'series' : 'movies';
+    if (scored.length > 1 && String(scored[0].item.id) === String(_fySnap.lead[k])) {
+      var s = 1 + Math.floor(_fyH('lead|' + _fySeed) * Math.min(4, scored.length - 1));
+      var x = scored[0]; scored[0] = scored[s]; scored[s] = x;
+    }
+    var seen = {}, now = Date.now();
+    try { seen = JSON.parse(localStorage.getItem('fySeen') || '{}'); } catch (e) {}
+    Object.keys(seen).forEach(function (id) { if (now - seen[id] > 7 * 86400000) delete seen[id]; });
+    scored.slice(0, FY_TOP).forEach(function (o) { seen[o.item.id] = now; });
+    localStorage.setItem('fySeen', JSON.stringify(seen));
+    var lead = {}; try { lead = JSON.parse(localStorage.getItem('fyLead') || '{}'); } catch (e) {}
+    lead[k] = scored[0].item.id;
+    localStorage.setItem('fyLead', JSON.stringify(lead));
+  } catch (e) {}
+}
 function renderForYou() {
   const grid = document.getElementById('fyGrid');
   const empty = document.getElementById('fyEmpty');
@@ -11265,7 +11298,8 @@ function renderForYou() {
   const _useJitter = _fyForceJitter;
   _fyForceJitter = false; // single-shot: only apply randomness for the render right after a manual refresh
 
-  const scored = pool.map(item => ({ item, score: fyScore(item) + _fyJit(item.id) + (_useJitter ? (Math.random() * 6 - 3) : 0) }))
+  if (_useJitter || !_fySeed) _fyRoll();
+  const scored = pool.map(item => ({ item, score: fyScore(item) + _fyJit(item.id) + _fyRot(item.id) }))
     .sort((a, b) => {
       // Liked items always sort above everything else; disliked items always sort
       // below everything else. The weighted score only breaks ties within each tier.
@@ -11276,6 +11310,7 @@ function renderForYou() {
       return b.score - a.score;
     });
 
+  _fyAfterSort(scored, isTV);
   const statValues = Object.values(_fyStats || {});
   const totalPlays = statValues.reduce((s, v) => s + (v.plays || 0), 0);
 
