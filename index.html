@@ -4794,6 +4794,25 @@ function _promoFlush() {
 }
 window.addEventListener('pagehide', _promoFlush);
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') _promoFlush(); });
+// ---- fair rotation for sponsored rows ----
+function _promoShuffle(arr, slot) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var x = a[i]; a[i] = a[j]; a[j] = x;
+  }
+  if (a.length > 1) {
+    var k = 'promoFirst:' + slot, last = null;
+    try { last = localStorage.getItem(k); } catch (e) {}
+    var kk = function (x) { return String(x.id != null ? x.id : x.username); };
+    if (last !== null && kk(a[0]) === last) {
+      var s = 1 + Math.floor(Math.random() * (a.length - 1));
+      var y = a[0]; a[0] = a[s]; a[s] = y;
+    }
+    try { localStorage.setItem(k, kk(a[0])); } catch (e) {}
+  }
+  return a;
+}
 async function renderPromotedRow(cards) {
   var old = document.getElementById('promoSection');
   if (old) old.remove();
@@ -4807,6 +4826,7 @@ async function renderPromotedRow(cards) {
     if (c) { items.push(c); map[String(c.id)] = p.id; }
   });
   if (!items.length) return;
+  items = _promoShuffle(items, 'home');
   var anchor = document.getElementById('continueSection');
   if (!anchor) {
     var anchorRow = document.getElementById('latestRow');
@@ -11826,7 +11846,7 @@ function _vjCreatorsLoad() {
   if (window._vjCrLoading || (window._vjCrAt && Date.now() - window._vjCrAt < 300000)) return;
   window._vjCrLoading = true;
   fetch(API + '/vj-creators').then(function (r) { return r.json(); })
-    .then(function (d) { window._vjCreators = (d && d.items) || []; window._vjCrAt = Date.now(); window._vjCrLoading = false; _bnRenderVJCards(); })
+    .then(function (d) { window._vjCreators = _promoShuffle((d && d.items) || [], 'veejays'); window._vjCrAt = Date.now(); window._vjCrLoading = false; _bnRenderVJCards(); })
     .catch(function () { window._vjCrLoading = false; });
 }
 function _vjOpenCreator(u) { if (typeof window.openCreatorPage === 'function') window.openCreatorPage(u); }
@@ -11838,7 +11858,6 @@ function _vjMerge(list, f, q) {
     return;
   }
   var norm = function (s) { return String(s || '').toLowerCase().replace(/^vj\s+/, '').trim(); };
-  cr.sort(function (a, b) { return (b.titles - a.titles) || (b.fans - a.fans); });
   var rows = Array.prototype.slice.call(list.querySelectorAll('.vr-row'));
   var keyOf = function (r) { var s = r.querySelector('.vr-nm span'); return norm(s ? s.textContent : ''); };
   var cntOf = function (r) { var m = /^(\d+)/.exec((r.querySelector('.vr-ct') || {}).textContent || ''); return m ? Number(m[1]) : 0; };
