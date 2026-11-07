@@ -5713,7 +5713,7 @@ function renderSavedDownloads() {
     } else if (d._native) {
       actionBtn = `<button onclick="_dlNativeAct(${d.dmId},'pause')" title="Pause" style="${_stl}background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;"><svg width="12" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>`;
     }
-    const delBtn = `<button onclick="_dlAskDelete(${d.id})" title="Delete" style="${_stl}background:rgba(245,73,77,0.12);border:1px solid rgba(245,73,77,0.4);color:#f5494d;"><span class="material-symbols-rounded" style="font-size:1.2rem;line-height:1;">delete</span></button>`;
+    const delBtn = `<button onclick="_dlAskDelete(${d.id})" title="Delete" style="flex-shrink:0;background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.45);"><span class="material-symbols-rounded" style="font-size:2.4rem;line-height:1;">delete</span></button>`;
 
     // Status line
     let statusLine = '';
@@ -5737,8 +5737,7 @@ function renderSavedDownloads() {
 
     return `
       <div class="dl-row" data-id="${d.id}" data-dm="${d.dmId || ''}" style="position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.05);">
-        <button class="dl-del" onclick="_dlAskDelete(${d.id})" title="Delete" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:2.9rem;height:2.9rem;border-radius:50%;background:#f5494d;border:none;color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.15s;cursor:pointer;"><span class="material-symbols-rounded" style="font-size:1.4rem;">delete</span></button>
-      <div class="dl-in" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;touch-action:pan-y;transition:transform 0.2s;">
+      <div class="dl-in" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 0;">
         ${d.poster
           ? `<img src="${d.poster}" style="width:46px;height:66px;object-fit:cover;border-radius:4px;flex-shrink:0;">`
           : `<div style="width:46px;height:66px;background:#1e1e1e;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;"><span class="material-symbols-rounded" style="color:rgba(255,255,255,0.25);">movie</span></div>`}
@@ -5823,55 +5822,6 @@ async function _dlAskDelete(id) {
   if (!ok) return;
   removeDownload(id);
 }
-(function () {
-  const W = 84;
-  let sx = 0, sy = 0, row = null, inner = null, drag = false, base = 0;
-  function setOpen(r, open) {
-    const i = r.querySelector('.dl-in'), b = r.querySelector('.dl-del');
-    i.style.transition = 'transform 0.2s';
-    i.style.transform = open ? 'translateX(-' + W + 'px)' : 'translateX(0)';
-    b.style.opacity = open ? '1' : '0';
-    b.style.pointerEvents = open ? 'auto' : 'none';
-    r.classList.toggle('open', open);
-  }
-  window._dlCloseRows = function (except) {
-    document.querySelectorAll('.dl-row.open').forEach(r => { if (r !== except) setOpen(r, false); });
-  };
-  document.addEventListener('touchstart', function (e) {
-    const r = e.target.closest && e.target.closest('.dl-row');
-    if (!r) { window._dlCloseRows(); row = null; return; }
-    if (e.target.closest('.dl-del')) { row = null; return; }
-    row = r; inner = r.querySelector('.dl-in');
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; drag = false;
-    base = r.classList.contains('open') ? -W : 0;
-    window._dlCloseRows(r);
-  }, { passive: true });
-  document.addEventListener('touchmove', function (e) {
-    if (!row) return;
-    const t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-    if (!drag) {
-      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) { drag = true; window._dlSwipeBusy = true; inner.style.transition = 'none'; }
-      else if (Math.abs(dy) > 10) { row = null; return; }
-    }
-    if (drag) inner.style.transform = 'translateX(' + Math.max(-W, Math.min(0, base + dx)) + 'px)';
-  }, { passive: true });
-  document.addEventListener('touchend', function () {
-    if (!row) return;
-    const r = row; row = null;
-    if (drag) {
-      const cur = parseFloat((inner.style.transform.match(/-?[\d.]+/) || [0])[0]);
-      setOpen(r, cur < -W / 2);
-      window._dlSwipeBusy = false;
-      window._dlJustSwiped = Date.now();
-    }
-  });
-  document.addEventListener('click', function (e) {
-    const r = e.target.closest && e.target.closest('.dl-row');
-    if (!r) return;
-    if (Date.now() - (window._dlJustSwiped || 0) < 350) { e.stopPropagation(); e.preventDefault(); return; }
-    if (r.classList.contains('open') && !e.target.closest('.dl-del')) { setOpen(r, false); e.stopPropagation(); e.preventDefault(); }
-  }, true);
-})();
 
 function _openMyDownloads() {
   if (window.PichaApp && PichaApp.openDownloads) {
