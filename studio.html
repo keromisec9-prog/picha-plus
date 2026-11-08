@@ -1559,7 +1559,7 @@ function upFile(slot,file,st){
     });
   }
   function fresh(){
-    var body={kind:slot,fileName:file.name,size:file.size};
+    var body={kind:slot,fileName:file.name,size:file.size};if(slot==='video'){try{var pf=window.PichaTemp&&PichaTemp.getPickedFolder&&PichaTemp.getPickedFolder();if(/^[0-9a-f-]{36}$/.test(pf||''))body.folder=pf}catch(e){}}
     if(multi){
       if(puAll().length>=PU_MAX)return Promise.reject(fatal('You already have '+PU_MAX+' unfinished uploads. Open Manage my uploads to finish or cancel one'));
       body.multipart=true;body.partSize=10*1024*1024;
