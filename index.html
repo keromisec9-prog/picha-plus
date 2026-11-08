@@ -15287,7 +15287,7 @@ async function submitForceReset() {
     if (!open) { key = ""; return; }
     fixBar();
     if (!it) return;
-    var k = String(it.catalogKey || it.catalog_key || it.id || "");
+    var k = String(it.catalogKey || it.catalog_key || it.id || it.tmdbId || "");
     if (!k || k === key) return;
     key = k; creator = null; items = []; total = 0; more = false;
     renderCreator(); renderComments();
