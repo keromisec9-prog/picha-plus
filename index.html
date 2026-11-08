@@ -7899,8 +7899,27 @@ function _setAuthLabel(m) {
   else if (m === 'email') el.textContent = 'Signed in with email';
   else el.textContent = '';
 }
+async function _loadAcctAvatar() {
+  try {
+    const av = document.querySelector('#acctSettingsContent .acct-avatar');
+    if (!av || !session || !session.token) return;
+    const r = await fetch(API + '/studio/profile', { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } });
+    const d = await r.json();
+    const u = r.ok && d && d.ok && d.profile && d.profile.avatarUrl;
+    if (!u) return;
+    const img = new Image();
+    img.onload = function () {
+      av.style.backgroundImage = 'url("' + u + '")';
+      av.style.backgroundSize = 'cover';
+      av.style.backgroundPosition = 'center';
+      const sv = av.querySelector('svg'); if (sv) sv.style.display = 'none';
+    };
+    img.src = u;
+  } catch (e) {}
+}
 async function _loadPwdState() {
   _renderPwdState(null);
+  _loadAcctAvatar();
   _setAuthLabel(session.user?.authMethod === 'email' ? 'email' : null);
   let has = session.user?.authMethod === 'email';
   try {
