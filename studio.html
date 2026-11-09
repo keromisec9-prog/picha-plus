@@ -736,6 +736,13 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
   
 </div>
 
+<style>@keyframes espin{to{transform:rotate(360deg)}}.espin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:espin .8s linear infinite;margin:40px auto}.ebig{font-size:34px;font-weight:700;margin:6px 0 4px}.elab{font-size:11px;letter-spacing:2px;color:var(--mute);text-transform:uppercase}.enote{font-size:12px;color:var(--mute);line-height:1.5;margin-top:10px}.erow{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}</style>
+<div class="view" id="v-earn"><div class="wrap page">
+  <div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="show('v-apps')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>
+  <h2>Earnings</h2>
+  <div id="earnBody"><div class="espin"></div></div>
+</div></div>
+
 <div class="view" id="v-how">
 <div class="hero how-hero"><div class="hero-bg" id="howBg"></div><div class="wrap">
   <div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="show('v-home');window.scrollTo(0,0)"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>
@@ -799,6 +806,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <div class="view" id="v-apps"><div class="wrap page">
   <div id="profHead"></div>
   <div class="ptabs"><button type="button" class="on" data-pt="lib">Library</button><button type="button" data-pt="apps">Applications</button><button type="button" data-pt="about">About</button></div>
+  <div class="app" onclick="openEarn()" style="cursor:pointer"><div class="row"><b>Earnings</b><span>&rsaquo;</span></div><p class="sub" style="margin:0">Estimated balance and credited months</p></div>
   <div id="pt-lib"></div>
   <div id="pt-apps" style="display:none"><h2>My applications</h2><p class="sub">Track the status of your partnership applications.</p><div id="appsList"></div><div id="subsList"></div></div>
   <div id="pt-about" style="display:none"></div>
@@ -828,6 +836,56 @@ function did(){var i=localStorage.getItem('picha_device_id');if(!i){i=crypto.ran
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show')},2200)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function show(id){document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});document.getElementById(id).classList.add('on');window.scrollTo(0,0)}
+function earnUgx(n){return 'UGX '+Math.round(Number(n)||0).toLocaleString('en-US')}
+function earnDur(sc){sc=Math.max(0,Math.round(Number(sc)||0));return Math.floor(sc/3600)+'h '+Math.floor((sc%3600)/60)+'m '+(sc%60)+'s'}
+function earnMk(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function earnChart(daily){
+  var NS='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 320 110');svg.setAttribute('width','100%');
+  var max=0;daily.forEach(function(r){if(r.secs>max)max=r.secs});
+  if(!max){return null}
+  var n=daily.length,bw=Math.max(3,Math.min(22,300/n-3)),gap=3;
+  daily.forEach(function(r,i){
+    var h=Math.max(2,Math.round(r.secs/max*88));
+    var rc=document.createElementNS(NS,'rect');
+    rc.setAttribute('x',10+i*(bw+gap));rc.setAttribute('y',95-h);rc.setAttribute('width',bw);rc.setAttribute('height',h);rc.setAttribute('rx',2);rc.setAttribute('fill','#d6a84b');
+    svg.appendChild(rc);
+  });
+  return svg;
+}
+function openEarn(){
+  show('v-earn');
+  var box=document.getElementById('earnBody');
+  box.textContent='';box.appendChild(earnMk('div','espin'));
+  api('/studio/earnings').then(function(res){
+    box.textContent='';
+    var d=res.body||{};
+    if(!d.ok){
+      box.appendChild(earnMk('p','sub','Could not load your earnings.'));
+      var b=earnMk('button','btn gold','Try again');b.onclick=openEarn;box.appendChild(b);return;
+    }
+    var c=earnMk('div','app');
+    c.appendChild(earnMk('div','elab','Estimated balance \u00b7 '+d.month));
+    c.appendChild(earnMk('div','ebig',earnUgx(d.estimate)));
+    c.appendChild(earnMk('div','sub','Watch time this month: '+earnDur(d.secs)));
+    if(d.ratePending)c.appendChild(earnMk('div','enote','The rate for this month has not been set yet.'));
+    c.appendChild(earnMk('div','enote','This is an estimate based on watch time. It can change before the month closes and is not a promise of payment. The final amount is fixed only when the month is closed.'));
+    box.appendChild(c);
+    var ch=earnChart(d.daily||[]);
+    var cc=earnMk('div','app');
+    cc.appendChild(earnMk('div','elab','Watch time by day'));
+    if(ch){cc.appendChild(ch);var ft=earnMk('div','erow');ft.appendChild(earnMk('span',null,d.daily[0].d.slice(5)));ft.appendChild(earnMk('span',null,d.daily[d.daily.length-1].d.slice(5)));cc.appendChild(ft)}
+    else cc.appendChild(earnMk('p','sub','No watch time on your titles yet this month.'));
+    box.appendChild(cc);
+    var bc=earnMk('div','app');
+    bc.appendChild(earnMk('div','elab','Credited balance'));
+    bc.appendChild(earnMk('div','ebig',earnUgx(d.balance)));
+    bc.appendChild(earnMk('div','enote','Amounts from months that have been closed. These are fixed.'));
+    if(d.closed&&d.closed.length){d.closed.forEach(function(m){var r=earnMk('div','erow');r.appendChild(earnMk('span',null,m.month+' \u00b7 '+earnDur(m.secs)));r.appendChild(earnMk('span',null,earnUgx(m.amount)));bc.appendChild(r)})}
+    else bc.appendChild(earnMk('p','sub','No closed months yet.'));
+    box.appendChild(bc);
+  }).catch(function(){box.textContent='';box.appendChild(earnMk('p','sub','Could not load your earnings.'))});
+}
 function api(path,opt){
   opt=opt||{};
   if(opt.method&&opt.method!=='GET')window.__mut=(window.__mut||0)+1;
