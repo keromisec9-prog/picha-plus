@@ -942,7 +942,7 @@ function openEarn(){
   var hd=document.querySelector('#v-earn h1, #v-earn h2');if(hd){hd.textContent='Creator Overview';hd.style.fontSize='22px'}
   var box=document.getElementById('earnBody');
   box.textContent='';box.appendChild(earnMk('div','espin'));
-  api('/studio/earnings').then(function(res){
+  api('/studio/earnings'+(window.__fresh?'?fresh=1':'')).then(function(res){
     box.textContent='';
     var d=res.body||{};
     if(!d.ok){
@@ -2276,7 +2276,7 @@ function del(el){
     else{
       window.__mut=(window.__mut||0)+1;
       var ev=document.getElementById('v-earn');
-      if(ev&&ev.classList.contains('on')){openEarn()}
+      if(ev&&ev.classList.contains('on')){window.__fresh=1;openEarn();window.__fresh=0}
       else{var pb=document.querySelector('.ptabs button.on'),pk=pb&&pb.getAttribute('data-pt');openApps();if(pk&&pk!=='apps')ptab(pk)}
       setTimeout(done,900);
     }
