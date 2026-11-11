@@ -4565,7 +4565,7 @@ async function loadContent() {
     // Fetch your catalog
     let _cachedRaw = null, _cachedAt = 0;
     try { _cachedRaw = localStorage.getItem('pp_cat'); _cachedAt = Number(localStorage.getItem('pp_cat_t')) || 0; } catch (e) {}
-    const _catP = (window._ppCatReloaded || (_cachedRaw && Date.now() - _cachedAt < 180000)) ? null : fetch(`${API}/videos/list`).then(r => r.text());
+    const _catP = (window._ppCatReloaded || (_cachedRaw && Date.now() - _cachedAt < 15000)) ? null : fetch(`${API}/videos/list`, {cache:'no-cache'}).then(r => r.text());
     let _cs = {};
     try { _cs = JSON.parse(localStorage.getItem('pp_settings') || '{}'); } catch (e) {}
     window._africanCinemaEnabled = _cs.africanCinemaEnabled !== false;
@@ -4583,7 +4583,7 @@ async function loadContent() {
       try { catalogData = JSON.parse(_cachedRaw); if (!_valid(catalogData)) throw 0; } catch (e) { _cachedRaw = null; catalogData = {}; }
     }
     if (!_cachedRaw) {
-      const _fr = await (_catP || fetch(`${API}/videos/list`).then(r => r.text()));
+      const _fr = await (_catP || fetch(`${API}/videos/list`, {cache:'no-cache'}).then(r => r.text()));
       catalogData = JSON.parse(_fr);
       if (_valid(catalogData)) _save(_fr);
     } else if (_catP) {
