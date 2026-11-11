@@ -2441,7 +2441,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='tsearch')tsearch();
   else if(a==='tpick'){var r=L.res[parseInt(el.dataset.i,10)];if(r){var gn=(r.genre_ids||[]).map(function(g){return GN[g]}).filter(Boolean).slice(0,2).join(', ');L.tmdb={id:r.id,poster:r.poster_path||null,backdrop:r.backdrop_path||null,year:(r.release_date||r.first_air_date||'').slice(0,4)||null,name:r.title||r.name||'',gids:r.genre_ids||[]};L.f={title:L.tmdb.name,genre:gn,syn:r.overview||''};renderForm();window.scrollTo(0,0)}}
   else if(a==='tclear'){saveF();L.tmdb=null;renderForm()}
-  else if(a==='upload'){var sv=L.up.video;if(!sv)return;if(sv.busy)return toast('Uploading...');if(!sv.ready||!sv.file)return;sv.ready=false;sv.busy=true;sv.pct=0;sv.autoSubmit=true;var fl=sv.file;sv.file=null;renderForm();run('video',fl,sv,null)}
+  else if(a==='upload'){var sv=L.up.video;if(!sv)return;var _rc=$('lf_rights');if(!_rc||!_rc.checked)return toast('Please confirm the declaration');if(sv.busy)return toast('Uploading...');if(!sv.ready||!sv.file)return;sv.ready=false;sv.busy=true;sv.pct=0;sv.autoSubmit=true;var fl=sv.file;sv.file=null;renderForm();run('video',fl,sv,null)}
   else if(a==='submit')submitTitle();
   else if(a==='esubmit')submitEp();
   else if(a==='back'){if(L.mode==='ep'&&L.tid)openDetail(L.tid);else openLib()}
