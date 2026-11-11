@@ -2880,7 +2880,7 @@ function fmtD(v){
         +'<div class="pfur"><span class="pfu">@'+E(c.username)+'</span></div>'
         +(c.bio?'<p class="pfb">'+E(c.bio)+'</p>':'')
         +'<div class="pfst"><div><b>'+(m.following||0)+'</b><span>Following</span></div><div><b id="pubFers">'+PC.n+'</b><span>Followers</span></div><div><b>'+t.length+'</b><span>Titles</span></div></div></div></div>';
-      h+='<div class="pubtabs"><button type="button" class="on" data-k="mv" onclick="pubTab(\'mv\')">Movies &amp; Series</button><button type="button" data-k="ab" onclick="pubTab(\'ab\')">About</button></div>';
+      h+='<div class="pubtabs"><button type="button" class="on" data-k="sh" onclick="pubTab(\'sh\')">Shorts</button><button type="button" data-k="mv" onclick="pubTab(\'mv\')">Movies &amp; Series</button><button type="button" data-k="ab" onclick="pubTab(\'ab\')">About</button></div>';
       var mv='';
       if(!t.length)mv='<p class="sub">No published titles yet.</p>';
       else{
@@ -2889,7 +2889,7 @@ function fmtD(v){
           return '<div class="pcd">'+(x.posterUrl?'<img class="pim" src="'+E(x.posterUrl)+'" alt="">':'<div class="pim"></div>')+'<div class="pt">'+E(x.title)+'</div><div class="pk">'+(x.kind==='series'?'Series':'Movie')+'</div></div>';
         }).join('')+'</div>';
       }
-      h+='<div id="pub-mv">'+shStrip(c.shorts)+mv+'</div><div id="pub-ab" style="display:none"><div class="qcard"><h3>About</h3><p class="sub" style="margin:0">'+(c.bio?E(c.bio):'No bio yet.')+'</p></div></div>';
+      h+=shPanes(c.shorts,'pub',mv)+'<div id="pub-ab" style="display:none"><div class="qcard"><h3>About</h3><p class="sub" style="margin:0">'+(c.bio?E(c.bio):'No bio yet.')+'</p></div></div>';
       root(h);
     }).catch(function(){root(head()+'<p class="sub">Could not load. Check your connection and try again.</p>')});
   }
@@ -2907,6 +2907,26 @@ if(!window.__shClick){window.__shClick=1;document.addEventListener('click',funct
   v=document.createElement('video');v.src=c.getAttribute('data-u');v.loop=true;v.autoplay=true;v.setAttribute('playsinline','');v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
   p.appendChild(v);var b=p.querySelector('.shplay');if(b)b.style.display='none';
   try{v.play().catch(function(){})}catch(err){}
+},true)}
+function shPanes(list,pre,mvHtml){
+  var has=!!(list&&list.length);
+  if(!document.getElementById('sg-css')){var st=document.createElement('style');st.id='sg-css';st.textContent='.shg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}.shg .shc{cursor:pointer}.shg .shp{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;background:#222 center/cover no-repeat}.shg .shplay{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;color:#fff;font-size:11px;background:linear-gradient(transparent 60%,rgba(0,0,0,.72))}.shg .sgl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';document.head.appendChild(st)}
+  var grid=has?'<div class="shg">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'"><div class="shp"'+(s.poster?' style="background-image:url(&quot;'+E(s.poster)+'&quot;)"':'')+'><span class="shplay"><span class="sgl">&#9654; '+E(s.title)+(s.part?' &middot; Part '+E(String(s.part)):'')+'</span></span></div></div>'}).join('')+'</div>':'';
+  setTimeout(function(){
+    var bar=document.querySelector(pre==='crp'?'.crtabs':'.pubtabs');if(!bar)return;
+    var bs=bar.querySelector('button[data-k="sh"]'),bm=bar.querySelector('button[data-k="mv"]');
+    if(!has){if(bs)bs.remove();if(bm)bm.classList.add('on')}
+  },0);
+  return '<div id="'+pre+'-sh"'+(has?'':' style="display:none"')+'>'+grid+'</div><div id="'+pre+'-mv"'+(has?' style="display:none"':'')+'>'+mvHtml+'</div>';
+}
+if(!window.__shTab){window.__shTab=1;document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest?e.target.closest('.crtabs button[data-k],.pubtabs button[data-k]'):null;if(!b)return;
+  var k=b.getAttribute('data-k');if(k!=='sh'&&k!=='mv'&&k!=='ab')return;
+  e.stopPropagation();
+  var bar=b.parentNode,pre=bar.classList.contains('crtabs')?'crp':'pub';
+  [].forEach.call(bar.querySelectorAll('button[data-k]'),function(x){x.classList.toggle('on',x===b)});
+  ['sh','mv','ab'].forEach(function(n){var p=document.getElementById(pre+'-'+n);if(p)p.style.display=(n===k)?'':'none'});
+  [].forEach.call(document.querySelectorAll('.shp video'),function(o){o.pause()});
 },true)}
 window.pubOpen=function(u,f){
     from=f||'';
