@@ -737,6 +737,25 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 </div>
 
 <style>@keyframes espin{to{transform:rotate(360deg)}}.espin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:espin .8s linear infinite;margin:40px auto}.ebig{font-size:34px;font-weight:700;margin:6px 0 4px}.elab{font-size:11px;letter-spacing:2px;color:var(--mute);text-transform:uppercase}.enote{font-size:12px;color:var(--mute);line-height:1.5;margin-top:10px}.erow{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}</style>
+<style>
+.ov-hero{border:1px solid rgba(214,168,75,.45);border-radius:20px;padding:18px;margin:0 0 14px;background:linear-gradient(135deg,rgba(214,168,75,.20),rgba(18,18,18,.95) 58%)}
+.ov-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ov-lab{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#bdb6a6}
+.ov-pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--gold);color:var(--gold);white-space:nowrap}
+.ov-pill.ok{border-color:#2e7d4f;color:#5fd38d;background:rgba(46,125,79,.15)}
+.ov-pill.off{border-color:rgba(255,255,255,.2);color:#9a9486}
+.ov-big{font-size:44px;font-weight:800;line-height:1.1;margin:10px 0 2px;color:#fff}
+.ov-gold{color:var(--gold);font-size:14px}
+.ov-cols{display:flex;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.ov-cols>div{flex:1}.ov-cols>div+div{padding-left:14px;border-left:1px solid rgba(255,255,255,.1)}
+.ov-cols span{display:block;font-size:12px;color:#9a9486}.ov-cols b{display:block;font-size:17px;margin-top:3px;color:#fff}
+.ov-note{font-size:12.5px;line-height:1.5;color:#9a9486;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.ov-card{border:1px solid rgba(214,168,75,.25);border-radius:20px;padding:16px;margin:0 0 14px;background:rgba(22,22,22,.9)}
+.ov-h{font-size:16px;font-weight:700;color:#fff}
+.ov-tip{font-size:13px;color:var(--gold);min-height:20px;margin:8px 0 2px}
+.ov-ax{display:flex;justify-content:space-between;font-size:12px;color:#9a9486;margin-top:2px}
+.ov-row{display:flex;justify-content:space-between;font-size:14px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
+</style>
 <div class="view" id="v-earn"><div class="wrap page">
   <div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="show('v-apps')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>
   <h2>Earnings</h2>
@@ -806,7 +825,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 <div class="view" id="v-apps"><div class="wrap page">
   <div id="profHead"></div>
   <div class="ptabs"><button type="button" class="on" data-pt="lib">Library</button><button type="button" data-pt="apps">Applications</button><button type="button" data-pt="about">About</button></div>
-  <div class="app" onclick="openEarn()" style="cursor:pointer"><div class="row"><b>Earnings</b><span>&rsaquo;</span></div><p class="sub" style="margin:0">Estimated balance and credited months</p></div>
+  <div class="app" onclick="openEarn()" style="cursor:pointer"><div class="row"><b>Creator Overview</b><span>&rsaquo;</span></div><p class="sub" style="margin:0">Current estimate and settled balance</p></div>
   <div id="pt-lib"></div>
   <div id="pt-apps" style="display:none"><h2>My applications</h2><p class="sub">Track the status of your partnership applications.</p><div id="appsList"></div><div id="subsList"></div></div>
   <div id="pt-about" style="display:none"></div>
@@ -839,52 +858,110 @@ function show(id){document.querySelectorAll('.view').forEach(function(v){v.class
 function earnUgx(n){return 'UGX '+Math.round(Number(n)||0).toLocaleString('en-US')}
 function earnDur(sc){sc=Math.max(0,Math.round(Number(sc)||0));return Math.floor(sc/3600)+'h '+Math.floor((sc%3600)/60)+'m '+(sc%60)+'s'}
 function earnMk(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
-function earnChart(daily){
-  var NS='http://www.w3.org/2000/svg';
-  var svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 320 110');svg.setAttribute('width','100%');
-  var max=0;daily.forEach(function(r){if(r.secs>max)max=r.secs});
-  if(!max){return null}
-  var n=daily.length,bw=Math.max(3,Math.min(22,300/n-3)),gap=3;
-  daily.forEach(function(r,i){
-    var h=Math.max(2,Math.round(r.secs/max*88));
-    var rc=document.createElementNS(NS,'rect');
-    rc.setAttribute('x',10+i*(bw+gap));rc.setAttribute('y',95-h);rc.setAttribute('width',bw);rc.setAttribute('height',h);rc.setAttribute('rx',2);rc.setAttribute('fill','#d6a84b');
-    svg.appendChild(rc);
+var OV_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var OV_MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function ovInfo(d){
+  var m=d.month||'',y=+m.slice(0,4),mo=+m.slice(5,7);
+  var dim=new Date(y,mo,0).getDate(),map={},last=0,act=0;
+  (d.daily||[]).forEach(function(r){var k=+String(r.d).slice(8,10);map[k]=r.secs;if(r.secs>0)act++;if(k>last)last=k});
+  var now=new Date();
+  if(now.getFullYear()===y&&now.getMonth()+1===mo&&now.getDate()>last)last=now.getDate();
+  var days=[];for(var i=1;i<=last;i++)days.push({day:i,secs:map[i]||0});
+  return {days:days,dim:dim,y:y,mo:mo,active:act};
+}
+function ovChart(info){
+  var NS='http://www.w3.org/2000/svg',days=info.days,n=days.length;
+  var W=320,H=120,L=8,R=8,T=10,B=10,max=0;
+  days.forEach(function(r){if(r.secs>max)max=r.secs});
+  if(!max)return null;
+  var wrap=document.createElement('div');
+  var tip=earnMk('div','ov-tip','Tap a day to see its watch time');
+  wrap.appendChild(tip);
+  var svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width','100%');
+  function el(t,a,par){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);(par||svg).appendChild(e);return e}
+  var defs=el('defs',{});
+  var lg=el('linearGradient',{id:'ovg',x1:0,y1:0,x2:0,y2:1},defs);
+  el('stop',{offset:'0%','stop-color':'#d6a84b','stop-opacity':'0.45'},lg);
+  el('stop',{offset:'100%','stop-color':'#d6a84b','stop-opacity':'0.02'},lg);
+  [0,1,2].forEach(function(g){var y=T+g*(H-T-B)/2;el('line',{x1:L,x2:W-R,y1:y,y2:y,stroke:'rgba(255,255,255,.08)','stroke-dasharray':'3 4'})});
+  function Y(s){return H-B-(s/max)*(H-T-B)}
+  var lineMode=info.active>=3&&n>=3,slot=(W-L-R)/n,step=n>1?(W-L-R)/(n-1):0;
+  function X(i){return lineMode?L+i*step:L+i*slot+slot/2}
+  if(lineMode){
+    var pts=days.map(function(r,i){return X(i).toFixed(1)+','+Y(r.secs).toFixed(1)});
+    el('polygon',{points:X(0).toFixed(1)+','+(H-B)+' '+pts.join(' ')+' '+X(n-1).toFixed(1)+','+(H-B),fill:'url(#ovg)'});
+    el('polyline',{points:pts.join(' '),fill:'none',stroke:'#d6a84b','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'});
+  }else{
+    days.forEach(function(r,i){var h=Math.max(r.secs>0?3:0,(H-T-B)*r.secs/max);el('rect',{x:L+i*slot+slot*0.15,y:H-B-h,width:slot*0.7,height:h,rx:2,fill:'#d6a84b'})});
+  }
+  var mk=el('line',{x1:0,x2:0,y1:T,y2:H-B,stroke:'#d6a84b','stroke-dasharray':'3 3',opacity:0});
+  var dot=el('circle',{cx:0,cy:0,r:4,fill:'#d6a84b',opacity:0});
+  svg.style.touchAction='manipulation';
+  svg.addEventListener('click',function(ev){
+    var rc=svg.getBoundingClientRect(),x=(ev.clientX-rc.left)/rc.width*W;
+    var i=lineMode?Math.round((x-L)/step):Math.floor((x-L)/slot);
+    i=Math.max(0,Math.min(n-1,i));
+    var r=days[i],cx=X(i);
+    mk.setAttribute('x1',cx);mk.setAttribute('x2',cx);mk.setAttribute('opacity',1);
+    dot.setAttribute('cx',cx);dot.setAttribute('cy',Y(r.secs));dot.setAttribute('opacity',1);
+    tip.textContent=(r.day<10?'0':'')+r.day+' '+OV_MON[info.mo-1]+' \u00b7 '+earnDur(r.secs);
   });
-  return svg;
+  wrap.appendChild(svg);
+  var ax=earnMk('div','ov-ax');
+  ax.appendChild(earnMk('span',null,'01 '+OV_MON[info.mo-1]));
+  ax.appendChild(earnMk('span',null,(n<10?'0':'')+n+' '+OV_MON[info.mo-1]));
+  wrap.appendChild(ax);
+  return wrap;
 }
 function openEarn(){
   show('v-earn');
+  var hd=document.querySelector('#v-earn h1, #v-earn h2');if(hd)hd.textContent='Creator Overview';
   var box=document.getElementById('earnBody');
   box.textContent='';box.appendChild(earnMk('div','espin'));
   api('/studio/earnings').then(function(res){
     box.textContent='';
     var d=res.body||{};
     if(!d.ok){
-      box.appendChild(earnMk('p','sub','Could not load your earnings.'));
+      box.appendChild(earnMk('p','sub','Could not load your overview.'));
       var b=earnMk('button','btn gold','Try again');b.onclick=openEarn;box.appendChild(b);return;
     }
-    var c=earnMk('div','app');
-    c.appendChild(earnMk('div','elab','Estimated balance \u00b7 '+d.month));
-    c.appendChild(earnMk('div','ebig',earnUgx(d.estimate)));
-    c.appendChild(earnMk('div','sub','Watch time this month: '+earnDur(d.secs)));
-    if(d.ratePending)c.appendChild(earnMk('div','enote','The rate for this month has not been set yet.'));
-    c.appendChild(earnMk('div','enote','This is an estimate based on watch time. It can change before the month closes and is not a promise of payment. The final amount is fixed only when the month is closed.'));
-    box.appendChild(c);
-    var ch=earnChart(d.daily||[]);
-    var cc=earnMk('div','app');
-    cc.appendChild(earnMk('div','elab','Watch time by day'));
-    if(ch){cc.appendChild(ch);var ft=earnMk('div','erow');ft.appendChild(earnMk('span',null,d.daily[0].d.slice(5)));ft.appendChild(earnMk('span',null,d.daily[d.daily.length-1].d.slice(5)));cc.appendChild(ft)}
-    else cc.appendChild(earnMk('p','sub','No watch time on your titles yet this month.'));
-    box.appendChild(cc);
-    var bc=earnMk('div','app');
-    bc.appendChild(earnMk('div','elab','Credited balance'));
-    bc.appendChild(earnMk('div','ebig',earnUgx(d.balance)));
-    bc.appendChild(earnMk('div','enote','Amounts from months that have been closed. These are fixed.'));
-    if(d.closed&&d.closed.length){d.closed.forEach(function(m){var r=earnMk('div','erow');r.appendChild(earnMk('span',null,m.month+' \u00b7 '+earnDur(m.secs)));r.appendChild(earnMk('span',null,earnUgx(m.amount)));bc.appendChild(r)})}
-    else bc.appendChild(earnMk('p','sub','No closed months yet.'));
-    box.appendChild(bc);
-  }).catch(function(){box.textContent='';box.appendChild(earnMk('p','sub','Could not load your earnings.'))});
+    var info=ovInfo(d),mon=OV_MON[info.mo-1]||'';
+    var hero=earnMk('div','ov-hero');
+    var top=earnMk('div','ov-top');
+    top.appendChild(earnMk('div','ov-lab','Current month estimate'));
+    top.appendChild(earnMk('div','ov-pill','Provisional'));
+    hero.appendChild(top);
+    hero.appendChild(earnMk('div','ov-big',earnUgx(d.estimate)));
+    hero.appendChild(earnMk('div','ov-gold','Estimated allocation \u00b7 '+(OV_MONL[info.mo-1]||'')+' '+info.y));
+    if(d.ratePending)hero.appendChild(earnMk('div','ov-note','The rate for this month has not been set yet.'));
+    var cols=earnMk('div','ov-cols');
+    var c1=earnMk('div');c1.appendChild(earnMk('span',null,'Qualified watch time'));c1.appendChild(earnMk('b',null,earnDur(d.secs)));
+    var c2=earnMk('div');c2.appendChild(earnMk('span',null,'Reporting period'));c2.appendChild(earnMk('b',null,'01 \u2013 '+info.dim+' '+mon));
+    cols.appendChild(c1);cols.appendChild(c2);hero.appendChild(cols);
+    hero.appendChild(earnMk('div','ov-note','This is an indicative calculation, not a confirmed payment obligation. Final amounts are determined after the period closes.'));
+    box.appendChild(hero);
+    var ac=earnMk('div','ov-card');
+    var at=earnMk('div','ov-top');
+    at.appendChild(earnMk('div','ov-h','Watch activity'));
+    at.appendChild(earnMk('div','ov-lab',(OV_MONL[info.mo-1]||'')+' '+info.y));
+    ac.appendChild(at);
+    var ch=ovChart(info);
+    if(ch)ac.appendChild(ch);
+    else ac.appendChild(earnMk('p','sub','No watch time on your titles yet this month.'));
+    box.appendChild(ac);
+    var has=d.closed&&d.closed.length;
+    var sc=earnMk('div','ov-card');
+    var st=earnMk('div','ov-top');
+    st.appendChild(earnMk('div','ov-h','Settled balance'));
+    st.appendChild(earnMk('div','ov-pill '+(has?'ok':'off'),has?'Finalized':'None yet'));
+    sc.appendChild(st);
+    sc.appendChild(earnMk('div','ov-big',earnUgx(d.balance)));
+    sc.appendChild(earnMk('div','sub','Amounts finalized from completed reporting periods.'));
+    if(has){d.closed.forEach(function(m){var r=earnMk('div','ov-row');r.appendChild(earnMk('span',null,m.month+' \u00b7 '+earnDur(m.secs)));r.appendChild(earnMk('b',null,earnUgx(m.amount)));sc.appendChild(r)})}
+    else sc.appendChild(earnMk('div','ov-row')).appendChild(earnMk('span',null,'No completed reporting periods yet.'));
+    box.appendChild(sc);
+  }).catch(function(){box.textContent='';box.appendChild(earnMk('p','sub','Could not load your overview.'))});
 }
 function api(path,opt){
   opt=opt||{};
