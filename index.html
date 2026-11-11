@@ -13096,6 +13096,14 @@ async function _mpfQueueNeighbors(centerIdx) {
 
 // ── PREVIEW FEED AS A FULL-SCREEN OVERLAY (openable from anywhere) ──────────
 let _mpfOv = null;
+if (window.PichaNav && window.PichaNav.reg && !window.__mpfReg) {
+  window.__mpfReg = 1;
+  window.PichaNav.reg('mpf', '#mpfContainer[data-overlay="1"]', function () {
+    closeMoviePreviewFeed();
+    var f = window.__mpfAfterPop; window.__mpfAfterPop = null;
+    if (f) setTimeout(f, 0);
+  }, function () { return true; });
+}
 if (!window.__mpfPop) {
   window.__mpfPop = 1;
   window.addEventListener('popstate', function (e) {
@@ -13208,7 +13216,11 @@ async function _mpfMountSlide(idx, autoplay) {
     document.getElementById('mpfMeta_' + idx).textContent = 'Short';
     document.getElementById('mpfDesc_' + idx).textContent = '';
     const _cta = document.getElementById('mpfCta_' + idx);
-    if (_cta) _cta.style.display = 'none';
+    const _cat = (window._allCards || []).find(c => String(c.id) === String(item._titleKey));
+    if (_cta && _cat) {
+      item._catalog = _cat;
+      _cta.innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full ${_cat.media_type === 'tv' ? 'Series' : 'Movie'}`;
+    } else if (_cta) { _cta.style.display = 'none'; }
   }
   const spinnerEl = document.getElementById('mpfSpinner_' + idx);
   const spinnerTimer = setTimeout(() => { if (spinnerEl) spinnerEl.style.display = 'flex'; }, 180);
@@ -13360,7 +13372,7 @@ setInterval(function () {
 function _mpfWatchFull(idx) {
   const meta = _mpfSlideMeta[idx];
   if (!meta) return;
-  const _go = function () { handleCardPlay(meta.item); };
+  const _go = function () { handleCardPlay(meta.item._catalog || meta.item); };
   if (_mpfOv && history.state && history.state.mpf) { window.__mpfAfterPop = _go; history.back(); }
   else { closeMoviePreviewFeed(); _go(); }
 }
@@ -15915,14 +15927,14 @@ async function submitForceReset() {
   function shStrip(list){
   if(!list||!list.length)return '';
   if(!document.getElementById('sh-css')){var st=document.createElement('style');st.id='sh-css';st.textContent='.shh{margin:14px 0 8px;font-size:16px}.shrow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 14px;-webkit-overflow-scrolling:touch}.shc{flex:none;width:112px;cursor:pointer}.shp{position:relative;width:112px;aspect-ratio:9/16;border-radius:10px;overflow:hidden;background:#222 center/cover no-repeat}.shplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;background:linear-gradient(transparent 55%,rgba(0,0,0,.55))}.sht{margin-top:6px;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shpt{font-size:11px;color:#f0b429}';document.head.appendChild(st)}
-  return '<h3 class="shh">Shorts</h3><div class="shrow">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'"><div class="shp"'+((s.coverUrl||s.poster)?' style="background-image:url(&quot;'+E(s.coverUrl||s.poster)+'&quot;)"':'')+'><span class="shplay">&#9654;</span></div><div class="sht">'+E(s.title)+'</div>'+(s.part?'<div class="shpt">Part '+E(String(s.part))+'</div>':'')+'</div>'}).join('')+'</div>';
+  return '<h3 class="shh">Shorts</h3><div class="shrow">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'" data-key="'+E(s.key||'')+'"><div class="shp"'+((s.coverUrl||s.poster)?' style="background-image:url(&quot;'+E(s.coverUrl||s.poster)+'&quot;)"':'')+'><span class="shplay">&#9654;</span></div><div class="sht">'+E(s.title)+'</div>'+(s.part?'<div class="shpt">Part '+E(String(s.part))+'</div>':'')+'</div>'}).join('')+'</div>';
 }
 if(!window.__shClick){window.__shClick=1;document.addEventListener('click',function(e){
   var c=e.target&&e.target.closest?e.target.closest('.shc'):null;if(!c)return;
   var g=c.closest('.shg');
   if(g&&window.openMpfAt){
     var tl=[].slice.call(g.querySelectorAll('.shc')),i=tl.indexOf(c);
-    var its=tl.map(function(t){var l=t.querySelector('.sgl');return {id:'short:'+t.getAttribute('data-u'),title:(l?l.textContent.replace('\u25B6','').trim():''),_short:true,_directUrl:t.getAttribute('data-u'),media_type:'movie',overview:''}});
+    var its=tl.map(function(t){var l=t.querySelector('.sgl');return {id:'short:'+t.getAttribute('data-u'),title:(l?l.textContent.replace('\u25B6','').trim():''),_short:true,_directUrl:t.getAttribute('data-u'),_titleKey:t.getAttribute('data-key'),media_type:'movie',overview:''}});
     e.stopPropagation();e.preventDefault();
     openMpfAt({_list:its.slice(i).concat(its.slice(0,i))});
     return;
@@ -15937,7 +15949,7 @@ if(!window.__shClick){window.__shClick=1;document.addEventListener('click',funct
 function shPanes(list,pre,mvHtml,own){
   var has=!!(list&&list.length);
   if(!document.getElementById('sg-css')){var st=document.createElement('style');st.id='sg-css';st.textContent='.shg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}.shg .shc{cursor:pointer}.shg .shp{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;background:#222 center/cover no-repeat}.shg .shplay{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;color:#fff;font-size:11px;background:linear-gradient(transparent 60%,rgba(0,0,0,.72))}.shg .sgl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';document.head.appendChild(st)}
-  var grid=has?'<div class="shg">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'"><div class="shp"'+((s.coverUrl||s.poster)?' style="background-image:url(&quot;'+E(s.coverUrl||s.poster)+'&quot;)"':'')+'><span class="shplay"><span class="sgl">&#9654; '+E(s.title)+(s.part?' &middot; Part '+E(String(s.part)):'')+'</span></span></div></div>'}).join('')+'</div>':'';
+  var grid=has?'<div class="shg">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'" data-key="'+E(s.key||'')+'"><div class="shp"'+((s.coverUrl||s.poster)?' style="background-image:url(&quot;'+E(s.coverUrl||s.poster)+'&quot;)"':'')+'><span class="shplay"><span class="sgl">&#9654; '+E(s.title)+(s.part?' &middot; Part '+E(String(s.part)):'')+'</span></span></div></div>'}).join('')+'</div>':'';
   setTimeout(function(){
     var bar=document.querySelector(pre==='crp'?'.crtabs':'.pubtabs');if(!bar)return;
     var bs=bar.querySelector('button[data-k="sh"]'),bm=bar.querySelector('button[data-k="mv"]');
