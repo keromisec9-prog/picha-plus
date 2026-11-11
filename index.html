@@ -13242,7 +13242,7 @@ function _mpfExpandCta(idx) {
   if (window.__mpfDescTap) return;
   window.__mpfDescTap = 1;
   const st = document.createElement('style');
-  st.textContent = '[id^="mpfDescBtn_"]{visibility:hidden !important;pointer-events:none !important;}[id^="mpfDesc_"]{pointer-events:auto;cursor:pointer;}';
+  st.textContent = '#mpfContainer[data-overlay="1"] [id^="mpfDescBtn_"]{visibility:hidden !important;pointer-events:none !important;}[id^="mpfDesc_"]{pointer-events:auto;cursor:pointer;}';
   document.head.appendChild(st);
   document.addEventListener('click', function (e) {
     const d = e.target.closest && e.target.closest('[id^="mpfDesc_"]');
