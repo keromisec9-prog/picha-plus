@@ -2162,18 +2162,18 @@ function renderEp(t){
   if(document.getElementById('pmCss'))return;
   var s=document.createElement('style');s.id='pmCss';
   s.textContent=[
-    '.pm-card{background:linear-gradient(160deg,#1b1810,#121212);border-radius:18px;padding:18px;margin:0 0 6px}',
-    '.pm-h{font-size:17px;font-weight:700;color:#fff}',
+    '.pm-card{background:linear-gradient(160deg,#1b1810,#121212);border-radius:18px;padding:14px;margin:0 0 6px}',
+    '.pm-h{font-size:15px;font-weight:700;color:#fff}',
     '.pm-s{margin:6px 0 14px;color:#9a9a9a;font-size:13px;line-height:1.45}',
     '.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}',
-    '.pm-t{appearance:none;-webkit-appearance:none;border:0;background:rgba(255,255,255,.05);color:#fff;border-radius:14px;padding:14px 6px;text-align:center;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}',
+    '.pm-t{appearance:none;-webkit-appearance:none;border:0;background:rgba(255,255,255,.05);color:#fff;border-radius:12px;padding:10px 6px;text-align:center;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}',
     '.pm-t:active{transform:scale(.97)}',
     '.pm-t:hover{background:rgba(229,185,60,.12)}',
-    '.pm-t b{display:block;font-size:24px;line-height:1.1}',
+    '.pm-t b{display:block;font-size:20px;line-height:1.1}',
     '.pm-t span{display:block;font-size:11px;color:#9a9a9a;margin-top:2px}',
-    '.pm-t i{display:block;font-style:normal;font-size:12.5px;color:var(--gold,#e5b93c);margin-top:9px;font-weight:600}',
+    '.pm-t i{display:block;font-style:normal;font-size:12.5px;color:var(--gold,#e5b93c);margin-top:6px;font-weight:600}',
     '.pm-f{margin-top:12px;font-size:11.5px;color:#7d7d7d}',
-    '.pm-live{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#6fe3a2;background:rgba(111,227,162,.1);border:1px solid rgba(111,227,162,.3);border-radius:20px;padding:3px 10px}',
+    '.pm-live{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#6fe3a2}',
     '.pm-st{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}',
     '.pm-st div{background:rgba(255,255,255,.04);border-radius:12px;padding:12px}',
     '.pm-st b{display:block;font-size:20px;color:#fff}',
@@ -2237,7 +2237,7 @@ function loadPromo(tid){
       h+='</div>';
     }
     if(act){
-      h+='<div class="pm-card" style="margin-top:12px"><div class="pm-h">Add more time</div><p class="pm-s">A longer package starts right away and your current one resumes after it. A shorter one starts when the current one ends. Nothing you pay for is lost.</p>'+grid+'</div>';
+      h+='<div class="pm-card" style="margin-top:12px"><div class="pm-h">Add more time</div><p class="pm-s">Longer packages start now, shorter ones start after the current one ends. Nothing you pay for is lost.</p>'+grid+'</div>';
     }else{
       h+='<div class="pm-card"><div class="pm-h">Get more viewers</div><p class="pm-s">Feature this title in the Sponsored row on the home page. Choose how long it runs.</p>'+grid+'</div>';
     }
@@ -2556,14 +2556,14 @@ function fmtD(v){
       var h='<h3 class="dsec">Boost my profile</h3>';
       if(act){
         var ed=new Date(Number(act.ends_ms)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-        h+='<div class="pm-card"><span class="pm-live">&#9679; LIVE</span><div class="pm-h" style="margin-top:10px">Featured until '+bxE(ed)+'</div><p class="pm-s">Your profile is showing in Featured Profiles on the Veejays tab.</p></div>';
+        h+='<div class="pm-card"><span class="pm-live">&#9679; LIVE</span><div class="pm-h" style="margin-top:4px">Featured until '+bxE(ed)+'</div><p class="pm-s" style="margin:4px 0 12px">Showing in Featured Profiles on the Veejays tab.</p>';
       }
       if(q.length){
-        h+='<div class="pm-card" style="margin-top:12px"><div class="pm-h">Up next</div>';
+        h+='<div class="pm-h" style="font-size:13px">Up next</div>';
         q.forEach(function(x){h+='<div class="pm-row"><span>'+bxE(bxDur(x.remaining_ms))+' of boost</span><b>Waiting</b></div>'});
-        h+='</div>';
+        
       }
-      h+='<div class="pm-card" style="margin-top:'+(act?12:0)+'px"><div class="pm-h">'+(act?'Add more time':'Get more followers')+'</div><p class="pm-s">'+(act?'A longer package starts right away and your current one resumes after it. A shorter one starts when the current one ends. Nothing you pay for is lost.':'Show your profile in the Featured Profiles row on the Veejays tab. Choose how long it runs.')+'</p>'+grid+'</div>';
+      h+=(act?'':'<div class="pm-card">')+'<div class="pm-h" style="font-size:13px;margin-top:2px">'+(act?'Add more time':'Get more followers')+'</div><p class="pm-s">'+(act?'Longer packages start now, shorter ones start after the current one ends. Nothing you pay for is lost.':'Show your profile in the Featured Profiles row on the Veejays tab. Choose how long it runs.')+'</p>'+grid+'</div>';
       box.innerHTML=h;
       box.onclick=function(ev){var el=ev.target.closest('[data-bx]');if(el)bxSheet(el)};
     }).catch(function(){});
