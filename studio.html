@@ -448,6 +448,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .pfnr .pfn.open{white-space:normal;overflow:visible;text-overflow:clip}
 .pfpen{flex:none;background:none;border:0;padding:4px;color:var(--mute);display:grid;place-items:center;cursor:pointer}
 .pfpen svg{width:16px;height:16px;fill:currentColor}
+.pvt{width:18px;height:18px;fill:#1d9bf0;flex:none}
 .pfur{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .pfur .pfu{margin:0}
 .pfur .pbd{font-size:11px!important;padding:2px 8px!important;margin:0!important;line-height:1.4}
@@ -2614,8 +2615,8 @@ function fmtD(v){
     var cov='<div class="pfc"'+(p.coverUrl?' style="background-image:url(\''+E(p.coverUrl)+'\')"':'')+'></div>';
     var av=p.avatarUrl?'<img src="'+E(p.avatarUrl)+'" alt="">':AVS;
     return '<div class="pf">'+cov+'<div class="pfr"><div class="pfa">'+av+'<button type="button" class="pfcam" aria-label="Change photo" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button></div><div class="pfbt"><button type="button" class="btn pfe pfedit" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span>Edit profile</span></button></div></div>'
-      +'<div class="pfnr"><div class="pfn" onclick="this.classList.toggle(\'open\')">'+E(p.displayName||'Creator')+'</div><button type="button" class="pfpen" aria-label="Edit name" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button></div>'
-      +'<div class="pfur">'+(p.username?'<span class="pfu">@'+E(p.username)+'</span>':'')+(/^user\d{8,12}$/.test(p.username||'')?'<button type="button" class="pfchg" onclick="profEdit()">Choose username</button>':'')+'<span class="pbd'+(ok?' ok':'')+'">'+(ok?(window.PFROLE||'Verified partner'):'Creator')+'</span></div>'
+      +'<div class="pfnr"><div class="pfn" onclick="this.classList.toggle(\'open\')">'+E(p.displayName||'Creator')+'</div>'+(ok?'<svg class="pvt" viewBox="0 0 24 24" aria-label="Verified"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>':'')+'<button type="button" class="pfpen" aria-label="Edit name" onclick="profEdit()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button></div>'
+      +'<div class="pfur">'+(p.username?'<span class="pfu">@'+E(p.username)+'</span>':'')+(/^user\d{8,12}$/.test(p.username||'')?'<button type="button" class="pfchg" onclick="profEdit()">Choose username</button>':'')+(ok?'':'<span class="pbd">Creator</span>')+'</div>'
       +(p.bio?'<p class="pfb">'+E(p.bio)+'</p>':'')+statsHTML()+'</div>';
   }
   window.renderProfile=function(){
@@ -2836,7 +2837,7 @@ function fmtD(v){
       var h='<div class="pubw">'+top+'<div class="pf"><div class="pfc"'+(c.coverUrl?' style="background-image:url(\''+E(c.coverUrl)+'\')"':'')+'></div>'
         +'<div class="pfr"><div class="pfa">'+(c.avatarUrl?'<img src="'+E(c.avatarUrl)+'" alt="">':AVS)+'</div>'
         +'<div class="pfbt">'+(self?'':folBtn())+'</div></div>'
-        +'<div class="pfnr"><div class="pfn" onclick="this.classList.toggle(\'open\')">'+E(c.displayName||('@'+c.username))+'</div>'+(c.verified?CHK:'')+'</div>'
+        +'<div class="pfnr"><div class="pfn" onclick="this.classList.toggle(\'open\')">'+E(c.displayName||('@'+c.username))+'</div>'+(c.verified?'<svg class="pvt" viewBox="0 0 24 24" aria-label="Verified"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>':'')+'</div>'
         +'<div class="pfur"><span class="pfu">@'+E(c.username)+'</span></div>'
         +(c.bio?'<p class="pfb">'+E(c.bio)+'</p>':'')
         +'<div class="pfst"><div><b>'+(m.following||0)+'</b><span>Following</span></div><div><b id="pubFers">'+PC.n+'</b><span>Followers</span></div><div><b>'+t.length+'</b><span>Titles</span></div></div></div></div>';
