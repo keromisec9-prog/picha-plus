@@ -13256,6 +13256,28 @@ function _mpfExpandCta(idx) {
   }, true);
 })();
 
+// Watch Full for a series: open the series screen (raised above the creator page when
+// opened from a profile), the same way the creator page opens its own series cards.
+function _mpfOpenTitle(item) {
+  try {
+    if (item && item.media_type === 'tv' && typeof showSeries === 'function') {
+      const si = (window._seriesList || []).findIndex(x => x && String(x._kvKey) === String(item.id));
+      if (si > -1) {
+        const inCr = !!document.getElementById('ppCr');
+        if (inCr) {
+          window.__ppDet = true;
+          const sm = document.getElementById('seriesModal');
+          if (sm) sm.classList.add('pp-lift');
+        }
+        showSeries(si);
+        try { if (inCr && (history.state || {}).ppcr) history.pushState({ type: 'series', idx: si }, '', location.href); } catch (e) {}
+        return;
+      }
+    }
+  } catch (e) {}
+  handleCardPlay(item);
+}
+
 async function _mpfMountSlide(idx, autoplay) {
   const _mpfMyGen = _mpfGeneration;
   const item = _mpfList[idx];
@@ -13445,7 +13467,7 @@ function _mpfWatchFull(idx) {
   if (!meta) return;
   const _c = document.getElementById('mpfCta_' + idx);
   if (_mpfOv && _c && _c.dataset.armedInit === '1' && _c.dataset.armed !== '1') { _mpfExpandCta(idx); return; }
-  const _go = function () { handleCardPlay(meta.item._catalog || meta.item); };
+  const _go = function () { _mpfOpenTitle(meta.item._catalog || meta.item); };
   if (_mpfOv && history.state && history.state.mpf) {
     let _done = false;
     const _once = function () { if (_done) return; _done = true; window.__mpfAfterPop = null; _go(); };
