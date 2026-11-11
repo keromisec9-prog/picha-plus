@@ -12,3 +12,6 @@ worker*.js.bak*
 *.py
 *.bak
 *.bak[0-9]*
+*.bak*
+*.pre_*
+EOF
