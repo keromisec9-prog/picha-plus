@@ -2661,10 +2661,19 @@ function fmtD(v){
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
       window.PFROLE=(function(){var ap=items.filter(function(x){return x.status==='approved'})[0];var k=ap&&ap.types&&ap.types[0];return k?(window.ROLE_LBL||{})[k]||'':''})();PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;var sb=(r[3]&&r[3].body)||{};PF.st={following:sb.following||0,followers:sb.followers||0,posts:ts.filter(function(t){return t.status==='approved'}).length};
       h.innerHTML=headHTML(PF.p,ok)+'<div id="boostBox"></div>';loadBoost();
-      l.innerHTML=pfCards(ts);if(0)l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
+      l.innerHTML=pfCards(ts);shMine(l);if(0)l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
+  function shMine(l){
+    var u=PF.p&&PF.p.username;if(!u||!window.shStrip||!l)return;
+    fetch((typeof API!=='undefined'?API:'')+'/studio/creator/'+encodeURIComponent(u)).then(function(r){return r.json()}).then(function(b){
+      var sh=b&&b.ok&&b.creator&&b.creator.shorts;if(!sh||!sh.length)return;
+      if(l.querySelector('#shMine'))return;
+      var d=document.createElement('div');d.id='shMine';d.innerHTML=window.shStrip(sh).replace('>Shorts<','>Your shorts<');
+      l.insertBefore(d,l.firstChild);
+    }).catch(function(){});
+  }
   function editBox(){
     var pe=G('profEdit');
     if(!pe){pe=document.createElement('div');pe.id='profEdit';pe.style.display='none';var h=G('profHead');h.parentNode.insertBefore(pe,h)}
@@ -2884,7 +2893,8 @@ function fmtD(v){
       root(h);
     }).catch(function(){root(head()+'<p class="sub">Could not load. Check your connection and try again.</p>')});
   }
-  function shStrip(list){
+  window.shStrip=shStrip;
+function shStrip(list){
   if(!list||!list.length)return '';
   if(!document.getElementById('sh-css')){var st=document.createElement('style');st.id='sh-css';st.textContent='.shh{margin:14px 0 8px;font-size:16px}.shrow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 14px;-webkit-overflow-scrolling:touch}.shc{flex:none;width:112px;cursor:pointer}.shp{position:relative;width:112px;aspect-ratio:9/16;border-radius:10px;overflow:hidden;background:#222 center/cover no-repeat}.shplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;background:linear-gradient(transparent 55%,rgba(0,0,0,.55))}.sht{margin-top:6px;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shpt{font-size:11px;color:#f0b429}';document.head.appendChild(st)}
   return '<h3 class="shh">Shorts</h3><div class="shrow">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'"><div class="shp"'+(s.poster?' style="background-image:url(&quot;'+E(s.poster)+'&quot;)"':'')+'><span class="shplay">&#9654;</span></div><div class="sht">'+E(s.title)+'</div>'+(s.part?'<div class="shpt">Part '+E(String(s.part))+'</div>':'')+'</div>'}).join('')+'</div>';
