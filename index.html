@@ -12655,6 +12655,17 @@ function _mpfWireSeekBar(idx) {
   const knob = document.getElementById('mpfSeekKnob_' + idx);
   if (!wrap || !video || wrap.dataset.wired === '1') return;
   wrap.dataset.wired = '1';
+  if (!document.getElementById('mpfSeekHit')) {
+    const st = document.createElement('style'); st.id = 'mpfSeekHit';
+    st.textContent = '[id^="mpfSeekWrap_"]::before{content:"";position:absolute;left:-8px;right:-8px;top:-6px;bottom:-22px;}';
+    document.head.appendChild(st);
+  }
+  let _lastSeekAt = 0;
+  function liveSeek(x) {
+    const r = ratioFromX(x); applyUI(r);
+    const n = Date.now();
+    if (n - _lastSeekAt > 80) { _lastSeekAt = n; seekTo(r); }
+  }
 
   function ratioFromX(clientX) {
     const rect = wrap.getBoundingClientRect();
@@ -12670,8 +12681,8 @@ function _mpfWireSeekBar(idx) {
   }
 
   let seeking = false;
-  wrap.addEventListener('touchstart', (e) => { seeking = true; e.stopPropagation(); applyUI(ratioFromX(e.touches[0].clientX)); }, { passive: true });
-  wrap.addEventListener('touchmove', (e) => { if (!seeking) return; e.stopPropagation(); applyUI(ratioFromX(e.touches[0].clientX)); }, { passive: true });
+  wrap.addEventListener('touchstart', (e) => { seeking = true; e.stopPropagation(); liveSeek(e.touches[0].clientX); }, { passive: true });
+  wrap.addEventListener('touchmove', (e) => { if (!seeking) return; e.stopPropagation(); liveSeek(e.touches[0].clientX); }, { passive: true });
   wrap.addEventListener('touchend', (e) => { if (!seeking) return; seeking = false; e.stopPropagation(); const r = ratioFromX(e.changedTouches[0].clientX); seekTo(r); }, { passive: true });
   wrap.addEventListener('click', (e) => { e.stopPropagation(); const r = ratioFromX(e.clientX); applyUI(r); seekTo(r); });
 }
@@ -12895,7 +12906,7 @@ function _mpfSlideHTML(idx) {
           <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:rgba(255,255,255,0.22);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;font-weight:700;font-size:0.88rem;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;">
           <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full Movie
         </button>
-          <div id="mpfSeekWrap_${idx}" style="position:relative;width:100%;height:14px;display:flex;align-items:center;touch-action:none;margin-top:4px;top:18px;">
+          <div id="mpfSeekWrap_${idx}" style="position:relative;width:100%;height:14px;display:flex;align-items:center;touch-action:none;margin-top:4px;top:10px;">
             <div style="position:relative;width:100%;height:2px;background:rgba(255,255,255,0.25);border-radius:2px;">
               <div id="mpfProgressBar_${idx}" style="position:absolute;left:0;top:0;height:100%;width:0%;background:var(--gold);border-radius:2px;"></div>
               <div id="mpfSeekKnob_${idx}" style="position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:var(--gold);transform:translate(-50%,-50%);left:0%;box-shadow:0 0 3px rgba(0,0,0,0.5);"></div>
@@ -13213,7 +13224,7 @@ async function _mpfMountSlide(idx, autoplay) {
   document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
 
   if (item._short) {
-    document.getElementById('mpfMeta_' + idx).textContent = 'Short';
+    document.getElementById('mpfMeta_' + idx).textContent = '';
     document.getElementById('mpfDesc_' + idx).textContent = '';
     const _cta = document.getElementById('mpfCta_' + idx);
     const _cat = (window._allCards || []).find(c => String(c.id) === String(item._titleKey));
