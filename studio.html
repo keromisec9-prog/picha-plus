@@ -2889,7 +2889,7 @@ function fmtD(v){
           return '<div class="pcd">'+(x.posterUrl?'<img class="pim" src="'+E(x.posterUrl)+'" alt="">':'<div class="pim"></div>')+'<div class="pt">'+E(x.title)+'</div><div class="pk">'+(x.kind==='series'?'Series':'Movie')+'</div></div>';
         }).join('')+'</div>';
       }
-      h+=shPanes(c.shorts,'pub',mv)+'<div id="pub-ab" style="display:none"><div class="qcard"><h3>About</h3><p class="sub" style="margin:0">'+(c.bio?E(c.bio):'No bio yet.')+'</p></div></div>';
+      h+=shPanes(c.shorts,'pub',mv,self)+'<div id="pub-ab" style="display:none"><div class="qcard"><h3>About</h3><p class="sub" style="margin:0">'+(c.bio?E(c.bio):'No bio yet.')+'</p></div></div>';
       root(h);
     }).catch(function(){root(head()+'<p class="sub">Could not load. Check your connection and try again.</p>')});
   }
@@ -2908,16 +2908,17 @@ if(!window.__shClick){window.__shClick=1;document.addEventListener('click',funct
   p.appendChild(v);var b=p.querySelector('.shplay');if(b)b.style.display='none';
   try{v.play().catch(function(){})}catch(err){}
 },true)}
-function shPanes(list,pre,mvHtml){
+function shPanes(list,pre,mvHtml,own){
   var has=!!(list&&list.length);
   if(!document.getElementById('sg-css')){var st=document.createElement('style');st.id='sg-css';st.textContent='.shg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}.shg .shc{cursor:pointer}.shg .shp{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;background:#222 center/cover no-repeat}.shg .shplay{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;color:#fff;font-size:11px;background:linear-gradient(transparent 60%,rgba(0,0,0,.72))}.shg .sgl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';document.head.appendChild(st)}
   var grid=has?'<div class="shg">'+list.map(function(s){return '<div class="shc" data-u="'+E(s.previewUrl)+'"><div class="shp"'+(s.poster?' style="background-image:url(&quot;'+E(s.poster)+'&quot;)"':'')+'><span class="shplay"><span class="sgl">&#9654; '+E(s.title)+(s.part?' &middot; Part '+E(String(s.part)):'')+'</span></span></div></div>'}).join('')+'</div>':'';
   setTimeout(function(){
     var bar=document.querySelector(pre==='crp'?'.crtabs':'.pubtabs');if(!bar)return;
     var bs=bar.querySelector('button[data-k="sh"]'),bm=bar.querySelector('button[data-k="mv"]');
-    if(!has){if(bs)bs.remove();if(bm)bm.classList.add('on')}
+    
   },0);
-  return '<div id="'+pre+'-sh"'+(has?'':' style="display:none"')+'>'+grid+'</div><div id="'+pre+'-mv"'+(has?' style="display:none"':'')+'>'+mvHtml+'</div>';
+  if(!has)grid='<div style="text-align:center;padding:56px 24px;color:#9a9aa2"><div style="font-size:36px">&#127916;</div><div style="color:#fff;font-weight:600;font-size:16px;margin:10px 0 6px">No shorts yet</div><div style="font-size:13px;line-height:1.5">'+(own?'Add a short preview when you publish a movie or series. It is the fastest way for viewers to discover you.':'This creator has not posted any shorts yet.')+'</div></div>';
+  return '<div id="'+pre+'-sh">'+grid+'</div><div id="'+pre+'-mv" style="display:none">'+mvHtml+'</div>';
 }
 if(!window.__shTab){window.__shTab=1;document.addEventListener('click',function(e){
   var b=e.target&&e.target.closest?e.target.closest('.crtabs button[data-k],.pubtabs button[data-k]'):null;if(!b)return;
