@@ -13223,9 +13223,9 @@ function _mpfExpandCta(idx) {
   if (!c || c.dataset.busy === '1') return;
   c.dataset.busy = '1';
   const from = c.offsetWidth;
+  const _bw = document.getElementById('mpfSeekWrap_' + idx);
+  const to = _bw ? _bw.offsetWidth : c.offsetWidth;
   c.style.transition = 'none';
-  c.style.width = '100%';
-  const to = c.offsetWidth;
   c.style.width = from + 'px';
   void c.offsetWidth;
   c.style.transition = 'width .28s ease';
@@ -13233,7 +13233,7 @@ function _mpfExpandCta(idx) {
   const l = c.querySelector('.mpf-cta-lbl'), ic = c.querySelector('.mpf-cta-ic');
   if (ic) ic.style.fontSize = '18px';
   if (l) { l.style.maxWidth = '240px'; l.style.opacity = '1'; l.style.marginLeft = '6px'; }
-  setTimeout(function () { c.dataset.armed = '1'; c.dataset.busy = '0'; c.style.width = '100%'; }, 300);
+  setTimeout(function () { c.dataset.armed = '1'; c.dataset.busy = '0'; }, 300);
 }
 
 async function _mpfMountSlide(idx, autoplay) {
