@@ -12703,9 +12703,9 @@ let _mpfSlideMeta = {};
 let _mpfDragging = false;
 let _mpfLocked = false;
 let _mpfTsy = 0, _mpfDragY = 0, _mpfLastY = 0, _mpfLastT = 0, _mpfVel = 0, _mpfPeekIdx = null;
-const MPF_SNAP_RATIO = 0.22;
-const MPF_VELOCITY_THRESH = 0.5;
-const MPF_ANIM_MS = 260;
+const MPF_SNAP_RATIO = 0.14;
+const MPF_VELOCITY_THRESH = 0.3;
+const MPF_ANIM_MS = 190;
 
 // Weighted-random shuffle: higher-scored items are more LIKELY to come first, but
 // not guaranteed — every call produces a genuinely different order, not just the
@@ -13852,6 +13852,18 @@ function _mpfWireEdgeLongPress(idx) {
   video.addEventListener('touchcancel', clearHold);
 }
 
+let _mpfWinH = 0;
+function _mpfPeekMount(i) {
+  const el = document.getElementById('mpfSlide_' + i);
+  if (!el || el.dataset.mounted !== '1') _mpfMountSlide(i, false);
+}
+(function () {
+  if (document.getElementById('mpfPerf')) return;
+  const st = document.createElement('style'); st.id = 'mpfPerf';
+  st.textContent = '.mpf-slide{will-change:transform;backface-visibility:hidden;}';
+  document.head.appendChild(st);
+})();
+
 function _mpfWireTouch() {
   _mpfH = _mpfSizeContainer();
   const root = document.getElementById('mpfRoot');
@@ -13864,7 +13876,7 @@ function _mpfWireTouch() {
 
   f.addEventListener('touchstart', (e) => {
     if (_mpfLocked) return;
-    _mpfH = _mpfSizeContainer();
+    if (window.innerHeight !== _mpfWinH || !_mpfH) { _mpfWinH = window.innerHeight; _mpfH = _mpfSizeContainer(); }
     _mpfTsy = e.touches[0].clientY;
     _mpfDragY = 0;
     _mpfLastY = _mpfTsy;
@@ -13889,12 +13901,12 @@ function _mpfWireTouch() {
     const len = _mpfList.length;
     if (dy < 0 && _mpfIdx + 1 < len) {
       _mpfPeekIdx = _mpfIdx + 1;
-      _mpfMountSlide(_mpfPeekIdx, false);
+      _mpfPeekMount(_mpfPeekIdx);
       const s = document.getElementById('mpfSlide_' + _mpfPeekIdx);
       if (s) { s.style.display = ''; s.style.transform = `translateY(${_mpfH + dy}px)`; }
     } else if (dy > 0 && _mpfIdx - 1 >= 0) {
       _mpfPeekIdx = _mpfIdx - 1;
-      _mpfMountSlide(_mpfPeekIdx, false);
+      _mpfPeekMount(_mpfPeekIdx);
       const s = document.getElementById('mpfSlide_' + _mpfPeekIdx);
       if (s) { s.style.display = ''; s.style.transform = `translateY(${-_mpfH + dy}px)`; }
     }
