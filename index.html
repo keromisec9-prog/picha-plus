@@ -13236,6 +13236,25 @@ function _mpfExpandCta(idx) {
   setTimeout(function () { c.dataset.armed = '1'; c.dataset.busy = '0'; }, 300);
 }
 
+// Read more/less: the button keeps its space but is invisible and untouchable;
+// tapping the description text itself toggles it.
+(function () {
+  if (window.__mpfDescTap) return;
+  window.__mpfDescTap = 1;
+  const st = document.createElement('style');
+  st.textContent = '[id^="mpfDescBtn_"]{visibility:hidden !important;pointer-events:none !important;}[id^="mpfDesc_"]{pointer-events:auto;cursor:pointer;}';
+  document.head.appendChild(st);
+  document.addEventListener('click', function (e) {
+    const d = e.target.closest && e.target.closest('[id^="mpfDesc_"]');
+    if (!d) return;
+    const idx = d.id.slice('mpfDesc_'.length);
+    const b = document.getElementById('mpfDescBtn_' + idx);
+    if (!b || getComputedStyle(b).display === 'none') return;
+    e.stopPropagation();
+    _mpfToggleDesc(Number(idx));
+  }, true);
+})();
+
 async function _mpfMountSlide(idx, autoplay) {
   const _mpfMyGen = _mpfGeneration;
   const item = _mpfList[idx];
