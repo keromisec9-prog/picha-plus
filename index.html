@@ -13256,6 +13256,75 @@ function _mpfExpandCta(idx) {
   }, true);
 })();
 
+// Auto-stacking: any modal that opens puts itself one above the highest visible layer.
+(function () {
+  if (window.__ppAutoZ) return;
+  window.__ppAutoZ = 1;
+  function topLayer(self) {
+    let top = 0;
+    const all = document.body.querySelectorAll('*');
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      if (el === self || self.contains(el) || el.contains(self)) continue;
+      if (el.classList.contains('pp-under')) continue;
+      const cs = getComputedStyle(el);
+      if (cs.position !== 'fixed' && cs.position !== 'absolute') continue;
+      const z = parseInt(cs.zIndex, 10);
+      if (!(z > top) || z >= 2147483647) continue;
+      if (cs.display === 'none' || cs.visibility === 'hidden' || !el.getClientRects().length) continue;
+      top = z;
+    }
+    return top;
+  }
+  function raise(m) {
+    requestAnimationFrame(function () {
+      if (!m.classList.contains('active') || m.classList.contains('pp-under')) return;
+      const top = topLayer(m);
+      const cur = parseInt(getComputedStyle(m).zIndex, 10) || 0;
+      if (cur <= top && top < 2147483646) {
+        m.__azPrev = [m.style.getPropertyValue('z-index'), m.style.getPropertyPriority('z-index')];
+        m.style.setProperty('z-index', String(top + 1), 'important');
+      }
+    });
+  }
+  function watch(m) {
+    if (m.__azObs) return;
+    m.__azObs = 1;
+    new MutationObserver(function () {
+      const on = m.classList.contains('active');
+      if (on && !m.__azOn) { m.__azOn = 1; raise(m); }
+      else if (!on && m.__azOn) {
+        m.__azOn = 0;
+        if (m.__azPrev) { m.style.removeProperty('z-index'); if (m.__azPrev[0]) m.style.setProperty('z-index', m.__azPrev[0], m.__azPrev[1]); m.__azPrev = null; }
+      }
+    }).observe(m, { attributes: true, attributeFilter: ['class'] });
+  }
+  function init() { document.querySelectorAll('.modal-overlay,#infoModal,#seriesModal,#playerModal').forEach(watch); }
+  init();
+  document.addEventListener('DOMContentLoaded', init);
+})();
+
+// Watch Full: series open the series screen (the pager stays underneath so back returns to it).
+function _mpfOpenTitle(item) {
+  try {
+    if (item && item.media_type === 'tv' && typeof showSeries === 'function') {
+      const si = (window._seriesList || []).findIndex(x => x && String(x._kvKey) === String(item.id));
+      if (si > -1) {
+        const inCr = !!document.getElementById('ppCr');
+        if (inCr) {
+          window.__ppDet = true;
+          const sm = document.getElementById('seriesModal');
+          if (sm) sm.classList.add('pp-lift');
+        }
+        showSeries(si);
+        try { if (inCr && (history.state || {}).ppcr) history.pushState({ type: 'series', idx: si }, '', location.href); } catch (e) {}
+        return;
+      }
+    }
+  } catch (e) {}
+  handleCardPlay(item);
+}
+
 async function _mpfMountSlide(idx, autoplay) {
   const _mpfMyGen = _mpfGeneration;
   const item = _mpfList[idx];
@@ -13445,7 +13514,7 @@ function _mpfWatchFull(idx) {
   if (!meta) return;
   const _c = document.getElementById('mpfCta_' + idx);
   if (_mpfOv && _c && _c.dataset.armedInit === '1' && _c.dataset.armed !== '1') { _mpfExpandCta(idx); return; }
-  const _go = function () { handleCardPlay(meta.item._catalog || meta.item); };
+  const _go = function () { _mpfOpenTitle(meta.item._catalog || meta.item); };
   if (_mpfOv && history.state && history.state.mpf) {
     let _done = false;
     const _once = function () { if (_done) return; _done = true; window.__mpfAfterPop = null; _go(); };
