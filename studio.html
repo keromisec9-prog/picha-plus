@@ -1456,10 +1456,25 @@ function nuSave(file,key,uid,frac){
   try{if(L.tmdb&&L.tmdb.poster)tp='https://image.tmdb.org/t/p/w185'+L.tmdb.poster;else if(L.up&&L.up.poster&&L.up.poster.preview&&String(L.up.poster.preview).indexOf('data:')===0&&L.up.poster.preview.length<300000)tp=L.up.poster.preview;tt=(L.tmdb&&(L.tmdb.name||L.tmdb.title))||''}catch(e){}
   try{PichaTemp.saveUpload(JSON.stringify({key:key,uploadId:uid,name:file.name,size:file.size,pct:Math.round(frac*100),t:Date.now(),poster:tp,title:tt,partSize:10485760,submit:nuSub(key)}))}catch(e){}
 }
+function rightsApply(){
+  try{
+    var c=document.getElementById('lf_rights');if(!c)return;
+    var lock=!!(L.up&&L.up.video&&L.up.video.busy);
+    var want=!!L.rightsOk||lock;
+    if(c.checked!==want)c.checked=want;
+    if(c.disabled!==lock)c.disabled=lock;
+  }catch(e){}
+}
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t&&t.id==='lf_rights'&&!t.disabled){L.rightsOk=!!t.checked}
+},true);
+try{new MutationObserver(rightsApply).observe(document.body,{childList:true,subtree:true})}catch(e){}
+setInterval(rightsApply,500);
 function nuSub(key){
   try{
     if(L.kind!=='movie')return null;
-    var rc=document.getElementById('lf_rights');if(!rc||!rc.checked)return null;
+    var rc=document.getElementById('lf_rights');if(!(L.rightsOk||(rc&&rc.checked)))return null;
     saveF();
     var f=L.f||{},t=(f.title||'').trim();if(!t)return null;
     var body={kind:'movie',title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true,videoKey:key};
@@ -2302,7 +2317,7 @@ function submitTitle(){
   if(!movie&&!(f.genre||'').trim())return toast('Select a genre');
   if(movie&&!(L.up.video&&L.up.video.key))return toast('Upload your movie file first');
   if(busy())return toast('Please wait for the upload to finish');
-  var rc=$('lf_rights');if(!rc||!rc.checked)return toast('Please confirm the declaration');
+  var rc=$('lf_rights');if(!(L.rightsOk||(rc&&rc.checked)))return toast('Please confirm the declaration');
   var body={kind:L.kind,title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true};
   if(movie)body.videoKey=L.up.video.key;
   if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
