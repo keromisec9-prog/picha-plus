@@ -1452,8 +1452,100 @@ function puFind(f){
 }
 function nuSave(file,key,uid,frac){
   if(!window.PichaTemp||!PichaTemp.saveUpload)return;
-  try{PichaTemp.saveUpload(JSON.stringify({key:key,uploadId:uid,name:file.name,size:file.size,pct:Math.round(frac*100),t:Date.now()}))}catch(e){}
+  var tp='',tt='';
+  try{if(L.tmdb&&L.tmdb.poster)tp='https://image.tmdb.org/t/p/w185'+L.tmdb.poster;else if(L.up&&L.up.poster&&L.up.poster.preview&&String(L.up.poster.preview).indexOf('data:')===0&&L.up.poster.preview.length<300000)tp=L.up.poster.preview;tt=(L.tmdb&&(L.tmdb.name||L.tmdb.title))||''}catch(e){}
+  try{PichaTemp.saveUpload(JSON.stringify({key:key,uploadId:uid,name:file.name,size:file.size,pct:Math.round(frac*100),t:Date.now(),poster:tp,title:tt,partSize:10485760,submit:nuSub(key)}))}catch(e){}
 }
+function nuSub(key){
+  try{
+    if(L.kind!=='movie')return null;
+    var rc=document.getElementById('lf_rights');if(!rc||!rc.checked)return null;
+    saveF();
+    var f=L.f||{},t=(f.title||'').trim();if(!t)return null;
+    var body={kind:'movie',title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true,videoKey:key};
+    if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
+    if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
+    return {path:'/studio/title',body:body};
+  }catch(e){return null}
+}
+function nuCanHand(file){
+  try{return L.kind==='movie'&&!!(window.PichaTemp&&PichaTemp.resumeNative&&PichaTemp.hasCopy&&PichaTemp.hasCopy(file.name,file.size))&&!(L.up.poster&&L.up.poster.busy)&&nuSub('x')!==null}catch(e){return false}
+}
+function stNat(fn){try{return JSON.parse(window.PichaTemp[fn]())}catch(e){return null}}
+function stList(){
+  var d=stNat('listUploads')||{uploads:[]},lv=stNat('liveUploads')||[],m={};
+  lv.forEach(function(x){m[x.key+'|'+x.uploadId]=x});
+  return (d.uploads||[]).map(function(u){u.lv=m[u.key+'|'+u.uploadId]||null;return u}).sort(function(a,b){return (a.started||a.t||0)-(b.started||b.t||0)});
+}
+function stPct(u){return u.lv&&u.lv.size?Math.min(100,Math.floor(u.lv.sent*100/u.lv.size)):(u.pct||0)}
+function stState(u){
+  var s=u.lv&&u.lv.state;
+  return s==='uploading'?'Uploading':s==='waiting'?'Waiting for connection':s==='retrying'?'Reconnecting':s==='signin'?'Sign in again, then tap Resume':s==='error'?'Could not resume. Tap Resume':s==='done'?'Finishing':'Paused';
+}
+function stSize(b){b=b||0;return b>=1073741824?(b/1073741824).toFixed(1)+' GB':Math.round(b/1048576)+' MB'}
+function upCard(){
+  var a=stList();if(!a.length)return '';
+  var run=a.filter(function(u){return u.lv&&u.lv.state==='uploading'}).length;
+  return '<button type="button" class="qab" onclick="openStUploads()" style="width:100%;margin:10px 0;text-align:left"><b>Uploads ('+a.length+')</b><span>'+(run?run+' uploading in the background':'Tap to view and resume')+'</span></button>';
+}
+var stUpT=null,stUpSig='',stUpArm=null,stUpReload=false,stUpSeen={};
+function stUpClose(){
+  clearInterval(stUpT);stUpT=null;
+  var el=document.getElementById('stUp');if(el)el.remove();
+  if(stUpReload){stUpReload=false;try{openLib()}catch(e){}}
+}
+window.addEventListener('popstate',function(){if(document.getElementById('stUp'))stUpClose()});
+function stUpPaint(force){
+  var el=document.getElementById('stUp');if(!el)return;
+  var a=stList(),sig=a.map(function(u){return u.key+u.uploadId+(u.lv?u.lv.state:'p')}).join('|')+'|'+stUpArm;
+  Object.keys(stUpSeen).forEach(function(k){if(!a.some(function(u){return u.key+'|'+u.uploadId===k}))stUpReload=true});
+  stUpSeen={};a.forEach(function(u){if(u.lv)stUpSeen[u.key+'|'+u.uploadId]=1});
+  if(!force&&sig===stUpSig){
+    a.forEach(function(u){
+      var p=stPct(u),b=el.querySelector('[data-bar="'+u.uploadId+'"]'),t=el.querySelector('[data-txt="'+u.uploadId+'"]');
+      if(b)b.style.width=p+'%';
+      if(t)t.textContent=p+'% \u00b7 '+stSize(Math.round((u.size||0)*p/100))+' of '+stSize(u.size||0);
+    });
+    return;
+  }
+  stUpSig=sig;
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button type="button" data-a="back" aria-label="Back" style="background:none;border:0;color:#f0b429;padding:6px"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><div style="font-size:22px;font-weight:700;color:#f0b429">Uploads</div></div>';
+  if(!a.length)h+='<div style="opacity:.7;padding:30px 4px;line-height:1.5">No unfinished uploads.<br>Uploads that are running or paused appear here.</div>';
+  a.forEach(function(u){
+    var p=stPct(u),run=u.lv&&u.lv.state==='uploading',idle=!u.lv||u.lv.state==='error'||u.lv.state==='signin';
+    h+='<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #2a2a2a">'
+     +'<div style="width:64px;height:92px;border-radius:8px;background:#2a2a2a center/cover no-repeat'+(u.poster?';background-image:url('+esc(u.poster)+')':'')+';flex:none"></div>'
+     +'<div style="flex:1;min-width:0"><div style="font-weight:700;color:#f0b429;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(u.title||u.name)+'</div>'
+     +'<div style="font-size:13px;margin:4px 0;opacity:.85">'+(run?'\u25b2 ':'')+stState(u)+'</div>'
+     +'<div style="height:5px;border-radius:3px;background:#333;overflow:hidden"><i data-bar="'+esc(u.uploadId)+'" style="display:block;height:100%;width:'+p+'%;background:#f0b429"></i></div>'
+     +'<div data-txt="'+esc(u.uploadId)+'" style="font-size:13px;opacity:.7;margin-top:5px">'+p+'% \u00b7 '+stSize(Math.round((u.size||0)*p/100))+' of '+stSize(u.size||0)+'</div>'
+     +'<div style="display:flex;gap:8px;margin-top:8px">'
+     +(idle?'<button type="button" class="pill" data-a="res" data-k="'+esc(u.key)+'" data-u="'+esc(u.uploadId)+'">Resume</button>':'')
+     +'<button type="button" class="pill dng" data-a="can" data-k="'+esc(u.key)+'" data-u="'+esc(u.uploadId)+'">'+(stUpArm===u.uploadId?'Tap again to confirm':'Cancel')+'</button>'
+     +'</div></div></div>';
+  });
+  el.innerHTML=h;
+}
+window.openStUploads=function(reload){
+  if(document.getElementById('stUp'))return;
+  stUpReload=!!reload;stUpArm=null;stUpSig='';stUpSeen={};
+  var el=document.createElement('div');el.id='stUp';
+  el.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:70;background:#121212;color:#fff;overflow-y:auto;box-sizing:border-box;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)';
+  el.addEventListener('click',function(ev){
+    var b=ev.target.closest('[data-a]');if(!b)return;
+    var a=b.dataset.a;
+    if(a==='back'){history.back();return}
+    if(a==='res'){try{PichaTemp.resumeNative(b.dataset.k,b.dataset.u)}catch(e){}stUpArm=null;setTimeout(function(){stUpPaint(true)},300);return}
+    if(a==='can'){
+      if(stUpArm!==b.dataset.u){stUpArm=b.dataset.u;stUpPaint(true);clearTimeout(window.stUpArmT);window.stUpArmT=setTimeout(function(){stUpArm=null;stUpPaint(true)},4000);return}
+      stUpArm=null;try{PichaTemp.cancelUpload(b.dataset.k,b.dataset.u)}catch(e){}stUpReload=true;stUpPaint(true);
+    }
+  });
+  document.body.appendChild(el);
+  try{history.pushState({stUp:1},'')}catch(e){}
+  stUpPaint(true);
+  stUpT=setInterval(function(){stUpPaint(false)},1000);
+};
 function nuCall(fn,key,uid){
   if(!window.PichaTemp||!PichaTemp[fn])return false;
   try{PichaTemp[fn](key,uid);return true}catch(e){return false}
@@ -1586,6 +1678,7 @@ function upFile(slot,file,st){
       var urls={};b.parts.forEach(function(u,j){urls[j+1]=u});
       var r={slot:slot,key:b.key,uploadId:b.uploadId,partSize:b.partSize,name:file.name,size:file.size,lm:file.lastModified||0,t:Date.now()};
       puPut(r);nuSave(file,b.key,b.uploadId,0);
+      if(slot==='video'&&nuCanHand(file)){puDel(r.key,r.uploadId);nuCall('resumeNative',r.key,r.uploadId);throw fatal('handoff')}
       return drive(r,false,{ok:true,done:[],urls:urls});
     });
   }
@@ -1637,6 +1730,7 @@ function run(slot,file,st,preview){
   }).catch(function(e){
     st.busy=false;st.paused=false;
     var m=(e&&e.message)||'';
+    if(m==='handoff'){L.up={};try{toast('Upload continues in the background')}catch(e2){}openStUploads(true);return}
     if(m==='auth'){L.up[slot]=null;paint(slot);return gate()}
     if(st.cancel){if(!st.leave)cancelPendingUpload(st);L.up[slot]=null;paint(slot);return}
     L.up[slot]={err:(st.uploadId?'Upload stopped: ':'')+(m||'Upload failed')+(st.uploadId?'. Choose the same video again to continue where it stopped.':'')};if(L.kind==='movie'&&slot==='video'&&L.step===3){L.step=1;renderForm();return}
@@ -1760,7 +1854,7 @@ function renderList(){
   });
   var up='';
   if(d.hasMore)h+='<button type="button" class="btn" style="width:100%;margin:10px 0 14px" onclick="libMore(this)">Load more</button>';
-  h+='<div class="qa"><div class="qat">Quick actions</div><div class="qag"><button type="button" class="qab" data-act="choose" data-kind="movie"><b>Upload content</b><span>Publish a new movie</span></button><button type="button" class="qab" data-act="choose" data-kind="series"><b>Create series</b><span>Start an episodic title</span></button></div></div>';
+  h+=upCard();h+='<div class="qa"><div class="qat">Quick actions</div><div class="qag"><button type="button" class="qab" data-act="choose" data-kind="movie"><b>Upload content</b><span>Publish a new movie</span></button><button type="button" class="qab" data-act="choose" data-kind="series"><b>Create series</b><span>Start an episodic title</span></button></div></div>';
   h+='<div id="libSheet" class="lsh" onclick="if(event.target===this||event.target.closest(\'[data-act]\'))this.classList.remove(\'on\')"><div class="lsc"><div class="lsh-h"><b>Library menu</b><button type="button" class="lsx" aria-label="Close" onclick="document.getElementById(\'libSheet\').classList.remove(\'on\')"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>'+qh+up+'</div></div>';
   R(h);
 }
@@ -1865,7 +1959,7 @@ function renderForm(){
   }else{
     var pv=hasTp?'https://image.tmdb.org/t/p/w185'+L.tmdb.poster:(L.up.poster&&L.up.poster.preview)||'';
     h+='<div class="rvw"><div class="tr">'+(pv?'<img class="tth" src="'+esc(pv)+'" alt="">':'<div class="tth"></div>')+'<div class="tcb"><div class="tt">'+esc(f.title||'')+'</div>'+(f.genre?'<div class="tm">'+esc(f.genre)+'</div>':'')+(f.syn?'<div class="tm" style="margin-top:6px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">'+esc(f.syn)+'</div>':'')+'</div></div>';
-    h+='<div class="inf"><div><span>Movie file</span><b>'+esc(L.up.video?(L.up.video.shown||L.up.video.name):'')+'</b></div><div><span>Details from</span><b>'+(L.tmdb?'TMDB':'Entered manually')+'</b></div><div><span>Poster</span><b>'+(hasTp?'TMDB':(L.up.poster&&L.up.poster.key?'Uploaded':'None'))+'</b></div></div></div>';
+    h+='<div class="inf"><div><span>Movie file</span><b>'+esc(L.up.video?(L.up.video.shown||L.up.video.name):'')+'</b></div></div></div>';
     h+=RIGHTS;
   }
   if(movie&&n===3&&!L.up.video){L.step=1;return renderForm()}
