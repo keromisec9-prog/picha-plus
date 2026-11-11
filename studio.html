@@ -1546,6 +1546,48 @@ window.openStUploads=function(reload){
   stUpPaint(true);
   stUpT=setInterval(function(){stUpPaint(false)},1000);
 };
+function puSync(){
+  try{
+    if(!(window.PichaTemp&&PichaTemp.listUploads))return;
+    var d=JSON.parse(PichaTemp.listUploads()),have={};
+    (d.uploads||[]).forEach(function(u){have[u.key+'|'+u.uploadId]=1});
+    var a=puAll(),k=a.filter(function(r){return have[r.key+'|'+r.uploadId]});
+    if(k.length!==a.length)puSaveAll(k);
+  }catch(e){}
+}
+function stClearPending(){
+  var seen={},all=[];
+  function add(r){if(!r||!r.key||!r.uploadId)return;var k=r.key+'|'+r.uploadId;if(!seen[k]){seen[k]=1;all.push({key:r.key,uploadId:r.uploadId})}}
+  try{puAll().forEach(add)}catch(e){}
+  try{((stNat('listUploads')||{}).uploads||[]).forEach(add)}catch(e){}
+  if(!all.length){
+    try{if(L.up&&L.up.video&&L.up.video.err){L.up.video=null;paint('video')}}catch(e){}
+    return toast('Nothing to clear');
+  }
+  var old=document.getElementById('stClr');if(old)old.remove();
+  var o=document.createElement('div');o.id='stClr';
+  o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:90;background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box';
+  o.innerHTML='<div style="width:100%;max-width:420px;background:#0f0f14;border:1px solid #2a2a30;border-radius:24px;padding:28px 22px 22px;text-align:center;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.6)">'
+   +'<div style="width:64px;height:64px;border-radius:50%;background:#3a1020;border:1px solid #5a1a30;margin:0 auto 18px;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="#ff2d55"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div>'
+   +'<div style="font-size:24px;font-weight:700;margin-bottom:10px">Clear unfinished uploads?</div>'
+   +'<div style="font-size:16px;line-height:1.45;color:#a0a0ab;margin-bottom:22px">Remove '+(all.length===1?'1 unfinished upload':'all '+all.length+' unfinished uploads')+' and their saved copies from your device? This action can\u2019t be undone.</div>'
+   +'<div style="display:flex;gap:12px"><button type="button" id="stClrNo" style="flex:1;height:52px;border-radius:14px;background:transparent;border:1px solid #3a3a42;color:#fff;font-weight:700;font-size:16px">Keep uploads</button>'
+   +'<button type="button" id="stClrYes" style="flex:1;height:52px;border-radius:14px;background:#d6103f;border:0;color:#fff;font-weight:700;font-size:16px">Clear all</button></div></div>';
+  document.body.appendChild(o);
+  document.getElementById('stClrNo').onclick=function(){o.remove()};
+  o.addEventListener('click',function(ev){if(ev.target===o)o.remove()});
+  document.getElementById('stClrYes').onclick=function(){
+    o.remove();
+    try{puSaveAll([])}catch(e){}
+    all.forEach(function(r){
+      try{
+        if(!nuCall('cancelUpload',r.key,r.uploadId))api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:r.key,uploadId:r.uploadId,reason:'user'})}).catch(function(){});
+      }catch(e){}
+    });
+    try{if(L.up&&L.up.video&&L.up.video.err){L.up.video=null;paint('video')}}catch(e){}
+    toast('Cleared');
+  };
+}
 function nuCall(fn,key,uid){
   if(!window.PichaTemp||!PichaTemp[fn])return false;
   try{PichaTemp[fn](key,uid);return true}catch(e){return false}
@@ -1667,6 +1709,7 @@ function upFile(slot,file,st){
   function fresh(){
     var body={kind:slot,fileName:file.name,size:file.size};if(slot==='video'){try{var pf=window.PichaTemp&&PichaTemp.getPickedFolder&&PichaTemp.getPickedFolder();if(/^[0-9a-f-]{36}$/.test(pf||''))body.folder=pf}catch(e){}}
     if(multi){
+      puSync();
       if(puAll().length>=PU_MAX)return Promise.reject(fatal('You already have '+PU_MAX+' unfinished uploads. Open Manage my uploads to finish or cancel one'));
       body.multipart=true;body.partSize=10*1024*1024;
     }
@@ -1698,7 +1741,7 @@ function slotInner(slot){
   if(st&&st.ready&&!st.key)return '<div class="upn">'+esc(st.shown||st.name)+'</div><div class="upr"><span>Ready to upload'+(st.size?' &middot; '+cxMB(st.size):'')+'</span><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
   if(st&&st.busy)return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%</span><button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
   if(st&&st.key)return (st.preview?'<img class="upp" src="'+st.preview+'" alt="">':'')+'<div class="upn">'+esc(st.name)+' &#10003; uploaded</div><div class="upr"><button type="button" class="pill" data-act="uclear" data-slot="'+slot+'">Remove</button></div>';
-  return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>':'')+'<button type="button" class="btn upc" data-act="pick" data-slot="'+slot+'">Choose '+(slot==='video'?'video':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
+  return (st&&st.err?'<div class="upe">'+esc(st.err)+'</div>'+(/^You already have/.test(st.err)?'<button type="button" class="btn upc" onclick="stClearPending()" style="margin-bottom:10px">Clear unfinished uploads</button>':''):'')+'<button type="button" class="btn upc" data-act="pick" data-slot="'+slot+'">Choose '+(slot==='video'?'video':'poster image')+'</button><input class="upin" type="file" accept="'+acc+'" data-up="'+slot+'">';
 }
 function paint(slot){var b=$('lu_'+slot);if(b)b.innerHTML=slotInner(slot)}
 function slotHTML(slot,label,hint){return '<div class="fld"><label>'+label+'</label><div class="upl" id="lu_'+slot+'">'+slotInner(slot)+'</div><div class="uph">'+hint+'</div></div>'}
