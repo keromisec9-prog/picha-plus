@@ -13272,6 +13272,8 @@ function _mpfExpandCta(idx) {
       const z = parseInt(cs.zIndex, 10);
       if (!(z > top) || z >= 2147483647) continue;
       if (cs.display === 'none' || cs.visibility === 'hidden' || !el.getClientRects().length) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < window.innerWidth * 0.8 || r.height < window.innerHeight * 0.8) continue;
       top = z;
     }
     return top;
