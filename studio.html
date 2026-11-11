@@ -524,8 +524,6 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 .ceco-r em{font-style:normal;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.1);white-space:nowrap}
 .ceco-r em.v{color:#4aa3ff}
 .ceco .btn{width:100%;margin-top:12px}
-.projlink{text-align:center;font-size:13.5px;opacity:.85;margin:14px 0}
-.projlink a{color:#f5b800;font-weight:600;text-decoration:underline}
 
 .how-ways,.how-more{padding:28px 0 4px}
 .ways{display:grid;gap:14px;margin-top:16px}
@@ -793,7 +791,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
   <div class="hwp"><h2>More Ways to Get Noticed</h2>
     <div class="hw2">
       <div class="hbc" onclick="openPromote()"><b>Boost Your Content</b><p>Pay to reach more viewers with promoted videos, movies or trailers.</p><span class="hlm">Learn More</span></div>
-      <div class="hbc" onclick="go('promote-content')"><b>Boost Your Profile</b><p>Increase your visibility and attract more followers.</p><span class="hlm">Learn More</span></div>
+      <div class="hbc" onclick="show('v-apps');setTimeout(function(){var b=document.getElementById('boostBox');if(b)b.scrollIntoView({behavior:'smooth'})},250)"><b>Boost Your Profile</b><p>Increase your visibility and attract more followers.</p><span class="hlm">Learn More</span></div>
     </div></div>
   <div class="hjr"><h3>Your Journey, <span>Your Opportunities</span></h3>
     <p>Whether you&rsquo;re a creator, a professional or a company, MyPicha+ Studio gives you the tools to share, grow and earn.</p></div>
@@ -1022,7 +1020,6 @@ function openApps(){
 function go(flow){
   if(!token)return gate();
   if(flow==='partner'&&window.openPartner)return window.openPartner();
-  if((flow==='promote-content'||flow==='promote-project')&&window.openSubmit)return window.openSubmit(flow);
   toast('Coming soon');
 }
 
@@ -1222,7 +1219,6 @@ function openSubmit(flow){
   S={flow:flow,kind:flow==='promote-project'?'project':'movie',title:'',d:{},rights:false,done:false};
   show('v-submit');renderS();
 }
-window.openSubmit=openSubmit;
 function sfld(k,label,type,ph){
   var v=(k==='title'?S.title:S.d[k])||'';
   var a=' data-sk="'+k+'"';
