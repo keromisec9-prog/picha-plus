@@ -13111,7 +13111,7 @@ if (window.PichaNav && window.PichaNav.reg && !window.__mpfReg) {
   window.__mpfReg = 1;
   window.PichaNav.reg('mpf', '#mpfContainer[data-overlay="1"]', function () {
     closeMoviePreviewFeed();
-    var f = window.__mpfAfterPop; window.__mpfAfterPop = null;
+    var f = (Date.now() - (window.__mpfAfterPopAt || 0) < 1500) ? window.__mpfAfterPop : null; window.__mpfAfterPop = null;
     if (f) setTimeout(f, 0);
   }, function () { return true; });
 }
@@ -13121,7 +13121,7 @@ if (!window.__mpfPop) {
     if (_mpfOv) {
       e.stopImmediatePropagation();
       closeMoviePreviewFeed();
-      var f = window.__mpfAfterPop; window.__mpfAfterPop = null;
+      var f = (Date.now() - (window.__mpfAfterPopAt || 0) < 1500) ? window.__mpfAfterPop : null; window.__mpfAfterPop = null;
       if (f) setTimeout(f, 0);
       return;
     }
@@ -13147,6 +13147,7 @@ function openMpfAt(ref) {
   if (!item) { showToast('Preview unavailable', 'error'); return false; }
   const c = document.getElementById('mpfContainer');
   if (!c) return false;
+  window.__mpfAfterPop = null;
   if (_mpfOv) closeMoviePreviewFeed();
   _mpfOv = { css: c.style.cssText, parent: c.parentNode, next: c.nextSibling, bodyOv: document.body.style.overflow };
   document.body.appendChild(c);
@@ -13445,7 +13446,13 @@ function _mpfWatchFull(idx) {
   const _c = document.getElementById('mpfCta_' + idx);
   if (_mpfOv && _c && _c.dataset.armedInit === '1' && _c.dataset.armed !== '1') { _mpfExpandCta(idx); return; }
   const _go = function () { handleCardPlay(meta.item._catalog || meta.item); };
-  if (_mpfOv && history.state && history.state.mpf) { window.__mpfAfterPop = _go; history.back(); }
+  if (_mpfOv && history.state && history.state.mpf) {
+    let _done = false;
+    const _once = function () { if (_done) return; _done = true; window.__mpfAfterPop = null; _go(); };
+    window.__mpfAfterPop = _once; window.__mpfAfterPopAt = Date.now();
+    history.back();
+    setTimeout(function () { if (_done) return; if (_mpfOv) closeMoviePreviewFeed(); _once(); }, 350);
+  }
   else { closeMoviePreviewFeed(); _go(); }
 }
 
