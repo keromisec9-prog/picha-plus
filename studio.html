@@ -889,7 +889,7 @@ function ovChart(info){
   function el(t,a,par){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);(par||svg).appendChild(e);return e}
   var defs=el('defs',{});
   var lg=el('linearGradient',{id:'ovg',x1:0,y1:0,x2:0,y2:1},defs);
-  el('stop',{offset:'0%','stop-color':'#d6a84b','stop-opacity':'0.5'},lg);
+  el('stop',{offset:'0%','stop-color':'#d6a84b','stop-opacity':'0.32'},lg);
   el('stop',{offset:'100%','stop-color':'#d6a84b','stop-opacity':'0'},lg);
   function X(i){return n>1?L+i*(W-L-R)/(n-1):(L+W-R)/2}
   function Y(v){return H-B-(v/max)*(H-T-B)}
@@ -905,10 +905,10 @@ function ovChart(info){
   }
   var base=H-B;
   var area=el('path',{d:d+' L'+X(n-1).toFixed(1)+' '+base+' L'+X(0).toFixed(1)+' '+base+' Z',fill:'url(#ovg)'});
-  var glow=el('path',{d:d,fill:'none',stroke:'#d6a84b','stroke-width':7,'stroke-opacity':0.18,'stroke-linejoin':'round','stroke-linecap':'round'});
+  var glow=el('path',{d:d,fill:'none',stroke:'#d6a84b','stroke-width':4,'stroke-opacity':0.06,'stroke-linejoin':'round','stroke-linecap':'round'});
   var line=el('path',{d:d,fill:'none',stroke:'#e8b947','stroke-width':2.2,'stroke-linejoin':'round','stroke-linecap':'round'});
   var mk=el('line',{x1:0,x2:0,y1:T,y2:base,stroke:'#d6a84b','stroke-dasharray':'3 3','stroke-opacity':0.8});
-  var halo=el('circle',{cx:0,cy:0,r:8,fill:'#d6a84b','fill-opacity':0.22});
+  var halo=el('circle',{cx:0,cy:0,r:6,fill:'#d6a84b','fill-opacity':0.10});
   var dot=el('circle',{cx:0,cy:0,r:4,fill:'#e8b947',stroke:'#141414','stroke-width':1.5});
   function sel(i){
     var r=days[i],cx=X(i),cy=Y(r.secs);
