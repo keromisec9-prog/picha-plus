@@ -12895,7 +12895,7 @@ function _mpfSlideHTML(idx) {
           <button onclick="_mpfWatchFull(${idx})" id="mpfCta_${idx}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:rgba(255,255,255,0.22);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;font-weight:700;font-size:0.88rem;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;">
           <span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full Movie
         </button>
-          <div id="mpfSeekWrap_${idx}" style="position:relative;width:100%;height:20px;display:flex;align-items:center;touch-action:none;margin-top:30px;">
+          <div id="mpfSeekWrap_${idx}" style="position:relative;width:100%;height:14px;display:flex;align-items:center;touch-action:none;margin-top:4px;top:18px;">
             <div style="position:relative;width:100%;height:2px;background:rgba(255,255,255,0.25);border-radius:2px;">
               <div id="mpfProgressBar_${idx}" style="position:absolute;left:0;top:0;height:100%;width:0%;background:var(--gold);border-radius:2px;"></div>
               <div id="mpfSeekKnob_${idx}" style="position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:var(--gold);transform:translate(-50%,-50%);left:0%;box-shadow:0 0 3px rgba(0,0,0,0.5);"></div>
@@ -13219,6 +13219,7 @@ async function _mpfMountSlide(idx, autoplay) {
     const _cat = (window._allCards || []).find(c => String(c.id) === String(item._titleKey));
     if (_cta && _cat) {
       item._catalog = _cat;
+      document.getElementById('mpfDesc_' + idx).textContent = _cat.overview || _cat.synopsis || '';
       _cta.innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full ${_cat.media_type === 'tv' ? 'Series' : 'Movie'}`;
     } else if (_cta) { _cta.style.display = 'none'; }
   }
