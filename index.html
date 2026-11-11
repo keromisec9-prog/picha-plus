@@ -13151,6 +13151,11 @@ function openMpfAt(ref) {
   _mpfOv = { css: c.style.cssText, parent: c.parentNode, next: c.nextSibling, bodyOv: document.body.style.overflow };
   document.body.appendChild(c);
   c.dataset.overlay = '1';
+  if (!document.getElementById('mpfOvBar')) {
+    const st = document.createElement('style'); st.id = 'mpfOvBar';
+    st.textContent = '#mpfContainer[data-overlay="1"] [id^="mpfSeekWrap_"]{top:-8px !important;}';
+    document.head.appendChild(st);
+  }
   c.style.cssText = 'display:block;position:fixed;left:0;top:0;width:100%;z-index:2147483000;background:#000;overflow:hidden;touch-action:none;';
   document.body.style.overflow = 'hidden';
   try { history.pushState({ mpf: 1 }, ''); } catch (e) {}
