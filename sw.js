@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-v217-b1794429807';
+const CACHE_NAME = 'picha-plus-20261112-000030';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -56,6 +56,17 @@ self.addEventListener('fetch', e => {
   // range silently hands the media pipeline wrong-offset bytes, breaking playback after
   // the first cached chunk. Always go straight to network for these.
   if (url.hostname.includes('backblazeb2.com') || e.request.headers.has('Range')) {
+    return;
+  }
+
+  // NETWORK-FIRST-NAV: pages always come fresh from the network; cache is only the offline fallback
+  if (e.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    e.respondWith(
+      fetch(new Request(url.href, { cache: 'no-cache' })).then(res => {
+        if (res.ok) { const clone = res.clone(); caches.open(CACHE_NAME).then(c => c.put(e.request, clone)); }
+        return res;
+      }).catch(() => caches.match(e.request).then(h => h || caches.match('/index.html')))
+    );
     return;
   }
 
