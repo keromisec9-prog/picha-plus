@@ -13205,24 +13205,30 @@ function _mpfSetupCta(idx) {
   const m = document.getElementById('mpfMeta_' + idx);
   if (!c || !m || !m.parentNode || c.style.display === 'none' || c.dataset.armedInit === '1') return;
   c.dataset.armedInit = '1';
-  c.dataset.full = c.innerHTML;
-  c.dataset.css = c.style.cssText;
-  m.parentNode.insertBefore(c, m);
-  _mpfCollapseCta(idx);
-}
-function _mpfCollapseCta(idx) {
-  const c = document.getElementById('mpfCta_' + idx);
-  if (!c) return;
   c.dataset.armed = '0';
-  c.style.cssText = c.dataset.css + ';width:46px;height:46px;min-width:0;padding:0;margin:0 0 10px 0;pointer-events:auto;transition:width .2s ease;';
-  c.innerHTML = '<span class="material-symbols-rounded" style="font-size:28px;font-variation-settings:\'FILL\' 1">play_arrow</span>';
+  const label = c.textContent.replace('play_arrow', '').trim();
+  c.dataset.css = c.style.cssText;
+  c.innerHTML = '<span class="material-symbols-rounded mpf-cta-ic" style="font-size:28px;flex:none;font-variation-settings:\'FILL\' 1;transition:font-size .28s ease;">play_arrow</span>'
+    + '<span class="mpf-cta-lbl" style="display:inline-block;white-space:nowrap;overflow:hidden;max-width:0;opacity:0;margin-left:0;transition:max-width .28s ease,opacity .22s ease,margin-left .28s ease;">' + label + '</span>';
+  m.parentNode.insertBefore(c, m);
+  c.style.cssText = c.dataset.css + ';gap:0;width:46px;height:46px;min-width:0;padding:0;margin:0 0 10px 0;overflow:hidden;pointer-events:auto;transition:width .28s ease;';
 }
 function _mpfExpandCta(idx) {
   const c = document.getElementById('mpfCta_' + idx);
-  if (!c) return;
-  c.dataset.armed = '1';
-  c.style.cssText = c.dataset.css + ';margin:0 0 10px 0;pointer-events:auto;transition:width .2s ease;';
-  c.innerHTML = c.dataset.full;
+  if (!c || c.dataset.busy === '1') return;
+  c.dataset.busy = '1';
+  const from = c.offsetWidth;
+  c.style.transition = 'none';
+  c.style.width = '100%';
+  const to = c.offsetWidth;
+  c.style.width = from + 'px';
+  void c.offsetWidth;
+  c.style.transition = 'width .28s ease';
+  c.style.width = to + 'px';
+  const l = c.querySelector('.mpf-cta-lbl'), ic = c.querySelector('.mpf-cta-ic');
+  if (ic) ic.style.fontSize = '18px';
+  if (l) { l.style.maxWidth = '240px'; l.style.opacity = '1'; l.style.marginLeft = '6px'; }
+  setTimeout(function () { c.dataset.armed = '1'; c.dataset.busy = '0'; c.style.width = '100%'; }, 300);
 }
 
 async function _mpfMountSlide(idx, autoplay) {
