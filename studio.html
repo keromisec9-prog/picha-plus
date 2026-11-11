@@ -1471,6 +1471,23 @@ document.addEventListener('change',function(ev){
 },true);
 try{new MutationObserver(rightsApply).observe(document.body,{childList:true,subtree:true})}catch(e){}
 setInterval(rightsApply,500);
+function genreChips(cur){
+  var GLL=(typeof GL!=='undefined'&&GL.length)?GL:['Action','Adventure','Animation','Comedy','Crime','Documentary','Drama','Family','Fantasy','Horror','Mystery','Romance','Science Fiction','Thriller'];
+  var sel=String(cur||'').split(',').map(function(x){return x.trim().toLowerCase()});
+  return '<div class="fld"><label>Genre (optional, up to 2)</label><div id="lf_gc" style="display:flex;flex-wrap:wrap;gap:8px">'+GLL.map(function(g){var on=sel.indexOf(g.toLowerCase())>-1;return '<button type="button" data-g="'+esc(g)+'" class="'+(on?'on':'')+'" style="height:38px;padding:0 14px;border-radius:19px;border:1px solid #3a3a42;background:'+(on?'#f0b429':'transparent')+';color:'+(on?'#111':'#fff')+';font-size:14px">'+esc(g)+'</button>'}).join('')+'</div><input id="lf_genre" type="hidden" value="'+esc(cur||'')+'"></div>';
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target&&ev.target.closest?ev.target.closest('#lf_gc button'):null;if(!b)return;
+  var box=document.getElementById('lf_gc'),hid=document.getElementById('lf_genre');if(!box||!hid)return;
+  if(b.classList.contains('on'))b.classList.remove('on');
+  else{if(box.querySelectorAll('button.on').length>=2)return toast('Pick up to 2 genres');b.classList.add('on')}
+  var sel=[].slice.call(box.querySelectorAll('button.on')).map(function(x){return x.dataset.g});
+  hid.value=sel.join(', ');
+  try{L.f=L.f||{};L.f.genre=hid.value}catch(e){}
+  [].forEach.call(box.querySelectorAll('button'),function(x){var o=x.classList.contains('on');x.style.background=o?'#f0b429':'transparent';x.style.color=o?'#111':'#fff'});
+},true);
+document.addEventListener('input',function(ev){var t=ev.target;if(t&&t.id==='lf_part'){try{L.f=L.f||{};L.f.part=t.value}catch(e){}}},true);
+function partOf(){try{var n=parseInt((L.f||{}).part,10);return(n>=1&&n<=99)?n:null}catch(e){return null}}
 function nuSub(key){
   try{
     if(L.kind!=='movie')return null;
@@ -1479,7 +1496,7 @@ function nuSub(key){
     var f=L.f||{},t=(f.title||'').trim();if(!t)return null;
     var body={kind:'movie',title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true,videoKey:key};
     if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
-    if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
+    var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
     return {path:'/studio/title',body:body};
   }catch(e){return null}
 }
@@ -1874,7 +1891,7 @@ document.getElementById('libRoot').addEventListener('click',function(ev){
   if(!ti)return toast('Enter a title');
   if(busy())return toast('Please wait for the upload to finish');
   var body={id:L.editId,title:ti,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim()};
-  if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
+  var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
   if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
   post('/studio/edit',body,el,'Save changes',function(b){
     toast(b.artPending?'Saved. New poster is in review':'Saved');
@@ -2009,7 +2026,7 @@ function renderForm(){
     h+=tmdbBlock(movie);
     if(!tm||(L.tmdb&&!L.tmdb.poster))h+=slotHTML('poster','Poster image (optional)','');
     h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
-    if(!tm)h+='<div class="fld"><label>Genre (optional)</label><input id="lf_genre" type="text" maxlength="80" value="'+esc(f.genre||'')+'"></div>';
+    h+='<div class="fld"><label>Part (optional)</label><input id="lf_part" type="number" inputmode="numeric" min="1" max="99" placeholder="e.g. 1, 2, 3" value="'+esc(f.part||'')+'"></div>';if(!tm)h+=genreChips(f.genre);
     if(!tm)h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
     if(!movie)h+=RIGHTS;
   }else if(n===1){
@@ -2321,7 +2338,7 @@ function submitTitle(){
   var body={kind:L.kind,title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true};
   if(movie)body.videoKey=L.up.video.key;
   if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
-  if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
+  var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
   post('/studio/title',body,$('lf_go'),movie?'Submit for review':'Save & Continue',function(b){
     toast(movie?'Movie submitted for review':'Series created');L.up={};
     if(movie)openLib();else openDetail(b.id);
