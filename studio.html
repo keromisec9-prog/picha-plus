@@ -738,23 +738,25 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
 
 <style>@keyframes espin{to{transform:rotate(360deg)}}.espin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:espin .8s linear infinite;margin:40px auto}.ebig{font-size:34px;font-weight:700;margin:6px 0 4px}.elab{font-size:11px;letter-spacing:2px;color:var(--mute);text-transform:uppercase}.enote{font-size:12px;color:var(--mute);line-height:1.5;margin-top:10px}.erow{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}</style>
 <style>
-.ov-hero{border:1px solid rgba(214,168,75,.45);border-radius:20px;padding:18px;margin:0 0 14px;background:linear-gradient(135deg,rgba(214,168,75,.20),rgba(18,18,18,.95) 58%)}
+.ov-hero{border:1px solid rgba(214,168,75,.35);border-radius:16px;padding:14px;margin:0 0 12px;background:linear-gradient(135deg,rgba(214,168,75,.14),rgba(18,18,18,.95) 60%)}
 .ov-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.ov-lab{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#bdb6a6}
-.ov-pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--gold);color:var(--gold);white-space:nowrap}
-.ov-pill.ok{border-color:#2e7d4f;color:#5fd38d;background:rgba(46,125,79,.15)}
-.ov-pill.off{border-color:rgba(255,255,255,.2);color:#9a9486}
-.ov-big{font-size:44px;font-weight:800;line-height:1.1;margin:10px 0 2px;color:#fff}
-.ov-gold{color:var(--gold);font-size:14px}
-.ov-cols{display:flex;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
-.ov-cols>div{flex:1}.ov-cols>div+div{padding-left:14px;border-left:1px solid rgba(255,255,255,.1)}
-.ov-cols span{display:block;font-size:12px;color:#9a9486}.ov-cols b{display:block;font-size:17px;margin-top:3px;color:#fff}
-.ov-note{font-size:12.5px;line-height:1.5;color:#9a9486;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
-.ov-card{border:1px solid rgba(214,168,75,.25);border-radius:20px;padding:16px;margin:0 0 14px;background:rgba(22,22,22,.9)}
-.ov-h{font-size:16px;font-weight:700;color:#fff}
-.ov-tip{font-size:13px;color:var(--gold);min-height:20px;margin:8px 0 2px}
-.ov-ax{display:flex;justify-content:space-between;font-size:12px;color:#9a9486;margin-top:2px}
-.ov-row{display:flex;justify-content:space-between;font-size:14px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
+.ov-lab{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#bdb6a6;display:flex;align-items:center}
+.ov-st{font-size:12px;font-weight:600;color:var(--gold);white-space:nowrap}
+.ov-st.ok{color:#5fd38d}.ov-st.off{color:#9a9486;font-weight:400}
+.ov-big{font-size:28px;font-weight:800;line-height:1.1;margin:8px 0 2px;color:#fff}
+.ov-gold{color:var(--gold);font-size:12.5px}
+.ov-cols{display:flex;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.ov-cols>div{flex:1}.ov-cols>div+div{padding-left:12px;border-left:1px solid rgba(255,255,255,.08)}
+.ov-cols span{display:flex;align-items:center;font-size:11px;color:#9a9486}.ov-cols b{display:block;font-size:14px;margin-top:3px;color:#fff;font-weight:600}
+.ov-note{display:flex;gap:6px;font-size:11.5px;line-height:1.45;color:#9a9486;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)}
+.ov-note .ov-i{flex:none;margin-top:1px}
+.ov-card{border:1px solid rgba(214,168,75,.2);border-radius:16px;padding:14px;margin:0 0 12px;background:rgba(22,22,22,.9)}
+.ov-h{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center}
+.ov-tip{font-size:12px;color:var(--gold);min-height:16px;margin:6px 0 0}
+.ov-ax{display:flex;justify-content:space-between;font-size:11px;color:#9a9486;margin-top:2px}
+.ov-row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}
+.ov-i{width:16px;height:16px;fill:var(--gold);margin-right:6px;flex:none}
+.ov-cols .ov-i{width:14px;height:14px}
 </style>
 <div class="view" id="v-earn"><div class="wrap page">
   <div class="sh"><button type="button" class="bkb" aria-label="Back" onclick="show('v-apps')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button></div>
@@ -860,6 +862,9 @@ function earnDur(sc){sc=Math.max(0,Math.round(Number(sc)||0));return Math.floor(
 function earnMk(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 var OV_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var OV_MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var OV_P={trend:'M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z',clock:'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z',cal:'M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z',info:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',bars:'M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z',bank:'M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z'};
+function ovIc(k){var w=document.createElement('span');w.innerHTML='<svg class="ov-i" viewBox="0 0 24 24" aria-hidden="true"><path d="'+OV_P[k]+'"/></svg>';return w.firstChild}
+function ovLbl(cls,ic,txt){var e=earnMk('div',cls);e.appendChild(ovIc(ic));e.appendChild(document.createTextNode(txt));return e}
 function ovInfo(d){
   var m=d.month||'',y=+m.slice(0,4),mo=+m.slice(5,7);
   var dim=new Date(y,mo,0).getDate(),map={},last=0,act=0;
@@ -871,7 +876,7 @@ function ovInfo(d){
 }
 function ovChart(info){
   var NS='http://www.w3.org/2000/svg',days=info.days,n=days.length;
-  var W=320,H=120,L=8,R=8,T=10,B=10,max=0;
+  var W=320,H=80,L=8,R=8,T=10,B=10,max=0;
   days.forEach(function(r){if(r.secs>max)max=r.secs});
   if(!max)return null;
   var wrap=document.createElement('div');
@@ -916,7 +921,7 @@ function ovChart(info){
 }
 function openEarn(){
   show('v-earn');
-  var hd=document.querySelector('#v-earn h1, #v-earn h2');if(hd)hd.textContent='Creator Overview';
+  var hd=document.querySelector('#v-earn h1, #v-earn h2');if(hd){hd.textContent='Creator Overview';hd.style.fontSize='22px'}
   var box=document.getElementById('earnBody');
   box.textContent='';box.appendChild(earnMk('div','espin'));
   api('/studio/earnings').then(function(res){
@@ -929,21 +934,21 @@ function openEarn(){
     var info=ovInfo(d),mon=OV_MON[info.mo-1]||'';
     var hero=earnMk('div','ov-hero');
     var top=earnMk('div','ov-top');
-    top.appendChild(earnMk('div','ov-lab','Current month estimate'));
-    top.appendChild(earnMk('div','ov-pill','Provisional'));
+    top.appendChild(ovLbl('ov-lab','trend','Current month estimate'));
+    top.appendChild(earnMk('div','ov-st','Provisional'));
     hero.appendChild(top);
     hero.appendChild(earnMk('div','ov-big',earnUgx(d.estimate)));
     hero.appendChild(earnMk('div','ov-gold','Estimated allocation \u00b7 '+(OV_MONL[info.mo-1]||'')+' '+info.y));
     if(d.ratePending)hero.appendChild(earnMk('div','ov-note','The rate for this month has not been set yet.'));
     var cols=earnMk('div','ov-cols');
-    var c1=earnMk('div');c1.appendChild(earnMk('span',null,'Qualified watch time'));c1.appendChild(earnMk('b',null,earnDur(d.secs)));
-    var c2=earnMk('div');c2.appendChild(earnMk('span',null,'Reporting period'));c2.appendChild(earnMk('b',null,'01 \u2013 '+info.dim+' '+mon));
+    var c1=earnMk('div');var s1=earnMk('span');s1.appendChild(ovIc('clock'));s1.appendChild(document.createTextNode('Qualified watch time'));c1.appendChild(s1);c1.appendChild(earnMk('b',null,earnDur(d.secs)));
+    var c2=earnMk('div');var s2=earnMk('span');s2.appendChild(ovIc('cal'));s2.appendChild(document.createTextNode('Reporting period'));c2.appendChild(s2);c2.appendChild(earnMk('b',null,'01 \u2013 '+info.dim+' '+mon));
     cols.appendChild(c1);cols.appendChild(c2);hero.appendChild(cols);
-    hero.appendChild(earnMk('div','ov-note','This is an indicative calculation, not a confirmed payment obligation. Final amounts are determined after the period closes.'));
+    var nt=earnMk('div','ov-note');nt.appendChild(ovIc('info'));nt.appendChild(earnMk('span',null,'This is an indicative calculation, not a confirmed payment obligation. Final amounts are determined after the period closes.'));hero.appendChild(nt);
     box.appendChild(hero);
     var ac=earnMk('div','ov-card');
     var at=earnMk('div','ov-top');
-    at.appendChild(earnMk('div','ov-h','Watch activity'));
+    at.appendChild(ovLbl('ov-h','bars','Watch activity'));
     at.appendChild(earnMk('div','ov-lab',(OV_MONL[info.mo-1]||'')+' '+info.y));
     ac.appendChild(at);
     var ch=ovChart(info);
@@ -953,8 +958,8 @@ function openEarn(){
     var has=d.closed&&d.closed.length;
     var sc=earnMk('div','ov-card');
     var st=earnMk('div','ov-top');
-    st.appendChild(earnMk('div','ov-h','Settled balance'));
-    st.appendChild(earnMk('div','ov-pill '+(has?'ok':'off'),has?'Finalized':'None yet'));
+    st.appendChild(ovLbl('ov-h','bank','Settled balance'));
+    st.appendChild(earnMk('div','ov-st'+(has?' ok':' off'),has?'Finalized':'None yet'));
     sc.appendChild(st);
     sc.appendChild(earnMk('div','ov-big',earnUgx(d.balance)));
     sc.appendChild(earnMk('div','sub','Amounts finalized from completed reporting periods.'));
