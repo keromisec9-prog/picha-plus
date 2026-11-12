@@ -1474,7 +1474,7 @@ setInterval(rightsApply,500);
 function genreChips(cur){
   var GLL=(typeof GL!=='undefined'&&GL.length)?GL:['Action','Adventure','Animation','Comedy','Crime','Documentary','Drama','Family','Fantasy','Horror','Mystery','Romance','Science Fiction','Thriller'];
   var sel=String(cur||'').split(',').map(function(x){return x.trim().toLowerCase()});
-  return '<div class="fld"><label>Genre (optional, up to 2)</label><div id="lf_gc" style="display:flex;flex-wrap:wrap;gap:8px">'+GLL.map(function(g){var on=sel.indexOf(g.toLowerCase())>-1;return '<button type="button" data-g="'+esc(g)+'" class="'+(on?'on':'')+'" style="height:38px;padding:0 14px;border-radius:19px;border:1px solid #3a3a42;background:'+(on?'#f0b429':'transparent')+';color:'+(on?'#111':'#fff')+';font-size:14px">'+esc(g)+'</button>'}).join('')+'</div><input id="lf_genre" type="hidden" value="'+esc(cur||'')+'"></div>';
+  return '<div class="fld"><label>Genre (optional, up to 2)</label><div id="lf_gc" style="display:flex;flex-wrap:wrap;gap:8px">'+GLL.map(function(g){var on=sel.indexOf(g.toLowerCase())>-1;return '<button type="button" data-g="'+esc(g)+'" class="'+(on?'on':'')+'" style="height:38px;padding:0 14px;border-radius:8px;border:0;background:'+(on?'#f0b429':'rgba(255,255,255,.07)')+';color:'+(on?'#111':'#fff')+';font-size:14px">'+esc(g)+'</button>'}).join('')+'</div><input id="lf_genre" type="hidden" value="'+esc(cur||'')+'"></div>';
 }
 document.addEventListener('click',function(ev){
   var b=ev.target&&ev.target.closest?ev.target.closest('#lf_gc button'):null;if(!b)return;
