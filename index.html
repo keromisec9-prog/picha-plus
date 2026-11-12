@@ -5277,6 +5277,7 @@ async function showInfo(item) {
     if (idx !== -1) { showSeries(idx); return; }
   }
   currentInfoItem = item;
+  try { const _dl0 = document.getElementById('infoDownloadBtn'); if (_dl0) _dl0.style.display = item._isOwned ? 'flex' : 'none'; } catch (e) {}
   // showShortInfo() overrides infoPlayBtn's onclick via a JS property assignment,
   // which takes permanent precedence over the button's static HTML attribute —
   // it persists even after that modal closes without playing anything. Reclaim
