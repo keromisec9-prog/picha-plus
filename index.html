@@ -6387,7 +6387,7 @@ async function initPlayer(data, item, force) {
   });
 
   // Progress tracking — throttled to every 5s, also on pause
-  const savedPos = progress[item?.id]?.position || 0;
+  let savedPos = progress[item?.id]?.position || 0;
   let lastSave = 0;
   const trackProgress = () => {
     if (item?.id && video.currentTime > 0) {
@@ -6399,7 +6399,19 @@ async function initPlayer(data, item, force) {
   video.addEventListener('pause', () => { if (item?.id && video.currentTime > 0) saveProgress(item.id, video.currentTime, video.duration, true, item.title || item.name); });
 
   try {
+    const _srvP = (item && item.id && session.token)
+      ? fetch(`${API}/watch-history?movie=${encodeURIComponent(item.id)}`, { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } })
+          .then(r => r.json()).then(d => (d.items || [])[0] || null).catch(() => null)
+      : Promise.resolve(null);
     await shakaPlayer.load(url);
+    try {
+      const _row = await Promise.race([_srvP, new Promise(r => setTimeout(() => r(null), 2500))]);
+      if (_row && Number(_row.progress_seconds) > 30) {
+        const _st = new Date(_row.updated_at).getTime();
+        const _lt = (progress[item.id] && progress[item.id].ts) || 0;
+        if (_st > _lt) savedPos = Number(_row.progress_seconds);
+      }
+    } catch (e) {}
     if (savedPos > 30) {
       video.currentTime = savedPos;
       showToast(`Resuming from ${formatTime(savedPos)}`);
