@@ -13831,6 +13831,20 @@ function _getShareTargets() {
   try { _shareTargetsCache = JSON.parse(PichaApp.getShareTargets() || '[]'); } catch (e) { _shareTargetsCache = []; }
   return _shareTargetsCache;
 }
+function _ppTopZ(skipId) {
+  let m = 0;
+  const seen = new Set();
+  const nodes = Array.from(document.body.children).concat(Array.from(document.querySelectorAll('[style*="position:fixed"],[style*="position: fixed"]')));
+  nodes.forEach(function (el) {
+    if (seen.has(el) || el.id === skipId) return;
+    seen.add(el);
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'static') return;
+    const z = parseInt(cs.zIndex, 10);
+    if (z > m) m = z;
+  });
+  return Math.min(m + 1, 2147483646);
+}
 function _closeShareSheet() { const el = document.getElementById('ppShareSheet'); if (el) el.remove(); }
 function _countShare(url, dest) {
   try {
@@ -13855,6 +13869,7 @@ function _openShareSheet(url, title) {
   const wrap = document.createElement('div');
   wrap.id = 'ppShareSheet';
   wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;';
+  wrap.style.setProperty('z-index', String(_ppTopZ('ppShareSheet')), 'important');
   wrap.onclick = (e) => { if (e.target === wrap) _closeShareSheet(); };
   const box = document.createElement('div');
   box.style.cssText = 'width:100%;background:#1a1a1a;border-radius:16px 16px 0 0;padding:14px 8px calc(14px + env(safe-area-inset-bottom,0px));';
