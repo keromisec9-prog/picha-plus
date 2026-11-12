@@ -12780,7 +12780,19 @@ function _mpfBuildRankedList() {
     if (si < series.length) interleaved.push(series[si++]);
   }
 
-  return [...interleaved, ..._mpfWeightedShuffle(disliked)];
+  // Creator uploads (studiot_*) have no stats yet, so ranking alone drops them.
+  // Reserve a slot for one every 4 regular slides, rotated like everything else.
+  const _isStudio = c => String(c.id).startsWith('studiot_') || String(c.tmdbId || '').startsWith('studiot_');
+  const _base = interleaved.filter(c => !_isStudio(c));
+  const _cr = _mpfDemoteSeen(_mpfWeightedShuffle(rest.filter(_isStudio)));
+  const _merged = [];
+  let _ci = 0;
+  _base.forEach((c, i) => {
+    _merged.push(c);
+    if ((i + 1) % 4 === 0 && _ci < _cr.length) _merged.push(_cr[_ci++]);
+  });
+  while (_ci < _cr.length) _merged.push(_cr[_ci++]);
+  return [..._merged, ..._mpfWeightedShuffle(disliked)];
 }
 
 // Recently-seen history (ids), oldest first, capped. Titles seen lately sink to the
