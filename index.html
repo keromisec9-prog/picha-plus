@@ -12919,7 +12919,7 @@ function _mpfSlideHTML(idx) {
         </div>
         <div onclick="_mpfToggleAutoScroll()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span class="mpf-auto-icon" style="display:inline-flex;">${window._mpfAutoScroll !== false ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`}</span>
-          <span style="font-size:0.68rem;font-weight:600;">Auto</span>
+          <span style="font-size:0.68rem;font-weight:600;">Auto</span></div><div class="mpf-fullbtn" onclick="_mpfToggleFull()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;"><span class="material-symbols-rounded mpf-fi-in" style="font-size:26px;">fullscreen</span><span class="material-symbols-rounded mpf-fi-out" style="font-size:26px;">fullscreen_exit</span><span style="font-size:0.68rem;font-weight:600;">Full</span>
         </div>
       </div>
       <div style="position:absolute;left:16px;right:64px;bottom:22px;color:#fff;">
@@ -16566,5 +16566,50 @@ setInterval(function () {
   } catch (e) {}
 }, 800);
 </script>
-<style id="pubshg-css">.shg{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:2px!important;width:100vw;margin-left:calc(50% - 50vw)}.shg .shc{position:relative;width:auto!important;min-width:0!important}.shg .shp{width:100%!important;aspect-ratio:3/4!important;border-radius:0!important}.shg .shplay{display:none!important}.shg .sht{display:none!important}.shg .shpt{position:absolute;top:6px;left:6px;bottom:auto!important;right:auto!important;background:rgba(0,0,0,.55);color:#f0b429;font-size:10px;padding:2px 6px;border-radius:4px;pointer-events:none}</style><script id="mpf-deep-late">(function(){var d=window.__mpfDeep;if(!d)return;var n=0,opened=false;var t=setInterval(function(){n++;if(n>150){clearInterval(t);return}if(!opened){if(typeof window.openCreatorPage==='function'&&window.openMpfAt){opened=true;window.openCreatorPage(d.c)}return}var tiles=[].slice.call(document.querySelectorAll('.shg .shc'));var m=tiles.filter(function(x){return x.getAttribute('data-u')===d.u})[0];if(m){clearInterval(t);m.click()}},200)})();</script><script id="mpf-cr-back">(function(){var d=window.__mpfDeep;if(!d||!d.b)return;var seen=false;var t=setInterval(function(){var o=window.__ppCrOpen&&window.__ppCrOpen();if(o){seen=true;return}if(!seen)return;clearInterval(t);setTimeout(function(){var again=window.__ppCrOpen&&window.__ppCrOpen();if(!again&&!window.__ppDet){document.documentElement.classList.add('mpfcover');location.replace('studio.html')}},0)},100)})();</script><script id="mpf-exit-cover">(function(){var d=window.__mpfDeep;if(!d||!d.b||!window.__ppCrShut)return;var o=window.__ppCrShut;window.__ppCrShut=function(){document.documentElement.classList.add('mpfcover');o.apply(this,arguments);location.replace('studio.html')}})();</script></body>
+<style id="pubshg-css">.shg{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:2px!important;width:100vw;margin-left:calc(50% - 50vw)}.shg .shc{position:relative;width:auto!important;min-width:0!important}.shg .shp{width:100%!important;aspect-ratio:3/4!important;border-radius:0!important}.shg .shplay{display:none!important}.shg .sht{display:none!important}.shg .shpt{position:absolute;top:6px;left:6px;bottom:auto!important;right:auto!important;background:rgba(0,0,0,.55);color:#f0b429;font-size:10px;padding:2px 6px;border-radius:4px;pointer-events:none}</style><script id="mpf-deep-late">(function(){var d=window.__mpfDeep;if(!d)return;var n=0,opened=false;var t=setInterval(function(){n++;if(n>150){clearInterval(t);return}if(!opened){if(typeof window.openCreatorPage==='function'&&window.openMpfAt){opened=true;window.openCreatorPage(d.c)}return}var tiles=[].slice.call(document.querySelectorAll('.shg .shc'));var m=tiles.filter(function(x){return x.getAttribute('data-u')===d.u})[0];if(m){clearInterval(t);m.click()}},200)})();</script><script id="mpf-cr-back">(function(){var d=window.__mpfDeep;if(!d||!d.b)return;var seen=false;var t=setInterval(function(){var o=window.__ppCrOpen&&window.__ppCrOpen();if(o){seen=true;return}if(!seen)return;clearInterval(t);setTimeout(function(){var again=window.__ppCrOpen&&window.__ppCrOpen();if(!again&&!window.__ppDet){document.documentElement.classList.add('mpfcover');location.replace('studio.html')}},0)},100)})();</script><script id="mpf-exit-cover">(function(){var d=window.__mpfDeep;if(!d||!d.b||!window.__ppCrShut)return;var o=window.__ppCrShut;window.__ppCrShut=function(){document.documentElement.classList.add('mpfcover');o.apply(this,arguments);location.replace('studio.html')}})();</script><script id="mpf-full">(function(){
+var st=document.createElement('style');
+st.textContent='.mpf-fi-out{display:none}#mpfContainer[data-full="1"] .mpf-fi-out{display:inline-block}#mpfContainer[data-full="1"] .mpf-fi-in{display:none}#mpfContainer[data-overlay="1"]:not([data-full="1"]) .mpf-fullbtn{display:none!important}#mpfContainer[data-overlay="1"] [id^="mpfSeekWrap_"]{top:-8px!important}';
+document.head.appendChild(st);
+var oc=window.closeMoviePreviewFeed;
+function settle(was){
+  try{_mpfH=_mpfSizeContainer();_mpfPlaceSlides(_mpfIdx)}catch(e){}
+  var v=document.getElementById('mpfVid_'+_mpfIdx);
+  if(v&&was){try{v.play().catch(function(){})}catch(e){}}
+}
+window._mpfToggleFull=function(){
+  var c=document.getElementById('mpfContainer');if(!c)return;
+  if(window.__mpfFull){
+    if(history.state&&history.state.mpf)history.back();else window.closeMoviePreviewFeed();
+    return;
+  }
+  if(_mpfOv)return;
+  var v=document.getElementById('mpfVid_'+_mpfIdx),was=!!(v&&!v.paused);
+  window.__mpfFull=true;
+  _mpfOv={css:c.style.cssText,parent:c.parentNode,next:c.nextSibling,bodyOv:document.body.style.overflow};
+  document.body.appendChild(c);
+  c.dataset.overlay='1';c.dataset.full='1';
+  c.style.cssText='display:block;position:fixed;left:0;top:0;width:100%;z-index:2147483000;background:#000;overflow:hidden;touch-action:none;';
+  document.body.style.overflow='hidden';
+  try{history.pushState({mpf:1},'')}catch(e){}
+  var back=document.createElement('button');
+  back.id='mpfOvBack';
+  back.innerHTML='<span class="material-symbols-rounded" style="font-size:26px;">arrow_back</span>';
+  back.style.cssText='position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;z-index:20;width:42px;height:42px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:#fff;display:flex;align-items:center;justify-content:center;';
+  back.onclick=function(e){e.stopPropagation();window._mpfToggleFull()};
+  c.appendChild(back);
+  settle(was);
+};
+window.closeMoviePreviewFeed=function(){
+  if(window.__mpfFull){
+    window.__mpfFull=false;
+    var c=document.getElementById('mpfContainer');
+    var v=document.getElementById('mpfVid_'+_mpfIdx),was=!!(v&&!v.paused);
+    _mpfOverlayTeardown();
+    if(c)delete c.dataset.full;
+    settle(was);
+    return;
+  }
+  return oc.apply(this,arguments);
+};
+})();</script></body>
 </html>
