@@ -1486,6 +1486,7 @@ document.addEventListener('click',function(ev){
   try{L.f=L.f||{};L.f.genre=hid.value}catch(e){}
   [].forEach.call(box.querySelectorAll('button'),function(x){var o=x.classList.contains('on');x.style.background=o?'#f0b429':'transparent';x.style.color=o?'#111':'#fff'});
 },true);
+document.addEventListener('change',function(ev){var t=ev.target;if(!t)return;try{L.f=L.f||{};if(t.id==='lf_18')L.f.a18=t.checked;if(t.id==='lf_af')L.f.afr=t.checked}catch(e){}},true);document.addEventListener('input',function(ev){var t=ev.target;if(t&&t.id==='lf_vj'){try{L.f=L.f||{};L.f.vj=t.value}catch(e){}}},true);
 document.addEventListener('input',function(ev){var t=ev.target;if(t&&t.id==='lf_part'){try{L.f=L.f||{};L.f.part=t.value}catch(e){}}},true);
 function partOf(){try{var n=parseInt((L.f||{}).part,10);return(n>=1&&n<=99)?n:null}catch(e){return null}}
 function nuSub(key){
@@ -2028,6 +2029,9 @@ function renderForm(){
     h+='<div class="fld"><label>Title</label><input id="lf_title" type="text" maxlength="120" value="'+esc(f.title||'')+'"></div>';
     h+='<div class="fld"><label>Part (optional)</label><input id="lf_part" type="number" inputmode="numeric" min="1" max="99" placeholder="e.g. 1, 2, 3" value="'+esc(f.part||'')+'"></div>';if(!tm)h+=genreChips(f.genre);
     if(!tm)h+='<div class="fld"><label>Synopsis (optional)</label><textarea id="lf_syn" maxlength="2000">'+esc(f.syn||'')+'</textarea></div>';
+    if(movie){h+='<div class="fld"><label>VJ (optional)</label><input id="lf_vj" type="text" maxlength="60" placeholder="e.g. VJ Junior" value="'+esc(f.vj||'')+'"></div>';
+      h+='<div class="fld"><label style="display:flex;align-items:center;gap:10px"><input id="lf_af" type="checkbox"'+(f.afr?' checked':'')+'> African Cinema</label></div>';
+      h+='<div class="fld"><label style="display:flex;align-items:center;gap:10px"><input id="lf_18" type="checkbox"'+(f.a18?' checked':'')+'> 18+ (adult content)</label></div>'}
     if(!movie)h+=RIGHTS;
   }else if(n===1){
     h+=slotHTML('video','Movie file','In the app: MP4, MKV, MOV or WebM (converted to MP4 for you). On the web: MP4 only. Up to 2.5 GB. Large files upload in parts and resume if your connection drops.');
@@ -2339,6 +2343,7 @@ function submitTitle(){
   if(movie)body.videoKey=L.up.video.key;
   if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
   var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
+  if(movie){if(f.vj&&String(f.vj).trim())body.vj=String(f.vj).trim().slice(0,60);if(f.a18)body.is18Plus=true;if(f.afr){body.isAfrican=true;body.genreIds=[]}}
   post('/studio/title',body,$('lf_go'),movie?'Submit for review':'Save & Continue',function(b){
     toast(movie?'Movie submitted for review':'Series created');L.up={};
     if(movie)openLib();else openDetail(b.id);
