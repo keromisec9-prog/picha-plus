@@ -16609,6 +16609,7 @@ window._mpfToggleFull=function(){
   settle(was);
 };
 window.closeMoviePreviewFeed=function(){
+  if(window.__mpfFull&&window.__mpfClosing){window.__mpfFull=false;var c0=document.getElementById('mpfContainer');if(c0)delete c0.dataset.full;try{_mpfOverlayTeardown()}catch(e){}}
   if(window.__mpfFull){
     window.__mpfFull=false;
     var c=document.getElementById('mpfContainer');
@@ -16619,6 +16620,17 @@ window.closeMoviePreviewFeed=function(){
     return;
   }
   return oc.apply(this,arguments);
+};
+var ow=window._mpfWatchFull;
+window._mpfWatchFull=function(idx){
+  var c=document.getElementById('mpfCta_'+idx);
+  var expanding=!!(c&&c.dataset.armedInit==='1'&&c.dataset.armed!=='1');
+  if(window.__mpfFull&&!expanding){
+    window.__mpfClosing=true;
+    setTimeout(function(){window.__mpfClosing=false},1500);
+    [].forEach.call(document.querySelectorAll('[id^="mpfVid_"]'),function(v){try{v.pause()}catch(e){}});
+  }
+  return ow.apply(this,arguments);
 };
 })();</script></body>
 </html>
