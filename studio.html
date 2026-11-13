@@ -2705,7 +2705,7 @@ function fmtD(v){
       var sh=b&&b.ok&&b.creator&&b.creator.shorts;if(!sh||!sh.length)return;
       if(l.querySelector('#shMine'))return;
       var d=document.createElement('div');d.id='shMine';d.innerHTML=window.shStrip(sh).replace('>Shorts<','>Your shorts<');
-      l.insertBefore(d,l.firstChild);if(!l.querySelector('#mvH')){var mh=document.createElement('h3');mh.id='mvH';mh.className='shh';mh.textContent='Movies & Series';d.parentNode.insertBefore(mh,d.nextSibling)}
+      l.insertBefore(d,l.firstChild);if(!l.querySelector('#mvTabs')){var tb=document.createElement('div');tb.id='mvTabs';tb.innerHTML='<button type="button" data-t="s" class="on">Your shorts</button><button type="button" data-t="m">Movies &amp; Series</button>';l.insertBefore(tb,l.firstChild);var sw=function(t){[].forEach.call(l.children,function(c){if(c===tb)return;c.style.display=((c===d)===(t==='s'))?'':'none'});[].forEach.call(tb.children,function(b){b.classList.toggle('on',b.getAttribute('data-t')===t)})};tb.onclick=function(e){var b=e.target.closest('button');if(b)sw(b.getAttribute('data-t'))};sw('s')}
     }).catch(function(){});
   }
   function editBox(){
@@ -2985,5 +2985,5 @@ window.pubOpen=function(u,f){
   fromHash();
 })();
 </script>
-<style id="shgrid-css">#shMine .shrow{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:10px!important;overflow:visible!important;padding:4px 0 14px!important}#shMine .shc{position:relative;width:auto!important;min-width:0!important}#shMine .shp{width:100%!important;aspect-ratio:3/4!important}#shMine .sht{position:absolute;left:8px;right:8px;bottom:8px;margin:0!important;font-size:12px;font-weight:600;text-shadow:0 1px 3px #000;pointer-events:none}#shMine .shpt{position:absolute;left:8px;right:8px;bottom:26px;font-size:11px;text-shadow:0 1px 3px #000;pointer-events:none}</style></body>
+<style id="shgrid-css">#shMine .shrow{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:10px!important;overflow:visible!important;padding:4px 0 14px!important}#shMine .shc{position:relative;width:auto!important;min-width:0!important}#shMine .shp{width:100%!important;aspect-ratio:3/4!important}#shMine .sht{position:absolute;left:8px;right:8px;bottom:8px;margin:0!important;font-size:12px;font-weight:600;text-shadow:0 1px 3px #000;pointer-events:none}#shMine .shpt{position:absolute;left:8px;right:8px;bottom:26px;font-size:11px;text-shadow:0 1px 3px #000;pointer-events:none}</style><style id="mvtabs-css">#mvTabs{display:flex;gap:22px;border-bottom:1px solid rgba(255,255,255,.12);margin:4px 0 14px}#mvTabs button{background:none;border:0;color:#9a9a9a;font-size:16px;font-weight:600;padding:10px 0;margin-bottom:-1px;border-bottom:2px solid transparent;cursor:pointer}#mvTabs button.on{color:#f0b429;border-bottom-color:#f0b429}#shMine .shh{display:none}</style></body>
 </html>
