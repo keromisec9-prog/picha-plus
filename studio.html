@@ -2516,7 +2516,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='fback'){saveFm();if(L.kind==='movie'&&(L.step||1)>1){L.step=L.step-1;renderForm();window.scrollTo(0,0)}else openLib()}
   else if(a==='next'){saveFm();var ff=L.f||{};
     if((L.step||1)===1){var uv=L.up.video;if(!uv||uv.err)return toast('Choose your movie file first');L.step=2}
-    else if(L.step===2){if(!(ff.title||'').trim())return toast('Enter a title');if(!L.up.video||!(L.up.video.key||L.up.video.ready))return toast('Choose your movie file first');L.step=3}
+    else if(L.step===2){if(!(ff.title||'').trim())return toast('Enter a title');if(!L.up.video||!(L.up.video.key||L.up.video.ready))return toast('Choose your movie file first');var _hp=!!(L.tmdb&&L.tmdb.poster)||!!(L.up.poster&&(L.up.poster.key||L.up.poster.ready));if(!_hp){var _s=L.src==='tmdb'&&!L.tmdb;try{var _el=_s?document.getElementById('tq'):document.querySelector('[data-slot="poster"],#slot_poster,.slot-poster');if(_el){_el.scrollIntoView({block:'center'});if(_s){_el.style.outline='2px solid #f0b429';_el.style.outlineOffset='2px';_el.focus();setTimeout(function(){try{_el.style.outline=''}catch(e){}},5000)}}}catch(e){}return toast(_s?'Add a poster: search the exact movie name in the highlighted field, or switch to Enter manually and upload one':'Add a poster: upload one below')}L.step=3}
     renderForm();window.scrollTo(0,0)}
   else if(a==='flt'){L.flt=el.dataset.v;renderList()}
   else if(a==='menu'){L.open=String(L.open)===el.dataset.id?null:el.dataset.id;renderList()}
