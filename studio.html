@@ -1527,7 +1527,7 @@ function nuSub(key){
     var body={kind:'movie',title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true,videoKey:key};
     if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
     var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
-    var _vj=window.__ppVjFull?window.__ppVjFull(f.vj):'';if(_vj)body.vj=_vj;if(f.a18)body.is18Plus=true;if(f.afr){body.isAfrican=true;body.genreIds=[]}
+    try{var _vj=window.__ppVjFull?window.__ppVjFull(f.vj):'';if(_vj)body.vj=_vj;if(f.a18)body.is18Plus=true;if(f.afr){body.isAfrican=true;body.genreIds=[]}}catch(_e){}
     return {path:'/studio/title',body:body};
   }catch(e){return null}
 }
