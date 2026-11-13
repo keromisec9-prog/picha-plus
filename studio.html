@@ -2705,7 +2705,7 @@ function fmtD(v){
       var sh=b&&b.ok&&b.creator&&b.creator.shorts;if(!sh||!sh.length)return;
       if(l.querySelector('#shMine'))return;
       var d=document.createElement('div');d.id='shMine';d.innerHTML=window.shStrip(sh).replace('>Shorts<','>Your shorts<');
-      l.insertBefore(d,l.firstChild);
+      l.insertBefore(d,l.firstChild);if(!l.querySelector('#mvH')){var mh=document.createElement('h3');mh.id='mvH';mh.className='shh';mh.textContent='Movies & Series';d.parentNode.insertBefore(mh,d.nextSibling)}
     }).catch(function(){});
   }
   function editBox(){
@@ -2985,5 +2985,5 @@ window.pubOpen=function(u,f){
   fromHash();
 })();
 </script>
-</body>
+<style id="shgrid-css">#shMine .shrow{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:10px!important;overflow:visible!important;padding:4px 0 14px!important}#shMine .shc{position:relative;width:auto!important;min-width:0!important}#shMine .shp{width:100%!important;aspect-ratio:3/4!important}#shMine .sht{position:absolute;left:8px;right:8px;bottom:8px;margin:0!important;font-size:12px;font-weight:600;text-shadow:0 1px 3px #000;pointer-events:none}#shMine .shpt{position:absolute;left:8px;right:8px;bottom:26px;font-size:11px;text-shadow:0 1px 3px #000;pointer-events:none}</style></body>
 </html>
