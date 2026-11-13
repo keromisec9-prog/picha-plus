@@ -1843,7 +1843,37 @@ function run(slot,file,st,preview){
     paint(slot);
   });
 }
-function start(slot,file){
+function stToastX(m){
+  var o=document.getElementById('toastx');if(o)o.remove();
+  var d=document.createElement('div');d.id='toastx';
+  d.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:99999;background:#2a1c1c;color:#fff;border:1px solid #f0b429;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.4;display:flex;gap:12px;align-items:flex-start;box-shadow:0 6px 24px rgba(0,0,0,.5)';
+  var t=document.createElement('div');t.style.flex='1';t.textContent=m;
+  var b=document.createElement('button');b.type='button';b.textContent='Dismiss';
+  b.style.cssText='background:#f0b429;color:#111;border:0;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px';
+  b.onclick=function(){d.remove()};
+  d.appendChild(t);d.appendChild(b);document.body.appendChild(d);
+  clearTimeout(window._ttx);window._ttx=setTimeout(function(){try{d.remove()}catch(e){}},15000);
+}
+function stChkParts(){
+  var f=L.f||{},tm=(L.src==='tmdb'&&L.tmdb)?L.tmdb:null,vj='',part=null;
+  try{vj=window.__ppVjFull?window.__ppVjFull(f.vj):''}catch(e){}
+  try{part=partOf()}catch(e){}
+  return {kind:L.kind,title:(f.title||'').trim(),year:tm?String(tm.year||''):'',tmdbId:tm?String(tm.id):'',part:part,vj:vj||''};
+}
+function stChkKey(){var b=stChkParts();return [b.title,b.tmdbId,b.vj,b.part].join('|')}
+function stTitleCheck(done){
+  try{
+    var body=stChkParts();
+    api('/studio/check-title',{method:'POST',body:JSON.stringify(body)}).then(function(res){
+      var r=(res&&res.body)||{};
+      if(r.duplicate===true){
+        stToastX('You already uploaded "'+body.title+'"'+(body.vj?' by '+body.vj:'')+(body.part?' (Part '+body.part+')':'')+'. Nothing was uploaded, so none of your data was used. Open it in your Library to add or change content, or change the VJ or part number if this is a different version.');
+        done(false);
+      }else done(true);
+    }).catch(function(){done(true)});
+  }catch(e){done(true)}
+}
+function start(slot,file){if(slot==='video')L._chkOk=null;
   if(slot==='video'){
     if(!(file.type==='video/mp4'||/\.mp4$/i.test(file.name)))return toast('Video must be an MP4 file');
     if(file.size>2684354560)return toast('Video must be 2.5 GB or smaller');
@@ -2517,7 +2547,7 @@ rt.addEventListener('click',function(ev){
   else if(a==='fback'){saveFm();if(L.kind==='movie'&&(L.step||1)>1){L.step=L.step-1;renderForm();window.scrollTo(0,0)}else openLib()}
   else if(a==='next'){saveFm();var ff=L.f||{};
     if((L.step||1)===1){var uv=L.up.video;if(!uv||uv.err)return toast('Choose your movie file first');L.step=2}
-    else if(L.step===2){if(!(ff.title||'').trim())return toast('Enter a title');if(!L.up.video||!(L.up.video.key||L.up.video.ready))return toast('Choose your movie file first');var _hp=!!(L.tmdb&&L.tmdb.poster)||!!(L.up.poster&&(L.up.poster.key||L.up.poster.ready));if(!_hp){var _s=L.src==='tmdb'&&!L.tmdb;try{var _el=_s?document.getElementById('tq'):document.querySelector('[data-slot="poster"],#slot_poster,.slot-poster');if(_el){_el.scrollIntoView({block:'center'});if(_s){_el.style.outline='2px solid #f0b429';_el.style.outlineOffset='2px';_el.focus();setTimeout(function(){try{_el.style.outline=''}catch(e){}},5000)}}}catch(e){}return toast(_s?'Add a poster: search the exact movie name in the highlighted field, or switch to Enter manually and upload one':'Add a poster: upload one below')}L.step=3}
+    else if(L.step===2){if(!(ff.title||'').trim())return toast('Enter a title');if(!L.up.video||!(L.up.video.key||L.up.video.ready))return toast('Choose your movie file first');var _hp=!!(L.tmdb&&L.tmdb.poster)||!!(L.up.poster&&(L.up.poster.key||L.up.poster.ready));if(!_hp){var _s=L.src==='tmdb'&&!L.tmdb;try{var _el=_s?document.getElementById('tq'):document.querySelector('[data-slot="poster"],#slot_poster,.slot-poster');if(_el){_el.scrollIntoView({block:'center'});if(_s){_el.style.outline='2px solid #f0b429';_el.style.outlineOffset='2px';_el.focus();setTimeout(function(){try{_el.style.outline=''}catch(e){}},5000)}}}catch(e){}return toast(_s?'Add a poster: search the exact movie name in the highlighted field, or switch to Enter manually and upload one':'Add a poster: upload one below')}if(L.kind==='movie'&&L._chkOk!==stChkKey()){if(L._chkBusy)return;L._chkBusy=1;stTitleCheck(function(ok){L._chkBusy=0;if(ok){L._chkOk=stChkKey();L.step=3;renderForm();window.scrollTo(0,0)}});return}L.step=3}
     renderForm();window.scrollTo(0,0)}
   else if(a==='flt'){L.flt=el.dataset.v;renderList()}
   else if(a==='menu'){L.open=String(L.open)===el.dataset.id?null:el.dataset.id;renderList()}
