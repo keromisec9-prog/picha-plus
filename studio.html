@@ -1770,7 +1770,7 @@ function upFile(slot,file,st){
     });
   }
   function fresh(){
-    var body={kind:slot,fileName:file.name,size:file.size};if(slot==='video'){try{var pf=window.PichaTemp&&PichaTemp.getPickedFolder&&PichaTemp.getPickedFolder();if(/^[0-9a-f-]{36}$/.test(pf||''))body.folder=pf}catch(e){}}
+    var body={kind:slot,fileName:file.name,size:file.size};if(slot==='video'){if(L.kind==='movie'){if(L._ticket)body.ticket=L._ticket}else if(L.tid)body.titleId=String(L.tid)}if(slot==='video'){try{var pf=window.PichaTemp&&PichaTemp.getPickedFolder&&PichaTemp.getPickedFolder();if(/^[0-9a-f-]{36}$/.test(pf||''))body.folder=pf}catch(e){}}
     if(multi){
       puSync();
       if(puAll().length>=PU_MAX)return Promise.reject(fatal('You already have '+PU_MAX+' unfinished uploads. Open Manage my uploads to finish or cancel one'));
@@ -1869,7 +1869,7 @@ function stTitleCheck(done){
       if(r.duplicate===true){
         stToastX('You already uploaded "'+body.title+'"'+(body.vj?' by '+body.vj:'')+(body.part?' (Part '+body.part+')':'')+'. Nothing was uploaded, so none of your data was used. Open it in your Library to add or change content, or change the VJ or part number if this is a different version.');
         done(false);
-      }else done(true);
+      }else{L._ticket=r.ticket||'';done(true)}
     }).catch(function(){done(true)});
   }catch(e){done(true)}
 }
