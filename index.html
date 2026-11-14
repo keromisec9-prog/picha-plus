@@ -13579,41 +13579,53 @@ function _mpfGoTo(targetIdx, fromOffset, releaseVel) {
   _mpfLocked = true;
   const H = _mpfH || window.innerHeight;
   const currIdx = _mpfIdx;
-  const startTime = performance.now();
-
-  const _mpfStartAnim = () => {
-    const _mpfT0 = performance.now();
-    const _mpfRemain = Math.max(40, H - Math.abs(fromOffset));
-    const _mpfV = Math.max(0, releaseVel || 0);
-    const _mpfDur = _mpfV > 0.05
-      ? Math.min(MPF_ANIM_MS, Math.max(170, 2 * _mpfRemain / _mpfV))
-      : MPF_ANIM_MS;
-    const _mpfS0 = Math.min(3, Math.max(1, _mpfV * _mpfDur / _mpfRemain));
+  const _go = () => {
     const targetSlide = document.getElementById('mpfSlide_' + targetIdx);
     const currSlide = document.getElementById('mpfSlide_' + currIdx);
+    const fwd = targetIdx > currIdx;
+    const currFinal = fwd ? -H : H;
+    const targetStart = (fwd ? H : -H) + fromOffset;
+    const remain = Math.max(40, H - Math.abs(fromOffset));
+    const v = Math.max(0, releaseVel || 0);
+    const dur = v > 0.05 ? Math.min(MPF_ANIM_MS, Math.max(170, 2 * remain / v)) : MPF_ANIM_MS;
+    const s0 = Math.min(3, Math.max(1, v * dur / remain));
+    const easing = 'cubic-bezier(0.25,' + (0.25 * s0).toFixed(3) + ',0.25,1)';
     if (targetSlide) targetSlide.style.display = '';
-
-    function frame(now) {
-      const t = Math.min((now - _mpfT0) / _mpfDur, 1);
-      const ease = _mpfHermite(t, _mpfS0);
-      const currFinal = targetIdx > currIdx ? -H : H;
-      if (currSlide) currSlide.style.transform = `translateY(${fromOffset + (currFinal - fromOffset) * ease}px)`;
-      if (targetSlide) {
-        const targetInitial = targetIdx > currIdx ? H - Math.abs(fromOffset) : -(H - Math.abs(fromOffset));
-        targetSlide.style.transform = `translateY(${targetInitial * (1 - ease)}px)`;
-      }
-      if (t < 1) { requestAnimationFrame(frame); return; }
-      if (currSlide) currSlide.style.transform = `translateY(${currFinal}px)`;
-      if (targetSlide) targetSlide.style.transform = 'translateY(0px)';
-      _mpfOnCommitted(currIdx, targetIdx);
+    const tv = document.getElementById('mpfVid_' + targetIdx);
+    if (tv) {
+      try {
+        if (_mpfPlayedIndices.has(targetIdx) && _mpfClipFixedStart[targetIdx] != null) tv.currentTime = _mpfClipFixedStart[targetIdx];
+        window._mpfPreStarted = targetIdx;
+        tv.play().catch(() => {});
+      } catch (e) {}
     }
-    requestAnimationFrame(frame);
+    let done = false;
+    const anims = [];
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (currSlide) currSlide.style.transform = 'translateY(' + currFinal + 'px)';
+      if (targetSlide) targetSlide.style.transform = 'translateY(0px)';
+      anims.forEach(a => { try { a.cancel(); } catch (e) {} });
+      setTimeout(() => _mpfOnCommitted(currIdx, targetIdx), 0);
+    };
+    try {
+      if (currSlide && currSlide.animate) anims.push(currSlide.animate(
+        [{ transform: 'translate3d(0,' + fromOffset + 'px,0)' }, { transform: 'translate3d(0,' + currFinal + 'px,0)' }],
+        { duration: dur, easing: easing, fill: 'both' }));
+      if (targetSlide && targetSlide.animate) anims.push(targetSlide.animate(
+        [{ transform: 'translate3d(0,' + targetStart + 'px,0)' }, { transform: 'translate3d(0,0px,0)' }],
+        { duration: dur, easing: easing, fill: 'both' }));
+    } catch (e) { anims.length = 0; }
+    if (!anims.length) { finish(); return; }
+    anims[0].onfinish = finish;
+    setTimeout(finish, dur + 120);
   };
   if (document.getElementById('mpfSlide_' + targetIdx)) {
     _mpfMountSlide(targetIdx, false).catch(() => {});
-    _mpfStartAnim();
+    _go();
   } else {
-    _mpfMountSlide(targetIdx, false).then(_mpfStartAnim);
+    _mpfMountSlide(targetIdx, false).then(_go);
   }
 }
 
@@ -13666,7 +13678,7 @@ function _mpfOnCommitted(prevIdx, newIdx) {
       // to wherever currentTime happened to be, which meant every revisit granted
       // another fresh MPF_CLIP_SECS forward from that drifted position — letting
       // repeated swiping-away-and-back creep through the entire film in chunks.
-      newVideo.currentTime = _mpfClipFixedStart[newIdx];
+      if (window._mpfPreStarted === newIdx) { window._mpfPreStarted = null; } else { newVideo.currentTime = _mpfClipFixedStart[newIdx]; }
       _mpfClipStarts[newIdx] = _mpfClipFixedStart[newIdx];
     } else {
       // First-ever activation — loadedmetadata already set the baseline correctly.
@@ -13684,7 +13696,7 @@ function _mpfOnCommitted(prevIdx, newIdx) {
     // refetch if you scroll back to something you already saw.
     if (i !== newIdx && !_mpfPlayedIndices.has(i)) _mpfStopNeighborPreload(i);
   });
-  _mpfQueueNeighbors(newIdx);
+  setTimeout(() => { if (_mpfIdx === newIdx) _mpfQueueNeighbors(newIdx); }, 450);
 
   // Only evict slides that fall outside the wider keep-alive window — anything
   // closer keeps its actual buffered video data intact for instant scroll-back.
@@ -14004,7 +14016,7 @@ function _mpfWireTouch() {
   if (!document.getElementById('mpfPerfCss')) {
     const _st = document.createElement('style');
     _st.id = 'mpfPerfCss';
-    _st.textContent = '.mpf-slide{will-change:transform}#mpfRoot{touch-action:none;overscroll-behavior:contain}';
+    _st.textContent = '.mpf-slide{will-change:transform}#mpfRoot{touch-action:none;overscroll-behavior:contain}[id^=mpfCta_]{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(40,40,40,.55)!important}';
     document.head.appendChild(_st);
   }
   _mpfH = _mpfSizeContainer();
