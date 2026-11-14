@@ -1657,9 +1657,9 @@ function nuCall(fn,key,uid){
 }
 function cancelPendingUpload(st){
   var key=st.pendKey,uid=st.uploadId;
-  if(!key||!uid)return;
-  puDel(key,uid);
-  if(!nuCall('cancelUpload',key,uid))api('/studio/upload/abort',{method:'POST',body:JSON.stringify({key:key,uploadId:uid,reason:'user'})}).catch(function(){});
+  if(!key)return;
+  if(uid)puDel(key,uid);
+  if(!nuCall('cancelUpload',key,uid||''))api(uid?'/studio/upload/abort':'/studio/upload/cancel-batch',{method:'POST',body:JSON.stringify(uid?{key:key,uploadId:uid,reason:'user'}:{items:[{key:key,uploadId:'',reason:'user'}]})}).catch(function(){});
 }
 function netOk(st){
   if(st.force)return true;
