@@ -13220,7 +13220,10 @@ function _mpfNatEnsure(i) {
     for (var n = 0; n < order.length; n++) {
       if (tok !== _mpfNatEnsureTok) return;
       var k = order[n];
-      if (k >= 0 && k < _mpfList.length) { try { await _mpfMountSlide(k, false); } catch (e) {} }
+      if (k >= 0 && k < _mpfList.length) {
+        try { var u = await _mpfResolvePreviewUrl(_mpfList[k]); if (tok === _mpfNatEnsureTok && u && _mpfList[k]) _mpfNatUrl(k, _mpfList[k], u); } catch (e) {}
+        try { await _mpfMountSlide(k, false); } catch (e) {}
+      }
     }
   })();
 }
