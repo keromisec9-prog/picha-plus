@@ -13561,28 +13561,33 @@ function _mpfSetSlideY(idx, px) {
 
 function _mpfPlaceSlides(centerIdx) {
   const H = _mpfH || window.innerHeight;
-  _mpfList.forEach((_, i) => {
-    const s = document.getElementById('mpfSlide_' + i);
-    if (!s) return;
+  document.querySelectorAll('.mpf-slide').forEach((s) => {
+    if (!s.id || s.id.indexOf('mpfSlide_') !== 0) return;
+    const i = Number(s.id.slice(9));
     const dist = i - centerIdx;
     if (Math.abs(dist) <= 1) { s.style.display = ''; s.style.transform = `translateY(${dist * H}px)`; }
     else { s.style.display = 'none'; }
   });
 }
 
-function _mpfGoTo(targetIdx, fromOffset) {
+function _mpfGoTo(targetIdx, fromOffset, releaseVel) {
   _mpfLocked = true;
   const H = _mpfH || window.innerHeight;
   const currIdx = _mpfIdx;
   const startTime = performance.now();
 
-  _mpfMountSlide(targetIdx, false).then(() => {
+  const _mpfStartAnim = () => {
+    const _mpfT0 = performance.now();
+    const _mpfRemain = Math.max(40, H - Math.abs(fromOffset));
+    const _mpfDur = (releaseVel && Math.abs(releaseVel) > 0.05)
+      ? Math.min(MPF_ANIM_MS, Math.max(130, _mpfRemain / Math.abs(releaseVel)))
+      : MPF_ANIM_MS;
     const targetSlide = document.getElementById('mpfSlide_' + targetIdx);
     const currSlide = document.getElementById('mpfSlide_' + currIdx);
     if (targetSlide) targetSlide.style.display = '';
 
     function frame(now) {
-      const t = Math.min((now - startTime) / MPF_ANIM_MS, 1);
+      const t = Math.min((now - _mpfT0) / _mpfDur, 1);
       const ease = _mpfEase(t);
       const currFinal = targetIdx > currIdx ? -H : H;
       if (currSlide) currSlide.style.transform = `translateY(${fromOffset + (currFinal - fromOffset) * ease}px)`;
@@ -13596,7 +13601,13 @@ function _mpfGoTo(targetIdx, fromOffset) {
       _mpfOnCommitted(currIdx, targetIdx);
     }
     requestAnimationFrame(frame);
-  });
+  };
+  if (document.getElementById('mpfSlide_' + targetIdx)) {
+    _mpfMountSlide(targetIdx, false).catch(() => {});
+    _mpfStartAnim();
+  } else {
+    _mpfMountSlide(targetIdx, false).then(_mpfStartAnim);
+  }
 }
 
 let _mpfGeneration = 0; // bumped on every open/close — lets a stray async mount that resolves after teardown detect it's stale and bail out silently
@@ -13983,6 +13994,12 @@ function _mpfPeekMount(i) {
 })();
 
 function _mpfWireTouch() {
+  if (!document.getElementById('mpfPerfCss')) {
+    const _st = document.createElement('style');
+    _st.id = 'mpfPerfCss';
+    _st.textContent = '.mpf-slide{will-change:transform}';
+    document.head.appendChild(_st);
+  }
   _mpfH = _mpfSizeContainer();
   const root = document.getElementById('mpfRoot');
   if (!root) return;
@@ -14036,13 +14053,13 @@ function _mpfWireTouch() {
     const H = _mpfH;
     const dy = _mpfDragY;
     const ratio = Math.abs(dy) / H;
-    const vel = Math.abs(_mpfVel);
+    const vel = (performance.now() - _mpfLastT > 80) ? 0 : Math.abs(_mpfVel);
     const len = _mpfList.length;
     const commit = ratio >= MPF_SNAP_RATIO || vel >= MPF_VELOCITY_THRESH;
 
     if (commit) {
-      if (dy < 0 && _mpfIdx + 1 < len) { _mpfGoTo(_mpfIdx + 1, dy); }
-      else if (dy > 0 && _mpfIdx - 1 >= 0) { _mpfGoTo(_mpfIdx - 1, dy); }
+      if (dy < 0 && _mpfIdx + 1 < len) { _mpfGoTo(_mpfIdx + 1, dy, vel); }
+      else if (dy > 0 && _mpfIdx - 1 >= 0) { _mpfGoTo(_mpfIdx - 1, dy, vel); }
       else { _mpfLocked = true; _mpfSnapBack(dy); }
     } else {
       _mpfLocked = true;
