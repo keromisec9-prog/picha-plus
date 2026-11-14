@@ -13205,7 +13205,7 @@ function _mpfNatAvail() {
 function _mpfNatItems() {
   return _mpfList.map(function (it) {
     var tv = it.media_type === 'tv', y = (it.release_date || it.first_air_date || '').slice(0, 4);
-    return { id: String(it.id), s: it._short ? 1 : 0, t: it.title || it.name || '', m: it._short ? '' : [tv ? 'Series' : 'Movie', y].filter(Boolean).join(' \u2022 '), d: it._short ? '' : (it.overview || '') };
+    return { id: String(it.id), s: it._short ? 1 : 0, t: it.title || it.name || '', m: it._short ? '' : [tv ? 'Series' : 'Movie', y].filter(Boolean).join(' \u2022 '), d: it._short ? '' : (it.overview || ''), st: it._short ? 0 : (function (d) { return d > 90 ? Math.round(Math.min(d * 0.27, d - 30)) : 0; })(Number(it.durationSecs) || (Number(it.runtime) > 0 ? Number(it.runtime) * 60 : 0)) };
   });
 }
 function _mpfNatListSig() { return _mpfList.map(function (x) { return x.id; }).join(','); }
