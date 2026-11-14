@@ -13258,31 +13258,15 @@ function _mpfNatTick() {
   var ls = _mpfNatListSig();
   if (ls !== _mpfNatLast.ls) { _mpfNatLast.ls = ls; try { PichaShorts.list(JSON.stringify(_mpfNatItems())); } catch (e) {} }
 }
-var _mpfNatAheadBusy = false;
-async function _mpfNatAhead(i) {
-  if (_mpfNatAheadBusy) return;
-  _mpfNatAheadBusy = true;
-  try {
-    for (var k = i + 2; k <= i + 4 && k < _mpfList.length; k++) {
-      if (!_mpfNativeOn) break;
-      var it = _mpfList[k];
-      if (!it) continue;
-      var u = await _mpfResolvePreviewUrl(it);
-      if (u && _mpfNativeOn) _mpfNatUrl(k, it, u);
-    }
-  } catch (e) {}
-  _mpfNatAheadBusy = false;
-}
 function _mpfNativeStart() {
   if (!_mpfNatAvail()) return false;
   try {
     clearInterval(_mpfNatTimer);
     if (_mpfNatObs) { _mpfNatObs.disconnect(); _mpfNatObs = null; }
     _mpfNativeOn = true; _mpfNatLast = {}; _mpfNatSnapSig = {};
-    PichaShorts.open(JSON.stringify({ overlay: !!_mpfOv, auto: window._mpfAutoScroll !== false, clip: MPF_CLIP_SECS, warm: (typeof _adaptiveChunkBytes === 'function' ? Number(_adaptiveChunkBytes()) || 0 : 0), items: _mpfNatItems() }));
+    PichaShorts.open(JSON.stringify({ overlay: !!_mpfOv, auto: window._mpfAutoScroll !== false, clip: MPF_CLIP_SECS, items: _mpfNatItems() }));
     _mpfNatLast.ls = _mpfNatListSig();
     _mpfNatEnsure(0);
-    _mpfNatAhead(0);
     var root = document.getElementById('mpfRoot');
     if (window.MutationObserver && root) {
       _mpfNatObs = new MutationObserver(_mpfNatSnapSoon);
@@ -13309,7 +13293,6 @@ window._mpfNatPage = function (i) {
   _mpfIdx = i; _mpfPlayedIndices.add(i);
   try { var it = _mpfList[i]; if (it) _mpfMarkSeen(it.id); } catch (e) {}
   _mpfNatEnsure(i);
-  _mpfNatAhead(i);
 };
 window._mpfNatAct = function (a, i) {
   try {
