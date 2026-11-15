@@ -4635,6 +4635,7 @@ async function loadContent() {
       _part: v.part || null,
       _narrative: v.narrative || null,
       _episode: v.episode || null,
+      _epCount: Array.isArray(v.episodes) ? v.episodes.length : ((v.episodes && typeof v.episodes === 'object') ? Object.keys(v.episodes).length : 0),
       isUgandan: !!v.isUgandan,
       is18Plus: !!v.is18Plus,
       _addedAt: v.addedAt || 0,
@@ -17059,6 +17060,7 @@ window._mpfWatchFull=function(idx){
     });
     if (pend && fixN++ < 6) setTimeout(fix, 1500);
   }
+  function epLabel(it){ var n = it._epCount | 0; return n > 0 ? n + (n === 1 ? " EPISODE" : " EPISODES") : "SERIES"; }
   function card(it){
     var idx = registerItem(it), locked = !!(it.isUgandan && !session.hasAfricanAccess());
     var click = locked ? "showAfricanUpgradeToast()" : "showInfo(getItem(" + idx + "))";
@@ -17076,7 +17078,7 @@ window._mpfWatchFull=function(idx){
     var poster = it._customPoster || (it.poster_path ? TMDB_IMG + "w154" + it.poster_path : "");
     return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t" onclick="' + click + '">' +
       (im ? '<img src="' + E(im) + '" alt="" loading="lazy" decoding="async"' + (locked ? ' style="filter:brightness(.4)"' : "") + '>' : "") +
-      '<span class="ff-b">' + (tv ? "SERIES" : "MOVIE") + '</span>' +
+      '<span class="ff-b">' + (tv ? epLabel(it) : "MOVIE") + '</span>' +
       (pct > 0 ? '<div class="ff-p"><i style="width:' + pct + '%"></i></div>' : "") + '</div>' +
       '<div class="ff-r">' + avatar(cr, poster, click) +
       '<div class="ff-x" onclick="' + click + '"><div class="ff-n">' + E(t) + '</div><div class="ff-m">' + E(meta) + '</div></div>' +
