@@ -1,0 +1,26 @@
+name: Make preview clips
+on:
+  workflow_dispatch:
+    inputs:
+      max:
+        description: Max titles this run
+        default: '3'
+  schedule:
+    - cron: '0 2 * * *'
+jobs:
+  clips:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Make clips
+        env:
+          ADMIN_URL: https://picha-admin-worker.kerosoftz522.workers.dev
+          PREVIEW_JOB_KEY: ${{ secrets.PREVIEW_JOB_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APP_KEY }}
+          MAX: ${{ github.event.inputs.max || '150' }}
+        run: python3 tools/make_previews.py
