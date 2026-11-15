@@ -3813,8 +3813,9 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <!-- FOR YOU PAGE -->
 <div class="bn-page" id="bnForYouPage" style="display:none;">
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
-    <button class="bn-inner-tab active" id="fyt-movies" onclick="fyTab('movies')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
-    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
+    <button class="bn-inner-tab active" id="fyt-feed" onclick="fyTab('feed')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">dynamic_feed</span> Feed</button>
+    <button class="bn-inner-tab" id="fyt-movies" onclick="fyTab('movies')" style="display:none;"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
+    <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')" style="display:none;"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
     <button class="bn-inner-tab" id="fyt-shorts" onclick="fyTab('shorts')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
     <button id="fyLocateBtn" onclick="locateCurrentPreviewCard()" title="Find playing preview" style="margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;padding:0.4rem;display:none;align-items:center;">
       <span class="material-symbols-rounded" style="font-size:22px;line-height:1;">frame_inspect</span>
@@ -3824,6 +3825,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
     </button>
   </div>
   <div id="fyGrid" class="category-grid"></div>
+  <div id="fyFeed" style="display:none;"></div>
   <div id="mpfContainer" style="display:none;position:relative;width:100%;background:#000;overflow:hidden;touch-action:none;">
     <div id="mpfRoot" style="position:relative;width:100%;height:100%;"></div>
   </div>
@@ -9572,7 +9574,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let _bnActive = 'home';
 
 // ── FOR YOU ──────────────────────────────────────────────────────────────────
-let _fyTab = 'movies';
+let _fyTab = 'feed';
 
 let _fyForceJitter = false;
 
@@ -11269,7 +11271,9 @@ function fyTab(tab) {
   document.getElementById('fyt-movies').classList.toggle('active', tab === 'movies');
   document.getElementById('fyt-series').classList.toggle('active', tab === 'series');
   document.getElementById('fyt-shorts').classList.toggle('active', tab === 'shorts');
-  document.getElementById('fyGrid').style.display = tab === 'shorts' ? 'none' : '';
+  document.getElementById('fyGrid').style.display = (tab === 'shorts' || tab === 'feed') ? 'none' : '';
+  var _ft = document.getElementById('fyt-feed'); if (_ft) _ft.classList.toggle('active', tab === 'feed');
+  var _fe = document.getElementById('fyFeed'); if (_fe) _fe.style.display = tab === 'feed' ? '' : 'none';
   document.getElementById('mpfContainer').style.display = tab === 'shorts' ? 'block' : 'none';
   if (tab === 'shorts') {
     openMoviePreviewFeed();
@@ -11449,6 +11453,7 @@ function _fyAfterSort(scored, isTV) {
   } catch (e) {}
 }
 function renderForYou() {
+  if (_fyTab === 'feed') { try { window._fyFeedShow(); } catch (e) {} return; }
   const grid = document.getElementById('fyGrid');
   const empty = document.getElementById('fyEmpty');
   const allCards = window._allCards || [];
@@ -11657,7 +11662,7 @@ function setPreviewSoundPref(soundOn) {
 }
 
 function _setupPreviewObserver(grid) {
-  if (_fyTab === 'shorts') { _stopPreviewSequence(true); return; }
+  if (_fyTab === 'shorts' || _fyTab === 'feed') { _stopPreviewSequence(true); return; }
   const isFirstSetup = !_fySeqVideo;
   _stopPreviewSequence(true); // keep index — don't restart from the top
   let cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
@@ -16939,6 +16944,162 @@ window._mpfWatchFull=function(idx){
   return ow.apply(this,arguments);
 };
 })();</script><script id="bn-z-js">(function(){function f(e){if(e.style.zIndex!=="150")e.style.setProperty("z-index","150","important")}function w(i){var e=document.getElementById(i);if(!e)return false;f(e);new MutationObserver(function(){f(e)}).observe(e,{attributes:true,attributeFilter:["style"]});return true}var n=0,t=setInterval(function(){n++;var a=w("bnCategoriesPage"),b=w("bnSavedPage");if(a&&b||n>40)clearInterval(t)},100);w("bnCategoriesPage");w("bnSavedPage")})();</script>
+<script id="fy-feed">(function(){
+  if (window._fyFeedShow) return;
+  var BATCH = 10, st = { chip: "all", list: [], n: 0 };
+  function $(i){ return document.getElementById(i); }
+  function E(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function css(){
+    if ($("ffCss")) return;
+    var s = document.createElement("style"); s.id = "ffCss";
+    s.textContent = [
+      "#fyFeed{max-width:720px;margin:0 auto;padding-bottom:5rem}",
+      "#fyFeed .ff-ch{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}",
+      "#fyFeed .ff-ch::-webkit-scrollbar{display:none}",
+      "#fyFeed .ff-ch button{flex:none;border:0;border-radius:10px;padding:8px 14px;font-size:.9rem;font-weight:600;background:rgba(128,128,128,.22);color:var(--white,#fff);cursor:pointer;white-space:nowrap}",
+      "#fyFeed .ff-ch button.on{background:var(--gold,#e5b93c);color:#000}",
+      "#fyFeed .ff-c{margin:0 0 18px}",
+      "#fyFeed .ff-t{position:relative;width:calc(100% - 24px);margin:0 12px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#1a1a1a;cursor:pointer}",
+      "#fyFeed .ff-t img{width:100%;height:100%;object-fit:cover;display:block}",
+      "#fyFeed .ff-b{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.8);color:#fff;font-size:.68rem;font-weight:700;padding:2px 6px;border-radius:5px;letter-spacing:.04em}",
+      "#fyFeed .ff-p{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.3)}",
+      "#fyFeed .ff-p i{display:block;height:100%;background:var(--gold,#e5b93c)}",
+      "#fyFeed .ff-r{display:flex;gap:12px;align-items:flex-start;padding:10px 12px 0}",
+      "#fyFeed .ff-a{flex:none;width:38px;height:38px;border-radius:50%;background:#333 center/cover no-repeat;cursor:pointer}",
+      "#fyFeed .ff-x{flex:1;min-width:0;cursor:pointer}",
+      "#fyFeed .ff-n{font-size:1rem;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--white,#fff)}",
+      "#fyFeed .ff-m{font-size:.8rem;color:var(--gray,#aaa);margin-top:3px}",
+      "#fyFeed .ff-k{flex:none;border:0;background:none;color:var(--white,#fff);padding:2px 0 2px 4px;cursor:pointer;display:flex}",
+      "#fyFeed .ff-e{text-align:center;padding:4rem 2rem;color:var(--gray,#aaa)}",
+      "#ffMenu{position:fixed;left:0;right:0;top:0;bottom:0;z-index:100002}",
+      "#ffMenu .ffm-b{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.55)}",
+      "#ffMenu .ffm-s{position:absolute;left:0;right:0;bottom:0;background:#212121;color:#fff;border-radius:16px 16px 0 0;padding:8px 0 calc(12px + env(safe-area-inset-bottom))}",
+      "#ffMenu .ffm-t{padding:12px 20px;font-weight:600;opacity:.7;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      "#ffMenu .ffm-s button{display:flex;gap:16px;align-items:center;width:100%;border:0;background:none;color:#fff;font-size:1rem;padding:14px 20px;text-align:left}"
+    ].join("\n");
+    document.head.appendChild(s);
+  }
+  function img(it){
+    if (it._customBackdrop) return it._customBackdrop;
+    if (it.backdrop_path) return TMDB_IMG + "w780" + it.backdrop_path;
+    if (it._customPoster) return it._customPoster;
+    if (it.poster_path) return TMDB_IMG + "w500" + it.poster_path;
+    return "";
+  }
+  function match(it){
+    var c = st.chip;
+    if (c === "all") return true;
+    if (c === "movies") return it.media_type !== "tv";
+    if (c === "series") return it.media_type === "tv";
+    return c.indexOf("vj:") === 0 && it._vj === c.slice(3);
+  }
+  function chips(all){
+    var cnt = {};
+    all.forEach(function(it){ if (it._vj) cnt[it._vj] = (cnt[it._vj] || 0) + 1; });
+    var vjs = Object.keys(cnt).sort(function(a, b){ return cnt[b] - cnt[a]; }).slice(0, 12);
+    var base = [["all", "All"], ["movies", "Movies"], ["series", "Series"]].concat(vjs.map(function(v){ return ["vj:" + v, v]; }));
+    return '<div class="ff-ch">' + base.map(function(x){
+      return '<button type="button" data-c="' + E(x[0]) + '"' + (st.chip === x[0] ? ' class="on"' : "") + '>' + E(x[1]) + '</button>';
+    }).join("") + '</div>';
+  }
+  function rank(all, reroll){
+    var pool = all.filter(match);
+    if (reroll || !_fySeed) _fyRoll();
+    var dis = {};
+    try { (_disliked || []).forEach(function(id){ dis[id] = 1; }); } catch(e){}
+    var scored = pool.map(function(it){
+      var sc = 0;
+      try { sc = fyScore(it) + _fyJit(it.id) + _fyRot(it.id); } catch(e){}
+      return { item: it, score: sc - (dis[it.id] ? 1000 : 0) };
+    }).sort(function(a, b){ return b.score - a.score; });
+    if (st.chip === "all") { try { _fyAfterSort(scored, false); } catch(e){} }
+    return scored.map(function(o){ return o.item; });
+  }
+  function card(it){
+    var idx = registerItem(it), locked = !!(it.isUgandan && !session.hasAfricanAccess());
+    var click = locked ? "showAfricanUpgradeToast()" : "showInfo(getItem(" + idx + "))";
+    var tv = it.media_type === "tv", yr = (it.release_date || it.first_air_date || "").slice(0, 4);
+    var rt = it.vote_average ? Number(it.vote_average).toFixed(1) : "";
+    var pr = null; try { pr = progress[it.id]; } catch(e){}
+    var pct = (pr && pr.duration > 0) ? Math.min(100, Math.round(pr.position / pr.duration * 100)) : 0;
+    var t = it.title || it.name || "";
+    var im = img(it), av = it._customPoster || (it.poster_path ? TMDB_IMG + "w154" + it.poster_path : "");
+    var meta = [it._vj, yr, rt ? "\u2605 " + rt : ""].filter(Boolean).join(" \u00b7 ");
+    return '<div class="ff-c"><div class="ff-t" onclick="' + click + '">' +
+      (im ? '<img src="' + E(im) + '" alt="" loading="lazy" decoding="async"' + (locked ? ' style="filter:brightness(.4)"' : "") + '>' : "") +
+      '<span class="ff-b">' + (tv ? "SERIES" : "MOVIE") + '</span>' +
+      (pct > 0 ? '<div class="ff-p"><i style="width:' + pct + '%"></i></div>' : "") + '</div>' +
+      '<div class="ff-r"><div class="ff-a" onclick="' + click + '"' + (av ? ' style="background-image:url(' + E(av) + ')"' : "") + '></div>' +
+      '<div class="ff-x" onclick="' + click + '"><div class="ff-n">' + E(t) + '</div><div class="ff-m">' + E(meta) + '</div></div>' +
+      '<button type="button" class="ff-k" data-i="' + idx + '" aria-label="More"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></button></div></div>';
+  }
+  function more(){
+    var l = $("ffList"); if (!l || st.n >= st.list.length) return;
+    var nx = st.list.slice(st.n, st.n + BATCH);
+    l.insertAdjacentHTML("beforeend", nx.map(card).join(""));
+    st.n += nx.length;
+  }
+  function build(reroll){
+    var box = $("fyFeed"); if (!box) return;
+    var all = window._allCards || [];
+    if (!all.length) { box.innerHTML = '<div class="ff-e">Nothing here yet</div>'; return; }
+    st.list = rank(all, reroll); st.n = 0;
+    box.innerHTML = chips(all) + '<div id="ffList"></div>';
+    more();
+  }
+  function menu(idx){
+    var it = null; try { it = getItem(idx); } catch(e){}
+    if (!it) return;
+    var m = $("ffMenu"); if (m && m.parentNode) m.parentNode.removeChild(m);
+    var saved = false, lk = false;
+    try { saved = myList.some(function(x){ return x.id === it.id; }); } catch(e){}
+    try { lk = liked.includes(it.id); } catch(e){}
+    m = document.createElement("div"); m.id = "ffMenu";
+    m.innerHTML = '<div class="ffm-b" data-x="1"></div><div class="ffm-s"><div class="ffm-t">' + E(it.title || it.name || "") + '</div>' +
+      '<button type="button" data-a="play"><span class="material-symbols-rounded">play_arrow</span>Play</button>' +
+      '<button type="button" data-a="list"><span class="material-symbols-rounded">' + (saved ? "bookmark_remove" : "bookmark_add") + '</span>' + (saved ? "Remove from My List" : "Add to My List") + '</button>' +
+      '<button type="button" data-a="like"><span class="material-symbols-rounded">favorite</span>' + (lk ? "Unlike" : "Like") + '</button></div>';
+    document.body.appendChild(m);
+    m.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest("[data-a]") : null;
+      if (m.parentNode) m.parentNode.removeChild(m);
+      if (!b) return;
+      var a = b.getAttribute("data-a"), locked = !!(it.isUgandan && !session.hasAfricanAccess());
+      try {
+        if (a === "play") { if (locked) showAfricanUpgradeToast(); else handleCardPlay(it); }
+        else if (a === "list") toggleMyList(it, document.createElement("button"));
+        else if (a === "like") toggleLike(it.id, document.createElement("button"));
+      } catch(x){}
+    });
+  }
+  function onClick(e){
+    var c = e.target.closest ? e.target.closest("[data-c]") : null;
+    if (c) { st.chip = c.getAttribute("data-c"); build(false); return; }
+    var k = e.target.closest ? e.target.closest(".ff-k") : null;
+    if (k) { e.stopPropagation(); menu(parseInt(k.getAttribute("data-i"), 10)); }
+  }
+  function bind(){
+    var box = $("fyFeed"), pg = $("bnForYouPage");
+    if (box && !box.__ff) { box.__ff = 1; box.addEventListener("click", onClick); }
+    if (pg && !pg.__ff) {
+      pg.__ff = 1;
+      pg.addEventListener("scroll", function(){
+        var b = $("fyFeed");
+        if (!b || b.style.display === "none" || pg.style.display === "none") return;
+        if (pg.scrollHeight - pg.scrollTop - pg.clientHeight < 900) more();
+      }, { passive: true });
+    }
+  }
+  window._fyFeedShow = function(){
+    css(); bind();
+    try { _stopPreviewSequence(true); } catch(e){}
+    var rr = false;
+    try { rr = !!_fyForceJitter; _fyForceJitter = false; } catch(e){}
+    var box = $("fyFeed"); if (box) box.style.display = "";
+    var em = $("fyEmpty"); if (em) em.style.display = "none";
+    build(rr || !st.list.length);
+  };
+})();</script>
 <script id="mpf-fol">(function(){
   if (window._mpfFolSet) return;
   var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
