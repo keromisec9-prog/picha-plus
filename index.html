@@ -11663,7 +11663,7 @@ function setPreviewSoundPref(soundOn) {
 }
 
 /* ---- Feed autoplay: the card most in view plays (one shared <video>) ---- */
-var FA_SETTLE_MS = 400, FA_CLIP_MS = 12000, FA_MIN_RATIO = 0.6, FA_ALLOW_FULLFILE = false;
+var FA_SETTLE_MS = 400, FA_CLIP_MS = 35000, FA_MIN_RATIO = 0.6, FA_ALLOW_FULLFILE = false;
 var _faObs = null, _faMO = null, _faSeen = new WeakSet(), _faVis = new Map();
 var _faSettle = null, _faTimer = null, _faAbort = null, _faGen = 0, _faCur = null;
 var _faPaused = false, _faDone = {}, _faNoClip = {};
@@ -11718,13 +11718,13 @@ async function _faPlay(el, retry) {
       url = d.url;
       _previewCache[key] = url;
     }
-    if (!FA_ALLOW_FULLFILE && url.indexOf('#pvclip') < 0) { _faNoClip[id] = 1; _faHide(); return; }
+    if (!FA_ALLOW_FULLFILE && url.indexOf('#pvclip') < 0) { _faNoClip[id] = 1; _faHide(); _faAfterMiss(); return; }
     _faEls();
     var v = _fySeqVideo, b = _fySeqMuteBtn;
     el.appendChild(v); el.appendChild(b);
     v.muted = _fyPreviewMuted;
     v.style.opacity = '0';
-    v.onended = function () { if (gen === _faGen) { _faDone[id] = 1; _faHide(); } };
+    v.onended = function () { _faFinished(el, gen, id); };
     v.addEventListener('loadedmetadata', function () {
       if (gen !== _faGen) return;
       try { v.currentTime = _ppPrevStart(v); } catch (e2) {}
@@ -11734,30 +11734,59 @@ async function _faPlay(el, retry) {
     if (gen !== _faGen) return;
     v.style.opacity = '1';
     b.style.display = 'flex';
-    _faTimer = setTimeout(function () {
-      if (gen !== _faGen) return;
-      _faDone[id] = 1; _faHide();
-    }, FA_CLIP_MS);
+    _faTimer = setTimeout(function () { _faFinished(el, gen, id); }, FA_CLIP_MS);
   } catch (e) {
     if (gen !== _faGen) return;
     if (e && e.name === 'NotAllowedError') { _faHide(); return; }
     delete _previewCache[key];
     if (!retry) { _faPlay(el, true); return; }
-    _faNoClip[id] = 1; _faHide();
+    _faNoClip[id] = 1; _faHide(); _faAfterMiss();
   }
 }
-function _faEval() {
-  if (_faPaused || !_faNetOk()) { _faHide(); return; }
+function _faPickNext() {
   var best = null, br = 0;
   _faVis.forEach(function (r, el) {
     if (!el.isConnected) { _faVis.delete(el); return; }
-    if (r >= FA_MIN_RATIO && r > br) { br = r; best = el; }
+    var id = el.dataset.previewId;
+    if (r >= FA_MIN_RATIO && r > br && !_faDone[id] && !_faNoClip[id]) { br = r; best = el; }
   });
-  if (!best) { if (_faCur) _faHide(); return; }
-  if (best === _faCur) return;
-  var id = best.dataset.previewId;
-  if (_faDone[id] || _faNoClip[id]) { if (_faCur) _faHide(); return; }
-  _faPlay(best, false);
+  return best;
+}
+function _faEval() {
+  if (_faPaused || !_faNetOk()) { _faHide(); return; }
+  var best = _faPickNext();
+  if (best) { if (best !== _faCur) _faPlay(best, false); return; }
+  if (_faCur && !(_faVis.get(_faCur) >= FA_MIN_RATIO)) _faHide();
+}
+var _faLast = null;
+function _faReplay(el, id) {
+  var v = _fySeqVideo, b = _fySeqMuteBtn;
+  if (_faPaused || !_faNetOk() || !v || !b || !el || !el.isConnected || v.parentNode !== el || !(_faVis.get(el) >= FA_MIN_RATIO)) return false;
+  _faHide();
+  var gen = _faGen;
+  _faCur = el;
+  v.muted = _fyPreviewMuted;
+  v.onended = function () { _faFinished(el, gen, id); };
+  try { v.currentTime = _ppPrevStart(v); } catch (e) {}
+  var p = v.play();
+  var shown = function () { if (gen !== _faGen) return; v.style.opacity = '1'; b.style.display = 'flex'; };
+  if (p && p.then) p.then(shown, function () { if (gen === _faGen) _faHide(); }); else shown();
+  _faTimer = setTimeout(function () { _faFinished(el, gen, id); }, FA_CLIP_MS);
+  return true;
+}
+function _faAfterMiss() {
+  var nxt = _faPickNext();
+  if (nxt) { _faPlay(nxt, false); return; }
+  if (_faLast && _faReplay(_faLast.el, _faLast.id)) return;
+  _faEval();
+}
+function _faFinished(el, gen, id) {
+  if (gen !== _faGen) return;
+  _faDone[id] = 1;
+  _faLast = { el: el, id: id };
+  var nxt = _faPickNext();
+  if (nxt) { _faPlay(nxt, false); return; }
+  if (!_faReplay(el, id)) _faHide();
 }
 function _faScan(grid) {
   if (!_faObs) return;
