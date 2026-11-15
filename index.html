@@ -13362,6 +13362,17 @@ function _mpfNatSnapSoon() {
   if (_mpfNatSnapT) return;
   _mpfNatSnapT = setTimeout(function () { _mpfNatSnapT = 0; _mpfNatSnapAll(); }, 100);
 }
+function _mpfMenuOpen(r) {
+  var m = document.getElementById('subStatusItem');
+  if (!m || !m.getClientRects().length) return false;
+  var q = m.getBoundingClientRect();
+  if (q.width < 2 || q.height < 2 || q.bottom <= r.top || q.top >= r.bottom || q.right <= 0 || q.left >= window.innerWidth) return false;
+  for (var p = m; p && p !== document.documentElement; p = p.parentElement) {
+    var cs = getComputedStyle(p);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.05) return false;
+  }
+  return true;
+}
 function _mpfNatTick() {
   if (!_mpfNativeOn) return;
   var c = document.getElementById('mpfContainer'), st = { v: 0 };
@@ -13372,6 +13383,7 @@ function _mpfNatTick() {
     var vis = shownNow && inView;
     var cut = null;
     if (vis) { var cov = _mpfNatCover(c, r); if (cov) vis = false; }
+    if (vis && _mpfMenuOpen(r)) vis = false;
     st = { v: vis ? 1 : 0, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
       o: _mpfOv ? 1 : 0, f: c.dataset.full === '1' ? 1 : 0, a: window._mpfAutoScroll !== false ? 1 : 0 };
     if (cut) { st.cx = cut[0]; st.cy = cut[1]; st.cw = cut[2]; st.ch = cut[3]; }
