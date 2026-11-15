@@ -17051,8 +17051,15 @@ window._mpfWatchFull=function(idx){
   function tick(){ try { _mpfNatTick(); } catch(e){} }
   function openProf(h){
     var u = String(h || "").replace(/^@/, ""); if (!u) return;
-    close();
-    setTimeout(function(){ try { if (typeof window.openCreatorPage === "function") window.openCreatorPage(u); } catch(e){} }, 60);
+    try { if (typeof window.openCreatorPage === "function") window.openCreatorPage(u); } catch(e){}
+    var sh = $("mpfCmt"); if (sh) sh.classList.remove("on");
+    var bk = $("mpfCmtBack"); if (bk) bk.classList.remove("on");
+    try { $("mcInput").blur(); $("mcCf").classList.remove("on"); } catch(e){}
+    setTimeout(function(){
+      var s2 = $("mpfCmt");
+      if (s2 && s2.classList.contains("on")) return;
+      window._mpfCmtOpen = false; tick();
+    }, 450);
   }
   function findItem(id){
     var i, p, a; id = sid(id);
@@ -17151,7 +17158,7 @@ window._mpfWatchFull=function(idx){
     var id = esc(it.id), nm = it.name || "?";
     var pf = (it.name && it.name.charAt(0) === "@") ? ' data-prof="' + esc(it.name) + '"' : "";
     var av = '<div class="mc-av' + (rep ? " sm" : "") + '"' + pf + (it.avatarUrl ? ' style="background-image:url(' + esc(it.avatarUrl) + ')"' : "") + '>' + (it.avatarUrl ? "" : esc(nm.charAt(0).toUpperCase())) + '</div>';
-    var h = '<div class="mc-r">' + av + '<div class="mc-b"><div class="mc-n"' + pf + '>' + esc(nm) + '</div><div class="mc-t">' +
+    var h = '<div class="mc-r">' + av + '<div class="mc-b"><div class="mc-n">' + esc(nm) + '</div><div class="mc-t">' +
       (it.replyTo ? '<span class="mc-to">' + esc(it.replyTo) + '</span> ' : "") + esc(it.text) + '</div>' +
       '<div class="mc-m"><span>' + esc(ago(it.at)) + '</span>' + (it.editedAt ? '<span>edited</span>' : "") +
       '<button type="button" data-rep="' + id + '">Reply</button>' +
