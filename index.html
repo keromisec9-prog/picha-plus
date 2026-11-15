@@ -17064,7 +17064,7 @@ window._mpfWatchFull=function(idx){
     });
     if (pend && fixN++ < 6) setTimeout(fix, 1500);
   }
-  function rtLabel(m){ m = Number(m) | 0; if (m <= 0) return ""; var h = Math.floor(m / 60), r = m % 60; return h ? (h + "h" + (r ? " " + r + "m" : "")) : (r + "m"); }
+  function rtLabel(m){ m = Number(m) | 0; if (m <= 0) return ""; var h = Math.floor(m / 60), r = m % 60; return h + ":" + (r < 10 ? "0" : "") + r + ":00"; }
   function epLabel(it){ var n = it._epCount | 0; return n > 0 ? n + (n === 1 ? " EPISODE" : " EPISODES") : "SERIES"; }
   function card(it){
     var idx = registerItem(it), locked = !!(it.isUgandan && !session.hasAfricanAccess());
