@@ -15856,7 +15856,7 @@ async function submitForceReset() {
     if (!$("ppComments")) {
       var c = document.createElement("div"); c.id = "ppComments";
       c.innerHTML = '<div class="pp-ch">Comments<span id="ppCmtCount">0</span></div>' +
-        '<div class="pp-cin" id="ppCmtForm"><input id="ppCmtInput" maxlength="500" autocomplete="off"><button type="button" id="ppCmtSend" aria-label="Post"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>' +
+        '<div class="pp-cin" id="ppCmtForm"><input id="ppCmtInput" maxlength="150" autocomplete="off"><button type="button" id="ppCmtSend" aria-label="Post"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>' +
         '<div id="ppEmoRow"><button type="button" data-emo="&#x1F602;">&#x1F602;</button><button type="button" data-emo="&#x2764;&#xFE0F;">&#x2764;&#xFE0F;</button><button type="button" data-emo="&#x1F525;">&#x1F525;</button><button type="button" data-emo="&#x1F60D;">&#x1F60D;</button><button type="button" data-emo="&#x1F44F;">&#x1F44F;</button><button type="button" data-emo="&#x1F62D;">&#x1F62D;</button><button type="button" data-emo="&#x1F64C;">&#x1F64C;</button><button type="button" data-emo="&#x1F4AF;">&#x1F4AF;</button></div><div id="ppCmtList"></div><button type="button" class="pp-cmore" id="ppCmtMore" style="display:none">Load more</button>';
       body.appendChild(c);
       c.addEventListener("click", function (e) {
@@ -16942,7 +16942,7 @@ window._mpfWatchFull=function(idx){
   if (window._mpfOpenCommentsSheet) return;
   var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
   var key = "", items = [], total = 0, more = false, busy = false, loading = false, reply = null, edit = null, delId = null, reps = {}, opened = {};
-  var EMO = ["😂", "❤️", "🔥", "😍", "👏", "😭", "🙌", "💯"];
+  var EMO = "😂 ❤️ 🔥 😍 👏 😭 🙌 💯 🤣 🫣 🫡 😔 😌 😏 🥳 🤩 🥰 🤨 🧐 😲 😯 😮 😦 🙁 😢 🤯 😳 🤕 🤒 😷 🤓 🤑 🤠 🤥 🤢 🤮 👻 🥸 😸 😹 😻 😼 😽 😺 🙀 😿 😾 🙈 🙉 🙊 🎉 🎊 ❤️‍🩹 💔 👋 🤟 🖖 ✋ 🖐️ 🤚 🫰 🤞 🤌 🤏 👌 🫵 👉 👈 ☝️ 👆 👇 ✍️ 🤳 🙏 💅 🤝 🙋 💁 🙆 😀 😃 😄 😁 😆 😅 🙂 🙃 😉 😊 😇 😋 😛 😜 🤪 😝 🤗 🤭 🫢 🤫 🤔 😐 😑 😶 🫥 😬 🙄 😒 😞 😟 😕 🫤 😣 😖 😫 😩 🥺 🥹 😮‍💨 🥱 😴 😪 🤤 🥵 🥶 🥴 😵 🤧 🤡 😎 🤖 😘 😗 😙 😚 🥲 🫠 🤲 👐 🫶 🫂 💪 👍 👎 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💕 💞 💓 💗 💖 💘 💝 ✨ 💫 ⭐ 🌟 🎈 🎁 🏆 🥇 👑 💎 🌹 🌸 🍀 🌈 ☀️ 🎶 🎵 🍿 🙇 🤦 🤷 💃 🕺".split(" ").filter(function(e, i, a){ return e && a.indexOf(e) === i; });
   var HP = "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
   var I_UP = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
   var I_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
@@ -16994,9 +16994,10 @@ window._mpfWatchFull=function(idx){
       "#mpfCmt .mc-i input::placeholder{color:#555;opacity:1}",
       "#mpfCmt .mc-i input:disabled{opacity:.5}",
       "#mpfCmt .mc-s{flex:none;width:44px;height:44px;border:0;background:none;color:#a8a8a8;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color .15s,transform .15s}",
-      "#mpfCmt .mc-s.on{color:#c98f00;transform:scale(1.1)}",
-      "#mpfCmt .mc-q{flex:none;display:flex;justify-content:space-between;gap:2px;padding:2px 14px 8px;overflow-x:auto;border-bottom:1px solid #eee}",
-      "#mpfCmt .mc-q button{border:0;background:none;font-size:26px;line-height:1;padding:6px 4px}",
+      "#mpfCmt .mc-s.on{color:#000;transform:scale(1.1)}",
+      "#mpfCmt .mc-q{flex:none;display:flex;justify-content:flex-start;gap:0;padding:2px 10px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid #eee}",
+      "#mpfCmt .mc-q::-webkit-scrollbar{display:none}",
+      "#mpfCmt .mc-q button{flex:none;border:0;background:none;font-size:22px;line-height:1;padding:6px 7px}",
       "#mpfCmt .mc-q button:active{transform:scale(1.25)}",
       "#mpfCmt .mc-l{flex:1;overflow-y:auto;padding:6px 16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}",
       "#mpfCmt .mc-r{display:flex;gap:12px;padding:10px 0}",
@@ -17028,7 +17029,7 @@ window._mpfWatchFull=function(idx){
     var sh = document.createElement("div"); sh.id = "mpfCmt";
     sh.innerHTML = '<div class="mc-h"><span id="mcCount">Comments</span><button type="button" class="mc-x" id="mcClose" aria-label="Close">&times;</button></div>' +
       '<div class="mc-rb" id="mcRb"><span id="mcRbT"></span><button type="button" id="mcRbX" aria-label="Cancel">&times;</button></div>' +
-      '<div class="mc-i"><input id="mcInput" type="text" maxlength="500" autocomplete="off"><button type="button" class="mc-s" id="mcSend" aria-label="Post comment" disabled>' + I_UP + '</button></div>' +
+      '<div class="mc-i"><input id="mcInput" type="text" maxlength="150" autocomplete="off"><button type="button" class="mc-s" id="mcSend" aria-label="Post comment" disabled>' + I_UP + '</button></div>' +
       '<div class="mc-q" id="mcQ"></div>' +
       '<div class="mc-l" id="mcList"></div>' +
       '<div class="mc-cf" id="mcCf"><div class="mc-cb"><b>Delete comment?</b><p>This can\'t be undone.</p><div><button type="button" id="mcCfNo">Cancel</button><button type="button" class="d" id="mcCfYes">Delete</button></div></div></div>';
@@ -17118,7 +17119,7 @@ window._mpfWatchFull=function(idx){
     var s = inp.selectionStart, en = inp.selectionEnd;
     if (s == null) { s = en = inp.value.length; }
     var nv = inp.value.slice(0, s) + em + inp.value.slice(en);
-    if (nv.length > 500) return;
+    if (nv.length > 150) return;
     inp.value = nv; bump(em);
     var p = s + em.length;
     try { inp.focus({ preventScroll: true }); inp.setSelectionRange(p, p); } catch(x){}
