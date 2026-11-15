@@ -13311,7 +13311,7 @@ function _mpfNatFetchCr(sid) {
     .then(function (j) {
       if (j && j.ok && j.creator && j.creator.username) {
         var a = j.creator.avatarUrl || ''; if (a.charAt(0) === '/') a = base + a;
-        _mpfNatCr[sid] = { u: j.creator.username, av: a };
+        _mpfNatCr[sid] = { u: j.creator.username, av: a, f: !!j.creator.following, me: !!j.creator.isSelf };
         _mpfNatSnapSoon();
       } else _mpfNatCr[sid] = {};
     }).catch(function () { _mpfNatCr[sid] = {}; });
@@ -13347,7 +13347,7 @@ function _mpfNatSnapOne(i) {
   var cr = _mpfNatCreator(i);
   return { i: i, m: g('mpfMeta').textContent, t: g('mpfTitle').textContent, d: g('mpfDesc').textContent, c: ct,
     l: /1/.test(fv) ? 1 : 0, lc: (g('mpfLikeCount') || {}).textContent || 'Like',
-    s: (si && si.dataset.on === '1') ? 1 : 0, sl: (g('mpfSaveLbl') || {}).textContent || 'Save', sc: (g('mpfSaveCount') || {}).textContent || '', cc: (g('mpfCmtCount') || {}).textContent || '', u: cr.u || '', av: cr.av || '' };
+    s: (si && si.dataset.on === '1') ? 1 : 0, sl: (g('mpfSaveLbl') || {}).textContent || 'Save', sc: (g('mpfSaveCount') || {}).textContent || '', cc: (g('mpfCmtCount') || {}).textContent || '', u: cr.u || '', av: cr.av || '', pl: (cr.u && !cr.me && !cr.f) ? 1 : 0 };
 }
 function _mpfNatSnapAll() {
   if (!_mpfNativeOn) return;
@@ -13447,6 +13447,7 @@ window._mpfNatAct = function (a, i) {
     else if (a === 'share') _mpfShare(i);
     else if (a === 'save') _mpfSaveToggle(i);
     else if (a === 'auto') _mpfToggleAutoScroll();
+    else if (a === 'follow') { try { window._mpfFolToggle(i); } catch (e2) {} }
     else if (a === 'profile') { var cr0 = _mpfNatCreator(i); if (cr0 && cr0.u && typeof window.openCreatorPage === 'function') window.openCreatorPage(cr0.u); }
     else if (a === 'comments') { if (typeof window._mpfOpenCommentsSheet === 'function') window._mpfOpenCommentsSheet(i); }
     else if (a === 'full') _mpfToggleFull();
@@ -16938,6 +16939,48 @@ window._mpfWatchFull=function(idx){
   return ow.apply(this,arguments);
 };
 })();</script><script id="bn-z-js">(function(){function f(e){if(e.style.zIndex!=="150")e.style.setProperty("z-index","150","important")}function w(i){var e=document.getElementById(i);if(!e)return false;f(e);new MutationObserver(function(){f(e)}).observe(e,{attributes:true,attributeFilter:["style"]});return true}var n=0,t=setInterval(function(){n++;var a=w("bnCategoriesPage"),b=w("bnSavedPage");if(a&&b||n>40)clearInterval(t)},100);w("bnCategoriesPage");w("bnSavedPage")})();</script>
+<script id="mpf-fol">(function(){
+  if (window._mpfFolSet) return;
+  var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
+  function tok(){ try { return localStorage.getItem("pichaplus_session") || ""; } catch(e){ return ""; } }
+  function low(s){ return String(s || "").toLowerCase(); }
+  function tst(m){ try { showToast(m, "error"); } catch(x){} }
+  window._mpfFolSet = function(un, v){
+    try {
+      var k, e, n = low(un);
+      for (k in _mpfNatCr) { e = _mpfNatCr[k]; if (e && e.u && low(e.u) === n) e.f = !!v; }
+    } catch(x){}
+    try { _mpfNatSnapSoon(); } catch(x){}
+  };
+  window._mpfFolToggle = function(i){
+    var cr = null; try { cr = _mpfNatCreator(i); } catch(x){}
+    if (!cr || !cr.u || cr.me || cr.f) return;
+    if (!tok()) { tst("Sign in to follow creators"); return; }
+    var un = cr.u;
+    window._mpfFolSet(un, true);
+    fetch(API_ + "/studio/follow", { method: "POST", headers: { "Content-Type": "application/json", "X-Session-Token": tok() }, body: JSON.stringify({ username: un }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (!(j && j.ok)) { window._mpfFolSet(un, false); tst((j && j.error) || "Could not follow"); } })
+      .catch(function(){ window._mpfFolSet(un, false); tst("Network error"); });
+  };
+  if (window._mpfFolHook) return;
+  window._mpfFolHook = 1;
+  var of = window.fetch;
+  window.fetch = function(input, init){
+    var p = of.apply(this, arguments);
+    try {
+      var u = typeof input === "string" ? input : ((input && input.url) || "");
+      var m = /\/studio\/(follow|unfollow)(?:[?#]|$)/.exec(u);
+      if (m && init && String(init.method || "").toUpperCase() === "POST") {
+        var un = ""; try { un = JSON.parse(init.body).username || ""; } catch(e){}
+        if (un) p.then(function(r){ return r.clone().json(); }).then(function(j){
+          if (j && j.ok) window._mpfFolSet(un, typeof j.following === "boolean" ? j.following : m[1] === "follow");
+        }).catch(function(){});
+      }
+    } catch(e){}
+    return p;
+  };
+})();</script>
 <script id="mpf-cmt-count">(function(){
   if (window._mpfCmtSet) return;
   var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
@@ -17006,6 +17049,11 @@ window._mpfWatchFull=function(idx){
   var loadedKey = "";
   function setCnt(){ try { if (window._mpfCmtSet) window._mpfCmtSet(key, total); } catch(e){} }
   function tick(){ try { _mpfNatTick(); } catch(e){} }
+  function openProf(h){
+    var u = String(h || "").replace(/^@/, ""); if (!u) return;
+    close();
+    setTimeout(function(){ try { if (typeof window.openCreatorPage === "function") window.openCreatorPage(u); } catch(e){} }, 60);
+  }
   function findItem(id){
     var i, p, a; id = sid(id);
     for (i = 0; i < items.length; i++) if (sid(items[i].id) === id) return items[i];
@@ -17101,8 +17149,9 @@ window._mpfWatchFull=function(idx){
   }
   function rowHtml(it, rep){
     var id = esc(it.id), nm = it.name || "?";
-    var av = '<div class="mc-av' + (rep ? " sm" : "") + '"' + (it.avatarUrl ? ' style="background-image:url(' + esc(it.avatarUrl) + ')"' : "") + '>' + (it.avatarUrl ? "" : esc(nm.charAt(0).toUpperCase())) + '</div>';
-    var h = '<div class="mc-r">' + av + '<div class="mc-b"><div class="mc-n">' + esc(nm) + '</div><div class="mc-t">' +
+    var pf = (it.name && it.name.charAt(0) === "@") ? ' data-prof="' + esc(it.name) + '"' : "";
+    var av = '<div class="mc-av' + (rep ? " sm" : "") + '"' + pf + (it.avatarUrl ? ' style="background-image:url(' + esc(it.avatarUrl) + ')"' : "") + '>' + (it.avatarUrl ? "" : esc(nm.charAt(0).toUpperCase())) + '</div>';
+    var h = '<div class="mc-r">' + av + '<div class="mc-b"><div class="mc-n"' + pf + '>' + esc(nm) + '</div><div class="mc-t">' +
       (it.replyTo ? '<span class="mc-to">' + esc(it.replyTo) + '</span> ' : "") + esc(it.text) + '</div>' +
       '<div class="mc-m"><span>' + esc(ago(it.at)) + '</span>' + (it.editedAt ? '<span>edited</span>' : "") +
       '<button type="button" data-rep="' + id + '">Reply</button>' +
@@ -17219,6 +17268,8 @@ window._mpfWatchFull=function(idx){
     edit = id; reply = null; $("mcInput").value = it.text; bar();
   }
   function onList(e){
+    var pv = e.target.closest ? e.target.closest("[data-prof]") : null;
+    if (pv) { openProf(pv.getAttribute("data-prof")); return; }
     var b = e.target.closest ? e.target.closest("button") : null; if (!b) return;
     var d = b.dataset;
     if (d.like) return toggleLike(d.like);
