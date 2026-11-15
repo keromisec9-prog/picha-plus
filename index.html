@@ -13262,6 +13262,36 @@ function _mpfNatUrl(idx, item, url) { try { PichaShorts.setUrl(idx, String(item.
   }).observe(document.body, { childList: true });
   [].forEach.call(document.body.children, function (el) { if (el.nodeType === 1) { try { am.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] }); } catch (e) {} seen.set(el, isOv(el)); } });
 })();
+function _mpfNatCover(c, r) {
+  var area = r.width * r.height, els = [], tried = [], ux1 = 1e9, uy1 = 1e9, ux2 = -1e9, uy2 = -1e9, any = false;
+  for (var a = 0; a < 4; a++) for (var b = 0; b < 6; b++) {
+    var e = document.elementFromPoint(r.left + r.width * (a + 0.5) / 4, r.top + r.height * (b + 0.5) / 6);
+    if (!e || tried.indexOf(e) >= 0) continue;
+    tried.push(e);
+    if (c.contains(e) || e.contains(c)) continue;
+    if (/toast|snack/i.test((e.id || '') + ' ' + (typeof e.className === 'string' ? e.className : ''))) continue;
+    var o = e, p = e;
+    while (p && p !== document.body && !p.contains(c)) {
+      var ps = getComputedStyle(p).position;
+      if (ps === 'fixed' || ps === 'absolute' || ps === 'sticky') o = p;
+      p = p.parentElement;
+    }
+    if (els.indexOf(o) < 0) els.push(o);
+  }
+  for (var k = 0; k < els.length; k++) {
+    var q = els[k].getBoundingClientRect();
+    var x1 = Math.max(q.left, r.left), y1 = Math.max(q.top, r.top), x2 = Math.min(q.right, r.right), y2 = Math.min(q.bottom, r.bottom);
+    if (x2 - x1 < 2 || y2 - y1 < 2) continue;
+    if ((x2 - x1) * (y2 - y1) >= area * 0.5) return 1;
+    any = true; ux1 = Math.min(ux1, x1); uy1 = Math.min(uy1, y1); ux2 = Math.max(ux2, x2); uy2 = Math.max(uy2, y2);
+  }
+  if (!any) return 0;
+  var cand = [[r.left, r.top, r.width, uy1 - r.top], [r.left, uy2, r.width, r.bottom - uy2], [r.left, r.top, ux1 - r.left, r.height], [ux2, r.top, r.right - ux2, r.height]];
+  var best = null, ba = 0;
+  cand.forEach(function (z) { var ar = Math.max(0, z[2]) * Math.max(0, z[3]); if (ar > ba) { ba = ar; best = z; } });
+  if (!best || ba < area * 0.25) return 1;
+  return [Math.round(best[0] - r.left), Math.round(best[1] - r.top), Math.round(best[2]), Math.round(best[3])];
+}
 var _mpfNatCr = {};
 function _mpfNatSid(it) {
   if (!it) return '';
@@ -13340,17 +13370,11 @@ function _mpfNatTick() {
     var shownNow = cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 50 && r.height > 100;
     var inView = r.top > -2 && r.bottom < window.innerHeight + 2 && r.left > -2 && r.right < window.innerWidth + 2;
     var vis = shownNow && inView;
-    if (vis) {
-      var fx = [0.2, 0.5, 0.8], fy = [0.15, 0.5, 0.85];
-      for (var a1 = 0; a1 < 3 && vis; a1++) for (var b1 = 0; b1 < 3 && vis; b1++) {
-        var e = document.elementFromPoint(r.left + r.width * fx[a1], r.top + r.height * fy[b1]);
-        if (!e || c.contains(e)) continue;
-        if (/toast|snack/i.test((e.id || '') + ' ' + (typeof e.className === 'string' ? e.className : ''))) continue;
-        vis = false;
-      }
-    }
+    var cut = null;
+    if (vis) { var cov = _mpfNatCover(c, r); if (cov === 1) vis = false; else if (cov) cut = cov; }
     st = { v: vis ? 1 : 0, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
       o: _mpfOv ? 1 : 0, f: c.dataset.full === '1' ? 1 : 0, a: window._mpfAutoScroll !== false ? 1 : 0 };
+    if (cut) { st.cx = cut[0]; st.cy = cut[1]; st.cw = cut[2]; st.ch = cut[3]; }
     if (vis) { _mpfNatLast.hold = 0; _mpfNatLast.stObj = st; }
     else if (shownNow && !inView && _mpfNatLast.stObj && _mpfNatLast.stObj.v === 1 && (_mpfNatLast.hold = (_mpfNatLast.hold || 0) + 1) <= 4) {
       st = _mpfNatLast.stObj;
