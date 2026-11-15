@@ -13206,9 +13206,10 @@ function _mpfNatAvail() {
   try { return !window._mpfNativeDisabled && !!(window.PichaShorts && PichaShorts.available && PichaShorts.available()); } catch (e) { return false; }
 }
 function _mpfNatItems() {
+  for (var w0 = 0; w0 < 4; w0++) { var sw = _mpfNatSid(_mpfList[w0]); if (sw) _mpfNatFetchCr(sw); }
   return _mpfList.map(function (it) {
     var tv = it.media_type === 'tv', y = (it.release_date || it.first_air_date || '').slice(0, 4);
-    return { id: String(it.id), s: it._short ? 1 : 0, t: it.title || it.name || '', m: it._short ? '' : [tv ? 'Series' : 'Movie', y].filter(Boolean).join(' \u2022 '), d: it._short ? '' : (it.overview || ''), st: it._short ? 0 : (function (d) { return d > 90 ? Math.round(Math.min(d * 0.27, d - 30)) : 0; })(Number(it.durationSecs) || (Number(it.runtime) > 0 ? Number(it.runtime) * 60 : 0)) };
+    return { id: String(it.id), cr: _mpfNatSid(it) ? 1 : 0, s: it._short ? 1 : 0, t: it.title || it.name || '', m: it._short ? '' : [tv ? 'Series' : 'Movie', y].filter(Boolean).join(' \u2022 '), d: it._short ? '' : (it.overview || ''), st: it._short ? 0 : (function (d) { return d > 90 ? Math.round(Math.min(d * 0.27, d - 30)) : 0; })(Number(it.durationSecs) || (Number(it.runtime) > 0 ? Number(it.runtime) * 60 : 0)) };
   });
 }
 function _mpfNatListSig() { return _mpfList.map(function (x) { return x.id; }).join(','); }
@@ -13229,12 +13230,13 @@ function _mpfNatEnsure(i) {
 }
 function _mpfNatUrl(idx, item, url) { try { PichaShorts.setUrl(idx, String(item.id), url); } catch (e) {} }
 var _mpfNatCr = {};
-function _mpfNatCreator(i) {
-  var it = _mpfList[i]; if (!it) return {};
-  var sid = String(it.id).indexOf('studiot_') === 0 ? String(it.id) : (String(it.tmdbId || '').indexOf('studiot_') === 0 ? String(it.tmdbId) : '');
-  if (!sid) return {};
-  var e = _mpfNatCr[sid];
-  if (e !== undefined) return e || {};
+function _mpfNatSid(it) {
+  if (!it) return '';
+  var m = /^studiot_\d+/.exec(String(it.id)) || /^studiot_\d+/.exec(String(it.tmdbId || ''));
+  return m ? m[0] : '';
+}
+function _mpfNatFetchCr(sid) {
+  if (_mpfNatCr[sid] !== undefined) return;
   _mpfNatCr[sid] = null;
   var base = (typeof API !== 'undefined' && API) ? API : 'https://api.mypicha.uk';
   var h = {}; try { if (typeof _fpTok === 'function') h['X-Session-Token'] = _fpTok(); } catch (x) {}
@@ -13247,7 +13249,12 @@ function _mpfNatCreator(i) {
         _mpfNatSnapSoon();
       } else _mpfNatCr[sid] = {};
     }).catch(function () { _mpfNatCr[sid] = {}; });
-  return {};
+}
+function _mpfNatCreator(i) {
+  var sid = _mpfNatSid(_mpfList[i]);
+  if (!sid) return {};
+  for (var j = i; j <= i + 3; j++) { var s2 = _mpfNatSid(_mpfList[j]); if (s2) _mpfNatFetchCr(s2); }
+  return _mpfNatCr[sid] || {};
 }
 function _mpfNatOpenCommentsTab() {
   var n = 0, t = setInterval(function () {
@@ -13360,11 +13367,7 @@ window._mpfNatAct = function (a, i) {
     else if (a === 'save') _mpfSaveToggle(i);
     else if (a === 'auto') _mpfToggleAutoScroll();
     else if (a === 'profile') { var cr0 = _mpfNatCreator(i); if (cr0 && cr0.u && typeof window.openCreatorPage === 'function') window.openCreatorPage(cr0.u); }
-    else if (a === 'comments') {
-      if (!_mpfSlideMeta[i] && _mpfList[i]) _mpfSlideMeta[i] = { item: _mpfList[i] };
-      var cb2 = document.getElementById('mpfCta_' + i); if (cb2) cb2.dataset.armed = '1';
-      _mpfWatchFull(i); _mpfNatOpenCommentsTab();
-    }
+    else if (a === 'comments') { if (typeof window._mpfOpenCommentsSheet === 'function') window._mpfOpenCommentsSheet(i); }
     else if (a === 'full') _mpfToggleFull();
     else if (a === 'watch') {
       if (!_mpfSlideMeta[i] && _mpfList[i]) _mpfSlideMeta[i] = { item: _mpfList[i] };
