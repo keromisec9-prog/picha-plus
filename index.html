@@ -12919,7 +12919,7 @@ function _mpfSlideHTML(idx) {
         <div onclick="_mpfSaveToggle(${idx})" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span id="mpfSaveIcon_${idx}" style="display:inline-flex;">${_mpfBookmarkSVG(false)}</span>
           <span id="mpfSaveLbl_${idx}" style="font-size:0.68rem;font-weight:600;">Save</span>
-          <span id="mpfSaveCount_${idx}" style="font-size:0.62rem;font-weight:600;opacity:0.85;margin-top:-2px;"></span>
+          <span id="mpfSaveCount_${idx}" style="font-size:0.62rem;font-weight:600;opacity:0.85;margin-top:-2px;"></span><span id="mpfCmtCount_${idx}" style="display:none"></span>
         </div>
         <div onclick="_mpfToggleAutoScroll()" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
           <span class="mpf-auto-icon" style="display:inline-flex;">${window._mpfAutoScroll !== false ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L4 11.5H8V15.5H16V11.5H20L12 3.5Z M9 17.5H15V19.5H9V17.5Z M10 21H14V22.5H10V21Z" fill="currentColor"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3.5L7 8.5H10V14H14V8.5H17L12 3.5Z" fill="currentColor"/><path d="M8.5 16H15.5V18H8.5V16Z" fill="currentColor"/><path d="M4.2 5L18.8 19.6L20.2 18.2L5.6 3.6L4.2 5Z" fill="currentColor"/></svg>`}</span>
@@ -13347,7 +13347,7 @@ function _mpfNatSnapOne(i) {
   var cr = _mpfNatCreator(i);
   return { i: i, m: g('mpfMeta').textContent, t: g('mpfTitle').textContent, d: g('mpfDesc').textContent, c: ct,
     l: /1/.test(fv) ? 1 : 0, lc: (g('mpfLikeCount') || {}).textContent || 'Like',
-    s: (si && si.dataset.on === '1') ? 1 : 0, sl: (g('mpfSaveLbl') || {}).textContent || 'Save', sc: (g('mpfSaveCount') || {}).textContent || '', u: cr.u || '', av: cr.av || '' };
+    s: (si && si.dataset.on === '1') ? 1 : 0, sl: (g('mpfSaveLbl') || {}).textContent || 'Save', sc: (g('mpfSaveCount') || {}).textContent || '', cc: (g('mpfCmtCount') || {}).textContent || '', u: cr.u || '', av: cr.av || '' };
 }
 function _mpfNatSnapAll() {
   if (!_mpfNativeOn) return;
@@ -13748,7 +13748,7 @@ async function _mpfMountSlide(idx, autoplay) {
       else if (!likesData.isLiked && liked.includes(item.id)) liked.splice(liked.indexOf(item.id), 1);
     }
   } catch (e) {}
-  _saveCountLoad(item.id, 'mpfSaveCount_' + idx);
+  _saveCountLoad(item.id, 'mpfSaveCount_' + idx); try { _mpfCmtCountLoad(idx, item); } catch (e) {}
   _mpfWireEdgeLongPress(idx);
   _mpfWireSeekBar(idx);
 
@@ -16938,6 +16938,44 @@ window._mpfWatchFull=function(idx){
   return ow.apply(this,arguments);
 };
 })();</script><script id="bn-z-js">(function(){function f(e){if(e.style.zIndex!=="150")e.style.setProperty("z-index","150","important")}function w(i){var e=document.getElementById(i);if(!e)return false;f(e);new MutationObserver(function(){f(e)}).observe(e,{attributes:true,attributeFilter:["style"]});return true}var n=0,t=setInterval(function(){n++;var a=w("bnCategoriesPage"),b=w("bnSavedPage");if(a&&b||n>40)clearInterval(t)},100);w("bnCategoriesPage");w("bnSavedPage")})();</script>
+<script id="mpf-cmt-count">(function(){
+  if (window._mpfCmtSet) return;
+  var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
+  var cache = {}, queue = {}, pend = {}, timer = 0;
+  function keyOf(it){ return it ? String(it.catalogKey || it.catalog_key || it.id || it.tmdbId || "") : ""; }
+  function fmt(n){ if (n >= 1e6) return (n / 1e6).toFixed(1).replace(".0", "") + "M"; if (n >= 1e3) return (n / 1e3).toFixed(1).replace(".0", "") + "K"; return String(n); }
+  function paint(k){
+    var n = cache[k]; if (n == null) return;
+    try {
+      for (var i = 0; i < _mpfList.length; i++) {
+        if (keyOf(_mpfList[i]) === k) { var el = document.getElementById("mpfCmtCount_" + i); if (el) el.textContent = n > 0 ? fmt(n) : ""; }
+      }
+    } catch(e){}
+    try { _mpfNatSnapSoon(); } catch(e){}
+  }
+  function chunk(ks){
+    fetch(API_ + "/studio/comment-counts?keys=" + encodeURIComponent(JSON.stringify(ks)))
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        ks.forEach(function(k){ delete pend[k]; });
+        if (!j || !j.ok) return;
+        ks.forEach(function(k){ cache[k] = (j.counts && j.counts[k]) | 0; paint(k); });
+      }).catch(function(){ ks.forEach(function(k){ delete pend[k]; }); });
+  }
+  function flush(){
+    timer = 0;
+    var ks = Object.keys(queue); queue = {};
+    for (var s = 0; s < ks.length; s += 20) chunk(ks.slice(s, s + 20));
+  }
+  window._mpfCmtCountLoad = function(idx, item){
+    var k = keyOf(item || _mpfList[idx]); if (!k) return;
+    if (cache[k] != null) { paint(k); return; }
+    if (pend[k]) return;
+    pend[k] = 1; queue[k] = 1;
+    if (!timer) timer = setTimeout(flush, 80);
+  };
+  window._mpfCmtSet = function(k, n){ cache[k] = n; paint(k); };
+})();</script>
 <script id="mpf-cmt-sheet">(function(){
   if (window._mpfOpenCommentsSheet) return;
   var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
@@ -16965,6 +17003,8 @@ window._mpfWatchFull=function(idx){
     if (d < 30) return Math.floor(d / 7) + "w ago";
     return Math.floor(d / 30) + "mo ago";
   }
+  var loadedKey = "";
+  function setCnt(){ try { if (window._mpfCmtSet) window._mpfCmtSet(key, total); } catch(e){} }
   function tick(){ try { _mpfNatTick(); } catch(e){} }
   function findItem(id){
     var i, p, a; id = sid(id);
@@ -17088,7 +17128,7 @@ window._mpfWatchFull=function(idx){
   function render(){
     var l = $("mcList"); if (!l) return;
     l.innerHTML = items.length ? items.map(function(x){ return rowHtml(x, false); }).join("") : '<div class="mc-e">' + (loading ? "Loading..." : "No comments yet. Be the first.") + '</div>';
-    $("mcCount").textContent = total + (total === 1 ? " comment" : " comments");
+    $("mcCount").textContent = total + (total === 1 ? " comment" : " comments"); if (loadedKey === key) setCnt();
     var inp = $("mcInput"), has = !!tok();
     inp.disabled = !has;
     inp.placeholder = !has ? "Sign in to comment" : edit ? "Edit your comment..." : reply ? "Reply to " + reply.name + "..." : "Add a comment...";
@@ -17135,7 +17175,7 @@ window._mpfWatchFull=function(idx){
         loading = false;
         if (k !== key || !j || !j.ok) { render(); return; }
         items = append ? items.concat(j.items || []) : (j.items || []);
-        total = j.total || 0; more = !!j.more; render();
+        total = j.total || 0; more = !!j.more; loadedKey = k; render();
       }).catch(function(){ loading = false; render(); });
   }
   function loadReplies(pid, after){
@@ -17259,7 +17299,7 @@ window._mpfWatchFull=function(idx){
     var k = String(it.catalogKey || it.catalog_key || it.id || it.tmdbId || "");
     if (!k) return;
     build();
-    key = k; items = []; total = 0; more = false; reps = {}; opened = {}; reply = null; edit = null; delId = null;
+    loadedKey = ""; key = k; items = []; total = 0; more = false; reps = {}; opened = {}; reply = null; edit = null; delId = null;
     $("mcInput").value = "";
     renderQ();
     window._mpfCmtOpen = true; tick();
