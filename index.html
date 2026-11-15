@@ -11537,6 +11537,7 @@ function _scheduleAdvance(cards, myGen, delayMs) {
 }
 
 function pauseGridPreviewForModal() {
+  try { _faPause(); } catch (e) {}
   if (_fySeqVideo && !_fySeqVideo.paused) {
     _fySeqVideo.pause();
     clearTimeout(_fySeqTimer);
@@ -11545,6 +11546,7 @@ function pauseGridPreviewForModal() {
 }
 
 function resumeGridPreviewAfterModal() {
+  try { _faResume(); } catch (e) {}
   if (!_fyGridPausedForModal) return;
   _fyGridPausedForModal = false;
   if (_fySeqVideo && _fySeqRunning && _fySeqActiveCards && _fySeqActiveGen === _fySeqGen) {
@@ -11663,7 +11665,158 @@ function setPreviewSoundPref(soundOn) {
   if (_fySeqMuteBtn) _fySeqMuteBtn.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">${_fyPreviewMuted ? 'volume_off' : 'volume_up'}</span>`;
 }
 
+/* ---- Feed autoplay: the card most in view plays (one shared <video>) ---- */
+var FA_SETTLE_MS = 400, FA_CLIP_MS = 12000, FA_MIN_RATIO = 0.6, FA_ALLOW_FULLFILE = false;
+var _faObs = null, _faMO = null, _faSeen = new WeakSet(), _faVis = new Map();
+var _faSettle = null, _faTimer = null, _faAbort = null, _faGen = 0, _faCur = null;
+var _faPaused = false, _faDone = {}, _faNoClip = {};
+function _faNetOk() {
+  try {
+    var c = navigator.connection;
+    if (c && (c.saveData || c.effectiveType === 'slow-2g' || c.effectiveType === '2g')) return false;
+  } catch (e) {}
+  return !document.hidden;
+}
+function _faEls() {
+  if (!_fySeqVideo) {
+    var v = document.createElement('video');
+    v.muted = _fyPreviewMuted; v.playsInline = true; v.preload = 'none';
+    v.style.cssText = 'position:absolute;top:0;left:0;width:100%;aspect-ratio:var(--card-ratio);object-fit:cover;opacity:0;transition:opacity 0.4s;pointer-events:none;border-radius:inherit;';
+    _fySeqVideo = v;
+  }
+  if (!_fySeqMuteBtn) {
+    var b = document.createElement('button');
+    b.style.cssText = 'position:absolute;right:0.4rem;z-index:5;background:rgba(0,0,0,0.6);border:none;border-radius:50%;width:1.8rem;height:1.8rem;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0;';
+    b.innerHTML = '<span class="material-symbols-rounded" style="font-size:1.1rem;color:#fff;line-height:1;">' + (_fyPreviewMuted ? 'volume_off' : 'volume_up') + '</span>';
+    b.onclick = function (e) { e.stopPropagation(); setPreviewSoundPref(_fyPreviewMuted); };
+    _fySeqMuteBtn = b;
+  }
+}
+function _faHide() {
+  _faGen++;
+  clearTimeout(_faTimer);
+  if (_faAbort) { try { _faAbort.abort(); } catch (e) {} _faAbort = null; }
+  if (_fySeqVideo) { _fySeqVideo.style.opacity = '0'; _fySeqVideo.onended = null; try { _fySeqVideo.pause(); } catch (e) {} }
+  if (_fySeqMuteBtn) _fySeqMuteBtn.style.display = 'none';
+  _faCur = null;
+}
+async function _faPlay(el, retry) {
+  _faHide();
+  var gen = _faGen, id = el.dataset.previewId, tv = el.dataset.tv === '1';
+  var ep = (typeof _fySeriesEpCycle === 'number') ? _fySeriesEpCycle : 0;
+  var key = tv ? (id + '_ep' + ep) : id;
+  _faCur = el;
+  try {
+    var url = _previewCache[key];
+    if (!url) {
+      var ac = new AbortController(); _faAbort = ac;
+      var res = await fetch(tv ? (API + '/episode-preview?seriesId=' + id + '&ep=' + ep) : (API + '/preview?id=' + id), {
+        headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() },
+        signal: ac.signal
+      });
+      if (gen !== _faGen) return;
+      var d = await res.json();
+      if (gen !== _faGen) return;
+      if (!d.url) throw new Error('no url');
+      url = d.url;
+      _previewCache[key] = url;
+    }
+    if (!FA_ALLOW_FULLFILE && url.indexOf('#pvclip') < 0) { _faNoClip[id] = 1; _faHide(); return; }
+    _faEls();
+    var v = _fySeqVideo, b = _fySeqMuteBtn;
+    el.appendChild(v); el.appendChild(b);
+    v.muted = _fyPreviewMuted;
+    v.style.opacity = '0';
+    v.onended = function () { if (gen === _faGen) { _faDone[id] = 1; _faHide(); } };
+    v.addEventListener('loadedmetadata', function () {
+      if (gen !== _faGen) return;
+      try { v.currentTime = _ppPrevStart(v); } catch (e2) {}
+    }, { once: true });
+    v.src = url;
+    await v.play();
+    if (gen !== _faGen) return;
+    v.style.opacity = '1';
+    b.style.display = 'flex';
+    _faTimer = setTimeout(function () {
+      if (gen !== _faGen) return;
+      _faDone[id] = 1; _faHide();
+    }, FA_CLIP_MS);
+  } catch (e) {
+    if (gen !== _faGen) return;
+    if (e && e.name === 'NotAllowedError') { _faHide(); return; }
+    delete _previewCache[key];
+    if (!retry) { _faPlay(el, true); return; }
+    _faNoClip[id] = 1; _faHide();
+  }
+}
+function _faEval() {
+  if (_faPaused || !_faNetOk()) { _faHide(); return; }
+  var best = null, br = 0;
+  _faVis.forEach(function (r, el) {
+    if (!el.isConnected) { _faVis.delete(el); return; }
+    if (r >= FA_MIN_RATIO && r > br) { br = r; best = el; }
+  });
+  if (!best) { if (_faCur) _faHide(); return; }
+  if (best === _faCur) return;
+  var id = best.dataset.previewId;
+  if (_faDone[id] || _faNoClip[id]) { if (_faCur) _faHide(); return; }
+  _faPlay(best, false);
+}
+function _faScan(grid) {
+  if (!_faObs) return;
+  grid.querySelectorAll('.ff-t[data-preview-id]').forEach(function (el) {
+    if (_faSeen.has(el)) return;
+    if (el.dataset.tv === '1' && !_seriesEpisodesArrFor(el.dataset.previewId).length) return;
+    _faSeen.add(el); _faObs.observe(el);
+  });
+}
+function _faSetup(grid) {
+  _stopPreviewSequence(true);
+  _faSeen = new WeakSet();
+  if (!grid || !('IntersectionObserver' in window)) return;
+  _faEls();
+  _faObs = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (e.isIntersecting) _faVis.set(e.target, e.intersectionRatio); else _faVis.delete(e.target);
+    });
+    clearTimeout(_faSettle); _faSettle = setTimeout(_faEval, FA_SETTLE_MS);
+  }, { threshold: [0, 0.25, 0.5, 0.6, 0.75, 1] });
+  _faScan(grid);
+  _faMO = new MutationObserver(function () { _faScan(grid); });
+  _faMO.observe(grid, { childList: true });
+  if (!window._faBound) {
+    window._faBound = true;
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) _faHide();
+      else { clearTimeout(_faSettle); _faSettle = setTimeout(_faEval, FA_SETTLE_MS); }
+    });
+    document.addEventListener('click', function (e) {
+      try {
+        var a = e.target && e.target.closest && e.target.closest('#fyFeed .ff-a');
+        if (!a) return;
+        var c = a.closest('.ff-c[data-sid]'); if (!c) return;
+        var cr = _mpfNatCr[c.getAttribute('data-sid')];
+        if (cr && cr.u && typeof window.openCreatorPage === 'function') {
+          e.stopPropagation(); e.preventDefault();
+          window.openCreatorPage(cr.u);
+        }
+      } catch (_e) {}
+    }, true);
+  }
+}
+function _faStop() {
+  if (_faObs) { _faObs.disconnect(); _faObs = null; }
+  if (_faMO) { _faMO.disconnect(); _faMO = null; }
+  clearTimeout(_faSettle); _faVis.clear(); _faHide();
+}
+function _faPause() { _faPaused = true; _faHide(); }
+function _faResume() {
+  if (!_faPaused) return;
+  _faPaused = false;
+  clearTimeout(_faSettle); _faSettle = setTimeout(_faEval, FA_SETTLE_MS);
+}
 function _setupPreviewObserver(grid) {
+  if (_fyTab === 'feed') { try { _faSetup(grid); } catch (e) {} return; }
   if (_fyTab === 'shorts') { _stopPreviewSequence(true); return; }
   const isFirstSetup = !_fySeqVideo;
   _stopPreviewSequence(true); // keep index — don't restart from the top
@@ -11712,6 +11865,7 @@ function _setupPreviewObserver(grid) {
 }
 
 function _stopPreviewSequence(keepIndex = false) {
+  try { _faStop(); } catch (e) {}
   _fySeqGen++;
   _fySeqRunning = false;
   clearTimeout(_fySeqTimer);
@@ -16956,6 +17110,9 @@ window._mpfWatchFull=function(idx){
     var s = document.createElement("style"); s.id = "ffCss";
     s.textContent = [
       "#fyFeed{max-width:720px;margin:0 auto;padding-bottom:5rem}",
+      "#bnForYouPage .bn-tabs-row{justify-content:center;position:relative}",
+      "#bnForYouPage .bn-tabs-row>button[onclick='refreshForYou()']{position:absolute;right:.6rem;top:.8rem}",
+      "#fyLocateBtn{display:none!important}",
       "#fyFeed .ff-ch{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}",
       "#fyFeed .ff-ch::-webkit-scrollbar{display:none}",
       "#fyFeed .ff-ch button{flex:none;border:0;border-radius:10px;padding:8px 14px;font-size:.9rem;font-weight:600;background:rgba(128,128,128,.22);color:var(--white,#fff);cursor:pointer;white-space:nowrap}",
