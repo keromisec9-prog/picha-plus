@@ -6734,14 +6734,14 @@ function toggleMyList(item, btn) {
       btn.classList.remove('saved');
       btn.innerHTML = `<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`;
     }
-    showToast('Removed from My List');
+    if (!window.PichaApp) showToast('Removed from My List');
   } else {
     myList.push(item);
     if (btn) {
       btn.classList.add('saved');
       btn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6L9 17l-5-5"/></svg>`;
     }
-    showToast('Added to My List ✓', 'gold');
+    if (!window.PichaApp) showToast('Added to My List ✓', 'gold');
   }
   saveMyList();
   try { _mlPush(item, idx === -1); } catch (e) {}
