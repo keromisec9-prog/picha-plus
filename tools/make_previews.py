@@ -37,7 +37,7 @@ for i, it in enumerate(items, 1):
         src = presign(fn)
         p = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], 120)
         dur = float((p.stdout.strip() or '0').split()[0])
-        if dur < 20: raise RuntimeError('bad duration %r' % p.stdout.strip())
+        if dur < 20: raise RuntimeError('bad duration %r | ffprobe: %s' % (p.stdout.strip(), p.stderr.strip()[-300:]))
         start = int(dur * 0.28)
         with tempfile.TemporaryDirectory() as td:
             out = os.path.join(td, 'c.mp4')
