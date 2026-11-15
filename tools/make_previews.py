@@ -37,11 +37,11 @@ for i, it in enumerate(items, 1):
         src = presign(fn)
         p = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], 120)
         dur = float((p.stdout.strip() or '0').split()[0])
-        if dur < 20: raise RuntimeError('bad duration %r | ffprobe: %s' % (p.stdout.strip(), p.stderr.strip()[-300:]))
+        if dur < 45: raise RuntimeError('bad duration %r | ffprobe: %s' % (p.stdout.strip(), p.stderr.strip()[-300:]))
         start = int(dur * 0.28)
         with tempfile.TemporaryDirectory() as td:
             out = os.path.join(td, 'c.mp4')
-            r = sh(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-ss', str(start), '-i', src, '-t', '12',
+            r = sh(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-ss', str(start), '-i', src, '-t', '30',
                     '-map', '0:v:0', '-map', '0:a:0?', '-vf', 'scale=-2:480', '-c:v', 'libx264', '-preset', 'veryfast',
                     '-crf', '28', '-maxrate', '1000k', '-bufsize', '2000k', '-pix_fmt', 'yuv420p',
                     '-c:a', 'aac', '-b:a', '64k', '-ac', '2', '-movflags', '+faststart', out], 300)
