@@ -13373,6 +13373,7 @@ function _mpfMenuOpen(r) {
   }
   return true;
 }
+window.addEventListener('pagehide', function () { try { PichaShorts.state('{"v":0}'); } catch (e) {} });
 function _mpfNatTick() {
   if (!_mpfNativeOn) return;
   var c = document.getElementById('mpfContainer'), st = { v: 0 };
