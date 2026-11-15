@@ -11663,10 +11663,10 @@ function setPreviewSoundPref(soundOn) {
 }
 
 function _setupPreviewObserver(grid) {
-  if (_fyTab === 'shorts' || _fyTab === 'feed') { _stopPreviewSequence(true); return; }
+  if (_fyTab === 'shorts') { _stopPreviewSequence(true); return; }
   const isFirstSetup = !_fySeqVideo;
   _stopPreviewSequence(true); // keep index — don't restart from the top
-  let cards = Array.from(grid.querySelectorAll('.card[data-preview-id]'));
+  let cards = Array.from(grid.querySelectorAll('.card[data-preview-id], .ff-t[data-preview-id]')).filter(c => c.dataset.tv !== '1' || _seriesEpisodesArrFor(c.dataset.previewId).length > 0);
   if (_fyTab === 'series') {
     cards = cards.filter(c => _seriesEpisodesArrFor(c.dataset.previewId).length > 0);
   }
@@ -11746,7 +11746,7 @@ async function _playSequenceStep(cards, myGen) {
   _fySeqAbort = controller;
 
   try {
-    const isSeries = _fyTab === 'series';
+    const isSeries = _fyTab === 'series' || card.dataset.tv === '1';
     const cacheKey = isSeries ? (id + '_ep' + _fySeriesEpCycle) : id;
     let previewUrl = _previewCache[cacheKey];
     if (!previewUrl) {
@@ -16962,6 +16962,9 @@ window._mpfWatchFull=function(idx){
       "#fyFeed .ff-c{margin:0 0 18px}",
       "#fyFeed .ff-t{position:relative;width:calc(100% - 24px);margin:0 12px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#1a1a1a;cursor:pointer}",
       "#fyFeed .ff-t img{width:100%;height:100%;object-fit:cover;display:block}",
+      "#fyFeed .ff-t{--card-ratio:16/9}",
+      "#fyFeed .ff-t>button{top:8px!important;bottom:auto!important}",
+      "#fyFeed .ff-b,#fyFeed .ff-p{z-index:2}",
       "#fyFeed .ff-b{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.8);color:#fff;font-size:.68rem;font-weight:700;padding:2px 6px;border-radius:5px;letter-spacing:.04em}",
       "#fyFeed .ff-p{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.3)}",
       "#fyFeed .ff-p i{display:block;height:100%;background:var(--gold,#e5b93c)}",
@@ -17076,7 +17079,7 @@ window._mpfWatchFull=function(idx){
     if (sid) { try { cr = _mpfNatCr[sid] || null; if (_mpfNatCr[sid] === undefined) _mpfNatFetchCr(sid); } catch(e){} }
     var meta = (cr && cr.u) ? ["@" + cr.u, ym].filter(Boolean).join(" \u00b7 ") : [it._vj, ym].filter(Boolean).join(" \u00b7 ");
     var poster = it._customPoster || (it.poster_path ? TMDB_IMG + "w154" + it.poster_path : "");
-    return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t" onclick="' + click + '">' +
+    return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t"' + (locked ? "" : ' data-preview-id="' + E(it.id) + '"' + (tv ? ' data-tv="1"' : "")) + ' onclick="' + click + '">' +
       (im ? '<img src="' + E(im) + '" alt="" loading="lazy" decoding="async"' + (locked ? ' style="filter:brightness(.4)"' : "") + '>' : "") +
       '<span class="ff-b">' + (tv ? epLabel(it) : "MOVIE") + '</span>' +
       (pct > 0 ? '<div class="ff-p"><i style="width:' + pct + '%"></i></div>' : "") + '</div>' +
@@ -17088,6 +17091,15 @@ window._mpfWatchFull=function(idx){
     var l = $("ffList"); if (!l || st.n >= st.list.length) return;
     var nx = st.list.slice(st.n, st.n + BATCH);
     l.insertAdjacentHTML("beforeend", nx.map(card).join(""));
+    try {
+      if (_fySeqRunning && Array.isArray(_fySeqActiveCards)) {
+        var els = l.querySelectorAll(".ff-t[data-preview-id]"), from = Math.max(0, els.length - nx.length);
+        for (var q = from; q < els.length; q++) {
+          var el = els[q];
+          if (el.dataset.tv !== "1" || _seriesEpisodesArrFor(el.dataset.previewId).length > 0) { if (_fySeqActiveCards.indexOf(el) < 0) _fySeqActiveCards.push(el); }
+        }
+      }
+    } catch(e){}
     fixN = 0; setTimeout(fix, 1200);
     st.n += nx.length;
   }
@@ -17098,6 +17110,7 @@ window._mpfWatchFull=function(idx){
     st.list = rank(all, reroll); st.n = 0;
     box.innerHTML = chips(all) + '<div id="ffList"></div>';
     more();
+    try { _setupPreviewObserver($("ffList")); } catch(e){}
   }
   var BM_ADD = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h12v18l-6-4-6 4V3z"/><path d="M12 7v6M9 10h6"/></svg>';
   var BM_ON = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h12v18l-6-4-6 4V3z" fill="currentColor"/><path d="M9 9.5l2 2 4-4" stroke="#212121"/></svg>';
