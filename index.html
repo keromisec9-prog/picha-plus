@@ -3813,7 +3813,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
 <!-- FOR YOU PAGE -->
 <div class="bn-page" id="bnForYouPage" style="display:none;">
   <div class="bn-tabs-row" style="padding:0.8rem 1rem 0;display:flex;align-items:center;">
-    <button class="bn-inner-tab active" id="fyt-feed" onclick="fyTab('feed')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">dynamic_feed</span> Feed</button>
+    <button class="bn-inner-tab active" id="fyt-feed" onclick="fyTab('feed')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-3px;"><path d="M4 5h16v6H4V5zm0 8h16v6H4v-6z"/></svg> Feed</button>
     <button class="bn-inner-tab" id="fyt-movies" onclick="fyTab('movies')" style="display:none;"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">movie</span> Movies</button>
     <button class="bn-inner-tab" id="fyt-series" onclick="fyTab('series')" style="display:none;"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">live_tv</span> Series</button>
     <button class="bn-inner-tab" id="fyt-shorts" onclick="fyTab('shorts')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">smart_display</span> Shorts</button>
@@ -16971,7 +16971,7 @@ window._mpfWatchFull=function(idx){
       "#fyFeed .ff-m{font-size:.8rem;color:var(--gray,#aaa);margin-top:3px}",
       "#fyFeed .ff-k{flex:none;border:0;background:none;color:var(--white,#fff);padding:2px 0 2px 4px;cursor:pointer;display:flex}",
       "#fyFeed .ff-e{text-align:center;padding:4rem 2rem;color:var(--gray,#aaa)}",
-      "#ffMenu{position:fixed;left:0;right:0;top:0;bottom:0;z-index:100002}",
+      "#ffMenu{position:fixed;left:0;right:0;top:0;bottom:0;z-index:100002;overscroll-behavior:contain;touch-action:none}",
       "#ffMenu .ffm-b{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.55)}",
       "#ffMenu .ffm-s{position:absolute;left:0;right:0;bottom:0;background:#212121;color:#fff;border-radius:16px 16px 0 0;padding:8px 0 calc(12px + env(safe-area-inset-bottom))}",
       "#ffMenu .ffm-t{padding:12px 20px;font-weight:600;opacity:.7;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
@@ -17047,22 +17047,42 @@ window._mpfWatchFull=function(idx){
     box.innerHTML = chips(all) + '<div id="ffList"></div>';
     more();
   }
+  var BM_ADD = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h12v18l-6-4-6 4V3z"/><path d="M12 7v6M9 10h6"/></svg>';
+  var BM_ON = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h12v18l-6-4-6 4V3z" fill="currentColor"/><path d="M9 9.5l2 2 4-4" stroke="#212121"/></svg>';
+  var lkst = null;
+  function lockMenu(on){
+    var pg = $("bnForYouPage"), b = document.body;
+    if (on) {
+      if (lkst) return;
+      lkst = { p: pg ? pg.style.overflowY : "", b: b.style.overflow };
+      if (pg) pg.style.overflowY = "hidden";
+      b.style.overflow = "hidden";
+    } else if (lkst) {
+      if (pg) pg.style.overflowY = lkst.p;
+      b.style.overflow = lkst.b;
+      lkst = null;
+    }
+  }
+  function closeMenu(){
+    var mm = $("ffMenu"); if (mm && mm.parentNode) mm.parentNode.removeChild(mm);
+    lockMenu(false);
+  }
   function menu(idx){
     var it = null; try { it = getItem(idx); } catch(e){}
     if (!it) return;
-    var m = $("ffMenu"); if (m && m.parentNode) m.parentNode.removeChild(m);
+    closeMenu(); var m;
     var saved = false, lk = false;
     try { saved = myList.some(function(x){ return x.id === it.id; }); } catch(e){}
     try { lk = liked.includes(it.id); } catch(e){}
-    m = document.createElement("div"); m.id = "ffMenu";
+    m = document.createElement("div"); m.id = "ffMenu"; lockMenu(true);
     m.innerHTML = '<div class="ffm-b" data-x="1"></div><div class="ffm-s"><div class="ffm-t">' + E(it.title || it.name || "") + '</div>' +
       '<button type="button" data-a="play"><span class="material-symbols-rounded">play_arrow</span>Play</button>' +
-      '<button type="button" data-a="list"><span class="material-symbols-rounded">' + (saved ? "bookmark_remove" : "bookmark_add") + '</span>' + (saved ? "Remove from My List" : "Add to My List") + '</button>' +
+      '<button type="button" data-a="list">' + (saved ? BM_ON : BM_ADD) + '' + (saved ? "Remove from My List" : "Add to My List") + '</button>' +
       '<button type="button" data-a="like"><span class="material-symbols-rounded">favorite</span>' + (lk ? "Unlike" : "Like") + '</button></div>';
     document.body.appendChild(m);
     m.addEventListener("click", function(e){
       var b = e.target.closest ? e.target.closest("[data-a]") : null;
-      if (m.parentNode) m.parentNode.removeChild(m);
+      closeMenu();
       if (!b) return;
       var a = b.getAttribute("data-a"), locked = !!(it.isUgandan && !session.hasAfricanAccess());
       try {
@@ -17092,6 +17112,7 @@ window._mpfWatchFull=function(idx){
   }
   window._fyFeedShow = function(){
     css(); bind();
+    if (!window._ffNav) { window._ffNav = 1; try { if (window.PichaNav && PichaNav.reg) PichaNav.reg("ffmenu", "#ffMenu", function(){ closeMenu(); }); } catch(e){} }
     try { _stopPreviewSequence(true); } catch(e){}
     var rr = false;
     try { rr = !!_fyForceJitter; _fyForceJitter = false; } catch(e){}
