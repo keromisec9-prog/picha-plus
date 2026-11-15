@@ -17034,6 +17034,31 @@ window._mpfWatchFull=function(idx){
     if (st.chip === "all") { try { _fyAfterSort(scored, false); } catch(e){} }
     return scored.map(function(o){ return o.item; });
   }
+  function ini(x){ return String(x || "?").replace(/^@/, "").replace(/^VJ\s+/i, "").trim().slice(0, 2).toUpperCase() || "?"; }
+  function avatar(cr, poster, click){
+    if (cr && cr.av) return '<div class="ff-a" onclick="' + click + '" style="background-image:url(' + E(cr.av) + ')"></div>';
+    if (cr && cr.u) return '<div class="ff-a ff-i" onclick="' + click + '">' + E(ini(cr.u)) + '</div>';
+    return '<div class="ff-a" onclick="' + click + '"' + (poster ? ' style="background-image:url(' + E(poster) + ')"' : "") + '></div>';
+  }
+  var fixN = 0;
+  function fix(){
+    var box = $("fyFeed"); if (!box) return;
+    var pend = 0;
+    box.querySelectorAll(".ff-c[data-sid]:not([data-d])").forEach(function(c){
+      var sid = c.getAttribute("data-sid"), cr;
+      try { cr = _mpfNatCr[sid]; } catch(e){}
+      if (cr === undefined || cr === null) { pend++; return; }
+      c.setAttribute("data-d", "1");
+      if (!cr.u) return;
+      var a = c.querySelector(".ff-a"), m = c.querySelector(".ff-m");
+      if (a) {
+        if (cr.av) { a.className = "ff-a"; a.textContent = ""; a.style.backgroundImage = 'url("' + cr.av + '")'; }
+        else { a.className = "ff-a ff-i"; a.textContent = ini(cr.u); a.style.backgroundImage = ""; }
+      }
+      if (m) m.textContent = ["@" + cr.u, c.getAttribute("data-ym")].filter(Boolean).join(" \u00b7 ");
+    });
+    if (pend && fixN++ < 6) setTimeout(fix, 1500);
+  }
   function card(it){
     var idx = registerItem(it), locked = !!(it.isUgandan && !session.hasAfricanAccess());
     var click = locked ? "showAfricanUpgradeToast()" : "showInfo(getItem(" + idx + "))";
@@ -17043,18 +17068,17 @@ window._mpfWatchFull=function(idx){
     var pct = (pr && pr.duration > 0) ? Math.min(100, Math.round(pr.position / pr.duration * 100)) : 0;
     var t = it.title || it.name || "";
     var im = img(it);
-    var meta = [it._vj, yr, rt ? "\u2605 " + rt : ""].filter(Boolean).join(" \u00b7 ");
-    var vp = it._vj ? (window._vjProfiles || {})[it._vj] : null;
-    var nm = it._vj || t || "?";
-    var ini = String(nm).replace(/^VJ\s+/i, "").trim().slice(0, 2).toUpperCase() || "?";
-    var avh = (vp && vp.photo)
-      ? '<div class="ff-a" onclick="' + click + '" style="background-image:url(' + E(vp.photo) + ')"></div>'
-      : '<div class="ff-a ff-i" onclick="' + click + '">' + E(ini) + '</div>';
-    return '<div class="ff-c"><div class="ff-t" onclick="' + click + '">' +
+    var ym = [yr, rt ? "\u2605 " + rt : ""].filter(Boolean).join(" \u00b7 ");
+    var sid = ""; try { sid = _mpfNatSid(it) || ""; } catch(e){}
+    var cr = null;
+    if (sid) { try { cr = _mpfNatCr[sid] || null; if (_mpfNatCr[sid] === undefined) _mpfNatFetchCr(sid); } catch(e){} }
+    var meta = (cr && cr.u) ? ["@" + cr.u, ym].filter(Boolean).join(" \u00b7 ") : [it._vj, ym].filter(Boolean).join(" \u00b7 ");
+    var poster = it._customPoster || (it.poster_path ? TMDB_IMG + "w154" + it.poster_path : "");
+    return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t" onclick="' + click + '">' +
       (im ? '<img src="' + E(im) + '" alt="" loading="lazy" decoding="async"' + (locked ? ' style="filter:brightness(.4)"' : "") + '>' : "") +
       '<span class="ff-b">' + (tv ? "SERIES" : "MOVIE") + '</span>' +
       (pct > 0 ? '<div class="ff-p"><i style="width:' + pct + '%"></i></div>' : "") + '</div>' +
-      '<div class="ff-r">' + avh +
+      '<div class="ff-r">' + avatar(cr, poster, click) +
       '<div class="ff-x" onclick="' + click + '"><div class="ff-n">' + E(t) + '</div><div class="ff-m">' + E(meta) + '</div></div>' +
       '<button type="button" class="ff-k" data-i="' + idx + '" aria-label="More"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></button></div></div>';
   }
@@ -17062,6 +17086,7 @@ window._mpfWatchFull=function(idx){
     var l = $("ffList"); if (!l || st.n >= st.list.length) return;
     var nx = st.list.slice(st.n, st.n + BATCH);
     l.insertAdjacentHTML("beforeend", nx.map(card).join(""));
+    fixN = 0; setTimeout(fix, 1200);
     st.n += nx.length;
   }
   function build(reroll){
