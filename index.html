@@ -13371,7 +13371,7 @@ function _mpfNatTick() {
     var inView = r.top > -2 && r.bottom < window.innerHeight + 2 && r.left > -2 && r.right < window.innerWidth + 2;
     var vis = shownNow && inView;
     var cut = null;
-    if (vis) { var cov = _mpfNatCover(c, r); if (cov === 1) vis = false; else if (cov) cut = cov; }
+    if (vis) { var cov = _mpfNatCover(c, r); if (cov) vis = false; }
     st = { v: vis ? 1 : 0, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
       o: _mpfOv ? 1 : 0, f: c.dataset.full === '1' ? 1 : 0, a: window._mpfAutoScroll !== false ? 1 : 0 };
     if (cut) { st.cx = cut[0]; st.cy = cut[1]; st.cw = cut[2]; st.ch = cut[3]; }
