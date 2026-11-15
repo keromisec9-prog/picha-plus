@@ -16934,5 +16934,21 @@ window._mpfWatchFull=function(idx){
   }
   return ow.apply(this,arguments);
 };
-})();</script></body>
+})();</script><script id="dbg-bars">(function(){
+function d(e){var c=getComputedStyle(e),r=e.getBoundingClientRect();return (e.id||(e.className+'').slice(0,18)||e.tagName)+' '+c.display+' '+c.visibility+' o'+c.opacity+' z'+c.zIndex+' '+c.position+' y'+Math.round(r.top)+' h'+Math.round(r.height)}
+function show(){
+var L=[],n=document.getElementById('bottomNav');
+L.push('NAV '+(n?d(n):'missing'));
+var a=[].map.call(document.querySelectorAll('.modal-overlay.active'),function(e){return e.id||e.className});
+L.push('ACTIVE '+(a.join(',')||'none'));
+var f=[].filter.call(document.querySelectorAll('body *'),function(e){var p=getComputedStyle(e).position;if(p!=='fixed'&&p!=='sticky')return false;var r=e.getBoundingClientRect();return r.top<140&&r.height>20&&r.width>200});
+L.push('TOPFIX '+f.slice(0,6).map(d).join(' || '));
+L.push('BODY ov:'+document.body.style.overflow+' cls:'+document.body.className+' html:'+document.documentElement.className);
+var b=document.getElementById('dbgBars')||document.body.appendChild(document.createElement('pre'));
+b.id='dbgBars';b.style.cssText='position:fixed;left:0;right:0;top:60px;z-index:2147483647;background:#900;color:#fff;font:11px monospace;white-space:pre-wrap;padding:6px;margin:0;max-height:55vh;overflow:auto';
+b.textContent=L.join('\n');b.onclick=function(){b.remove()};
+}
+document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.bn-tab'))setTimeout(show,900)},true);
+})();</script>
+</body>
 </html>
