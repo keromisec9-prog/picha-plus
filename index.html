@@ -16396,7 +16396,12 @@ if(!window.__shTab){window.__shTab=1;document.addEventListener('click',function(
 },true)}
 window.__ppCrOpen=function(){return !!ov};
   window.__ppCrShut=function(){pushed=false;shut()};
-  window.openCreatorPage=open;
+  window.openCreatorPage=function(){
+    var r=open.apply(this,arguments);
+    var up=function(){var e=document.getElementById("ppCr");if(e&&typeof _ppTopZ==="function")e.style.setProperty("z-index",String(_ppTopZ("ppCr")),"important")};
+    up();setTimeout(up,60);setTimeout(up,400);
+    return r;
+  };
   document.addEventListener("click",function(e){
     var t=e.target;if(!t||!t.closest)return;
     if(t.closest("#ppFollowBtn"))return;
