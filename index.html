@@ -13229,6 +13229,39 @@ function _mpfNatEnsure(i) {
   })();
 }
 function _mpfNatUrl(idx, item, url) { try { PichaShorts.setUrl(idx, String(item.id), url); } catch (e) {} }
+(function () {
+  if (window.__zStk) return; window.__zStk = 1;
+  var seen = new WeakMap();
+  function raise(el) {
+    var m = 1000, ch = document.body.children;
+    for (var i = 0; i < ch.length; i++) {
+      var x = ch[i]; if (x === el) continue;
+      var cs = getComputedStyle(x);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position !== 'fixed') continue;
+      var z = parseInt(cs.zIndex, 10); if (z > m && z < 2147000000) m = z;
+    }
+    el.style.setProperty('z-index', String(m + 1), 'important');
+  }
+  function isOv(el) {
+    var t = el.tagName; if (t === 'SCRIPT' || t === 'STYLE' || t === 'LINK') return false;
+    var cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position !== 'fixed') return false;
+    var r = el.getBoundingClientRect();
+    return r.width >= innerWidth * 0.6 && r.height >= innerHeight * 0.25;
+  }
+  function chk(el) {
+    var now = isOv(el), was = seen.get(el) === true;
+    seen.set(el, now);
+    if (now && !was) raise(el);
+  }
+  function later(el) { chk(el); setTimeout(function () { chk(el); }, 120); setTimeout(function () { chk(el); }, 400); }
+  var am = new MutationObserver(function (l) { l.forEach(function (m) { later(m.target); }); });
+  function watch(el) { try { am.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] }); } catch (e) {} later(el); }
+  new MutationObserver(function (l) {
+    l.forEach(function (m) { [].forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1) watch(n); }); });
+  }).observe(document.body, { childList: true });
+  [].forEach.call(document.body.children, function (el) { if (el.nodeType === 1) { try { am.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] }); } catch (e) {} seen.set(el, isOv(el)); } });
+})();
 var _mpfNatCr = {};
 function _mpfNatSid(it) {
   if (!it) return '';
@@ -13307,7 +13340,15 @@ function _mpfNatTick() {
     var shownNow = cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 50 && r.height > 100;
     var inView = r.top > -2 && r.bottom < window.innerHeight + 2 && r.left > -2 && r.right < window.innerWidth + 2;
     var vis = shownNow && inView;
-    if (vis) { var e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); vis = !!e && c.contains(e); }
+    if (vis) {
+      var fx = [0.2, 0.5, 0.8], fy = [0.15, 0.5, 0.85];
+      for (var a1 = 0; a1 < 3 && vis; a1++) for (var b1 = 0; b1 < 3 && vis; b1++) {
+        var e = document.elementFromPoint(r.left + r.width * fx[a1], r.top + r.height * fy[b1]);
+        if (!e || c.contains(e)) continue;
+        if (/toast|snack/i.test((e.id || '') + ' ' + (typeof e.className === 'string' ? e.className : ''))) continue;
+        vis = false;
+      }
+    }
     st = { v: vis ? 1 : 0, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
       o: _mpfOv ? 1 : 0, f: c.dataset.full === '1' ? 1 : 0, a: window._mpfAutoScroll !== false ? 1 : 0 };
     if (vis) { _mpfNatLast.hold = 0; _mpfNatLast.stObj = st; }
