@@ -16232,7 +16232,6 @@ async function submitForceReset() {
     var it = (typeof currentInfoItem !== "undefined") ? currentInfoItem : null;
     var m = $("infoModal");
     var open = !!(m && m.classList.contains("active"));
-    if (window.__ppExt) return;
     if (!open) { key = ""; return; }
     fixBar();
     if (!it) return;
@@ -16243,14 +16242,6 @@ async function submitForceReset() {
     fetchCreator(k); loadComments(false);
   }
   var tm;
-  window.__ppCmtExt = function (k, on) {
-    if (!on) { window.__ppExt = 0; key = ""; return true; }
-    if (!ensure()) return false;
-    window.__ppExt = 1;
-    if (k !== key) { key = k; creator = null; items = []; total = 0; more = false; renderCreator(); renderComments(); loadComments(false); }
-    else renderComments();
-    return true;
-  };
   function kick() { clearTimeout(tm); tm = setTimeout(sync, 120); }
   function init() {
     var m = $("infoModal"), t = $("infoTitle");
@@ -16947,9 +16938,24 @@ window._mpfWatchFull=function(idx){
 };
 })();</script><script id="mpf-cmt-sheet">(function(){
   if (window._mpfOpenCommentsSheet) return;
-  var sh = null, back = null, host = null, sv = null;
+  var API_ = (typeof API !== "undefined") ? API : "https://api.mypicha.uk";
+  var key = "", items = [], total = 0, more = false, busy = false, loading = false, reply = null, reps = {}, opened = {};
   function $(i){ return document.getElementById(i); }
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function tok(){ try { return localStorage.getItem("pichaplus_session") || ""; } catch(e){ return ""; } }
+  function hdr(j){ var h = {}, t = tok(); if (t) h["X-Session-Token"] = t; if (j) h["Content-Type"] = "application/json"; return h; }
+  function toast(m){ try { if (typeof showToast === "function") showToast(m, "error"); } catch(e){} }
+  function ago(iso){
+    var t = Date.parse(iso); if (!t) return "";
+    var s = Math.max(0, (Date.now() - t) / 1000); if (s < 60) return "now";
+    var m = s / 60; if (m < 60) return Math.floor(m) + "m ago";
+    var h = m / 60; if (h < 24) return Math.floor(h) + "h ago";
+    var d = h / 24; if (d < 7) return Math.floor(d) + "d ago";
+    if (d < 30) return Math.floor(d / 7) + "w ago";
+    return Math.floor(d / 30) + "mo ago";
+  }
   function tick(){ try { _mpfNatTick(); } catch(e){} }
+
   function build(){
     if ($("mpfCmt")) return;
     var st = document.createElement("style");
@@ -16957,55 +16963,162 @@ window._mpfWatchFull=function(idx){
     st.textContent = [
       "#mpfCmtBack{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.5);z-index:100000;display:none}",
       "#mpfCmtBack.on{display:block}",
-      "#mpfCmt{position:fixed;left:0;right:0;bottom:0;height:76vh;background:#fff;border-radius:16px 16px 0 0;z-index:100001;display:none;flex-direction:column;overflow:hidden}",
+      "#mpfCmt{position:fixed;left:0;right:0;bottom:0;height:72vh;background:#fff;color:#111;border-radius:16px 16px 0 0;z-index:100001;display:none;flex-direction:column}",
       "#mpfCmt.on{display:flex}",
-      "#mpfCmt .mc-x{position:absolute;right:4px;top:4px;z-index:5;width:44px;height:44px;border:0;background:none;color:#111;font-size:30px;line-height:44px;padding:0}",
-      "#mpfCmt .mc-s{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}",
-      "#mpfCmt #ppBody{background:#fff!important;min-height:0!important}",
-      "#mpfCmt #ppDetails,#mpfCmt #ppCast,#mpfCmt #ppAll{display:none!important}",
-      "#mpfCmt .pp-ch{color:#111}"
+      "#mpfCmt .mc-h{position:relative;text-align:center;padding:16px 48px;font-weight:600;font-size:15px;border-bottom:1px solid #eee;flex:none}",
+      "#mpfCmt .mc-x{position:absolute;right:8px;top:6px;width:40px;height:40px;border:0;background:none;color:#111;font-size:26px;line-height:40px}",
+      "#mpfCmt .mc-l{flex:1;overflow-y:auto;padding:6px 16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}",
+      "#mpfCmt .mc-r{display:flex;gap:12px;padding:10px 0}",
+      "#mpfCmt .mc-av{flex:none;width:38px;height:38px;border-radius:50%;background:#6b5a50 center/cover no-repeat;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}",
+      "#mpfCmt .mc-av.sm{width:26px;height:26px;font-size:12px}",
+      "#mpfCmt .mc-b{flex:1;min-width:0}",
+      "#mpfCmt .mc-n{color:#777;font-size:13px;font-weight:600}",
+      "#mpfCmt .mc-t{font-size:15px;line-height:1.35;margin-top:2px;word-break:break-word}",
+      "#mpfCmt .mc-to{color:#2b5fd9}",
+      "#mpfCmt .mc-m{display:flex;gap:16px;color:#888;font-size:13px;margin-top:4px}",
+      "#mpfCmt .mc-m button,#mpfCmt .mc-vr{border:0;background:none;color:#888;font-size:13px;padding:0;font-weight:600}",
+      "#mpfCmt .mc-vr{display:block;margin:8px 0 2px}",
+      "#mpfCmt .mc-e{text-align:center;color:#888;padding:40px 0;font-size:14px}",
+      "#mpfCmt .mc-rb{display:none;flex:none;padding:8px 16px;background:#f6f6f7;color:#666;font-size:13px;justify-content:space-between}",
+      "#mpfCmt .mc-rb.on{display:flex}",
+      "#mpfCmt .mc-rb button{border:0;background:none;color:#666;font-size:16px;padding:0 4px}",
+      "#mpfCmt .mc-i{flex:none;display:flex;gap:8px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #eee}",
+      "#mpfCmt .mc-i input{flex:1;min-width:0;border:0;border-radius:22px;background:#f1f1f2;color:#111;padding:12px 16px;font-size:15px;outline:none}",
+      "#mpfCmt .mc-i button{border:0;background:none;color:#c98f00;font-weight:700;font-size:15px;padding:8px}",
+      "#mpfCmt .mc-i button:disabled{opacity:.35}"
     ].join("\n");
     document.head.appendChild(st);
-    back = document.createElement("div"); back.id = "mpfCmtBack";
-    sh = document.createElement("div"); sh.id = "mpfCmt";
-    sh.innerHTML = '<button type="button" class="mc-x" id="mcClose" aria-label="Close">&times;</button><div class="mc-s" id="mcHost"></div>';
+    var back = document.createElement("div"); back.id = "mpfCmtBack";
+    var sh = document.createElement("div"); sh.id = "mpfCmt";
+    sh.innerHTML = '<div class="mc-h"><span id="mcCount">Comments</span><button type="button" class="mc-x" id="mcClose" aria-label="Close">&times;</button></div>' +
+      '<div class="mc-l" id="mcList"></div>' +
+      '<div class="mc-rb" id="mcRb"><span id="mcRbT"></span><button type="button" id="mcRbX" aria-label="Cancel reply">&times;</button></div>' +
+      '<div class="mc-i"><input id="mcInput" type="text" maxlength="500" autocomplete="off"><button type="button" id="mcSend">Post</button></div>';
     document.body.appendChild(back); document.body.appendChild(sh);
-    host = $("mcHost");
     back.addEventListener("click", close);
     $("mcClose").addEventListener("click", close);
-    try { if (window.PichaNav && PichaNav.reg) PichaNav.reg("mpfcmt", "#mpfCmt.on", function(){ close(); return true; }); } catch(e){}
+    $("mcSend").addEventListener("click", send);
+    $("mcInput").addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); send(); } });
+    $("mcRbX").addEventListener("click", function(){ reply = null; bar(); });
+    $("mcList").addEventListener("click", onList);
+    $("mcList").addEventListener("scroll", function(){
+      var l = $("mcList");
+      if (more && !loading && l.scrollTop + l.clientHeight > l.scrollHeight - 200) load(true);
+    });
+    if (window.visualViewport) {
+      var fit = function(){ var vv = window.visualViewport; sh.style.bottom = Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + "px"; };
+      window.visualViewport.addEventListener("resize", fit);
+      window.visualViewport.addEventListener("scroll", fit);
+    }
+    try { if (window.PichaNav && PichaNav.reg) PichaNav.reg("mpfcmt", "#mpfCmt.on", function(){ close(); }); } catch(e){}
   }
+
+  function rowHtml(it, rep){
+    var nm = it.name || "?";
+    var av = '<div class="mc-av' + (rep ? " sm" : "") + '"' + (it.avatarUrl ? ' style="background-image:url(' + esc(it.avatarUrl) + ')"' : "") + '>' + (it.avatarUrl ? "" : esc(nm.charAt(0).toUpperCase())) + '</div>';
+    var h = '<div class="mc-r">' + av + '<div class="mc-b"><div class="mc-n">' + esc(nm) + '</div><div class="mc-t">' +
+      (it.replyTo ? '<span class="mc-to">' + esc(it.replyTo) + '</span> ' : "") + esc(it.text) + '</div>' +
+      '<div class="mc-m"><span>' + esc(ago(it.at)) + '</span><button type="button" data-rep="' + esc(it.id) + '" data-nm="' + esc(nm) + '">Reply</button></div>';
+    if (!rep && it.replies > 0) {
+      var arr = reps[it.id] || [];
+      if (!opened[it.id]) h += '<button type="button" class="mc-vr" data-vr="' + esc(it.id) + '">View ' + it.replies + (it.replies === 1 ? " reply" : " replies") + '</button>';
+      else {
+        h += arr.map(function(r){ return rowHtml(r, true); }).join("");
+        if (arr.length < it.replies) h += '<button type="button" class="mc-vr" data-vr="' + esc(it.id) + '" data-more="1">View more replies</button>';
+      }
+    }
+    return h + '</div></div>';
+  }
+
+  function render(){
+    var l = $("mcList"); if (!l) return;
+    l.innerHTML = items.length ? items.map(function(x){ return rowHtml(x, false); }).join("") : '<div class="mc-e">' + (loading ? "Loading..." : "No comments yet. Be the first.") + '</div>';
+    $("mcCount").textContent = total + (total === 1 ? " comment" : " comments");
+    var inp = $("mcInput"), has = !!tok();
+    inp.disabled = !has; $("mcSend").disabled = !has;
+    inp.placeholder = !has ? "Sign in to comment" : (reply ? "Reply to " + reply.name + "..." : "Add comment...");
+  }
+  function bar(){
+    var rb = $("mcRb");
+    if (reply) { rb.classList.add("on"); $("mcRbT").textContent = "Replying to " + reply.name; $("mcInput").focus(); }
+    else rb.classList.remove("on");
+    render();
+  }
+
+  function load(append){
+    var k = key, before = (append && items.length) ? items[items.length - 1].id : 0;
+    loading = true;
+    fetch(API_ + "/studio/comments/" + encodeURIComponent(k) + (before ? "?before=" + before : ""), { headers: hdr(false) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        loading = false;
+        if (k !== key || !j || !j.ok) { render(); return; }
+        items = append ? items.concat(j.items || []) : (j.items || []);
+        total = j.total || 0; more = !!j.more; render();
+      }).catch(function(){ loading = false; render(); });
+  }
+  function loadReplies(pid, after){
+    var k = key;
+    fetch(API_ + "/studio/replies/" + encodeURIComponent(pid) + (after ? "?after=" + after : ""), { headers: hdr(false) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (k !== key || !j || !j.ok) return;
+        var got = j.items || [];
+        reps[pid] = after ? (reps[pid] || []).concat(got) : got;
+        opened[pid] = true; render();
+      }).catch(function(){});
+  }
+
+  function onList(e){
+    var b = e.target.closest ? e.target.closest("button") : null; if (!b) return;
+    if (b.dataset.rep) { reply = { id: b.dataset.rep, name: b.dataset.nm }; bar(); return; }
+    if (b.dataset.vr) {
+      var pid = b.dataset.vr, arr = reps[pid] || [];
+      loadReplies(pid, b.dataset.more && arr.length ? arr[arr.length - 1].id : 0);
+    }
+  }
+
+  function send(){
+    var inp = $("mcInput"), v = (inp.value || "").replace(/\s+/g, " ").trim();
+    if (!v || busy) return;
+    if (!tok()) { toast("Sign in to comment"); return; }
+    busy = true;
+    var body = { key: key, text: v }; if (reply) body.parentId = reply.id;
+    fetch(API_ + "/studio/comment", { method: "POST", headers: hdr(true), body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        busy = false;
+        if (!j || !j.ok) { toast((j && j.error) || "Could not post comment"); return; }
+        inp.value = ""; total++;
+        if (j.parent) {
+          var pid = String(j.parent);
+          for (var i = 0; i < items.length; i++) if (String(items[i].id) === pid) items[i].replies = (items[i].replies || 0) + 1;
+          if (opened[pid] && reps[pid]) reps[pid].push(j.item); else loadReplies(pid, 0);
+        } else {
+          items.unshift(j.item);
+          var l = $("mcList"); if (l) l.scrollTop = 0;
+        }
+        reply = null; bar();
+      }).catch(function(){ busy = false; toast("Network error"); });
+  }
+
   function close(){
-    if (!sh || !sv) return;
-    sh.classList.remove("on"); back.classList.remove("on");
-    try { if (document.activeElement) document.activeElement.blur(); } catch(e){}
-    var b = $("ppBody");
-    if (b && sv.p) sv.p.insertBefore(b, (sv.n && sv.n.parentNode === sv.p) ? sv.n : null);
-    if (typeof window._ppTab === "function") { try { window._ppTab(sv.t); } catch(e){} }
-    if (!sv.c) document.documentElement.classList.remove("pp-cmt-on");
-    try { window.__ppCmtExt("", false); } catch(e){}
-    sv = null; window._mpfCmtOpen = false; tick();
+    var sh = $("mpfCmt"); if (!sh) return;
+    sh.classList.remove("on"); $("mpfCmtBack").classList.remove("on");
+    try { $("mcInput").blur(); } catch(e){}
+    window._mpfCmtOpen = false; tick();
   }
+
   window._mpfOpenCommentsSheet = function(i){
     var it = null; try { it = _mpfList[i]; } catch(e){}
     if (!it) return;
     var k = String(it.catalogKey || it.catalog_key || it.id || it.tmdbId || "");
-    var b = $("ppBody");
-    if (!k || !b || typeof window.__ppCmtExt !== "function" || !window.__ppCmtExt(k, true)) {
-      try { showToast("Comments unavailable", "error"); } catch(e){}
-      return;
-    }
+    if (!k) return;
     build();
-    if (!sv) {
-      sv = { p: b.parentNode, n: b.nextSibling, t: b.dataset.tab || "details", c: document.documentElement.classList.contains("pp-cmt-on") };
-      host.appendChild(b);
-    }
-    if (typeof window._ppTab === "function") { try { window._ppTab("comments"); } catch(e){} }
-    document.documentElement.classList.add("pp-cmt-on");
-    window.__ppCmtExt(k, true);
-    host.scrollTop = 0;
-    sh.classList.add("on"); back.classList.add("on");
+    key = k; items = []; total = 0; more = false; reps = {}; opened = {}; reply = null;
     window._mpfCmtOpen = true; tick();
+    $("mpfCmtBack").classList.add("on"); $("mpfCmt").classList.add("on");
+    bar(); load(false);
   };
 })();</script>
 </body>
