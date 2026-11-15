@@ -1525,6 +1525,7 @@ function nuSub(key){
     saveF();
     var f=L.f||{},t=(f.title||'').trim();if(!t)return null;
     var body={kind:'movie',title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true,videoKey:key};
+    if(L._vdur)body.durationSecs=L._vdur;
     if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
     var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
     try{var _vj=window.__ppVjFull?window.__ppVjFull(f.vj):'';if(_vj)body.vj=_vj;if(f.a18)body.is18Plus=true;if(f.afr){body.isAfrican=true;body.genreIds=[]}}catch(_e){}
@@ -1879,7 +1880,7 @@ function start(slot,file){if(slot==='video')L._chkOk=null;
     if(file.size>2684354560)return toast('Video must be 2.5 GB or smaller');
     var sv=L.up[slot]={name:file.name,size:file.size,pct:0,busy:true,preview:null};paint(slot);
     if(L.kind==='movie'){L.f=L.f||{};var cur=(L.f.title||'').trim();if(!L.tmdb&&(!cur||cur===L.autoT)){var tt=titleFromFile(file.name);if(tt){L.f.title=tt;L.autoT=tt}}}
-    var pn='';try{if(window.PichaTemp&&PichaTemp.getPickedName)pn=PichaTemp.getPickedName()||''}catch(e){}sv.shown=pn||file.name;sv.name=sv.shown;sv.busy=false;sv.ready=true;sv.file=file;paint(slot);return;
+    var pn='';try{if(window.PichaTemp&&PichaTemp.getPickedName)pn=PichaTemp.getPickedName()||''}catch(e){}sv.shown=pn||file.name;sv.name=sv.shown;sv.busy=false;sv.ready=true;sv.file=file;try{L._vdur=null;var _v=document.createElement('video');_v.preload='metadata';var _u=URL.createObjectURL(file);_v.onloadedmetadata=function(){var d=_v.duration;if(isFinite(d)&&d>0)L._vdur=Math.round(d);URL.revokeObjectURL(_u)};_v.onerror=function(){URL.revokeObjectURL(_u)};_v.src=_u}catch(_e){}paint(slot);return;
   }
   if(file.size>60*1024*1024)return toast('That image is too large. Please pick a smaller one.');
   var st=L.up[slot]={name:file.name,pct:0,busy:true,preview:null};paint(slot);
@@ -2400,7 +2401,7 @@ function submitTitle(){
   if(busy())return toast('Please wait for the upload to finish');
   var rc=$('lf_rights');if(!(L.rightsOk||(rc&&rc.checked)))return toast('Please confirm the declaration');
   var body={kind:L.kind,title:t,genre:(f.genre||'').trim(),synopsis:(f.syn||'').trim(),rightsConfirmed:true};
-  if(movie)body.videoKey=L.up.video.key;
+  if(movie)body.videoKey=L.up.video.key;if(movie&&L._vdur)body.durationSecs=L._vdur;
   if(L.up.poster&&L.up.poster.key)body.posterKey=L.up.poster.key;
   var _pt=partOf();if(_pt)body.part=_pt;if(L.src==='tmdb'&&L.tmdb){body.tmdbId=String(L.tmdb.id);body.posterPath=L.tmdb.poster;body.backdropPath=L.tmdb.backdrop;body.year=L.tmdb.year;body.genreIds=L.tmdb.gids}
   if(movie){var _vj=window.__ppVjFull?window.__ppVjFull(f.vj):'';if(_vj)body.vj=_vj;if(f.a18)body.is18Plus=true;if(f.afr){body.isAfrican=true;body.genreIds=[]}}

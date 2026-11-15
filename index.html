@@ -4639,6 +4639,7 @@ async function loadContent() {
       isUgandan: !!v.isUgandan,
       is18Plus: !!v.is18Plus,
       _addedAt: v.addedAt || 0,
+      _runtime: Number(v.runtime) > 0 ? Number(v.runtime) : 0,
     });
 
     const movieEntries = Object.entries(catalogData.movies || {});
@@ -17063,6 +17064,7 @@ window._mpfWatchFull=function(idx){
     });
     if (pend && fixN++ < 6) setTimeout(fix, 1500);
   }
+  function rtLabel(m){ m = Number(m) | 0; if (m <= 0) return ""; var h = Math.floor(m / 60), r = m % 60; return h ? (h + "h" + (r ? " " + r + "m" : "")) : (r + "m"); }
   function epLabel(it){ var n = it._epCount | 0; return n > 0 ? n + (n === 1 ? " EPISODE" : " EPISODES") : "SERIES"; }
   function card(it){
     var idx = registerItem(it), locked = !!(it.isUgandan && !session.hasAfricanAccess());
@@ -17081,7 +17083,7 @@ window._mpfWatchFull=function(idx){
     var poster = it._customPoster || (it.poster_path ? TMDB_IMG + "w154" + it.poster_path : "");
     return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t"' + (locked ? "" : ' data-preview-id="' + E(it.id) + '"' + (tv ? ' data-tv="1"' : "")) + ' onclick="' + click + '">' +
       (im ? '<img src="' + E(im) + '" alt="" loading="lazy" decoding="async"' + (locked ? ' style="filter:brightness(.4)"' : "") + '>' : "") +
-      '<span class="ff-b">' + (tv ? epLabel(it) : "MOVIE") + '</span>' +
+      '<span class="ff-b">' + (tv ? epLabel(it) : (rtLabel(it._runtime) || "MOVIE")) + '</span>' +
       (pct > 0 ? '<div class="ff-p"><i style="width:' + pct + '%"></i></div>' : "") + '</div>' +
       '<div class="ff-r">' + avatar(cr, poster, click) +
       '<div class="ff-x" onclick="' + click + '"><div class="ff-n">' + E(t) + '</div><div class="ff-m">' + E(meta) + '</div></div>' +
