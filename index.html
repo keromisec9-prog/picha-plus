@@ -17316,7 +17316,12 @@ window._mpfWatchFull=function(idx){
     try { _bnRenderVJCards(); } catch(e){}
     var box = $("fyFeed"); if (!box || box.style.display === "none") return;
     var all = window._allCards || []; if (!all.length) return;
-    if (st.n <= BATCH) { build(false); return; }
+    if (!st.n || !st.list.length) { build(false); return; }
+    try {
+      var _h = st.list.slice(0, st.n), _ids = {};
+      _h.forEach(function(x){ _ids[x.id] = 1; });
+      st.list = _h.concat(rank(all, false, true).filter(function(x){ return !_ids[x.id]; }));
+    } catch(e){}
     var ch = box.querySelector(".ff-ch");
     if (ch) ch.outerHTML = chips(all);
   }
@@ -17326,7 +17331,27 @@ window._mpfWatchFull=function(idx){
     fetch(API + "/vj-ranking").then(function(r){ return r.json(); }).then(function(d){ window._vjRank = d.order || []; refreshVJ(); }).catch(function(){});
     fetch(API + "/vj-profiles").then(function(r){ return r.json(); }).then(function(d){ window._vjProfiles = d.profiles || {}; refreshVJ(); }).catch(function(){ window._vjProfLoading = false; });
   }
-  function rank(all, reroll){
+  function _ffMark(scored){
+    var seen = {}, now = Date.now();
+    try { seen = JSON.parse(localStorage.getItem('fySeen') || '{}'); } catch(e){}
+    Object.keys(seen).forEach(function(id){ if (now - seen[id] > 7 * 86400000) delete seen[id]; });
+    var top = scored.slice(0, FY_TOP);
+    top.forEach(function(o){ seen[o.item.id] = now; });
+    _fyReport(top.map(function(o){ return String(o.item.id); }));
+    localStorage.setItem('fySeen', JSON.stringify(seen));
+  }
+  function _ffExplore(scored){
+    var now = Date.now(), seen = (_fySnap && _fySnap.seen) || {}, idx = [], i;
+    for (i = 6; i < scored.length && idx.length < 3; i++) {
+      var o = scored[i], it = o.item;
+      if (o.score > -500 && it._addedAt && (now - it._addedAt) / 864e5 <= 14 && !seen[it.id]) idx.push(i);
+    }
+    if (!idx.length) return;
+    var pick = idx.map(function(k){ return scored[k]; });
+    for (i = idx.length - 1; i >= 0; i--) scored.splice(idx[i], 1);
+    pick.forEach(function(o, j){ scored.splice(1 + j * 2, 0, o); });
+  }
+  function rank(all, reroll, quiet){
     var pool = all.filter(match);
     if (reroll || !_fySeed) _fyRoll();
     var dis = {};
@@ -17336,7 +17361,11 @@ window._mpfWatchFull=function(idx){
       try { sc = fyScore(it) + _fyJit(it.id) + _fyRot(it.id); } catch(e){}
       return { item: it, score: sc - (dis[it.id] ? 1000 : 0) };
     }).sort(function(a, b){ return b.score - a.score; });
-    if (st.chip === "all") { try { _fyAfterSort(scored, false); } catch(e){} }
+    try { _ffExplore(scored); } catch(e){}
+    if (!quiet) {
+      if (st.chip === "all") { try { _fyAfterSort(scored, false); } catch(e){} }
+      else { try { _ffMark(scored); } catch(e){} }
+    }
     return scored.map(function(o){ return o.item; });
   }
   function ini(x){ return String(x || "?").replace(/^@/, "").replace(/^VJ\s+/i, "").trim().slice(0, 2).toUpperCase() || "?"; }
