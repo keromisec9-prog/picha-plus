@@ -17255,6 +17255,7 @@ async function _saveCountLoad(id, elId) {
     const r = await fetch(`${API}/saves?itemId=${encodeURIComponent(id)}`);
     const d = await r.json();
     const n = d && d.saves > 0 ? d.saves : 0;
+    el.dataset.n = String(n);
     el.textContent = n > 0 ? (elId === 'infoSaveCount' ? _formatLikeCount(n) + (n === 1 ? ' save' : ' saves') : _formatLikeCount(n)) : '';
   } catch (e) {}
 }
