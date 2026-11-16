@@ -12985,9 +12985,34 @@ function _mpfQuickShuffle(items) {
   return a;
 }
 
+function _mpfOpenOrder() {
+  var all = window._allCards || [];
+  var dis = {};
+  try { (_disliked || []).forEach(function (id) { dis[id] = 1; }); } catch (e) {}
+  var ok = all.filter(function (c) { return !dis[c.id]; });
+  var bad = all.filter(function (c) { return dis[c.id]; });
+  var list = _mpfDemoteSeen(_mpfQuickShuffle(ok));
+  try {
+    var seen = {};
+    _mpfSeenList().forEach(function (id) { seen[id] = 1; });
+    var now = Date.now(), pick = [], i;
+    for (i = 0; i < list.length && pick.length < 3; i++) {
+      var it = list[i];
+      if (!seen[it.id] && it._addedAt && (now - it._addedAt) / 864e5 <= 14) pick.push(it);
+    }
+    if (pick.length) {
+      var ids = {};
+      pick.forEach(function (o) { ids[o.id] = 1; });
+      list = list.filter(function (o) { return !ids[o.id]; });
+      pick.forEach(function (o, j) { list.splice(Math.min(1 + j * 2, list.length), 0, o); });
+    }
+  } catch (e) {}
+  return list.concat(bad);
+}
+
 function _mpfBuildList() {
   window._mpfEpGen = (window._mpfEpGen || 0) + 1;
-  return _mpfQuickShuffle(window._allCards || []);
+  return _mpfOpenOrder();
 }
 
 // The real ranked/interleaved order (scoring, series-interleaving) — expensive,
@@ -13060,6 +13085,7 @@ function _mpfRefineListInBackground() {
   const schedule = window.requestIdleCallback || (fn => setTimeout(fn, 50));
   schedule(() => {
     if (myGen !== _mpfGeneration) return; // feed closed/reopened meanwhile — stale, discard
+    try { var _cur = _mpfList[_mpfIdx]; if (_cur) _mpfMarkSeen(_cur.id); } catch (e) {}
     const ranked = _mpfBuildRankedList();
     const keepCount = _mpfIdx + 1;
     const already = new Set(_mpfList.slice(0, keepCount).map(c => c.id));
