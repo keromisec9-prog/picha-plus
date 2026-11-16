@@ -13045,7 +13045,9 @@ function _mpfBuildRankedList() {
     if ((i + 1) % 4 === 0 && _ci < _cr.length) _merged.push(_cr[_ci++]);
   });
   while (_ci < _cr.length) _merged.push(_cr[_ci++]);
-  return [..._merged, ..._mpfWeightedShuffle(disliked)];
+  const _inM = new Set(_merged.map(c => c.id));
+  const _leftover = _mpfDemoteSeen(_mpfWeightedShuffle(rest.filter(c => !_inM.has(c.id))));
+  return [..._merged, ..._leftover, ..._mpfWeightedShuffle(disliked)];
 }
 
 // Recently-seen history (ids), oldest first, capped. Titles seen lately sink to the
@@ -13058,7 +13060,7 @@ function _mpfMarkSeen(id) {
   try {
     const a = _mpfSeenList().filter(x => x !== id);
     a.push(id);
-    while (a.length > 150) a.shift();
+    while (a.length > 2000) a.shift();
     localStorage.setItem('pichaplus_mpf_seen', JSON.stringify(a));
   } catch (e) {}
 }
@@ -13073,6 +13075,18 @@ function _mpfDemoteSeen(arr) {
   const _orig = _mpfOnCommitted;
   _mpfOnCommitted = function (prevIdx, newIdx) {
     try { const it = _mpfList[newIdx]; if (it) _mpfMarkSeen(it.id); } catch (e) {}
+    // Batching: near the end, append the next batch (least recently seen first) so the
+    // feed never runs out and never replays a title before the rest have been shown.
+    try {
+      if (_mpfList.length - newIdx <= 5 && !window._mpfTopping) {
+        window._mpfTopping = true;
+        const _recent = new Set(_mpfList.slice(-40).map(x => x.id));
+        const _pool = (window._allCards || []).filter(x => !_recent.has(x.id) && !_disliked.includes(x.id));
+        const _more = _mpfDemoteSeen(_mpfWeightedShuffle(_pool)).slice(0, 30);
+        if (_more.length) _mpfList = _mpfList.concat(_more);
+        window._mpfTopping = false;
+      }
+    } catch (e) { window._mpfTopping = false; }
     return _orig.apply(this, arguments);
   };
 })();
@@ -13089,7 +13103,13 @@ function _mpfRefineListInBackground() {
     const ranked = _mpfBuildRankedList();
     const keepCount = _mpfIdx + 1;
     const already = new Set(_mpfList.slice(0, keepCount).map(c => c.id));
-    const tail = ranked.filter(c => !already.has(c.id));
+    let tail = ranked.filter(c => !already.has(c.id));
+    // Guard: the ranked list must never be shorter than the catalog. Anything a cap or
+    // filter dropped is appended (unseen first), so the feed always covers every title.
+    const _have = new Set(already);
+    tail.forEach(c => _have.add(c.id));
+    const _missing = (window._allCards || []).filter(c => !_have.has(c.id));
+    if (_missing.length) tail = tail.concat(_mpfDemoteSeen(_mpfWeightedShuffle(_missing)));
     _mpfList = _mpfList.slice(0, keepCount).concat(tail);
   });
 }
@@ -13244,10 +13264,46 @@ function _mpfCacheKeyFor(item) {
   return item.id + '_ep' + (n ? e % n : e);
 }
 
-async function _mpfResolvePreviewUrl(item) {
+var _pvStore = (function () {
+  try {
+    var o = JSON.parse(localStorage.getItem('pv_url_v1') || '{}'), n = Date.now();
+    Object.keys(o).forEach(function (k) { if (!o[k] || o[k].x < n) delete o[k]; });
+    return o;
+  } catch (e) { return {}; }
+})();
+var _pvTimer = 0;
+function _pvGet(k) { var e = _pvStore[k]; return (e && e.x > Date.now()) ? e.v : undefined; }
+function _pvPut(k, v, ttl) {
+  _pvStore[k] = { v: v, x: Date.now() + ttl * 1000 };
+  clearTimeout(_pvTimer);
+  _pvTimer = setTimeout(function () {
+    try {
+      var ks = Object.keys(_pvStore);
+      if (ks.length > 400) {
+        ks.sort(function (a, b) { return _pvStore[a].x - _pvStore[b].x; }).slice(0, ks.length - 400).forEach(function (x) { delete _pvStore[x]; });
+      }
+      localStorage.setItem('pv_url_v1', JSON.stringify(_pvStore));
+    } catch (e) {}
+  }, 2000);
+}
+Object.keys(_pvStore).forEach(function (k) { if (k.indexOf('n:') === 0) _mpfClipN[k.slice(2)] = _pvStore[k].v; });
+
+const _mpfPvFly = {};
+function _mpfResolvePreviewUrl(item) {
+  if (!item) return _mpfResolvePreviewUrlRaw(item);
+  var k = _mpfCacheKeyFor(item);
+  if (_mpfPvFly[k]) return _mpfPvFly[k];
+  var pr = _mpfResolvePreviewUrlRaw(item);
+  _mpfPvFly[k] = pr;
+  var done = function () { delete _mpfPvFly[k]; };
+  pr.then(done, done);
+  return pr;
+}
+
+async function _mpfResolvePreviewUrlRaw(item) {
   if (item && item._directUrl) return item._directUrl;
   const cacheKey = _mpfCacheKeyFor(item);
-  let url = _previewCache[cacheKey];
+  let url = _previewCache[cacheKey] || _pvGet(cacheKey);
   if (!url) {
     const isTV = item.media_type === 'tv';
     const endpoint = isTV
@@ -13258,10 +13314,12 @@ async function _mpfResolvePreviewUrl(item) {
     });
     const data = await res.json();
     if (!data.url) return null;
+    try { if (data.ttl && !isTV) _pvPut(cacheKey, data.url, data.ttl); } catch (e) {}
     url = data.url;
     _previewCache[cacheKey] = url;
     if (isTV && data.clipCount > 0) {
       _mpfClipN[item.id] = data.clipCount;
+      try { if (data.ttl) { _pvPut('n:' + item.id, data.clipCount, data.ttl); _pvPut(item.id + '_ep' + (_mpfEpFor(item) % data.clipCount), data.url, data.ttl); } } catch (e) {}
       _previewCache[item.id + '_ep' + (_mpfEpFor(item) % data.clipCount)] = url;
     }
   }
@@ -13469,6 +13527,7 @@ function _mpfNatEnsure(i) {
   var tok = ++_mpfNatEnsureTok;
   (async function () {
     var order = [i, i + 1, i + 2, i - 1];
+    order.forEach(function (k) { if (k >= 0 && k < _mpfList.length) { try { _mpfResolvePreviewUrl(_mpfList[k]).catch(function () {}); } catch (e) {} } });
     for (var n = 0; n < order.length; n++) {
       if (tok !== _mpfNatEnsureTok) return;
       var k = order[n];
