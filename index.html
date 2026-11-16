@@ -13049,21 +13049,21 @@ function _mpfBuildRankedList() {
   const _leftover = _mpfDemoteSeen(_mpfWeightedShuffle(rest.filter(c => !_inM.has(c.id))));
   const _allR = [..._merged, ..._leftover];
   const _sp = new Map(_mpfSeenList().map((id, i) => [id, i]));
-  const _unseenR = _allR.filter(c => !_sp.has(c.id));
-  const _seenR = _allR.filter(c => _sp.has(c.id)).sort((a, b) => _sp.get(a.id) - _sp.get(b.id));
+  const _unseenR = _allR.filter(c => !_sp.has(String(c.id)));
+  const _seenR = _allR.filter(c => _sp.has(String(c.id))).sort((a, b) => _sp.get(String(a.id)) - _sp.get(String(b.id)));
   return [..._unseenR, ..._seenR, ..._mpfWeightedShuffle(disliked)];
 }
 
 // Recently-seen history (ids), oldest first, capped. Titles seen lately sink to the
 // back of the next feed so users don't get the same videos every time they open it.
 function _mpfSeenList() {
-  try { return JSON.parse(localStorage.getItem('pichaplus_mpf_seen') || '[]'); } catch (e) { return []; }
+  try { return JSON.parse(localStorage.getItem('pichaplus_mpf_seen') || '[]').map(String); } catch (e) { return []; }
 }
 function _mpfMarkSeen(id) {
   if (id == null) return;
   try {
-    const a = _mpfSeenList().filter(x => x !== id);
-    a.push(id);
+    const a = _mpfSeenList().filter(x => x !== String(id));
+    a.push(String(id));
     while (a.length > 2000) a.shift();
     localStorage.setItem('pichaplus_mpf_seen', JSON.stringify(a));
   } catch (e) {}
@@ -13071,8 +13071,8 @@ function _mpfMarkSeen(id) {
 function _mpfDemoteSeen(arr) {
   const seen = _mpfSeenList();
   const pos = new Map(seen.map((id, i) => [id, i]));
-  const fresh = arr.filter(c => !pos.has(c.id));
-  const old = arr.filter(c => pos.has(c.id)).sort((a, b) => pos.get(a.id) - pos.get(b.id));
+  const fresh = arr.filter(c => !pos.has(String(c.id)));
+  const old = arr.filter(c => pos.has(String(c.id))).sort((a, b) => pos.get(String(a.id)) - pos.get(String(b.id)));
   return fresh.concat(old);
 }
 (function () {
