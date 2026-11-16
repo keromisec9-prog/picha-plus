@@ -16114,7 +16114,7 @@ async function submitForceReset() {
   }
 
   function fetchCreator(k) {
-    fetch(API_ + "/studio/creator-of/" + encodeURIComponent(k), { headers: hdr(false) })
+    fetch(API_ + "/studio/creator-of/" + encodeURIComponent((/^studiot_\d+/.exec(k) || [k])[0]), { headers: hdr(false) })
       .then(function (r) { return r.json(); })
       .then(function (j) { if (k !== key) return; creator = (j && j.ok) ? j.creator : null; renderCreator(); })
       .catch(function () {});
