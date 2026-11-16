@@ -4583,21 +4583,21 @@ async function loadContent() {
       if (_sb) _sb.style.display = window._shortFilmEnabled ? '' : 'none';
     }).catch(() => {});
     const _valid = j => !!j && typeof j === 'object' && !!(j.movies || j.series);
-    const _save = txt => { try { localStorage.setItem('pp_cat', txt); localStorage.setItem('pp_cat_t', String(Date.now())); } catch (e) {} };
+    const _save = (txt, obj) => { try { if (obj && obj.creators) { window._ppCreators = obj.creators; localStorage.setItem('pp_crmap', JSON.stringify(obj.creators)); } } catch (e) {} try { localStorage.setItem('pp_cat', txt); localStorage.setItem('pp_cat_t', String(Date.now())); } catch (e) {} };
     if (_cachedRaw) {
       try { catalogData = JSON.parse(_cachedRaw); if (!_valid(catalogData)) throw 0; } catch (e) { _cachedRaw = null; catalogData = {}; }
     }
     if (!_cachedRaw) {
       const _fr = await (_catP || fetch(`${API}/videos/list`, {cache:'no-cache'}).then(r => r.text()));
       catalogData = JSON.parse(_fr);
-      if (_valid(catalogData)) _save(_fr);
+      if (_valid(catalogData)) _save(_fr, catalogData);
     } else if (_catP) {
       const _old = _cachedRaw;
       _catP.then(txt => {
         let j = null;
         try { j = JSON.parse(txt); } catch (e) {}
         if (!_valid(j)) return;
-        _save(txt);
+        _save(txt, j);
         if (txt !== _old) {
           window._ppCatReloaded = true;
           try { clearInterval(heroTimer); } catch (e) {}
@@ -16116,7 +16116,7 @@ async function submitForceReset() {
   var _crC = {}, _crMap = {}, _crU = {}, _crLoaded = false;
   try { _crMap = JSON.parse(localStorage.getItem("pp_crmap") || "{}") || {}; } catch (e) {}
   function loadCrMap() {
-    if (_crLoaded) return; _crLoaded = true;
+    if (_crLoaded || window._ppCreators) return; _crLoaded = true;
     try {
       fetch(API_ + "/studio/creators-map").then(function (r) { return r.json(); }).then(function (j) {
         if (j && j.ok && j.map) { _crMap = j.map; try { localStorage.setItem("pp_crmap", JSON.stringify(j.map)); } catch (e) {} }
@@ -16129,7 +16129,7 @@ async function submitForceReset() {
     if (!m) return;
     var sid = m[0];
     loadCrMap();
-    var me = _crMap[sid];
+    var me = (window._ppCreators && window._ppCreators[sid]) || _crMap[sid];
     if (me) {
       var uc = _crU[me.u];
       if (uc && Date.now() - uc.t < 3000000) { creator = uc.c; renderCreator(); return; }
