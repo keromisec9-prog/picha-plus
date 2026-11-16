@@ -12208,8 +12208,7 @@ function bnBuildGenreList() {
     '<div class="gc-card" onclick="' + onclick + '">' +
       (img ? '<img class="gc-img' + (poster ? ' gc-poster' : '') + '" src="' + img + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : '') +
       '<div class="gc-shade"></div>' +
-      '<div class="gc-txt"><div class="gc-name">' + name + '</div>' +
-      (count >= 30 ? '<div class="gc-count">' + count + ' titles</div>' : '') + '</div>' +
+      '<div class="gc-txt"><div class="gc-name">' + name + '</div></div>' +
       '<div class="gc-ico">' + icon + '</div></div>';
 
   const all = window._allCards || [];
