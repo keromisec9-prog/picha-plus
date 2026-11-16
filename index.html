@@ -12964,6 +12964,7 @@ function _mpfQuickShuffle(items) {
 }
 
 function _mpfBuildList() {
+  window._mpfEpGen = (window._mpfEpGen || 0) + 1;
   return _mpfQuickShuffle(window._allCards || []);
 }
 
@@ -13171,16 +13172,21 @@ function _mpfWaitForPrefetchAllowed() {
 }
 
 const _mpfEpPick = {};
+window._mpfEpGen = window._mpfEpGen || 0;
 function _mpfEpFor(item) {
-  if (_mpfEpPick[item.id] === undefined) {
+  var p = _mpfEpPick[item.id];
+  if (p === undefined) {
     var n = 0;
     if (Array.isArray(item.episodes)) n = item.episodes.length;
     else if (item.episodes && typeof item.episodes === 'object') n = Object.keys(item.episodes).length;
     if (!n) n = item.number_of_episodes || 0;
     if (!n) n = 8;
-    _mpfEpPick[item.id] = Math.floor(Math.random() * Math.min(n, 30));
+    p = { v: Math.floor(Math.random() * Math.min(n, 30)), g: window._mpfEpGen };
+    _mpfEpPick[item.id] = p;
+  } else if (p.g !== window._mpfEpGen) {
+    p.v += 1; p.g = window._mpfEpGen;
   }
-  return _mpfEpPick[item.id];
+  return p.v;
 }
 
 function _mpfCacheKeyFor(item) {
