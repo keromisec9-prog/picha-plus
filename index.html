@@ -13047,7 +13047,11 @@ function _mpfBuildRankedList() {
   while (_ci < _cr.length) _merged.push(_cr[_ci++]);
   const _inM = new Set(_merged.map(c => c.id));
   const _leftover = _mpfDemoteSeen(_mpfWeightedShuffle(rest.filter(c => !_inM.has(c.id))));
-  return [..._merged, ..._leftover, ..._mpfWeightedShuffle(disliked)];
+  const _allR = [..._merged, ..._leftover];
+  const _sp = new Map(_mpfSeenList().map((id, i) => [id, i]));
+  const _unseenR = _allR.filter(c => !_sp.has(c.id));
+  const _seenR = _allR.filter(c => _sp.has(c.id)).sort((a, b) => _sp.get(a.id) - _sp.get(b.id));
+  return [..._unseenR, ..._seenR, ..._mpfWeightedShuffle(disliked)];
 }
 
 // Recently-seen history (ids), oldest first, capped. Titles seen lately sink to the
