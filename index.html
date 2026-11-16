@@ -13068,6 +13068,30 @@ function _mpfMarkSeen(id) {
     localStorage.setItem('pichaplus_mpf_seen', JSON.stringify(a));
   } catch (e) {}
 }
+var _mpfSyncSig = '';
+function _mpfSeenSync(force) {
+  try {
+    var tk = _mlTok(); if (!tk) return;
+    var ids = _mpfSeenList();
+    var sig = ids.length + ':' + (ids[ids.length - 1] || '');
+    if (!force && sig === _mpfSyncSig) return;
+    fetch(API + '/mpf-seen', {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': tk, 'X-Device-Id': getDeviceId() },
+      body: JSON.stringify({ ids: ids.slice(-400) })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok || !Array.isArray(d.ids)) return;
+      var local = _mpfSeenList(), have = {};
+      local.forEach(function (x) { have[x] = 1; });
+      var other = d.ids.map(String).filter(function (x) { return !have[x]; });
+      var out = other.concat(local).slice(-2000);
+      try { localStorage.setItem('pichaplus_mpf_seen', JSON.stringify(out)); } catch (e) {}
+      _mpfSyncSig = out.length + ':' + (out[out.length - 1] || '');
+    }).catch(function () {});
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') _mpfSeenSync(false); });
+setTimeout(function () { try { if (!_mpfSeenList().length) _mpfSeenSync(true); } catch (e) {} }, 4000);
 function _mpfDemoteSeen(arr) {
   const seen = _mpfSeenList();
   const pos = new Map(seen.map((id, i) => [id, i]));
