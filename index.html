@@ -16113,11 +16113,40 @@ async function submitForceReset() {
       .catch(function () { busy = false; note("Network error"); });
   }
 
-  var _crC = {};
+  var _crC = {}, _crMap = {}, _crU = {}, _crLoaded = false;
+  try { _crMap = JSON.parse(localStorage.getItem("pp_crmap") || "{}") || {}; } catch (e) {}
+  function loadCrMap() {
+    if (_crLoaded) return; _crLoaded = true;
+    try {
+      fetch(API_ + "/studio/creators-map").then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.ok && j.map) { _crMap = j.map; try { localStorage.setItem("pp_crmap", JSON.stringify(j.map)); } catch (e) {} }
+      }).catch(function () { _crLoaded = false; });
+    } catch (e) {}
+  }
+  setTimeout(loadCrMap, 2500);
   function fetchCreator(k) {
     var m = /^studiot_\d+/.exec(k);
     if (!m) return;
-    var sid = m[0], hit = _crC[sid];
+    var sid = m[0];
+    loadCrMap();
+    var me = _crMap[sid];
+    if (me) {
+      var uc = _crU[me.u];
+      if (uc && Date.now() - uc.t < 3000000) { creator = uc.c; renderCreator(); return; }
+      creator = { username: me.u, avatarUrl: me.a || null, verified: !!me.v, role: me.r || null, followers: 0, following: false, isSelf: false };
+      renderCreator();
+      if (!tok()) return;
+      fetch(API_ + "/studio/creator-of/" + encodeURIComponent(sid), { headers: hdr(false) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (k !== key || !(j && j.ok && j.creator)) return;
+          if (me.a) j.creator.avatarUrl = me.a;
+          creator = j.creator; _crU[me.u] = { c: creator, t: Date.now() };
+          renderCreator();
+        }).catch(function () {});
+      return;
+    }
+    var hit = _crC[sid];
     if (hit && Date.now() - hit.t < 3000000) { creator = hit.c; renderCreator(); return; }
     var box = $("ppCreator");
     if (box) { box.className = "on"; box.removeAttribute("data-u"); box.style.pointerEvents = "none"; box.innerHTML = '<div class="pp-av" style="background:#2a2a2a"></div><div style="width:72px;height:12px;border-radius:6px;background:#2a2a2a"></div>'; }
