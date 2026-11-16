@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-20261116-125852';
+const CACHE_NAME = 'picha-plus-20261116-130559';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -20,7 +20,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'picha-img-v1').map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'picha-img-v1' && k !== 'picha-tmdb-v1').map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -29,6 +29,26 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
+
+  // TMDB posters/backdrops: stable URLs, CORS-enabled. Cache-first, capped at 600 images.
+  if (e.request.destination === 'image' && url.hostname === 'image.tmdb.org') {
+    const tkey = url.origin + url.pathname;
+    e.respondWith(
+      caches.open('picha-tmdb-v1').then(c =>
+        c.match(tkey).then(hit => hit || fetch(tkey, { mode: 'cors' }).then(res => {
+          if (res.ok) {
+            c.put(tkey, res.clone());
+            self._tmdbPuts = (self._tmdbPuts || 0) + 1;
+            if (self._tmdbPuts % 25 === 0) {
+              c.keys().then(ks => { for (let i = 0; i < ks.length - 600; i++) c.delete(ks[i]); });
+            }
+          }
+          return res;
+        }).catch(() => fetch(e.request)))
+      )
+    );
+    return;
+  }
 
   // Always network-first for API calls
   if (url.hostname.includes('workers.dev') || url.hostname === 'api.mypicha.uk' || url.hostname.includes('tmdb.org')) {
