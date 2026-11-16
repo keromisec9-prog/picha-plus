@@ -13189,8 +13189,11 @@ function _mpfEpFor(item) {
   return p.v;
 }
 
+const _mpfClipN = {};
 function _mpfCacheKeyFor(item) {
-  return item.media_type === 'tv' ? (item.id + '_ep' + _mpfEpFor(item)) : item.id;
+  if (item.media_type !== 'tv') return item.id;
+  var e = _mpfEpFor(item), n = _mpfClipN[item.id];
+  return item.id + '_ep' + (n ? e % n : e);
 }
 
 async function _mpfResolvePreviewUrl(item) {
@@ -13209,6 +13212,10 @@ async function _mpfResolvePreviewUrl(item) {
     if (!data.url) return null;
     url = data.url;
     _previewCache[cacheKey] = url;
+    if (isTV && data.clipCount > 0) {
+      _mpfClipN[item.id] = data.clipCount;
+      _previewCache[item.id + '_ep' + (_mpfEpFor(item) % data.clipCount)] = url;
+    }
   }
   return url;
 }
