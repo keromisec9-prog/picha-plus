@@ -9629,6 +9629,24 @@ async function fetchCrossDeviceProgress() {
   _crossDeviceMatched = results;
 }
 
+// Re-rank only titles not yet rendered, so what the user sees never jumps.
+function _fyReflowTail() {
+  try {
+    if (_fyTab === 'feed') return;
+    var st = _fyRenderState;
+    if (!st || !st.scored || !_fySnap) { renderForYou(); return; }
+    var head = st.scored.slice(0, st.rendered);
+    var tail = st.scored.slice(st.rendered).map(function (o) {
+      return { item: o.item, score: fyScore(o.item) + _fyJit(o.item.id) + _fyRot(o.item.id) };
+    }).sort(function (a, b) {
+      var ad = _disliked.includes(a.item.id) ? 1 : 0, bd = _disliked.includes(b.item.id) ? 1 : 0;
+      if (ad !== bd) return ad - bd;
+      return b.score - a.score;
+    });
+    st.scored = head.concat(tail);
+  } catch (e) {}
+}
+
 async function bnOpenForYou() {
   document.getElementById('bnForYouPage').style.display = 'block';
   document.body.style.overflow = 'hidden';
@@ -9642,7 +9660,7 @@ async function bnOpenForYou() {
   renderForYou();
   if (_crossDeviceMatched === null) {
     fetchCrossDeviceProgress().then(() => {
-      if (document.getElementById('bnForYouPage').style.display !== 'none') renderForYou();
+      if (document.getElementById('bnForYouPage').style.display !== 'none') _fyReflowTail();
     });
   }
 }
@@ -11324,7 +11342,7 @@ function fyScore(item) {
     const count = engagedGenres.filter(x => x === g).length;
     genreScore += Math.min(count * 1.5, 9); // capped per genre so one genre can't dominate everything
   });
-  score += genreScore;
+  score += Math.min(genreScore, 12);
 
   // VJ preference — scales with how many titles by that VJ have been watched
   const localVJs = Object.keys(progress).map(pid => {
@@ -11335,14 +11353,14 @@ function fyScore(item) {
   const playedVJs = localVJs.concat(crossDeviceVJs);
   if (item._vj) {
     const vjCount = playedVJs.filter(v => v === item._vj).length;
-    score += Math.min(vjCount * 4, 20); // weighted above genre so VJ preference dominates first
+    score += Math.min(vjCount * 4, 12); // weighted above genre so VJ preference dominates first
   }
 
   // New-content boost — keeps freshly uploaded titles from sinking to the bottom
   // alongside old, ignored/demoted content before they've had a chance to be seen
   if (item._addedAt) {
     const daysSinceAdded = (Date.now() - item._addedAt) / (1000 * 60 * 60 * 24);
-    if (daysSinceAdded <= 14) score += 6;
+    if (daysSinceAdded <= 14) score += 6 + 10 * (1 - daysSinceAdded / 14);
   }
 
   // Dislike penalty — strong enough that disliked content reliably sinks below
@@ -11403,7 +11421,7 @@ function _fyJit(id) {
   return window._fySessJit[k];
 }
 // ---- For You rotation: seen penalty + per-open shuffle + no repeat leader ----
-var FY_JIT = 4, FY_PEN = 4, FY_DAYS = 5, FY_TOP = 15;
+var FY_JIT = 4, FY_PEN = 30, FY_DAYS = 7, FY_TOP = 15;
 var _fySeed = null, _fySnap = null;
 function _fyH(s) { var h = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; }
 function _fyHdr() {
@@ -11418,6 +11436,7 @@ function _fySync() {
       var s = (d && d.seen) || {};
       Object.keys(s).forEach(function (k) { if (!local[k] || s[k] > local[k]) local[k] = s[k]; });
       localStorage.setItem('fySeen', JSON.stringify(local));
+      try { if (_fySnap) _fySnap.seen = local; } catch (e) {}
     }).catch(function () {});
   } catch (e) {}
 }
