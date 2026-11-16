@@ -16629,11 +16629,11 @@ async function submitForceReset() {
       +"#ppZoom .zi.av{width:min(80vw,420px);height:min(80vw,420px);border-radius:50%;box-shadow:0 10px 40px rgba(0,0,0,.6)}"
       +"#ppZoom .zi.bn{width:100vw;height:auto;aspect-ratio:16/9;background-size:contain;background-color:transparent}";
     document.head.appendChild(st);
-    var z=null,pushed=false;
+    var z=null,pushed=false,swallow=false;
     function closeZoom(fromPop){
       if(!z)return;var d=z;z=null;d.classList.remove("on");
       setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d)},190);
-      if(pushed&&!fromPop){pushed=false;try{history.back()}catch(e){}} else pushed=false;
+      if(pushed&&!fromPop){pushed=false;swallow=true;setTimeout(function(){swallow=false},700);try{history.back()}catch(e){swallow=false}} else pushed=false;
     }
     function openZoom(url,kind){
       if(z)return;
@@ -16646,6 +16646,7 @@ async function submitForceReset() {
       requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add("on")})});
     }
     window.addEventListener("popstate",function(e){
+      if(swallow){swallow=false;e.stopImmediatePropagation();return}
       if(z){e.stopImmediatePropagation();closeZoom(true)}
     },true);
     document.addEventListener("click",function(e){
