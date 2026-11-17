@@ -27,12 +27,12 @@ def flush(apply_path, done):
         print('applied:', api(apply_path, {'previews': dict(done)}).get('applied'), flush=True)
         done.clear()
 
-def make_clip(fn, pk):
+def _mc(fn, pk, frac):
     src = presign(fn)
     p = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], 120)
     dur = float((p.stdout.strip() or '0').split()[0])
     if dur < 45: raise RuntimeError('bad duration %r | ffprobe: %s' % (p.stdout.strip(), p.stderr.strip()[-300:]))
-    start = int(dur * 0.28)
+    start = int(dur * frac)
     with tempfile.TemporaryDirectory() as td:
         out = os.path.join(td, 'c.mp4')
         r = sh(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-ss', str(start), '-i', src, '-t', '30',
@@ -41,12 +41,23 @@ def make_clip(fn, pk):
                 '-c:a', 'aac', '-b:a', '64k', '-ac', '2', '-movflags', '+faststart', out], 300)
         if r.returncode or not os.path.exists(out): raise RuntimeError('ffmpeg: ' + r.stderr[-200:])
         sz = os.path.getsize(out)
-        if sz < 100 * 1024: raise RuntimeError('clip too small (%d bytes), not uploading' % sz)
+        if sz < 100 * 1024: raise RuntimeError('clip too small (%d bytes) | ffmpeg: %s' % (sz, r.stderr[-200:]))
         kb = sz // 1024
         u = sh(['aws', 's3', 'cp', out, f's3://{BUCKET}/{pk}', '--endpoint-url', EP,
                 '--content-type', 'video/mp4', '--only-show-errors'], 120)
         if u.returncode: raise RuntimeError('upload: ' + u.stderr[:200])
     return kb
+
+def make_clip(fn, pk):
+    h = sh(['aws', 's3api', 'head-object', '--bucket', BUCKET, '--key', fn, '--endpoint-url', EP], 60)
+    print('source head:', (h.stdout or h.stderr)[:300].replace('\n', ' '), flush=True)
+    last = None
+    for frac in (0.28, 0.15, 0.08, 0.02):
+        try:
+            kb = _mc(fn, pk, frac); print('ok at frac', frac, flush=True); return kb
+        except RuntimeError as e:
+            last = e; print('frac', frac, 'failed:', e, flush=True)
+    raise last
 
 ONLY = os.environ.get('ONLY', '').strip()
 if ONLY:
