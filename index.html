@@ -18232,5 +18232,133 @@ window._mpfWatchFull=function(idx){
   };
 })();
 </script>
+<style id="srUsersCss">
+#srTabs{display:flex;margin:0 0 .4rem;border-bottom:1px solid rgba(255,255,255,.12)}
+#srTabs .sr-tab{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:#8a8a8a;font:600 1.05rem/1 inherit;font-family:inherit;padding:.95rem 0;margin-bottom:-1px}
+#srTabs .sr-tab.on{color:#fff;border-bottom-color:#e5b93c}
+#srUsers{padding:.2rem 0 4rem}
+#srUsers .sr-row{display:flex;align-items:center;gap:.9rem;padding:.95rem 0;border-bottom:1px solid rgba(255,255,255,.07)}
+#srUsers .sr-av{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:none;background:#1c1c1c;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;color:#e5b93c;font-weight:700}
+#srUsers .sr-av img{width:100%;height:100%;object-fit:cover}
+#srUsers .sr-tx{flex:1;min-width:0}
+#srUsers .sr-nm{display:flex;align-items:center;gap:.35rem;color:#fff;font-weight:700;font-size:1rem}
+#srUsers .sr-nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#srUsers .sr-tick{width:16px;height:16px;flex:none}
+#srUsers .sr-un{color:#8a8a8a;font-size:.85rem;margin-top:.1rem}
+#srUsers .sr-fl{color:#bdbdbd;font-size:.82rem;margin-top:.15rem}
+#srUsers .sr-pill{display:inline-block;margin-top:.35rem;padding:.12rem .6rem;border-radius:999px;background:rgba(229,185,60,.16);color:#e5b93c;font-size:.75rem;font-weight:600}
+#srUsers .sr-fb{flex:none;min-width:92px;padding:.55rem 1rem;border-radius:999px;border:1.5px solid #e5b93c;background:transparent;color:#e5b93c;font:700 .9rem/1 inherit;font-family:inherit}
+#srUsers .sr-fb.on{border-color:rgba(255,255,255,.25);color:#cfcfcf;background:rgba(255,255,255,.06)}
+#srUsers .sr-fb:disabled{opacity:.6}
+#srUsers .sr-sk{height:72px;margin:.6rem 0;border-radius:14px}
+#srUsers .sr-empty{padding:3rem 1rem;text-align:center;color:#8a8a8a}
+</style>
+<script id="srUsersJs">
+(function(){
+  if(window._srInstalled) return; window._srInstalled=true;
+  var tab='top', lastQ='', runId=0, timer=null, tabsEl=null, usersEl=null, items=[];
+  function $(i){ return document.getElementById(i); }
+  function qNow(){ var i=$('searchInput'); return i ? i.value.trim() : ''; }
+  function toast(m){ try{ showToast(m,'error'); }catch(e){} }
+  function build(){
+    if(tabsEl) return true;
+    var rs=$('searchResults'); if(!rs||!rs.parentNode) return false;
+    tabsEl=document.createElement('div'); tabsEl.id='srTabs'; tabsEl.style.display='none';
+    tabsEl.innerHTML='<button type="button" class="sr-tab on" data-t="top">Top</button><button type="button" class="sr-tab" data-t="users">Users</button>';
+    tabsEl.addEventListener('click',function(e){
+      var b=e.target.closest('.sr-tab'); if(b) setTab(b.getAttribute('data-t'));
+    });
+    usersEl=document.createElement('div'); usersEl.id='srUsers'; usersEl.style.display='none';
+    usersEl.addEventListener('click',onUsersClick);
+    rs.parentNode.insertBefore(tabsEl,rs);
+    rs.parentNode.insertBefore(usersEl,rs.nextSibling);
+    return true;
+  }
+  function paintTabs(){
+    if(!tabsEl) return;
+    Array.prototype.forEach.call(tabsEl.querySelectorAll('.sr-tab'),function(b){
+      b.classList.toggle('on', b.getAttribute('data-t')===tab);
+    });
+  }
+  function setTab(t){ tab=t; paintTabs(); sync(); }
+  function sync(){
+    if(!build()) return;
+    var q=qNow(), rs=$('searchResults');
+    if(q.length<2){
+      tab='top'; paintTabs();
+      tabsEl.style.display='none'; usersEl.style.display='none'; rs.style.display=''; lastQ='';
+      return;
+    }
+    tabsEl.style.display='flex';
+    if(tab==='users'){
+      rs.style.display='none'; usersEl.style.display='block';
+      if(q!==lastQ) load(q);
+    } else {
+      rs.style.display=''; usersEl.style.display='none';
+    }
+  }
+  function schedule(){
+    clearTimeout(timer);
+    if(qNow().length<2){ sync(); return; }
+    timer=setTimeout(sync,300);
+  }
+  function load(q){
+    lastQ=q; var id=++runId;
+    usersEl.innerHTML=Array(5).fill('<div class="skeleton sr-sk"></div>').join('');
+    fetch(API+'/studio/search?q='+encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(id!==runId) return; render((j&&j.items)||[],q); })
+      .catch(function(){ if(id!==runId) return; lastQ=''; usersEl.innerHTML='<div class="sr-empty">Could not load users. Check your connection.</div>'; });
+  }
+  function render(list,q){
+    items=list;
+    if(!list.length){ usersEl.innerHTML='<div class="sr-empty">No users found for '+esc(q)+'</div>'; return; }
+    var tick=(typeof _FP_TICK==='string') ? _FP_TICK.replace('<svg ','<svg class="sr-tick" ') : '';
+    var num=(typeof _fpNum==='function') ? _fpNum : String;
+    usersEl.innerHTML=list.map(function(u,i){
+      var name=u.displayName||u.username;
+      var ini=name.replace(/^VJ\s+/i,'').trim().slice(0,2).toUpperCase()||'?';
+      var av=u.avatarUrl ? '<img src="'+esc(u.avatarUrl)+'" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : '<span>'+esc(ini)+'</span>';
+      var fans=Number(u.fans)||0;
+      return '<div class="sr-row" data-i="'+i+'"><div class="sr-av">'+av+'</div><div class="sr-tx"><div class="sr-nm"><span>'+esc(name)+'</span>'+(u.verified?tick:'')+'</div><div class="sr-un">@'+esc(u.username)+'</div><div class="sr-fl">'+num(fans)+' follower'+(fans!==1?'s':'')+'</div>'+(u.role?'<span class="sr-pill">'+esc(u.role)+'</span>':'')+'</div><button type="button" class="sr-fb">Follow</button></div>';
+    }).join('');
+  }
+  function toggle(u,b,row){
+    var tok=_fpTok();
+    if(!tok){ toast('Sign in to follow creators'); return; }
+    var want=!u._f; b.disabled=true;
+    fetch(API+(want?'/studio/follow':'/studio/unfollow'),{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':tok},body:JSON.stringify({username:u.username})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        b.disabled=false;
+        if(j&&j.ok){
+          u._f=want; b.textContent=want?'Following':'Follow'; b.classList.toggle('on',want);
+          if(typeof j.followers==='number'){
+            u.fans=j.followers;
+            var fl=row.querySelector('.sr-fl'), num=(typeof _fpNum==='function')?_fpNum:String;
+            if(fl) fl.textContent=num(j.followers)+' follower'+(j.followers!==1?'s':'');
+          }
+        } else toast((j&&j.error)||'Please sign in again');
+      })
+      .catch(function(){ b.disabled=false; toast('Network error'); });
+  }
+  function onUsersClick(e){
+    var row=e.target.closest('.sr-row'); if(!row) return;
+    var u=items[Number(row.getAttribute('data-i'))]; if(!u) return;
+    var b=e.target.closest('.sr-fb');
+    if(b){ e.stopPropagation(); toggle(u,b,row); return; }
+    try{ _rsSave($('searchInput').value); }catch(err){}
+    try{ $('searchInput').blur(); }catch(err){}
+    if(typeof window.openCreatorPage==='function') window.openCreatorPage(u.username);
+  }
+  document.addEventListener('input',function(e){ if(e.target&&e.target.id==='searchInput') schedule(); },true);
+  function watch(){
+    var rs=$('searchResults'); if(!rs) return;
+    build();
+    new MutationObserver(function(){ schedule(); }).observe(rs,{childList:true});
+  }
+  if(document.readyState!=='loading') watch(); else document.addEventListener('DOMContentLoaded',watch);
+})();
+</script>
 </body>
 </html>
