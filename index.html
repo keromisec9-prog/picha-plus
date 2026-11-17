@@ -17559,10 +17559,113 @@ window._mpfWatchFull=function(idx){
       '<div class="ff-x" onclick="' + click + '"><div class="ff-n">' + E(t) + '</div><div class="ff-m">' + E(meta) + '</div></div>' +
       '<button type="button" class="ff-k" data-i="' + idx + '" aria-label="More"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></button></div></div>';
   }
+  var fpMap = {}, fpMem = null, fpBusy = false, fpIO = null;
+  function fpCss(){
+    if ($("ffFpCss")) return;
+    var z = document.createElement("style"); z.id = "ffFpCss";
+    z.textContent = "#fyFeed .ff-fp{min-height:1px;margin:0 0 18px;padding:0 12px}" +
+      "#fyFeed .ff-fp .fp-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.05rem;margin:4px 0 10px;color:var(--white,#fff)}" +
+      "#fyFeed .ff-fp .fp-tag{border:1px solid rgba(255,255,255,.3);border-radius:6px;font-size:.68rem;letter-spacing:.1em;padding:2px 8px;color:var(--gray,#aaa);font-weight:600}" +
+      "html[data-theme=light] #fyFeed .ff-fp .fp-h{color:#111}";
+    document.head.appendChild(z);
+  }
+  function fpPool(){
+    var l = window._fpList; if (l && l.length) return l;
+    if (fpMem && fpMem.length) return fpMem;
+    try { var c = JSON.parse(localStorage.getItem("ffFpCache") || "null"); if (c && c.items && c.items.length) { fpMem = c.items; return fpMem; } } catch(e){}
+    return [];
+  }
+  function fpFetch(){
+    if (fpBusy) return;
+    var l = window._fpList; if (l && l.length) return;
+    var c = null; try { c = JSON.parse(localStorage.getItem("ffFpCache") || "null"); } catch(e){}
+    if (c && c.items && c.items.length && Date.now() - c.t < 600000) return;
+    fpBusy = true;
+    var go = function(){
+      var t = ""; try { t = _fpTok(); } catch(e){}
+      fetch(API + "/promoted-profiles", { headers: t ? { "X-Session-Token": t } : {} })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var items = (d && d.items) || [];
+          if (items.length) { fpMem = items; try { localStorage.setItem("ffFpCache", JSON.stringify({ t: Date.now(), items: items })); } catch(e){} }
+          fpBusy = false;
+          var w = document.querySelectorAll("#fyFeed .ff-fp[data-w]");
+          for (var i = 0; i < w.length; i++) fpFill(w[i]);
+        })
+        .catch(function(){ fpBusy = false; });
+    };
+    if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 800);
+  }
+  function fpPick(pool, n){
+    var seen = {}, now = Date.now();
+    try { seen = JSON.parse(localStorage.getItem("fpSeen") || "{}"); } catch(e){}
+    Object.keys(seen).forEach(function(k){ if (!seen[k] || now - seen[k][0] > 7 * 86400000) delete seen[k]; });
+    var a = pool.filter(function(p){ return p && p.username; }), i, j, x;
+    for (i = a.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); x = a[i]; a[i] = a[j]; a[j] = x; }
+    function key(p){ return String(p.username).toLowerCase(); }
+    a.sort(function(p, q){ var s1 = seen[key(p)] || [0, 0], s2 = seen[key(q)] || [0, 0]; return (s1[1] - s2[1]) || (s1[0] - s2[0]); });
+    var out = a.slice(0, n);
+    out.forEach(function(p){ var k = key(p), v = seen[k] || [0, 0]; seen[k] = [now, v[1] + 1]; });
+    try { localStorage.setItem("fpSeen", JSON.stringify(seen)); } catch(e){}
+    return out;
+  }
+  function fpFill(el){
+    if (!el || !el.parentNode) return;
+    var pool = fpPool();
+    if (!pool.length) {
+      if (fpBusy) el.setAttribute("data-w", "1"); else el.parentNode.removeChild(el);
+      return;
+    }
+    var picks = fpPick(pool, 4);
+    if (!picks.length) { el.parentNode.removeChild(el); return; }
+    var tick = (typeof _FP_TICK !== "undefined") ? _FP_TICK : "";
+    el.removeAttribute("data-w");
+    el.innerHTML = '<div class="fp-h"><span>Featured Profiles</span><span class="fp-tag">SPONSORED</span></div><div class="fp-row">' +
+      picks.map(function(p, i){
+        var u = String(p.username).toLowerCase();
+        fpMap[u] = p;
+        var nm = p.displayName || p.username;
+        var av = p.avatarUrl ? '<img src="' + E(p.avatarUrl) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : E(String(nm).charAt(0).toUpperCase());
+        var done = !!(p._done || p.following);
+        var fb = p.isSelf ? "" : '<button type="button" class="fp-fb' + (done ? " on" : "") + '">' + (done ? "Following" : "Follow") + '</button>';
+        var tt = p.titles | 0, fn = Number(p.fans) || 0;
+        return '<div class="fp-card' + (i === 0 ? " first" : "") + '" data-u="' + E(u) + '"><div class="fp-av">' + av + '</div>' +
+          '<div class="fp-bd"><div class="fp-nm"><span>' + E(nm) + '</span>' + (p.verified ? tick : "") + '</div>' +
+          '<div class="fp-ct">' + tt + ' title' + (tt !== 1 ? "s" : "") + '</div>' +
+          '<div class="fp-ct fp-fl">' + _fpNum(fn) + ' follower' + (fn !== 1 ? "s" : "") + '</div>' + fb + '</div></div>';
+      }).join("") + '</div>';
+  }
+  function fpWatch(l){
+    fpCss();
+    var els = l.querySelectorAll(".ff-fp:not([data-o])");
+    for (var i = 0; i < els.length; i++) {
+      els[i].setAttribute("data-o", "1");
+      if (!fpIO) {
+        try {
+          fpIO = new IntersectionObserver(function(es){
+            es.forEach(function(en){ if (en.isIntersecting) { fpIO.unobserve(en.target); fpFill(en.target); } });
+          }, { root: $("bnForYouPage") || null, rootMargin: "700px 0px" });
+        } catch(e){ fpIO = 0; }
+      }
+      if (fpIO) fpIO.observe(els[i]); else fpFill(els[i]);
+    }
+  }
+  function fpClick(e, c){
+    var p = fpMap[c.getAttribute("data-u")]; if (!p) return;
+    e.stopPropagation();
+    var b = e.target.closest ? e.target.closest(".fp-fb") : null;
+    try { if (b) _fpFollow(p, b); else _fpOpen(p); } catch(x){}
+  }
   function more(){
     var l = $("ffList"); if (!l || st.n >= st.list.length) return;
     var nx = st.list.slice(st.n, st.n + BATCH);
-    l.insertAdjacentHTML("beforeend", nx.map(card).join(""));
+    l.insertAdjacentHTML("beforeend", nx.map(function(it){
+      var h = card(it);
+      st.rows = (st.rows | 0) + 1;
+      if (st.rows === st.fpAt) { st.fpAt = st.rows + 4 + Math.floor(Math.random() * 3); h += '<div class="ff-fp"></div>'; }
+      return h;
+    }).join(""));
+    try { fpWatch(l); } catch(e){}
     try {
       if (_fySeqRunning && Array.isArray(_fySeqActiveCards)) {
         var els = l.querySelectorAll(".ff-t[data-preview-id]"), from = Math.max(0, els.length - nx.length);
@@ -17580,6 +17683,9 @@ window._mpfWatchFull=function(idx){
     var all = window._allCards || [];
     if (!all.length) { box.innerHTML = '<div class="ff-e">Nothing here yet</div>'; return; }
     st.list = rank(all, reroll); st.n = 0;
+    st.rows = 0; st.fpAt = 3;
+    if (fpIO) { try { fpIO.disconnect(); } catch(e){} fpIO = null; }
+    try { fpFetch(); } catch(e){}
     box.innerHTML = chips(all) + '<div id="ffList"></div>';
     more();
     try { _setupPreviewObserver($("ffList")); } catch(e){}
@@ -17630,6 +17736,8 @@ window._mpfWatchFull=function(idx){
     });
   }
   function onClick(e){
+    var fc = e.target.closest ? e.target.closest(".ff-fp .fp-card") : null;
+    if (fc) { fpClick(e, fc); return; }
     var c = e.target.closest ? e.target.closest("[data-c]") : null;
     if (c) { st.chip = c.getAttribute("data-c"); build(false); return; }
     var k = e.target.closest ? e.target.closest(".ff-k") : null;
