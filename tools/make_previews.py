@@ -40,11 +40,19 @@ def make_clip(fn, pk):
                 '-crf', '28', '-maxrate', '1000k', '-bufsize', '2000k', '-pix_fmt', 'yuv420p',
                 '-c:a', 'aac', '-b:a', '64k', '-ac', '2', '-movflags', '+faststart', out], 300)
         if r.returncode or not os.path.exists(out): raise RuntimeError('ffmpeg: ' + r.stderr[-200:])
-        kb = os.path.getsize(out) // 1024
+        sz = os.path.getsize(out)
+        if sz < 100 * 1024: raise RuntimeError('clip too small (%d bytes), not uploading' % sz)
+        kb = sz // 1024
         u = sh(['aws', 's3', 'cp', out, f's3://{BUCKET}/{pk}', '--endpoint-url', EP,
                 '--content-type', 'video/mp4', '--only-show-errors'], 120)
         if u.returncode: raise RuntimeError('upload: ' + u.stderr[:200])
     return kb
+
+ONLY = os.environ.get('ONLY', '').strip()
+if ONLY:
+    pk = re.sub(r'\.[^./]+$', '', ONLY) + '.preview.mp4'
+    print('ONLY', ONLY, '->', pk, 'KB', make_clip(ONLY, pk), flush=True)
+    raise SystemExit(0)
 
 budget = MAX
 for name, todo_path, apply_path in KINDS:

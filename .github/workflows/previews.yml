@@ -5,6 +5,9 @@ on:
       max:
         description: Max titles this run
         default: '3'
+      only:
+        description: Re-cut one title by fileName (optional)
+        default: ''
   schedule:
     - cron: '0 2 * * *'
 jobs:
@@ -23,4 +26,5 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.B2_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APP_KEY }}
           MAX: ${{ github.event.inputs.max || '150' }}
+          ONLY: ${{ github.event.inputs.only || '' }}
         run: python3 tools/make_previews.py
