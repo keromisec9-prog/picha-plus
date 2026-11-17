@@ -14147,9 +14147,11 @@ function _mpfSaveToggle(idx) {
   if (!meta || !meta.item) return;
   var wasOn = myList.some(function (m) { return m.id === meta.item.id; });
   window._mlFails = 0; window._mlNext = 0;
-  (window._mpfPend = window._mpfPend || []).push({ id: 'mpfSaveCount_' + idx, d: wasOn ? -1 : 1 });
+  var _in = false; try { _in = !!session.isLoggedIn(); } catch (e) {}
+  if (_in) (window._mpfPend = window._mpfPend || []).push({ id: 'mpfSaveCount_' + idx, d: wasOn ? -1 : 1 });
   toggleMyList(meta.item, null);
   _mpfRefreshSave(idx);
+  if (!_in) return;
   var el = document.getElementById('mpfSaveCount_' + idx);
   if (!el) return;
   var cur = parseInt(el.dataset.n || '0', 10) || 0;
