@@ -17684,7 +17684,7 @@ window._mpfWatchFull=function(idx){
     l.insertAdjacentHTML("beforeend", nx.map(function(it){
       var h = card(it);
       st.rows = (st.rows | 0) + 1;
-      if (st.rows === st.fpAt) { st.fpAt = st.rows + 12 + Math.floor(Math.random() * 7); h += '<div class="ff-fp"></div>'; }
+      if (st.rows === st.fpAt) { st.fpAt = st.rows + 18 + Math.floor(Math.random() * 10); h += '<div class="ff-fp"></div>'; }
       return h;
     }).join(""));
     try { fpWatch(l); } catch(e){}
@@ -17705,7 +17705,7 @@ window._mpfWatchFull=function(idx){
     var all = window._allCards || [];
     if (!all.length) { box.innerHTML = '<div class="ff-e">Nothing here yet</div>'; return; }
     st.list = rank(all, reroll); st.n = 0;
-    st.rows = 0; st.fpAt = 6;
+    st.rows = 0; st.fpAt = 9;
     if (fpIO) { try { fpIO.disconnect(); } catch(e){} fpIO = null; }
     if (fpOut) { try { fpOut.disconnect(); } catch(e){} fpOut = null; }
     try { fpFetch(); } catch(e){}
