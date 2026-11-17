@@ -17191,7 +17191,7 @@ body.pp-in-profile #serCreator{cursor:default}
     var id = card.getAttribute('data-preview-id');
     if (!id) return;
     played.add(id);
-    if (typeof session === 'undefined' || !session || !session.token || typeof API === 'undefined') return;
+    if (typeof API === 'undefined') return;
     var my = ++gen, v = null, b = null;
     busy = true;
     try {
@@ -17543,7 +17543,7 @@ window._mpfWatchFull=function(idx){
     if (sid) { try { cr = _mpfNatCr[sid] || null; if (_mpfNatCr[sid] === undefined) _mpfNatFetchCr(sid); } catch(e){} }
     var meta = (cr && cr.u) ? ["@" + cr.u, ym].filter(Boolean).join(" \u00b7 ") : [it._vj, ym].filter(Boolean).join(" \u00b7 ");
     var poster = it._customPoster || (it.poster_path ? TMDB_IMG + "w154" + it.poster_path : "");
-    return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t"' + (locked ? "" : ' data-preview-id="' + E(it.id) + '"' + (tv ? ' data-tv="1"' : "")) + ' onclick="' + click + '">' +
+    return '<div class="ff-c"' + (sid ? ' data-sid="' + E(sid) + '" data-ym="' + E(ym) + '"' : "") + '><div class="ff-t"' + (' data-preview-id="' + E(it.id) + '"' + (tv ? ' data-tv="1"' : "")) + ' onclick="' + click + '">' +
       (im ? '<img src="' + E(im) + '" alt="" loading="lazy" decoding="async"' + (locked ? ' style="filter:brightness(.4)"' : "") + '>' : "") +
       '<span class="ff-b">' + (tv ? epLabel(it) : (rtLabel(it._runtime) || "MOVIE")) + '</span>' +
       (pct > 0 ? '<div class="ff-p"><i style="width:' + pct + '%"></i></div>' : "") + '</div>' +
@@ -18211,6 +18211,25 @@ window._mpfWatchFull=function(idx){
   function sched() { if (!raf) raf = requestAnimationFrame(upd); }
   document.addEventListener('scroll', sched, { passive: true, capture: true });
   setInterval(upd, 700);
+})();
+</script>
+<script>
+(function () {
+  if (window._pvAnonFetch) return; window._pvAnonFetch = true;
+  var of = window.fetch;
+  window.fetch = function (input, init) {
+    try {
+      var u = typeof input === 'string' ? input : ((input && input.url) || '');
+      if ((u.indexOf('/preview?id=') > -1 || u.indexOf('/episode-preview?') > -1) && init && init.headers && !(init.headers instanceof Headers)) {
+        var t = init.headers['X-Session-Token'];
+        if (!t || t === 'undefined' || t === 'null') {
+          var nh = {}; for (var k in init.headers) { if (k !== 'X-Session-Token') nh[k] = init.headers[k]; }
+          init = Object.assign({}, init, { headers: nh });
+        }
+      }
+    } catch (e) {}
+    return of.call(this, input, init);
+  };
 })();
 </script>
 </body>
