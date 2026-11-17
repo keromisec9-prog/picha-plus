@@ -18176,9 +18176,15 @@ window._mpfWatchFull=function(idx){
   var sp = null; try { sp = JSON.parse(localStorage.getItem('pp_btt')); } catch (e) {}
   setPos(sp && typeof sp.x === 'number' ? sp.x : window.innerWidth - W - 14, sp && typeof sp.y === 'number' ? sp.y : window.innerHeight - W - 90);
   window.addEventListener('resize', function () { var r = b.getBoundingClientRect(); setPos(r.left, r.top); });
+  function vjShown() {
+    var pg = document.getElementById('bnCategoriesPage'), l = document.getElementById('bnVjList');
+    return !!pg && pg.style.display !== 'none' && !!l && l.style.display !== 'none';
+  }
   function toTop() {
     var p = fyPage();
     if (fyShown() && p && p.scrollTo) p.scrollTo({ top: 0, behavior: 'smooth' });
+    var cp = document.getElementById('bnCategoriesPage');
+    if (vjShown() && cp && cp.scrollTo) cp.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   var down = false, moved = false, px = 0, py = 0, bx = 0, by = 0;
@@ -18208,9 +18214,13 @@ window._mpfWatchFull=function(idx){
   var raf = 0;
   function upd() {
     raf = 0;
-    var p = fyPage(), y;
-    if (fyShown() && p) y = p.scrollTop; else y = window.scrollY || document.documentElement.scrollTop || 0;
-    var show = y > window.innerHeight * 2 && !document.querySelector(OV) && !(fyShown() && !feedTab());
+    var p = fyPage(), cp = document.getElementById('bnCategoriesPage'), y = 0, ctx = false;
+    if (fyShown() && p) { y = p.scrollTop; ctx = feedTab(); }
+    else if (vjShown()) {
+      y = Math.max(cp ? cp.scrollTop : 0, window.scrollY || document.documentElement.scrollTop || 0);
+      ctx = true;
+    }
+    var show = ctx && y > window.innerHeight * 1.2 && !document.querySelector(OV);
     b.classList.toggle('on', show);
   }
   function sched() { if (!raf) raf = requestAnimationFrame(upd); }
