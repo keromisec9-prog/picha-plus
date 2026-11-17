@@ -2810,7 +2810,7 @@
 <script id="searchPremiumJs">
 var _RS_KEY='pp_recent_searches', _rsConfirm=false;
 function _rsGet(){ try{ var a=JSON.parse(localStorage.getItem(_RS_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-function _rsSet(a){ try{ localStorage.setItem(_RS_KEY,JSON.stringify(a.slice(0,8))); }catch(e){} }
+function _rsSet(a){ try{ localStorage.setItem(_RS_KEY,JSON.stringify(a.slice(0,30))); }catch(e){} }
 function _rsSave(q){
   q=(q||'').trim(); if(q.length<2) return;
   var l=_rsGet().filter(function(x){return x.toLowerCase()!==q.toLowerCase();});
