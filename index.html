@@ -18470,5 +18470,88 @@ window._mpfWatchFull=function(idx){
   };
 })();
 </script>
+<script id="srOutJs">
+(function(){
+  if(window._srOutInstalled) return; window._srOutInstalled=true;
+  var S=null, io=null;
+  function $(i){ return document.getElementById(i); }
+  function moreAvailable(){ return !!S && (S.failed || S.page<S.total); }
+  async function fetchPage(q,pg){
+    var ctl=new AbortController(), t=setTimeout(function(){ ctl.abort(); },6000);
+    try{
+      var r=await fetch('https://api.themoviedb.org/3/search/multi?query='+encodeURIComponent(q)+'&page='+pg+'&api_key='+TMDB_KEY+'&language=en-US',{signal:ctl.signal});
+      var d=await r.json();
+      return {results:d.results||[], total:Math.min(d.total_pages||1,500)};
+    }catch(e){ return null; }
+    finally{ clearTimeout(t); }
+  }
+  async function next(want){
+    var out=[], tries=0, rid=S.rid;
+    S.failed=false;
+    while(S && S.rid===rid && S.page<S.total && out.length<want && tries<3){
+      var pg=S.page+1;
+      var d=await fetchPage(S.q,pg);
+      if(!S || S.rid!==rid) return null;
+      if(!d){ S.failed=true; break; }
+      S.page=pg; S.total=d.total; tries++;
+      d.results.forEach(function(it){
+        if(!it || it.media_type==='person') return;
+        var t=it.title||it.name; if(!t) return;
+        var k=_fzNorm(t); if(S.shown.has(k)) return;
+        S.shown.add(k); out.push(it);
+      });
+    }
+    return out;
+  }
+  function arm(){
+    if(io){ try{ io.disconnect(); }catch(e){} io=null; }
+    var h=$('srOutMore'); if(!h || !('IntersectionObserver' in window) || (S && S.failed)) return;
+    io=new IntersectionObserver(function(es){
+      if(es.some(function(x){ return x.isIntersecting; })) window._srOutMore();
+    },{rootMargin:'400px'});
+    io.observe(h);
+  }
+  function holderHTML(){
+    if(!moreAvailable()) return '';
+    return '<div id="srOutMore" style="grid-column:1/-1;text-align:center;padding:1.25rem 0 3rem;"><button id="srOutBtn" onclick="_srOutMore()" style="background:transparent;color:#f0a500;border:1px solid #f0a500;border-radius:999px;padding:0.6rem 1.4rem;font-size:0.85rem;cursor:pointer;">More results</button></div>';
+  }
+  window._searchFetchOutside=async function(query,localItems){
+    S={q:(query||'').trim(),page:0,total:1,failed:false,busy:false,rid:_searchRunId,
+       shown:new Set((localItems||[]).map(function(i){ return _fzNorm(i.title||i.name||''); }))};
+    return (await next(12))||[];
+  };
+  window._searchOutsideHTML=function(items,hasLocal){
+    var html='<div style="color:#888;font-size:0.8rem;grid-column:1/-1;padding:'+(hasLocal?'1.25rem':'0')+' 0 0.5rem 0;">Not in your library yet</div>'+
+      '<div class="sr-grid" id="srOutGrid">'+items.map(function(it){ return createCard(it); }).join('')+'</div>'+holderHTML();
+    setTimeout(arm,0);
+    return html;
+  };
+  window._searchLoadMore=async function(){
+    var runId=_searchRunId, btn=$('searchMoreBtn');
+    if(!btn || btn.disabled) return;
+    btn.disabled=true; btn.textContent='Searching...';
+    var out=await window._searchFetchOutside(window._searchMoreQuery||'', window._searchLocal||[]);
+    if(runId!==_searchRunId) return;
+    var holder=$('searchMoreHolder'); if(!holder) return;
+    holder.outerHTML=out.length
+      ? window._searchOutsideHTML(out,true)
+      : '<div style="color:#666;font-size:0.85rem;grid-column:1/-1;text-align:center;padding:1rem 0;">No other results found</div>';
+  };
+  window._srOutMore=async function(){
+    if(!S || S.busy) return;
+    S.busy=true; var rid=S.rid, me=S;
+    var btn=$('srOutBtn'); if(btn){ btn.disabled=true; btn.textContent='Loading...'; }
+    var items=await next(12);
+    if(S!==me || rid!==_searchRunId) return;
+    S.busy=false;
+    var grid=$('srOutGrid'), holder=$('srOutMore'); if(!grid||!holder) return;
+    if(items && items.length) grid.insertAdjacentHTML('beforeend', items.map(function(it){ return createCard(it); }).join(''));
+    if(moreAvailable()){
+      var b=$('srOutBtn'); if(b){ b.disabled=false; b.textContent=S.failed?'Try again':'More results'; }
+      arm();
+    } else { holder.remove(); if(io){ try{ io.disconnect(); }catch(e){} io=null; } }
+  };
+})();
+</script>
 </body>
 </html>
