@@ -2829,15 +2829,19 @@ function _rsRemove(i,e){ e.stopPropagation(); var l=_rsGet(); l.splice(i,1); _rs
 function _rsAskClear(){ _rsConfirm=true; _rsRefresh(); }
 function _rsCancel(){ _rsConfirm=false; _rsRefresh(); }
 function _rsClearAll(){ _rsSet([]); _rsConfirm=false; _rsRefresh(); }
+var _rsExpanded=false;
+function _rsToggleAll(){ _rsExpanded=!_rsExpanded; _rsConfirm=false; _rsRefresh(); }
 function _searchHomeHTML(){
   var l=_rsGet();
   if(!l.length) return '<div class="sh-hint">Start typing to search...</div>';
   var clock='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e5b93c" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
   var x='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   var h='<div class="rs-wrap"><div class="rs-head"><span>Recent Searches</span><button onclick="_rsAskClear()">Clear All</button></div>';
-  h+=l.map(function(q,i){
+  var _lim=_rsExpanded?l.length:Math.min(l.length,10);
+  h+=l.slice(0,_lim).map(function(q,i){
     return '<div class="rs-row" onclick="_rsUse('+i+')">'+clock+'<span class="t">'+esc(q)+'</span><button class="rs-x" aria-label="Remove" onclick="_rsRemove('+i+',event)">'+x+'</button></div>';
   }).join('');
+  if(l.length>10) h+='<div class="rs-seeall" onclick="_rsToggleAll()" style="text-align:center;padding:1rem 0;color:#e5b93c;font-weight:600;font-size:.95rem;cursor:pointer;">'+(_rsExpanded?'Show less':'See all ('+l.length+')')+'</div>';
   if(_rsConfirm) h+='<div class="rs-confirm"><b>Clear all recent searches?</b><p>This will remove all your search history.</p><div class="rs-btns"><button class="rs-cancel" onclick="_rsCancel()">Cancel</button><button class="rs-clear" onclick="_rsClearAll()">Clear All</button></div></div>';
   return h+'</div>';
 }
@@ -7439,6 +7443,7 @@ async function toggleLike(itemId, btn) {
 let _searchGen = 0;
 
 function openSearch() {
+  _rsExpanded=false;
   if (_navLocked()) return;
   const myGen = ++_searchGen;
   document.getElementById('searchOverlay').classList.add('active');
