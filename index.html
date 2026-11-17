@@ -11397,6 +11397,7 @@ function _fyRenderNextBatch() {
 function _fyOnScroll() {
   const page = document.getElementById('bnForYouPage');
   if (!page || page.style.display === 'none') return;
+  var _g = document.getElementById('fyGrid'); if (_g && _g.style.display === 'none') return;
   if (page.scrollHeight - page.scrollTop - page.clientHeight < FY_SCROLL_THRESHOLD) {
     _fyRenderNextBatch();
   }
@@ -16621,7 +16622,7 @@ async function submitForceReset() {
     var r = b.getBoundingClientRect();
     if (r.top < (window.innerHeight || 800) + 400) loadMoreComments();
   }
-  try { document.addEventListener("scroll", function () { clearTimeout(v2tm); v2tm = setTimeout(maybeMore, 120); }, true); } catch (e) {}
+  try { document.addEventListener("scroll", function () { if (!key || !more) return; clearTimeout(v2tm); v2tm = setTimeout(maybeMore, 120); }, { capture: true, passive: true }); } catch (e) {}
 
   function fixBar() {
     var b = $("ppBar"); if (!b) return;
