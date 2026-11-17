@@ -18360,5 +18360,67 @@ window._mpfWatchFull=function(idx){
   if(document.readyState!=='loading') watch(); else document.addEventListener('DOMContentLoaded',watch);
 })();
 </script>
+<style id="ymlCss">
+.yml-wrap{margin-top:1.8rem}
+.yml-wrap .rs-head{margin-bottom:.4rem}
+.yml-row{display:flex;align-items:center;gap:1rem;padding:.95rem 0;color:#e8e8e8;font-size:1.02rem}
+.yml-dot{width:7px;height:7px;border-radius:50%;background:#e5b93c;flex:none;opacity:.85}
+.yml-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.yml-first{margin-top:0}
+</style>
+<script id="ymlJs">
+(function(){
+  if(window._ymlInstalled) return; window._ymlInstalled=true;
+  var cache=null, cacheAt=0;
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function build(){
+    var cards=window._allCards||[]; if(!cards.length) return [];
+    var vjc={}, titles=[], seen={};
+    cards.forEach(function(it,idx){
+      var v=(it._vj||'').toString().trim();
+      if(v) vjc[v]=(vjc[v]||0)+1;
+      var t=(it.title||it.name||'').trim();
+      if(t && idx<60){ var k=t.toLowerCase(); if(!seen[k]){ seen[k]=1; titles.push(t); } }
+    });
+    var vjs=Object.keys(vjc).sort(function(a,b){ return vjc[b]-vjc[a]; }).slice(0,3).map(function(v){
+      return { label:v+' movies', q:v };
+    });
+    var picks=shuffle(titles).slice(0,5).map(function(t){ return { label:t, q:t }; });
+    var out=[], vi=0, pi=0;
+    while(vi<vjs.length||pi<picks.length){
+      if(picks[pi]) out.push(picks[pi++]);
+      if(vjs[vi]) out.push(vjs[vi++]);
+    }
+    return out;
+  }
+  function items(){
+    if(!cache || !cache.length || Date.now()-cacheAt>600000){ cache=build(); cacheAt=Date.now(); }
+    return cache;
+  }
+  function ymlHTML(first){
+    var l=items(); if(!l.length) return '';
+    return '<div class="rs-wrap yml-wrap'+(first?' yml-first':'')+'"><div class="rs-head"><span>You may like</span></div>'+
+      l.map(function(x,i){ return '<div class="yml-row" onclick="_ymlGo('+i+')"><span class="yml-dot"></span><span class="t">'+esc(x.label)+'</span></div>'; }).join('')+'</div>';
+  }
+  window._ymlGo=function(i){
+    var x=(cache||[])[i]; if(!x) return;
+    var inp=document.getElementById('searchInput'); if(!inp) return;
+    inp.value=x.q;
+    try{ _rsSave(x.q); }catch(e){}
+    try{ inp.blur(); }catch(e){}
+    (window._sgOrig||handleSearch)(x.q);
+  };
+  var orig=window._searchHomeHTML;
+  if(typeof orig!=='function') return;
+  window._searchHomeHTML=function(){
+    var base=''; try{ base=orig.apply(this,arguments); }catch(e){ base=''; }
+    try{
+      var y;
+      if(!base || base.indexOf('sh-hint')>-1){ y=ymlHTML(true); return y || base; }
+      return base+ymlHTML(false);
+    }catch(e){ return base; }
+  };
+})();
+</script>
 </body>
 </html>
