@@ -1,4 +1,5 @@
 name: Make preview clips
+run-name: Make preview clips ${{ github.event.inputs.only }}
 on:
   workflow_dispatch:
     inputs:
