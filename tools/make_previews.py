@@ -27,34 +27,35 @@ def flush(apply_path, done):
         print('applied:', api(apply_path, {'previews': dict(done)}).get('applied'), flush=True)
         done.clear()
 
-def _mc(fn, pk, frac):
+def _mc(fn, pk, frac, dur_clip=30, abs_start=None):
     src = presign(fn)
     p = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], 120)
     dur = float((p.stdout.strip() or '0').split()[0])
     if dur < 45: raise RuntimeError('bad duration %r | ffprobe: %s' % (p.stdout.strip(), p.stderr.strip()[-300:]))
-    start = int(dur * frac)
+    start = int(abs_start) if abs_start is not None else int(dur * frac)
+    start = max(0, min(start, int(dur) - int(dur_clip) - 1))
     with tempfile.TemporaryDirectory() as td:
         out = os.path.join(td, 'c.mp4')
-        r = sh(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-ss', str(start), '-i', src, '-t', '30',
+        r = sh(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-ss', str(start), '-i', src, '-t', str(int(dur_clip)),
                 '-map', '0:v:0', '-map', '0:a:0?', '-vf', 'scale=-2:480', '-c:v', 'libx264', '-preset', 'veryfast',
                 '-crf', '28', '-maxrate', '1000k', '-bufsize', '2000k', '-pix_fmt', 'yuv420p',
                 '-c:a', 'aac', '-b:a', '64k', '-ac', '2', '-movflags', '+faststart', out], 300)
         if r.returncode or not os.path.exists(out): raise RuntimeError('ffmpeg: ' + r.stderr[-200:])
         sz = os.path.getsize(out)
-        if sz < 100 * 1024: raise RuntimeError('clip too small (%d bytes) | ffmpeg: %s' % (sz, r.stderr[-200:]))
+        if sz < max(30 * 1024, int(dur_clip * 4096)): raise RuntimeError('clip too small (%d bytes) | ffmpeg: %s' % (sz, r.stderr[-200:]))
         kb = sz // 1024
         u = sh(['aws', 's3', 'cp', out, f's3://{BUCKET}/{pk}', '--endpoint-url', EP,
                 '--content-type', 'video/mp4', '--only-show-errors'], 120)
         if u.returncode: raise RuntimeError('upload: ' + u.stderr[:200])
     return kb
 
-def make_clip(fn, pk):
+def make_clip(fn, pk, dur_clip=30, abs_start=None):
     h = sh(['aws', 's3api', 'head-object', '--bucket', BUCKET, '--key', fn, '--endpoint-url', EP], 60)
     print('source head:', (h.stdout or h.stderr)[:300].replace('\n', ' '), flush=True)
     last = None
-    for frac in (0.28, 0.15, 0.08, 0.02):
+    for frac in ((-1.0,) if abs_start is not None else ()) + (0.28, 0.15, 0.08, 0.02):
         try:
-            kb = _mc(fn, pk, frac); print('ok at frac', frac, flush=True); return kb
+            kb = _mc(fn, pk, frac, dur_clip, abs_start if frac < 0 else None); print('ok at frac', frac, flush=True); return kb
         except RuntimeError as e:
             last = e; print('frac', frac, 'failed:', e, flush=True)
     raise last
@@ -62,7 +63,9 @@ def make_clip(fn, pk):
 ONLY = os.environ.get('ONLY', '').strip()
 if ONLY:
     pk = re.sub(r'\.[^./]+$', '', ONLY) + '.preview.mp4'
-    print('ONLY', ONLY, '->', pk, 'KB', make_clip(ONLY, pk), flush=True)
+    _s = os.environ.get('START', '').strip(); _d = os.environ.get('DUR', '').strip()
+    _dc = min(90, max(3, int(float(_d)))) if _d else 30
+    print('ONLY', ONLY, '->', pk, 'KB', make_clip(ONLY, pk, _dc, float(_s) if _s else None), flush=True)
     raise SystemExit(0)
 
 budget = MAX

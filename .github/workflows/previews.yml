@@ -8,6 +8,12 @@ on:
       only:
         description: Re-cut one title by fileName (optional)
         default: ''
+      start:
+        description: Clip start in seconds (optional)
+        default: ''
+      dur:
+        description: Clip length in seconds (optional)
+        default: ''
   schedule:
     - cron: '0 2 * * *'
 jobs:
@@ -27,4 +33,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APP_KEY }}
           MAX: ${{ github.event.inputs.max || '150' }}
           ONLY: ${{ github.event.inputs.only || '' }}
+          START: ${{ github.event.inputs.start || '' }}
+          DUR: ${{ github.event.inputs.dur || '' }}
         run: python3 tools/make_previews.py
