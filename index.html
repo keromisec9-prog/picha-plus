@@ -18875,46 +18875,5 @@ window._mpfWatchFull=function(idx){
   }, 700);
   log('debug panel ready');
 })();</script>
-<script id="mpf-decfix">(function () {
-  if (window.__mpfDecFix) return; window.__mpfDecFix = 1;
-  setInterval(function () {
-    try {
-      if (document.hidden || typeof _mpfIdx === 'undefined' || _mpfNativeOn) return;
-      var c = document.getElementById('mpfContainer');
-      if (!c || !c.getClientRects().length) return;
-      var cur = _mpfIdx | 0;
-      var vs = document.querySelectorAll('video[id^="mpfVid_"]');
-      for (var k = 0; k < vs.length; k++) {
-        var v = vs[k], n = parseInt(v.id.slice(7), 10);
-        if (n === cur) continue;
-        if (n === cur + 1) continue;
-        var sr = v.getAttribute('src');
-        if (sr) {
-          v.dataset.rsrc = sr;
-          try { v.pause(); } catch (e) {}
-          v.removeAttribute('src');
-          try { v.load(); } catch (e) {}
-        }
-      }
-      var v0 = document.getElementById('mpfVid_' + cur);
-      if (!v0) return;
-      if (!v0.getAttribute('src') && v0.dataset.rsrc) {
-        v0.src = v0.dataset.rsrc;
-        v0.load();
-        var p = v0.play(); if (p && p.catch) p.catch(function () {});
-        return;
-      }
-      if (v0.error && v0.error.code === 3) {
-        var tr = parseInt(v0.dataset.decTry || '0', 10);
-        if (tr >= 3) return;
-        v0.dataset.decTry = String(tr + 1);
-        var u = v0.getAttribute('src') || v0.currentSrc;
-        v0.removeAttribute('src'); v0.load();
-        v0.src = u; v0.load();
-        var q = v0.play(); if (q && q.catch) q.catch(function () {});
-      }
-    } catch (e) {}
-  }, 500);
-})();</script>
 </body>
 </html>
