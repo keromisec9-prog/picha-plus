@@ -13362,27 +13362,11 @@ async function _mpfResolvePreviewUrlRaw(item) {
     const endpoint = isTV
       ? `${API}/episode-preview?seriesId=${item.id}&ep=${_mpfEpFor(item)}`
       : `${API}/preview?id=${item.id}`;
-    let data = null, _st = 0;
-    for (let _a = 0; _a < 3 && !(data && data.url); _a++) {
-      if (_a) await new Promise(r => setTimeout(r, 700 * _a));
-      try {
-        const res = await fetch(endpoint, {
-          headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-        });
-        _st = res.status;
-        data = await res.json();
-        if (!(data && data.url)) window._mpfPvErr = { endpoint: endpoint, status: _st, body: data, t: Date.now() };
-      } catch (e) { window._mpfPvErr = { endpoint: endpoint, err: String(e), t: Date.now() }; }
-    }
-    if (!data || !data.url) {
-      try {
-        if (!window._mpfPvToast || Date.now() - window._mpfPvToast > 10000) {
-          window._mpfPvToast = Date.now();
-          showToast('Clip failed (' + (_st || 'network') + ')', 'error');
-        }
-      } catch (e) {}
-      return null;
-    }
+    const res = await fetch(endpoint, {
+      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+    });
+    const data = await res.json();
+    if (!data.url) return null;
     try { if (data.ttl && !isTV) _pvPut(cacheKey, data.url, data.ttl); } catch (e) {}
     url = data.url;
     _previewCache[cacheKey] = url;
@@ -13851,7 +13835,6 @@ async function openMoviePreviewFeed() {
   if (_mpfNativeStart()) return;
   await _mpfMountSlide(0, true);
   _mpfBackgroundPrefetchPaused = true; // wait for the first video to buffer before preloading ahead
-  setTimeout(function () { _mpfBackgroundPrefetchPaused = false; }, 5000);
   _mpfQueueNeighbors(0);
   _mpfPlaceSlides(0);
   _mpfWireTouch();
@@ -14313,7 +14296,6 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   [prevIdx, newIdx].forEach(i => { const ind = document.getElementById('mpfPause_' + i); if (ind) ind.style.display = 'none'; });
   _mpfIdx = newIdx;
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
-  setTimeout(function () { _mpfBackgroundPrefetchPaused = false; }, 5000);
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) {
     if (_mpfPlayedIndices.has(newIdx) && _mpfClipFixedStart[newIdx] != null) {
@@ -18748,132 +18730,5 @@ window._mpfWatchFull=function(idx){
   };
 })();
 </script>
-<script id="mpf-dbg2">(function () {
-  if (window.__ppDbg2) return; window.__ppDbg2 = 1;
-  var LOG = [], MAX = 120, open = false, lastIdx = -2;
-  var btn = document.createElement('div');
-  btn.textContent = 'DBG';
-  btn.style.cssText = 'position:fixed;left:8px;bottom:78px;z-index:2147483001;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.7);color:#0f0;border:1px solid #0f0;font:700 10px monospace;display:flex;align-items:center;justify-content:center;opacity:.65;';
-  var box = document.createElement('div');
-  box.style.cssText = 'position:fixed;left:0;right:0;bottom:70px;height:48vh;z-index:2147483002;background:rgba(0,0,0,.93);color:#0f0;font:11px/1.35 monospace;display:none;flex-direction:column;border-top:1px solid #0f0;';
-  var bar = document.createElement('div');
-  bar.style.cssText = 'display:flex;gap:8px;padding:6px;border-bottom:1px solid #063;';
-  function mk(t) {
-    var b = document.createElement('button');
-    b.textContent = t;
-    b.style.cssText = 'flex:1;padding:8px 0;background:#052;color:#0f0;border:1px solid #0f0;border-radius:6px;font:700 12px monospace;';
-    return b;
-  }
-  var bCopy = mk('Copy'), bClear = mk('Clear'), bClose = mk('Close');
-  bar.appendChild(bCopy); bar.appendChild(bClear); bar.appendChild(bClose);
-  var stat = document.createElement('div');
-  stat.style.cssText = 'padding:4px 6px;border-bottom:1px solid #063;white-space:pre-wrap;word-break:break-all;';
-  var out = document.createElement('div');
-  out.style.cssText = 'flex:1;overflow-y:auto;padding:4px 6px;white-space:pre-wrap;word-break:break-all;-webkit-overflow-scrolling:touch;';
-  box.appendChild(bar); box.appendChild(stat); box.appendChild(out);
-  function mount() { document.body.appendChild(btn); document.body.appendChild(box); }
-  if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
-
-  function ts() { var d = new Date(); return ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + '.' + ('00' + d.getMilliseconds()).slice(-3); }
-  function host(u) { try { return new URL(u, location.href).host; } catch (e) { return String(u || '').slice(0, 40); } }
-  function log(t) {
-    LOG.push(ts() + ' ' + t);
-    if (LOG.length > MAX) LOG.shift();
-    if (open) draw();
-  }
-  function census() {
-    var vs = document.querySelectorAll('video'), a = 0, b = 0, c = 0, i, v;
-    for (i = 0; i < vs.length; i++) {
-      v = vs[i];
-      if (v.currentSrc || v.getAttribute('src')) { a++; if (!v.paused && !v.ended) b++; if (v.readyState > 0) c++; }
-    }
-    return 'videos total=' + vs.length + ' withSrc=' + a + ' playing=' + b + ' loaded=' + c;
-  }
-  function snap() {
-    try {
-      var i = (typeof _mpfIdx !== 'undefined') ? _mpfIdx : -1;
-      var v = document.getElementById('mpfVid_' + i);
-      var sl = document.getElementById('mpfSlide_' + i);
-      var it = (typeof _mpfList !== 'undefined') ? _mpfList[i] : null;
-      var src = v ? (v.currentSrc || v.src || '') : '';
-      return 'idx=' + i + '/' + (typeof _mpfList !== 'undefined' ? _mpfList.length : '?') +
-        ' native=' + (typeof _mpfNativeOn !== 'undefined' ? _mpfNativeOn : '?') +
-        ' prefetchPaused=' + (typeof _mpfBackgroundPrefetchPaused !== 'undefined' ? _mpfBackgroundPrefetchPaused : '?') +
-        '\nslide=' + (sl ? 'yes mounted=' + sl.dataset.mounted : 'NO') +
-        ' vid=' + (v ? 'rs=' + v.readyState + ' ns=' + v.networkState + ' err=' + (v.error ? v.error.code : '-') + ' paused=' + v.paused : 'NO') +
-        '\ntitle=' + (it ? (it.title || it.name) + ' tv=' + (it.media_type === 'tv') : '-') +
-        '\nsrc=' + (src ? src.slice(0, 110) : 'EMPTY') + '\n' + census();
-    } catch (e) { return 'status error: ' + e; }
-  }
-  function draw() {
-    stat.textContent = snap();
-    out.textContent = LOG.join('\n');
-    out.scrollTop = out.scrollHeight;
-  }
-  btn.addEventListener('click', function () { open = !open; box.style.display = open ? 'flex' : 'none'; if (open) draw(); });
-  bClose.addEventListener('click', function () { open = false; box.style.display = 'none'; });
-  bClear.addEventListener('click', function () { LOG.length = 0; draw(); });
-  bCopy.addEventListener('click', function () {
-    var txt = snap() + '\n---\n' + LOG.join('\n');
-    function fb() {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = txt; ta.style.cssText = 'position:fixed;left:0;top:0;opacity:0;';
-        document.body.appendChild(ta); ta.focus(); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
-        bCopy.textContent = 'Copied';
-      } catch (e) { bCopy.textContent = 'Copy failed'; }
-      setTimeout(function () { bCopy.textContent = 'Copy'; }, 1500);
-    }
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(txt).then(function () {
-          bCopy.textContent = 'Copied'; setTimeout(function () { bCopy.textContent = 'Copy'; }, 1500);
-        }, fb);
-      } else fb();
-    } catch (e) { fb(); }
-  });
-
-  var of = window.fetch;
-  window.fetch = function (input, init) {
-    var u = '';
-    try { u = typeof input === 'string' ? input : ((input && input.url) || ''); } catch (e) {}
-    var watch = /\/(episode-)?preview(\?|$)/.test(u);
-    var t0 = Date.now();
-    var p = of.apply(this, arguments);
-    if (watch) {
-      var q = u.replace(/^https?:\/\/[^/]+/, '').slice(0, 70);
-      p.then(function (r) {
-        var ms = Date.now() - t0;
-        r.clone().json().then(function (j) {
-          log('API ' + r.status + ' ' + ms + 'ms ' + q + ' -> ' + (j && j.url ? 'url@' + host(j.url) : 'NO URL ' + JSON.stringify(j).slice(0, 80)));
-        }).catch(function () { log('API ' + r.status + ' ' + ms + 'ms ' + q + ' -> non-JSON'); });
-      }, function (e) { log('API NETWORK FAIL ' + q + ' ' + e); });
-    }
-    return p;
-  };
-
-  ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'waiting', 'stalled', 'error', 'abort', 'emptied'].forEach(function (ev) {
-    document.addEventListener(ev, function (e) {
-      var v = e.target;
-      if (!v || v.tagName !== 'VIDEO' || !v.id || v.id.indexOf('mpfVid_') !== 0) return;
-      if (ev === 'error') log('CENSUS ' + census());
-      log('vid ' + v.id.slice(7) + ' ' + ev + ' rs=' + v.readyState + ' ns=' + v.networkState + (v.error ? ' ERR=' + v.error.code : '') + ' @' + host(v.currentSrc || v.src));
-    }, true);
-  });
-
-  setInterval(function () {
-    try {
-      var i = (typeof _mpfIdx !== 'undefined') ? _mpfIdx : -1;
-      if (i !== lastIdx) {
-        lastIdx = i;
-        var it = (typeof _mpfList !== 'undefined') ? _mpfList[i] : null;
-        if (i >= 0) log('SWIPE -> ' + i + ' ' + (it ? (it.title || it.name) : '?'));
-      }
-      if (open) stat.textContent = snap();
-    } catch (e) {}
-  }, 700);
-  log('debug panel ready');
-})();</script>
 </body>
 </html>
