@@ -18781,6 +18781,14 @@ window._mpfWatchFull=function(idx){
     if (LOG.length > MAX) LOG.shift();
     if (open) draw();
   }
+  function census() {
+    var vs = document.querySelectorAll('video'), a = 0, b = 0, c = 0, i, v;
+    for (i = 0; i < vs.length; i++) {
+      v = vs[i];
+      if (v.currentSrc || v.getAttribute('src')) { a++; if (!v.paused && !v.ended) b++; if (v.readyState > 0) c++; }
+    }
+    return 'videos total=' + vs.length + ' withSrc=' + a + ' playing=' + b + ' loaded=' + c;
+  }
   function snap() {
     try {
       var i = (typeof _mpfIdx !== 'undefined') ? _mpfIdx : -1;
@@ -18794,7 +18802,7 @@ window._mpfWatchFull=function(idx){
         '\nslide=' + (sl ? 'yes mounted=' + sl.dataset.mounted : 'NO') +
         ' vid=' + (v ? 'rs=' + v.readyState + ' ns=' + v.networkState + ' err=' + (v.error ? v.error.code : '-') + ' paused=' + v.paused : 'NO') +
         '\ntitle=' + (it ? (it.title || it.name) + ' tv=' + (it.media_type === 'tv') : '-') +
-        '\nsrc=' + (src ? src.slice(0, 110) : 'EMPTY');
+        '\nsrc=' + (src ? src.slice(0, 110) : 'EMPTY') + '\n' + census();
     } catch (e) { return 'status error: ' + e; }
   }
   function draw() {
@@ -18849,6 +18857,7 @@ window._mpfWatchFull=function(idx){
     document.addEventListener(ev, function (e) {
       var v = e.target;
       if (!v || v.tagName !== 'VIDEO' || !v.id || v.id.indexOf('mpfVid_') !== 0) return;
+      if (ev === 'error') log('CENSUS ' + census());
       log('vid ' + v.id.slice(7) + ' ' + ev + ' rs=' + v.readyState + ' ns=' + v.networkState + (v.error ? ' ERR=' + v.error.code : '') + ' @' + host(v.currentSrc || v.src));
     }, true);
   });
