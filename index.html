@@ -13362,11 +13362,27 @@ async function _mpfResolvePreviewUrlRaw(item) {
     const endpoint = isTV
       ? `${API}/episode-preview?seriesId=${item.id}&ep=${_mpfEpFor(item)}`
       : `${API}/preview?id=${item.id}`;
-    const res = await fetch(endpoint, {
-      headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
-    });
-    const data = await res.json();
-    if (!data.url) return null;
+    let data = null, _st = 0;
+    for (let _a = 0; _a < 3 && !(data && data.url); _a++) {
+      if (_a) await new Promise(r => setTimeout(r, 700 * _a));
+      try {
+        const res = await fetch(endpoint, {
+          headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
+        });
+        _st = res.status;
+        data = await res.json();
+        if (!(data && data.url)) window._mpfPvErr = { endpoint: endpoint, status: _st, body: data, t: Date.now() };
+      } catch (e) { window._mpfPvErr = { endpoint: endpoint, err: String(e), t: Date.now() }; }
+    }
+    if (!data || !data.url) {
+      try {
+        if (!window._mpfPvToast || Date.now() - window._mpfPvToast > 10000) {
+          window._mpfPvToast = Date.now();
+          showToast('Clip failed (' + (_st || 'network') + ')', 'error');
+        }
+      } catch (e) {}
+      return null;
+    }
     try { if (data.ttl && !isTV) _pvPut(cacheKey, data.url, data.ttl); } catch (e) {}
     url = data.url;
     _previewCache[cacheKey] = url;
@@ -13835,6 +13851,7 @@ async function openMoviePreviewFeed() {
   if (_mpfNativeStart()) return;
   await _mpfMountSlide(0, true);
   _mpfBackgroundPrefetchPaused = true; // wait for the first video to buffer before preloading ahead
+  setTimeout(function () { _mpfBackgroundPrefetchPaused = false; }, 5000);
   _mpfQueueNeighbors(0);
   _mpfPlaceSlides(0);
   _mpfWireTouch();
@@ -14296,6 +14313,7 @@ function _mpfOnCommitted(prevIdx, newIdx) {
   [prevIdx, newIdx].forEach(i => { const ind = document.getElementById('mpfPause_' + i); if (ind) ind.style.display = 'none'; });
   _mpfIdx = newIdx;
   _mpfBackgroundPrefetchPaused = true; // wait for the new active video to buffer first
+  setTimeout(function () { _mpfBackgroundPrefetchPaused = false; }, 5000);
   const newVideo = document.getElementById('mpfVid_' + newIdx);
   if (newVideo) {
     if (_mpfPlayedIndices.has(newIdx) && _mpfClipFixedStart[newIdx] != null) {
