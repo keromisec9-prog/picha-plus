@@ -17163,15 +17163,27 @@ body.pp-in-profile #serCreator{cursor:default}
 (function () {
   if (window._spPrev) return; window._spPrev = true;
   if (!('IntersectionObserver' in window)) return;
-  var vis = new Map(), seen = new WeakSet(), played = new Set(), cur = null, busy = false, gen = 0, SECS = 15000, DWELL = 1200;
+  var vis = new Map(), seen = new WeakSet(), played = new Set(), cur = null, busy = false, gen = 0, SECS = 35000, DWELL = 400, pre = {};
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (en) {
-      if (en.isIntersecting) { if (!vis.has(en.target)) vis.set(en.target, Date.now()); }
+      if (en.isIntersecting) { if (!vis.has(en.target)) { vis.set(en.target, Date.now()); prefetch(en.target); } }
       else vis.delete(en.target);
     });
     if (!vis.size) played.clear();
   }, { threshold: 0.6 });
 
+  function prefetch(card) {
+    try {
+      var id = card.getAttribute('data-preview-id');
+      if (!id || typeof API === 'undefined' || pre[id]) return;
+      if (typeof _previewCache !== 'undefined' && _previewCache[id]) return;
+      pre[id] = 1;
+      fetch(API + '/preview?id=' + encodeURIComponent(id), { headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.url && typeof _previewCache !== 'undefined') _previewCache[id] = d.url; })
+        .catch(function () { delete pre[id]; });
+    } catch (e) {}
+  }
   function allowed() {
     if (document.hidden) return false;
     var h = document.getElementById('bn-home');
@@ -17224,7 +17236,8 @@ body.pp-in-profile #serCreator{cursor:default}
       b.onclick = function (e) { e.stopPropagation(); setPreviewSoundPref(muted()); v.muted = muted(); setIcon(b); };
       card.appendChild(v); card.appendChild(b);
       v.src = url;
-      v.addEventListener('loadedmetadata', function () { try { if (v.duration) v.currentTime = _ppPrevStart(v); } catch (e) {} }, { once: true });
+      v.addEventListener('loadedmetadata', function () { try { if (v.duration) v.currentTime = (v.duration <= 45) ? 0 : _ppPrevStart(v); } catch (e) {} }, { once: true });
+      v.addEventListener('ended', function () { if (cur && cur.v === v) stop(); }, { once: true });
       try { await v.play(); } catch (e) { v.muted = true; await v.play(); }
       if (my !== gen) { v.pause(); v.remove(); b.remove(); return; }
       v.style.opacity = '1'; b.style.opacity = '1';
@@ -17253,7 +17266,7 @@ body.pp-in-profile #serCreator{cursor:default}
       if (next) start(next);
     } catch (e) {}
   }
-  setInterval(tick, 700);
+  setInterval(tick, 250);
 })();
 </script>
 <script>
