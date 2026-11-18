@@ -11693,7 +11693,7 @@ function setPreviewSoundPref(soundOn) {
 }
 
 /* ---- Feed autoplay: the card most in view plays (one shared <video>) ---- */
-var FA_SETTLE_MS = 400, FA_CLIP_MS = 35000, FA_MIN_RATIO = 0.6, FA_ALLOW_FULLFILE = false;
+var FA_SETTLE_MS = 400, FA_CLIP_MS = 100000, FA_MIN_RATIO = 0.6, FA_ALLOW_FULLFILE = false;
 var _faObs = null, _faMO = null, _faSeen = new WeakSet(), _faVis = new Map();
 var _faSettle = null, _faTimer = null, _faAbort = null, _faGen = 0, _faCur = null;
 var _faPaused = false, _faDone = {}, _faNoClip = {};
