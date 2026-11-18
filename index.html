@@ -18730,5 +18730,125 @@ window._mpfWatchFull=function(idx){
   };
 })();
 </script>
+<script id="mpf-spons">(function () {
+  if (window.__mpfSpons) return; window.__mpfSpons = 1;
+  var TAG = '<div style="display:inline-block;margin-bottom:6px;padding:0 5px;border:1px solid rgba(255,255,255,.25);border-radius:4px;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;color:#fff;opacity:.55;">Sponsored</div>';
+  var busy = false, done = {}, lastI = -1, lastG = -1;
+  function gap() { return 4 + Math.floor(Math.random() * 5); }
+  function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+  function load() {
+    var sp = window._mpfSp;
+    if (busy || (sp && Date.now() - sp.t < 600000)) return;
+    busy = true;
+    fetch(API + '/promoted').then(function (r) { return r.json(); }).then(function (d) {
+      var cards = window._allCards || [], out = [];
+      ((d && d.items) || []).forEach(function (p) {
+        var c = cards.find(function (x) { return [x.id, x.tmdbId, x.movieId].some(function (v) { return v != null && String(v) === p.key; }); });
+        if (c) out.push({ item: c, pid: p.id });
+      });
+      window._mpfSp = { t: out.length ? Date.now() : Date.now() - 540000, list: out, q: [] };
+      busy = false;
+      try { apply(); } catch (e) {}
+    }).catch(function () { busy = false; });
+  }
+  function pick(out) {
+    var sp = window._mpfSp, lastId = null, i;
+    for (i = out.length - 1; i >= 0; i--) { if (out[i]._spon != null) { lastId = String(out[i].id); break; } }
+    if (!sp.q || !sp.q.length) sp.q = shuf(sp.list.slice());
+    var k = 0;
+    if (sp.list.length > 1 && sp.q.length > 1 && String(sp.q[0].item.id) === lastId) k = 1;
+    return sp.q.splice(k, 1)[0];
+  }
+  function apply() {
+    var sp = window._mpfSp;
+    if (!sp || !sp.list.length || !_mpfList.length) return;
+    var idx = _mpfIdx | 0, i;
+    for (i = idx + 1; i <= idx + 10 && i < _mpfList.length; i++) { if (_mpfList[i]._spon != null) return; }
+    var kn = Math.min(_mpfList.length, idx + 5);
+    var keep = _mpfList.slice(0, kn);
+    var S = {};
+    sp.list.forEach(function (x) { S[String(x.item.id)] = 1; });
+    var tail = _mpfList.slice(kn).filter(function (x) { return !S[String(x.id)]; });
+    var last = -1;
+    for (i = 0; i < keep.length; i++) { if (keep[i]._spon != null) last = i; }
+    var nxt = last >= 0 ? last + 1 + gap() : Math.max(kn, 2) + Math.floor(Math.random() * 4);
+    var out = keep.slice(), t = 0;
+    while (t < tail.length) {
+      if (out.length >= nxt) {
+        var s = pick(out);
+        if (s) { out.push(Object.assign({}, s.item, { _spon: s.pid })); nxt = out.length + gap(); continue; }
+        nxt = Infinity;
+      }
+      out.push(tail[t++]);
+    }
+    _mpfList = out;
+  }
+  function onIdx(i) {
+    try { apply(); } catch (e) {}
+    var it = _mpfList[i];
+    if (!it || it._spon == null) return;
+    var k = _mpfGeneration + ':' + i + ':' + it._spon;
+    if (done[k]) return;
+    done[k] = 1;
+    setTimeout(function () {
+      try {
+        var c = document.getElementById('mpfContainer');
+        if (document.hidden || _mpfIdx !== i || _mpfList[i] !== it || !c || !c.getClientRects().length) { delete done[k]; return; }
+        done[k] = 2;
+        _promoCount('i', it._spon);
+      } catch (e) { delete done[k]; }
+    }, 2000);
+  }
+  if (typeof _mpfSlideHTML === 'function') {
+    var os = _mpfSlideHTML;
+    _mpfSlideHTML = function (idx) {
+      var h = os.apply(this, arguments);
+      try {
+        var it = _mpfList[idx];
+        if (it && it._spon != null) h = h.replace('<div id="mpfMeta_' + idx + '"', TAG + '<div id="mpfMeta_' + idx + '"');
+      } catch (e) {}
+      return h;
+    };
+  }
+  if (typeof _mpfOnCommitted === 'function') {
+    var oc = _mpfOnCommitted;
+    _mpfOnCommitted = function (prev, nw) {
+      var r = oc.apply(this, arguments);
+      try { lastI = nw; lastG = _mpfGeneration; onIdx(nw); } catch (e) {}
+      return r;
+    };
+  }
+  if (typeof _mpfWatchFull === 'function') {
+    var ow = _mpfWatchFull;
+    _mpfWatchFull = function (idx) {
+      try { var it = _mpfList[idx]; if (it && it._spon != null) _promoCount('c', it._spon); } catch (e) {}
+      return ow.apply(this, arguments);
+    };
+  }
+  if (typeof openMoviePreviewFeed === 'function') {
+    var oo = openMoviePreviewFeed;
+    openMoviePreviewFeed = function () {
+      var p = oo.apply(this, arguments);
+      try {
+        load();
+        Promise.resolve(p).then(function () {
+          try { apply(); } catch (e) {}
+          setTimeout(function () { try { apply(); } catch (e) {} }, 1500);
+        });
+      } catch (e) {}
+      return p;
+    };
+  }
+  setInterval(function () {
+    try {
+      if (document.hidden || !_mpfList.length) return;
+      var c = document.getElementById('mpfContainer');
+      if (!c || !c.getClientRects().length) { lastI = -1; return; }
+      if (_mpfIdx === lastI && _mpfGeneration === lastG) return;
+      lastI = _mpfIdx; lastG = _mpfGeneration;
+      onIdx(_mpfIdx);
+    } catch (e) {}
+  }, 800);
+})();</script>
 </body>
 </html>
