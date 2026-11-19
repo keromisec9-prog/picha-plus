@@ -18734,7 +18734,7 @@ window._mpfWatchFull=function(idx){
   if (window.__mpfSpons3) return; window.__mpfSpons3 = 1;
   var busy = false, tries = 0, cand = null;
   function nat() { try { return typeof _mpfNatAvail === 'function' && !!_mpfNatAvail(); } catch (e) { return false; } }
-  function gap() { return 11 + Math.floor(Math.random() * 6); }
+  function gap() { return 8 + Math.floor(Math.random() * 4); }
   function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
   function place(list, from) {
     var sp = window._mpfSp;
@@ -18745,7 +18745,7 @@ window._mpfWatchFull=function(idx){
     var tail = list.slice(from).filter(function (x) { return !S[String(x.id)]; });
     var last = -1;
     for (i = head.length - 1; i >= 0; i--) { if (head[i]._spon != null) { last = i; break; } }
-    var nxt = last >= 0 ? last + gap() : Math.max(from, 5) + Math.floor(Math.random() * 3);
+    var nxt = last >= 0 ? last + gap() : Math.max(from, 4) + Math.floor(Math.random() * 3);
     var out = head, lastId = last >= 0 ? String(head[last].id) : null, q = sp.q || [];
     t = 0;
     while (t < tail.length) {
