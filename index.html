@@ -3653,7 +3653,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   <div class="hero-bg" id="heroBg"></div><script>if(window.__ppHero)document.getElementById("heroBg").style.backgroundImage="url("+window.__ppHero+")";</script>
   <div class="hero-overlay"></div>
   <div class="hero-content" id="heroContent">
-    <div class="hero-rating" id="heroRating">⭐ Loading...</div>
+    <div class="hero-rating" id="heroRating">⭐ Lindako</div>
     <h1 class="hero-title" id="heroTitle">Picha+</h1>
     <div class="hero-meta" id="heroMeta"></div>
     <p class="hero-desc" id="heroDesc">The best of East African and global cinema, streamed in stunning quality.</p>
@@ -15383,7 +15383,7 @@ function _serHeroPolish(s) {
     var id = s.tmdbId;
     box.dataset.for = String(id || '');
     if (!id) { box.innerHTML = '<div class="pp-empty">No cast information available.</div>'; return; }
-    box.innerHTML = '<div class="pp-empty">Loading...</div>';
+    box.innerHTML = '<div class="pp-empty">Lindako</div>';
     if (cache[id] === undefined) {
       cache[id] = fetch('https://api.themoviedb.org/3/tv/' + id + '?api_key=' + TMDB_KEY + '&language=en-US&append_to_response=credits')
         .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
@@ -16603,7 +16603,7 @@ async function submitForceReset() {
     if (v2loading || !more || !key) return;
     v2loading = true;
     var k = key, last = items.length ? items[items.length - 1].id : 0, b = $("ppCmtMore"), t0 = "";
-    if (b) { t0 = b.dataset.t0 || (b.dataset.t0 = b.textContent); b.disabled = true; b.textContent = "Loading..."; }
+    if (b) { t0 = b.dataset.t0 || (b.dataset.t0 = b.textContent); b.disabled = true; b.textContent = "Lindako"; }
     function done(ok) { v2loading = false; if (!ok) v2fail = Date.now(); if (b) { b.disabled = false; b.textContent = t0; } }
     fetch(API_ + "/studio/comments/" + encodeURIComponent(k) + (last ? "?before=" + last : ""), { headers: hdr(false) })
       .then(function (r) { return r.json(); })
@@ -18072,7 +18072,7 @@ window._mpfWatchFull=function(idx){
   }
   function render(){
     var l = $("mcList"); if (!l) return;
-    l.innerHTML = items.length ? items.map(function(x){ return rowHtml(x, false); }).join("") : '<div class="mc-e">' + (loading ? "Loading..." : "No comments yet. Be the first.") + '</div>';
+    l.innerHTML = items.length ? items.map(function(x){ return rowHtml(x, false); }).join("") : '<div class="mc-e">' + (loading ? "Lindako" : "No comments yet. Be the first.") + '</div>';
     $("mcCount").textContent = total + (total === 1 ? " comment" : " comments"); if (loadedKey === key) setCnt();
     var inp = $("mcInput"), has = !!tok();
     inp.disabled = !has;
@@ -18743,7 +18743,7 @@ window._mpfWatchFull=function(idx){
   window._srOutMore=async function(){
     if(!S || S.busy) return;
     S.busy=true; var rid=S.rid, me=S;
-    var btn=$('srOutBtn'); if(btn){ btn.disabled=true; btn.textContent='Loading...'; }
+    var btn=$('srOutBtn'); if(btn){ btn.disabled=true; btn.textContent='Lindako'; }
     var items=await next(12);
     if(S!==me || rid!==_searchRunId) return;
     S.busy=false;
