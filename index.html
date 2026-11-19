@@ -17580,7 +17580,8 @@ window._mpfWatchFull=function(idx){
       "#fyFeed .ff-fp .fp-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;margin:4px 0 8px;color:var(--white,#fff)}" +
       "#fyFeed .ff-fp .fp-tag{border:1px solid rgba(255,255,255,.18);border-radius:4px;font-size:.6rem;letter-spacing:.05em;padding:0 5px;color:var(--gray,#aaa);font-weight:500;opacity:.6}" +
       "#fyFeed .ff-fp .fp-card,#fyFeed .ff-fp .fp-card.first{box-shadow:none!important;border-color:rgba(255,255,255,.1)!important}" +
-      "html[data-theme=light] #fyFeed .ff-fp .fp-h{color:#111}";
+      "html[data-theme=light] #fyFeed .ff-fp .fp-h{color:#111}" +
+      "#fyFeed .ff-fp .fp-row{align-items:flex-start}#fyFeed .ff-fp .fp-card{height:auto!important;overflow:visible!important}#fyFeed .ff-fp .fp-fb{display:block!important}";
     document.head.appendChild(z);
   }
   function fpPool(){
@@ -17593,7 +17594,7 @@ window._mpfWatchFull=function(idx){
     if (fpBusy) return;
     var l = window._fpList; if (l && l.length) return;
     var c = null; try { c = JSON.parse(localStorage.getItem("ffFpCache") || "null"); } catch(e){}
-    if (c && c.items && c.items.length && Date.now() - c.t < 600000) return;
+    if (c && c.items && c.items.length && Date.now() - c.t < 120000) return;
     fpBusy = true;
     var go = function(){
       var t = ""; try { t = _fpTok(); } catch(e){}
@@ -17630,7 +17631,7 @@ window._mpfWatchFull=function(idx){
       if (fpBusy) el.setAttribute("data-w", "1"); else el.parentNode.removeChild(el);
       return;
     }
-    var picks = fpPick(pool, 4);
+    var allp = fpPick(pool, 40); el.__fpAll = allp; var picks = allp.slice(0, 8);
     if (!picks.length) { el.parentNode.removeChild(el); return; }
     var tick = (typeof _FP_TICK !== "undefined") ? _FP_TICK : "";
     el.removeAttribute("data-w"); try { fpOutWatch(el); } catch(e){}
@@ -17685,6 +17686,31 @@ window._mpfWatchFull=function(idx){
       if (fpIO) fpIO.observe(els[i]); else fpFill(els[i]);
     }
   }
+  function fpCardHtml(p, i){
+    var u = String(p.username).toLowerCase();
+    fpMap[u] = p;
+    var nm = p.displayName || p.username;
+    var av = p.avatarUrl ? '<img src="' + E(p.avatarUrl) + '" loading="lazy" decoding="async" alt="" onerror="this.style.display=\'none\'">' : E(String(nm).charAt(0).toUpperCase());
+    var done = !!(p._done || p.following);
+    var fb = p.isSelf ? "" : '<button type="button" class="fp-fb' + (done ? " on" : "") + '">' + (done ? "Following" : "Follow") + '</button>';
+    var tt = p.titles | 0, fn = Number(p.fans) || 0;
+    var tick = (typeof _FP_TICK !== "undefined") ? _FP_TICK : "";
+    return '<div class="fp-card' + (i === 0 ? " first" : "") + '" data-u="' + E(u) + '"><div class="fp-av">' + av + '</div>' +
+      '<div class="fp-bd"><div class="fp-nm"><span>' + E(nm) + '</span>' + (p.verified ? tick : "") + '</div>' +
+      '<div class="fp-ct">' + tt + ' title' + (tt !== 1 ? "s" : "") + '</div>' +
+      '<div class="fp-ct fp-fl">' + _fpNum(fn) + ' follower' + (fn !== 1 ? "s" : "") + '</div>' + fb + '</div></div>';
+  }
+  document.addEventListener("scroll", function(ev){
+    try {
+      var r = ev.target;
+      if (!r || !r.classList || !r.classList.contains("fp-row")) return;
+      var all = r.parentNode && r.parentNode.__fpAll;
+      if (!all || r.scrollLeft + r.clientWidth < r.scrollWidth - 240) return;
+      var n = r.children.length;
+      if (n >= all.length) return;
+      r.insertAdjacentHTML("beforeend", all.slice(n, n + 8).map(function(p, i){ return fpCardHtml(p, n + i); }).join(""));
+    } catch(e){}
+  }, true);
   function fpClick(e, c){
     var p = fpMap[c.getAttribute("data-u")]; if (!p) return;
     e.stopPropagation();
