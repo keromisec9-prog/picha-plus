@@ -3010,7 +3010,7 @@ function shPanes(list,pre,mvHtml,own){
     var bs=bar.querySelector('button[data-k="sh"]'),bm=bar.querySelector('button[data-k="mv"]');
     
   },0);
-  if(!has)grid='<div style="text-align:center;padding:56px 24px;color:#9a9aa2"><div style="font-size:36px">&#127916;</div><div style="color:#fff;font-weight:600;font-size:16px;margin:10px 0 6px">No shorts yet</div><div style="font-size:13px;line-height:1.5">'+(own?'Add a short preview when you publish a movie or series. It is the fastest way for viewers to discover you.':'This creator has not posted any shorts yet.')+'</div></div>';
+  if(!has)grid='<div style="text-align:center;padding:56px 24px;color:#9a9aa2"><div style="line-height:0"><svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg></div><div style="color:#fff;font-weight:600;font-size:16px;margin:10px 0 6px">No shorts yet</div><div style="font-size:13px;line-height:1.5">'+(own?'Add a short preview when you publish a movie or series. It is the fastest way for viewers to discover you.':'This creator has not posted any shorts yet.')+'</div></div>';
   return '<div id="'+pre+'-sh">'+grid+'</div><div id="'+pre+'-mv" style="display:none">'+mvHtml+'</div>';
 }
 if(!window.__shTab){window.__shTab=1;document.addEventListener('click',function(e){
