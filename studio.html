@@ -2933,7 +2933,7 @@ function fmtD(v){
     [].forEach.call(document.querySelectorAll('.pubtabs button'),function(b){b.classList.toggle('on',b.getAttribute('data-k')===k)});
   };
   window.pubShare=function(){
-    var url=API+'/c/'+encodeURIComponent(PC.u);
+    var url='https://mypicha.uk/c/'+encodeURIComponent(PC.u);
     if(navigator.share){navigator.share({title:'@'+PC.u+' on MyPicha+',url:url}).catch(function(){});return}
     (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){if(typeof toast==='function')toast('Link copied')},function(){if(typeof toast==='function')toast('Could not copy link')});
   };

@@ -4446,7 +4446,7 @@ window.addEventListener('load', async () => {
       });
     }
     window.history.replaceState({}, '', window.location.pathname);
-    showToast(`Welcome to Picha+, ${decodeURIComponent(userName).split(' ')[0]}! 🎬`, 'gold');
+    showToast(`Welcome to MyPicha+, ${decodeURIComponent(userName).split(' ')[0]}!`, 'gold');
   }
 
   // Payment success
@@ -5436,7 +5436,7 @@ async function shareCurrentTitle() {
   const _tm = window.location.pathname.match(/\/title\/([^/]+)/);
   const url = _tm ? `https://mypicha.uk/t/${_tm[1]}?to=title` : window.location.href;
   if (_tm && window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
-  const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
+  const shareData = { title: `${title} — MyPicha+`, text: `Watch ${title} on MyPicha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* user cancelled or unsupported, fall through */ }
   }
@@ -7386,7 +7386,7 @@ function saveHistoryItemToList(regIdx, btn) {
 
 async function shareHistoryItem(title) {
   const url = window.location.href;
-  const shareData = { title: `${title} \u2014 Picha+`, text: `Watch ${title} on Picha+`, url };
+  const shareData = { title: `${title} \u2014 MyPicha+`, text: `Watch ${title} on MyPicha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* fall through */ }
   }
@@ -14450,7 +14450,7 @@ async function _pagerShare() {
   const key = _shortKeyOf(short);
   const title = short.title || 'Picha+';
   const url = `${API}/s/${encodeURIComponent(key)}`;
-  const shareData = { title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url };
+  const shareData = { title: `${title} — MyPicha+`, text: `Watch "${title}" on MyPicha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* cancelled or unsupported */ }
   }
@@ -14471,7 +14471,7 @@ async function _mpfShare(idx) {
   const _sid = meta.item.id || meta.item.tmdbId;
   const url = _sid ? `https://mypicha.uk/t/${encodeURIComponent(String(_sid))}` : window.location.href;
   if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
-  const shareData = { title: `${title} — Picha+`, text: `Watch ${title} on Picha+`, url };
+  const shareData = { title: `${title} — MyPicha+`, text: `Watch ${title} on MyPicha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* cancelled or unsupported */ }
   }
@@ -14528,7 +14528,7 @@ function _countShare(url, dest) {
 }
 function _openShareSheet(url, title) {
   _closeShareSheet();
-  const text = `Watch "${title}" on Picha+ 🎬\n${url}`;
+  const text = (String(url).indexOf("/c/") > -1 ? `Follow ${title} on MyPicha+` : `Watch "${title}" on MyPicha+`) + `\n${url}`;
   const wrap = document.createElement('div');
   wrap.id = 'ppShareSheet';
   wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;';
@@ -14578,7 +14578,7 @@ function _openShareSheet(url, title) {
   addCell(mkIcon('more_horiz'), 'More', async () => {
     _closeShareSheet();
     if (window.PichaApp && typeof PichaApp.shareMore === 'function') { try { PichaApp.shareMore(text); } catch (e) {} return; }
-    if (navigator.share) { try { await navigator.share({ title: `${title} — Picha+`, text: `Watch "${title}" on Picha+`, url }); } catch (e) {} return; }
+    if (navigator.share) { try { await navigator.share({ title: `${title} — MyPicha+`, text: `Watch "${title}" on MyPicha+`, url }); } catch (e) {} return; }
     try { await navigator.clipboard.writeText(url); showToast('Link copied ✓', 'gold'); } catch (e) { showToast('Could not copy link', 'error'); }
   });
   box.appendChild(head); box.appendChild(row); wrap.appendChild(box);
@@ -15371,7 +15371,7 @@ function _serHeroPolish(s) {
     var m = window.location.pathname.match(/\/title\/([^\/]+)/);
     var url = m ? ('https://mypicha.uk/t/' + m[1] + '?to=title') : window.location.href;
     if (m && window.PichaApp && typeof PichaApp.getShareTargets === 'function' && typeof _openShareSheet === 'function') { _openShareSheet(url, title); return; }
-    var data = { title: title + ' \u2014 Picha+', text: 'Watch ' + title + ' on Picha+', url: url };
+    var data = { title: title + ' \u2014 MyPicha+', text: 'Watch ' + title + ' on MyPicha+', url: url };
     if (navigator.share) { try { await navigator.share(data); return; } catch (e) {} }
     try { await navigator.clipboard.writeText(url); showToast('Link copied \u2713', 'gold'); }
     catch (e) { showToast('Could not copy link', 'error'); }
@@ -16762,7 +16762,7 @@ async function submitForceReset() {
       }).catch(function(){busy=false;C.f=prevF;C.n=prevN;paint();note("Network error","error")});
   }
   function share(){
-    var url=API_+"/c/"+encodeURIComponent(C.u);
+    var url="https://mypicha.uk/c/"+encodeURIComponent(C.u);
     if(window.PichaApp&&typeof PichaApp.getShareTargets==="function"&&typeof window._openShareSheet==="function"){window._openShareSheet(url,"@"+C.u);return}
     if(navigator.share){navigator.share({title:"@"+C.u+" on MyPicha+",url:url}).catch(function(){});return}
     (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){note("Link copied \u2713")},function(){note("Could not copy link","error")});
