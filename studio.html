@@ -2133,7 +2133,7 @@ function startPreview(titleId,ep){
   var gen=L.pvGen,key=encodeURIComponent('studiot_'+titleId);
   var path=ep==null?'/preview?id='+key:'/episode-preview?seriesId='+key+'&ep='+ep;
   window.scrollTo(0,0);
-  toast('Loading preview...');
+  toast('Lindako...');
   api(path,{method:'GET'}).then(function(res){
     if(gen!==L.pvGen)return;
     var d=res.body||{};

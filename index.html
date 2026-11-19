@@ -6595,7 +6595,7 @@ async function upnextPlayNow() {
   document.body.style.overflow = 'hidden';
 
   try {
-    showToast('Loading next episode...', 'info');
+    showToast('Lindako...', 'info');
     console.log('[UpNext] Fetching:', s.tmdbId, 'ep:', idx, 'token:', session.token?.slice(0,10));
     const res = await fetch(`${API}/episode?seriesId=${s.tmdbId}&ep=${idx}`, {
       headers: { 'X-Session-Token': session.token, 'X-Device-Id': getDeviceId() }
@@ -9220,7 +9220,7 @@ function scrollToTop() {
 }
 
 function loadMoreGenre(genreId, name, type) {
-  showToast(`Loading more ${name}...`);
+  showToast('Lindako...');
 }
 
 function esc(str) {
@@ -16840,7 +16840,7 @@ async function submitForceReset() {
   function open(u){
     if(ov)return;
     ov=document.createElement("div");ov.id="ppCr";
-    ov.innerHTML=top(false)+'<div class="crmsg">Loading\u2026</div>';
+    ov.innerHTML=top(false)+'<div class="crmsg">Lindako</div>';
     document.body.appendChild(ov);document.body.style.overflow="hidden";
     try{history.pushState({ppcr:1},"",location.href);pushed=true}catch(e){pushed=false}
     ov.addEventListener("click",function(e){
