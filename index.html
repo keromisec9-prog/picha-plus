@@ -14467,9 +14467,10 @@ async function _pagerShare() {
 async function _mpfShare(idx) {
   const meta = _mpfSlideMeta[idx];
   if (!meta) return;
-  const title = meta.item.title || meta.item.name || 'Picha+';
-  const _sid = meta.item.id || meta.item.tmdbId;
-  const url = _sid ? `https://mypicha.uk/t/${encodeURIComponent(String(_sid))}` : window.location.href;
+  const title = meta.item.title || meta.item.name || 'this short';
+  let _sid = meta.item._titleKey || '';
+  if (!_sid) { const _rid = String(meta.item.id || meta.item.tmdbId || ''); if (_rid && !/^short:|:\/\/|[?&=]/.test(_rid)) _sid = _rid; }
+  const url = _sid ? `https://mypicha.uk/t/${encodeURIComponent(String(_sid))}` : 'https://mypicha.uk/';
   if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
   const shareData = { title: `${title} — MyPicha+`, text: `Watch ${title} on MyPicha+`, url };
   if (navigator.share) {
