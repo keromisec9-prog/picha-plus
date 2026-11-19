@@ -13998,7 +13998,7 @@ async function _mpfMountSlide(idx, autoplay) {
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
   const metaParts = [isTV ? 'Series' : 'Movie'];
   if (year) metaParts.push(year);
-  document.getElementById('mpfMeta_' + idx).textContent = metaParts.join(' • ');
+  document.getElementById('mpfMeta_' + idx).textContent = (item._spon != null ? 'Sponsored • ' : '') + metaParts.join(' • ');
   document.getElementById('mpfTitle_' + idx).textContent = item.title || item.name || '';
   document.getElementById('mpfDesc_' + idx).textContent = item.overview || '';
   document.getElementById('mpfCta_' + idx).innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;font-variation-settings:'FILL' 1">play_arrow</span> Watch Full ${isTV ? 'Series' : 'Movie'}`;
@@ -18730,5 +18730,102 @@ window._mpfWatchFull=function(idx){
   };
 })();
 </script>
+<script id="mpf-spons3">(function () {
+  if (window.__mpfSpons3) return; window.__mpfSpons3 = 1;
+  var busy = false, tries = 0, cand = null;
+  function nat() { try { return typeof _mpfNatAvail === 'function' && !!_mpfNatAvail(); } catch (e) { return false; } }
+  function gap() { return 11 + Math.floor(Math.random() * 6); }
+  function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+  function place(list, from) {
+    var sp = window._mpfSp;
+    if (!sp || !sp.list.length || !list || !list.length) return list;
+    var S = {}, i, t;
+    sp.list.forEach(function (x) { S[String(x.item.id)] = 1; });
+    var head = list.slice(0, from);
+    var tail = list.slice(from).filter(function (x) { return !S[String(x.id)]; });
+    var last = -1;
+    for (i = head.length - 1; i >= 0; i--) { if (head[i]._spon != null) { last = i; break; } }
+    var nxt = last >= 0 ? last + gap() : Math.max(from, 5) + Math.floor(Math.random() * 3);
+    var out = head, lastId = last >= 0 ? String(head[last].id) : null, q = sp.q || [];
+    t = 0;
+    while (t < tail.length) {
+      if (out.length >= nxt) {
+        if (!q.length) q = shuf(sp.list.slice());
+        var k = (q.length > 1 && String(q[0].item.id) === lastId) ? 1 : 0;
+        var s = q.splice(k, 1)[0];
+        out.push(Object.assign({}, s.item, { _spon: s.pid }));
+        lastId = String(s.item.id);
+        nxt = out.length + gap();
+        continue;
+      }
+      out.push(tail[t++]);
+    }
+    sp.q = q;
+    return out;
+  }
+  function load() {
+    var sp = window._mpfSp;
+    if (busy || (sp && Date.now() - sp.t < 600000)) return;
+    var cards = window._allCards || [];
+    if (!cards.length) { if (tries++ < 10) setTimeout(load, 3000); return; }
+    busy = true;
+    fetch(API + '/promoted').then(function (r) { return r.json(); }).then(function (d) {
+      var out = [];
+      ((d && d.items) || []).forEach(function (p) {
+        var c = cards.find(function (x) { return [x.id, x.tmdbId, x.movieId].some(function (v) { return v != null && String(v) === p.key; }); });
+        if (c) out.push({ item: c, pid: p.id });
+      });
+      window._mpfSp = { t: out.length ? Date.now() : Date.now() - 540000, list: out, q: [] };
+      busy = false;
+      try {
+        if (out.length && nat() && _mpfList.length) _mpfList = place(_mpfList, window._mpfNativeOn ? (_mpfIdx | 0) + 8 : 0);
+      } catch (e) {}
+    }).catch(function () { busy = false; });
+  }
+  var ob = _mpfBuildList;
+  _mpfBuildList = function () {
+    var l = ob.apply(this, arguments);
+    try { if (nat()) { load(); return place(l, 0); } } catch (e) {}
+    return l;
+  };
+  var orf = _mpfRefineListInBackground;
+  _mpfRefineListInBackground = function () {
+    var g = _mpfGeneration;
+    var r = orf.apply(this, arguments);
+    [1200, 3200].forEach(function (d) {
+      setTimeout(function () {
+        try { if (g === _mpfGeneration && nat()) _mpfList = place(_mpfList, (_mpfIdx | 0) + 8); } catch (e) {}
+      }, d);
+    });
+    return r;
+  };
+  var oni = _mpfNatItems;
+  _mpfNatItems = function () {
+    var a = oni.apply(this, arguments);
+    try {
+      a.forEach(function (o, i) {
+        var it = _mpfList[i];
+        if (it && it._spon != null && o.m && o.m.indexOf('Sponsored') !== 0) o.m = 'Sponsored \u2022 ' + o.m;
+      });
+    } catch (e) {}
+    return a;
+  };
+  var ow = _mpfWatchFull;
+  _mpfWatchFull = function (idx) {
+    try { var it = _mpfList[idx]; if (it && it._spon != null) _promoCount('c', it._spon); } catch (e) {}
+    return ow.apply(this, arguments);
+  };
+  setInterval(function () {
+    try {
+      if (document.hidden || !window._mpfNativeOn || !nat()) { cand = null; return; }
+      var i = _mpfIdx | 0, it = _mpfList[i];
+      if (!it || it._spon == null) { cand = null; return; }
+      var k = _mpfGeneration + ':' + i + ':' + it._spon;
+      if (!cand || cand.k !== k) { cand = { k: k, t: Date.now(), d: 0 }; return; }
+      if (!cand.d && Date.now() - cand.t >= 2000) { cand.d = 1; _promoCount('i', it._spon); }
+    } catch (e) {}
+  }, 400);
+  setTimeout(load, 4000);
+})();</script>
 </body>
 </html>
