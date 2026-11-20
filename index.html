@@ -3546,7 +3546,7 @@ async function _flushProgressInner() {
       data.results.forEach(function (r) {
         var k = batch[r.i];
         if (!k || !cur[k] || cur[k].ts !== q[k].ts) return;
-        if (r.ok) delete cur[k];
+        if (r.ok) { delete cur[k]; _pqSeen[k] = 1; }
         else { cur[k].tries = (cur[k].tries || 0) + 1; if (cur[k].tries >= 20) delete cur[k]; }
       });
     } else if (res.status === 401 || res.status === 403 || res.status === 404) {
@@ -3564,7 +3564,12 @@ async function _flushProgressInner() {
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flushProgress(); });
 window.addEventListener('pagehide', flushProgress);
 window.addEventListener('online', flushProgress);
-setInterval(flushProgress, 30000);
+var _pqSeen = {}, _pqLast = Date.now();
+setInterval(function () {
+  var q = _pqGet();
+  var fresh = Object.keys(q).some(function (k) { return !_pqSeen[k] && !q[k].tries; });
+  if (fresh || Date.now() - _pqLast >= 900000) { _pqLast = Date.now(); flushProgress(); }
+}, 30000);
 setTimeout(flushProgress, 3000);
 
 function saveProgress(id, pos, dur, forceSync, title) {
