@@ -3576,7 +3576,7 @@ function saveProgress(id, pos, dur, forceSync, title) {
   progress[id] = { position: pos, duration: dur, ts: Date.now() };
   localStorage.setItem('pichaplus_progress', JSON.stringify(progress));
   _syncProgressToServer(id, pos, dur, forceSync, title);
-  if (forceSync) flushProgress();
+  if (forceSync) { var _fn = Date.now(); if (_fn - (window._pqForceAt || 0) >= 120000) { window._pqForceAt = _fn; flushProgress(); } }
   // Re-render continue watching immediately, but only when player is closed
   if (!document.getElementById('playerModal')?.classList.contains('active')) {
     renderContinueWatching();
