@@ -17264,6 +17264,7 @@ body.pp-in-profile #serCreator{cursor:default}
         return;
       }
       if (busy) return;
+      if (Date.now() - (window._ppScrollAt || 0) < 150) return;
       var cards = Array.prototype.slice.call(document.querySelectorAll('#row-promoted .card[data-preview-id]'));
       cards.forEach(function (c) { if (!seen.has(c)) { seen.add(c); io.observe(c); } });
       var now = Date.now();
@@ -17273,7 +17274,8 @@ body.pp-in-profile #serCreator{cursor:default}
       if (next) start(next);
     } catch (e) {}
   }
-  setInterval(tick, 100);
+  document.addEventListener('scroll', function () { window._ppScrollAt = Date.now(); }, { capture: true, passive: true });
+  setInterval(tick, 150);
 })();
 </script>
 <script>
