@@ -12739,7 +12739,7 @@ window.addEventListener('scroll', () => {
 // Kill shimmer after 3s — content should be loaded by then
 setTimeout(() => { document.querySelectorAll('.skeleton').forEach(el => el.style.animation = 'none'); }, 3000);
 
-window.addEventListener("load",function(){var s=document.getElementById("app-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},450);}});</script><script type="module">
+(function(){var d=0;function hide(){if(d)return;d=1;var s=document.getElementById("app-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},450);}}window.addEventListener("load",hide);if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(hide,250)});else setTimeout(hide,250);setTimeout(hide,1800);})();</script><script type="module">
 await new Promise(function (r) { if (document.readyState === 'complete') setTimeout(r, 300); else window.addEventListener('load', function () { setTimeout(r, 300); }); });
 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
 const { getMessaging, getToken, onMessage } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js");
