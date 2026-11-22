@@ -4940,6 +4940,7 @@ document.addEventListener('visibilitychange', function () { if (document.visibil
     document.querySelectorAll('#row-promoted, .fp-row').forEach(function (el) {
       if (!el._ap) attach(el);
       if (Date.now() < (el._apHold || 0)) return;
+      if (el.id === 'row-promoted' && el.querySelector('video')) return;
       if (el.scrollWidth <= el.clientWidth + 4) return;
       if (!inView(el)) return;
       var kids = el.children;
