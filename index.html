@@ -17106,8 +17106,9 @@ body.pp-in-profile #serCreator{cursor:default}
     if (busy || e.touches.length !== 1) { armed = false; return; }
     armed = ptrOn() && homeActive() && atTop(e.target);
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+    try { document.removeEventListener('touchmove', _ptrMvHome); if (armed) document.addEventListener('touchmove', _ptrMvHome, { passive: false }); } catch (x) {}
   }, { passive: true });
-  document.addEventListener('touchmove', function (e) {
+  function _ptrMvHome(e) {
     if (!armed || busy) return;
     var dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
     if (!pulling) {
@@ -17123,9 +17124,10 @@ body.pp-in-profile #serCreator{cursor:default}
     if (nowReady && !ready) { try { navigator.vibrate && navigator.vibrate(15); } catch (x) {} }
     ready = nowReady;
     place(pull, false);
-  }, { passive: false });
+  }
   function end() {
     var was = pulling; armed = false; pulling = false;
+    try { document.removeEventListener('touchmove', _ptrMvHome); } catch (x) {}
     document.documentElement.style.overflow = ''; document.body.style.overflow = '';
     if (!was) return;
     if (ready && homeActive()) go(); else { place(0, true); pull = 0; ready = false; }
@@ -18379,8 +18381,9 @@ window._mpfWatchFull=function(idx){
     if (busy || e.touches.length !== 1) { armed = false; return; }
     armed = ptrOn() && active() && atTop(e.target);
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+    try { document.removeEventListener('touchmove', _ptrMvFeed); if (armed) document.addEventListener('touchmove', _ptrMvFeed, { passive: false }); } catch (x) {}
   }, { passive: true });
-  document.addEventListener('touchmove', function (e) {
+  function _ptrMvFeed(e) {
     if (!armed || busy) return;
     var dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
     if (!pulling) {
@@ -18395,9 +18398,10 @@ window._mpfWatchFull=function(idx){
     if (nowReady && !ready) { try { navigator.vibrate && navigator.vibrate(15); } catch (x) {} }
     ready = nowReady;
     place(pull, false);
-  }, { passive: false });
+  }
   function end() {
     var was = pulling; armed = false; pulling = false;
+    try { document.removeEventListener('touchmove', _ptrMvFeed); } catch (x) {}
     if (!was) return;
     if (ready && active()) go(); else { place(0, true); pull = 0; ready = false; }
   }
