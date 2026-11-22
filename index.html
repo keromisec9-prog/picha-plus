@@ -17784,7 +17784,7 @@ window._mpfWatchFull=function(idx){
   function ffmCounts(m, it){
     var hd = {}; try { if (session.isLoggedIn()) hd = { 'X-Session-Token': session.token }; } catch(e){}
     function put(sel, n){
-      var el = m.querySelector(sel); if (!el) return;
+      var el = m.querySelector(sel); if (!el) return; el.dataset.n = String(n > 0 ? n : 0);
       if (n > 0) { el.textContent = _formatLikeCount(n); el.style.display = ''; } else { el.style.display = 'none'; }
     }
     fetch(API + '/likes?videoId=' + encodeURIComponent(it.id), { headers: hd })
@@ -17803,6 +17803,54 @@ window._mpfWatchFull=function(idx){
       .then(function(d){ put('.ffm-sn', d && d.saves); })
       .catch(function(){});
   }
+  function ffmPaintLike(m, on, n){
+    var h = m.querySelector('.ffm-h'), l = m.querySelector('.ffm-ll'), c = m.querySelector('.ffm-ln');
+    if (h) { h.style.color = on ? '#ff3b5c' : ''; h.style.fontVariationSettings = on ? "'FILL' 1" : ''; }
+    if (l) l.textContent = on ? 'Unlike' : 'Like';
+    if (c) {
+      c.dataset.n = String(n > 0 ? n : 0);
+      if (n > 0) { c.textContent = _formatLikeCount(n); c.style.display = ''; } else { c.style.display = 'none'; }
+      c.style.background = on ? 'rgba(255,59,92,0.14)' : 'rgba(255,255,255,0.08)';
+      c.style.color = on ? '#ff3b5c' : 'rgba(255,255,255,0.72)';
+    }
+  }
+  async function ffmLike(m, it){
+    if (!session.isLoggedIn()) { closeMenu(); openSignin(); return; }
+    if (m.__lk) return; m.__lk = 1;
+    var c = m.querySelector('.ffm-ln'), cur = c ? (parseInt(c.dataset.n || '0', 10) || 0) : 0;
+    var want = !liked.includes(it.id);
+    if (want) liked.push(it.id); else { var i = liked.indexOf(it.id); if (i > -1) liked.splice(i, 1); }
+    try { saveLiked(); } catch(e){}
+    ffmPaintLike(m, want, Math.max(0, cur + (want ? 1 : -1)));
+    var r = await _setLikeState(it.id, want, 'movie');
+    m.__lk = 0;
+    if (r) { ffmPaintLike(m, want, r.likes || 0); }
+    else {
+      if (want) { var j = liked.indexOf(it.id); if (j > -1) liked.splice(j, 1); } else liked.push(it.id);
+      try { saveLiked(); } catch(e){}
+      ffmPaintLike(m, !want, cur);
+    }
+  }
+  function ffmList(m, it){
+    var wasOn = false; try { wasOn = myList.some(function(x){ return x.id === it.id; }); } catch(e){}
+    window._mlFails = 0; window._mlNext = 0;
+    var _in = false; try { _in = !!session.isLoggedIn(); } catch(e){}
+    toggleMyList(it, null);
+    var on = wasOn; try { on = myList.some(function(x){ return x.id === it.id; }); } catch(e){}
+    var b = m.querySelector('[data-a="list"]'); if (!b) return;
+    var svg = b.querySelector('svg'); if (svg) svg.outerHTML = on ? BM_ON : BM_ADD;
+    var lab = b.querySelectorAll('span')[0]; if (lab) lab.textContent = on ? 'Remove from My List' : 'Add to My List';
+    var c = b.querySelector('.ffm-sn');
+    if (c) {
+      if (_in) {
+        var n = Math.max(0, (parseInt(c.dataset.n || '0', 10) || 0) + (on === wasOn ? 0 : (on ? 1 : -1)));
+        c.dataset.n = String(n);
+        if (n > 0) { c.textContent = _formatLikeCount(n); c.style.display = ''; } else { c.style.display = 'none'; }
+      }
+      c.style.background = on ? 'rgba(229,185,60,0.14)' : 'rgba(255,255,255,0.08)';
+      c.style.color = on ? '#e5b93c' : 'rgba(255,255,255,0.72)';
+    }
+  }
   function menu(idx){
     var it = null; try { it = getItem(idx); } catch(e){}
     if (!it) return;
@@ -17818,13 +17866,12 @@ window._mpfWatchFull=function(idx){
     document.body.appendChild(m);
     m.addEventListener("click", function(e){
       var b = e.target.closest ? e.target.closest("[data-a]") : null;
-      closeMenu();
-      if (!b) return;
+      if (!b) { closeMenu(); return; }
       var a = b.getAttribute("data-a"), locked = !!(it.isUgandan && !session.hasAfricanAccess());
       try {
-        if (a === "play") { if (locked) showAfricanUpgradeToast(); else handleCardPlay(it); }
-        else if (a === "list") toggleMyList(it, document.createElement("button"));
-        else if (a === "like") toggleLike(it.id, document.createElement("button"));
+        if (a === "play") { closeMenu(); if (locked) showAfricanUpgradeToast(); else handleCardPlay(it); }
+        else if (a === "list") ffmList(m, it);
+        else if (a === "like") ffmLike(m, it);
       } catch(x){}
     });
   }
