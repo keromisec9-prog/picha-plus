@@ -17170,7 +17170,7 @@ body.pp-in-profile #serCreator{cursor:default}
 (function () {
   if (window._spPrev) return; window._spPrev = true;
   if (!('IntersectionObserver' in window)) return;
-  var vis = new Map(), seen = new WeakSet(), played = new Set(), cur = null, busy = false, gen = 0, SECS = 35000, DWELL = 400, pre = {};
+  var vis = new Map(), seen = new WeakSet(), played = new Set(), cur = null, busy = false, gen = 0, SECS = 35000, DWELL = 200, pre = {};
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (en) {
       if (en.isIntersecting) { if (!vis.has(en.target)) { vis.set(en.target, Date.now()); prefetch(en.target); } }
@@ -17273,7 +17273,7 @@ body.pp-in-profile #serCreator{cursor:default}
       if (next) start(next);
     } catch (e) {}
   }
-  setInterval(tick, 250);
+  setInterval(tick, 100);
 })();
 </script>
 <script>
