@@ -1791,11 +1791,11 @@
     #vrFeat{margin:0 0 14px}
     #vrFeat:empty{display:none}
     .fp-h{display:flex;align-items:center;gap:8px;margin:2px 0 10px;font-size:18px;font-weight:700;color:#fff}
-    .fp-tag{font-size:.6rem;letter-spacing:.08em;color:#999;border:1px solid #444;border-radius:4px;padding:.1rem .35rem;font-weight:600}
+    .fp-tag{font-size:.5rem;letter-spacing:.08em;color:#777;border:1px solid #363636;border-radius:4px;padding:.08rem .3rem;font-weight:600}
     .fp-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
     .fp-row::-webkit-scrollbar{display:none}
     .fp-card{position:relative;flex:none;width:44vw;max-width:190px;aspect-ratio:3/4.1;border-radius:14px;overflow:hidden;background:#161616;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;-webkit-tap-highlight-color:transparent}
-    .fp-card.first{border-color:rgba(238,179,42,.6);box-shadow:0 0 14px rgba(238,179,42,.25)}
+    .fp-card.first{border-color:rgba(238,179,42,.6);box-shadow:none}
     .fp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
     .fp-ini{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700;color:#fff;background:#2a2a2a}
     .fp-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.55) 38%,rgba(0,0,0,0) 62%)}
@@ -17587,10 +17587,10 @@ window._mpfWatchFull=function(idx){
     var z = document.createElement("style"); z.id = "ffFpCss";
     z.textContent = "#fyFeed .ff-fp{min-height:1px;margin:0 0 18px;padding:0 12px}" +
       "#fyFeed .ff-fp .fp-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;margin:4px 0 8px;color:var(--white,#fff)}" +
-      "#fyFeed .ff-fp .fp-tag{border:1px solid rgba(255,255,255,.18);border-radius:4px;font-size:.6rem;letter-spacing:.05em;padding:0 5px;color:var(--gray,#aaa);font-weight:500;opacity:.6}" +
+      "#fyFeed .ff-fp .fp-tag{border:1px solid rgba(255,255,255,.18);border-radius:4px;font-size:.5rem;letter-spacing:.05em;padding:0 4px;color:var(--gray,#aaa);font-weight:500;opacity:.4}" +
       "#fyFeed .ff-fp .fp-card,#fyFeed .ff-fp .fp-card.first{box-shadow:none!important;border-color:rgba(255,255,255,.1)!important}" +
       "html[data-theme=light] #fyFeed .ff-fp .fp-h{color:#111}" +
-      "#fyFeed .ff-fp .fp-row{align-items:flex-start}#fyFeed .ff-fp .fp-card{height:auto!important;overflow:visible!important}#fyFeed .ff-fp .fp-fb{display:block!important}";
+      "#fyFeed .ff-fp .fp-row{align-items:stretch}#fyFeed .ff-fp .fp-card{height:auto!important;overflow:visible!important}#fyFeed .ff-fp .fp-fb{display:block!important}";
     document.head.appendChild(z);
   }
   function fpPool(){
