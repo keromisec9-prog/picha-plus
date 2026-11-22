@@ -1,4 +1,4 @@
-const CACHE_NAME = 'picha-plus-20261122-225641';
+const CACHE_NAME = 'picha-plus-20261122-232331';
 const APP_SHELL = [
   '/',
   '/index.html',
