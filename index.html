@@ -2837,11 +2837,11 @@ function _searchHomeHTML(){
   var clock='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e5b93c" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
   var x='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   var h='<div class="rs-wrap"><div class="rs-head"><span>Recent Searches</span><button onclick="_rsAskClear()">Clear All</button></div>';
-  var _lim=_rsExpanded?l.length:Math.min(l.length,10);
+  var _lim=_rsExpanded?l.length:Math.min(l.length,5);
   h+=l.slice(0,_lim).map(function(q,i){
     return '<div class="rs-row" onclick="_rsUse('+i+')">'+clock+'<span class="t">'+esc(q)+'</span><button class="rs-x" aria-label="Remove" onclick="_rsRemove('+i+',event)">'+x+'</button></div>';
   }).join('');
-  if(l.length>10) h+='<div class="rs-seeall" onclick="_rsToggleAll()" style="text-align:center;padding:1rem 0;color:#e5b93c;font-weight:600;font-size:.95rem;cursor:pointer;">'+(_rsExpanded?'Show less':'See all ('+l.length+')')+'</div>';
+  if(l.length>5) h+='<div class="rs-seeall" onclick="_rsToggleAll()" style="text-align:center;padding:1rem 0;color:#e5b93c;font-weight:600;font-size:.95rem;cursor:pointer;">'+(_rsExpanded?'See less':'See more')+'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-left:4px;'+(_rsExpanded?'transform:rotate(180deg);':'')+'"><path d="M6 9l6 6 6-6"/></svg>'+'</div>';
   if(_rsConfirm) h+='<div class="rs-confirm"><b>Clear all recent searches?</b><p>This will remove all your search history.</p><div class="rs-btns"><button class="rs-cancel" onclick="_rsCancel()">Cancel</button><button class="rs-clear" onclick="_rsClearAll()">Clear All</button></div></div>';
   return h+'</div>';
 }
