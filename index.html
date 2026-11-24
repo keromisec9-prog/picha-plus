@@ -13182,7 +13182,7 @@ function _mpfDemoteSeen(arr) {
     // Batching: near the end, append the next batch (least recently seen first) so the
     // feed never runs out and never replays a title before the rest have been shown.
     try {
-      if (_mpfList.length - newIdx <= 5 && !window._mpfTopping && !_mpfLocked()) {
+      if (_mpfList.length - newIdx <= 5 && !window._mpfTopping && !_mpfLockQ()) {
         window._mpfTopping = true;
         const _recent = new Set(_mpfList.slice(-40).map(x => x.id));
         const _pool = (window._allCards || []).filter(x => !_recent.has(x.id) && !_disliked.includes(x.id));
@@ -13198,12 +13198,12 @@ function _mpfDemoteSeen(arr) {
 // Runs after the feed is already open and slide 0 is mounted — computes the proper
 // ranked order off the critical path, then replaces only the not-yet-reached tail of
 // _mpfList so nothing already shown/playing shifts under the user's finger.
-function _mpfLocked() { try { return !!(_mpfList.length && _mpfList[0] && _mpfList[0]._lockq); } catch (e) { return false; } }
+function _mpfLockQ() { try { return !!(_mpfList.length && _mpfList[0] && _mpfList[0]._lockq); } catch (e) { return false; } }
 function _mpfRefineListInBackground() {
   const myGen = _mpfGeneration;
   const schedule = window.requestIdleCallback || (fn => setTimeout(fn, 50));
   schedule(() => {
-    if (_mpfLocked()) return;
+    if (_mpfLockQ()) return;
     if (myGen !== _mpfGeneration) return; // feed closed/reopened meanwhile — stale, discard
     try { var _cur = _mpfList[_mpfIdx]; if (_cur) _mpfMarkSeen(_cur.id); } catch (e) {}
     const ranked = _mpfBuildRankedList();
@@ -18954,7 +18954,7 @@ window._mpfWatchFull=function(idx){
       window._mpfSp = { t: out.length ? Date.now() : Date.now() - 540000, list: out, q: [] };
       busy = false;
       try {
-        if (out.length && nat() && _mpfList.length && !_mpfLocked()) _mpfList = place(_mpfList, window._mpfNativeOn ? (_mpfIdx | 0) + 8 : 0);
+        if (out.length && nat() && _mpfList.length && !_mpfLockQ()) _mpfList = place(_mpfList, window._mpfNativeOn ? (_mpfIdx | 0) + 8 : 0);
       } catch (e) {}
     }).catch(function () { busy = false; });
   }
@@ -18970,7 +18970,7 @@ window._mpfWatchFull=function(idx){
     var r = orf.apply(this, arguments);
     [1200, 3200].forEach(function (d) {
       setTimeout(function () {
-        try { if (g === _mpfGeneration && nat() && !_mpfLocked()) _mpfList = place(_mpfList, (_mpfIdx | 0) + 8); } catch (e) {}
+        try { if (g === _mpfGeneration && nat() && !_mpfLockQ()) _mpfList = place(_mpfList, (_mpfIdx | 0) + 8); } catch (e) {}
       }, d);
     });
     return r;
