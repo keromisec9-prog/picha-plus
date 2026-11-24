@@ -20,7 +20,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'picha-img-v1' && k !== 'picha-tmdb-v1').map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'picha-img-v2' && k !== 'picha-tmdb-v1').map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
