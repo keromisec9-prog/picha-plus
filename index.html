@@ -14633,7 +14633,7 @@ function _openShareSheet(url, title, opts) {
     const dl = document.createElement('span');
     dl.style.cssText = 'display:flex;align-items:center;justify-content:center;';
     dl.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
-    addCell(dl, 'Download', () => { _closeShareSheet(); let ok = false; try { ok = PichaShorts.saveShort(opts.saveIdx | 0); } catch (e) {} if (!ok) showToast('Download is not available here', 'error'); });
+    addCell(dl, 'Download', () => { _closeShareSheet(); let ok = false; try { let cr = null; try { cr = _mpfNatCreator(opts.saveIdx | 0); } catch (e2) {} const un = (cr && cr.u) ? String(cr.u) : ''; ok = (typeof PichaShorts.saveShortAs === 'function') ? PichaShorts.saveShortAs(opts.saveIdx | 0, un) : PichaShorts.saveShort(opts.saveIdx | 0); } catch (e) {} if (!ok) showToast('Download is not available here', 'error'); });
   }
   _getShareTargets().forEach(t => {
     const img = document.createElement('img');
