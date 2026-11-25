@@ -14544,7 +14544,7 @@ async function _mpfShare(idx) {
   let _sid = meta.item._titleKey || '';
   if (!_sid) { const _rid = String(meta.item.id || meta.item.tmdbId || ''); if (_rid && !/^short:|:\/\/|[?&=]/.test(_rid)) _sid = _rid; }
   const url = _sid ? `https://mypicha.uk/t/${encodeURIComponent(String(_sid))}` : 'https://mypicha.uk/';
-  if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title); return; }
+  if (window.PichaApp && typeof PichaApp.getShareTargets === 'function') { _openShareSheet(url, title, (window.PichaShorts && typeof PichaShorts.canSave === 'function' && PichaShorts.canSave(idx)) ? { saveIdx: idx } : null); return; }
   const shareData = { title: `${title} — MyPicha+`, text: `Watch ${title} on MyPicha+`, url };
   if (navigator.share) {
     try { await navigator.share(shareData); _countShare(shareData.url, 'web'); return; } catch (e) { /* cancelled or unsupported */ }
@@ -14600,7 +14600,7 @@ function _countShare(url, dest) {
     fetch(API + '/share/count', { method: 'POST', headers: h, keepalive: true, body: JSON.stringify({ itemId: id, dest: dest || '', dev: dev }) }).catch(function () {});
   } catch (e) {}
 }
-function _openShareSheet(url, title) {
+function _openShareSheet(url, title, opts) {
   _closeShareSheet();
   const text = (String(url).indexOf("/c/") > -1 ? `Follow ${title} on MyPicha+` : `Watch "${title}" on MyPicha+`) + `\n${url}`;
   const wrap = document.createElement('div');
@@ -14629,6 +14629,12 @@ function _openShareSheet(url, title) {
     b.onclick = fn;
     row.appendChild(b);
   };
+  if (opts && opts.saveIdx != null && window.PichaShorts && typeof PichaShorts.saveShort === 'function') {
+    const dl = document.createElement('span');
+    dl.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    dl.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
+    addCell(dl, 'Download', () => { _closeShareSheet(); let ok = false; try { ok = PichaShorts.saveShort(opts.saveIdx | 0); } catch (e) {} if (!ok) showToast('Download is not available here', 'error'); });
+  }
   _getShareTargets().forEach(t => {
     const img = document.createElement('img');
     img.src = t.i; img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
