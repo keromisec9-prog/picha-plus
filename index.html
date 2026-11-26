@@ -3294,6 +3294,19 @@ html.pp-cmt-on:not([data-theme="light"]) #ppBody .pp-col small{color:#555!import
 <style id="bn-pages-z">#bnCategoriesPage,#bnSavedPage{z-index:150!important}</style>
 <style id="hero-rating-plain">.hero-rating{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>
 <style id="pp-noring">#ppCr .cra{border:0!important;outline:0!important;box-shadow:none!important}#ppCr .cra::before,#ppCr .cra::after{border:0!important;box-shadow:none!important;background:none!important}</style>
+<style id="tvLayout">
+@media (min-width:960px) and (min-height:540px) and (min-aspect-ratio:4/3){
+  :root{--rail-w:92px}
+  .bottom-nav{top:0;bottom:0;left:0;right:auto;width:var(--rail-w);height:auto;flex-direction:column;align-items:stretch;justify-content:center;gap:6px;padding:12px 0;border-top:none;border-right:1px solid rgba(255,255,255,0.08)}
+  html[data-theme="light"] .bottom-nav{border-right:1px solid rgba(0,0,0,0.08)}
+  .bottom-nav .bn-tab{flex:0 0 auto;width:100%;padding:14px 0}
+  body{padding-bottom:0!important;padding-left:var(--rail-w)}
+  .bn-page{left:var(--rail-w)!important;right:0!important;width:auto!important;padding-bottom:2rem!important}
+  .nav{left:var(--rail-w)!important;right:0!important;width:auto!important}
+  #accountSettingsModal .modal-box{max-width:min(860px,88vw);max-height:88vh}
+  .info-card{max-width:min(1100px,92vw)}
+}
+</style>
 </head>
 <div id="g_id_onload" data-client_id="37619691033-cjjhb99r0d9tojuqtea8knpo8f6ninid.apps.googleusercontent.com" data-callback="handleOneTap" data-auto_prompt="true" data-cancel_on_tap_outside="false"></div>
 <body>
