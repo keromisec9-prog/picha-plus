@@ -19069,5 +19069,73 @@ window._mpfWatchFull=function(idx){
   }, 400);
   setTimeout(load, 4000);
 })();</script>
+<script id="tvNav">(function(){
+  if (window.__tvNav) return; window.__tvNav = true;
+  var DIRS = {ArrowLeft:'l', ArrowRight:'r', ArrowUp:'u', ArrowDown:'d'};
+  var SEL = 'a[href],button,input,select,textarea,summary,[tabindex],[onclick],[role="button"],.card';
+  function isTV(){
+    try {
+      if (/PichaTV/i.test(navigator.userAgent)) return true;
+      if (localStorage.getItem('tvnav') === '1' || /[?&]tvnav=1/.test(location.search)) return true;
+      return window.matchMedia('(min-width:960px)').matches && window.matchMedia('(pointer:none)').matches;
+    } catch (e) { return false; }
+  }
+  function typing(el){
+    if (!el) return false;
+    var t = (el.tagName || '').toLowerCase();
+    return t === 'textarea' || t === 'select' || el.isContentEditable || (t === 'input' && !/^(button|checkbox|radio|submit|range|image|reset)$/i.test(el.type || 'text'));
+  }
+  function usable(el){
+    if (el.disabled || el.getAttribute('aria-hidden') === 'true') return false;
+    if (el.tabIndex < 0 && !el.hasAttribute('onclick') && el.getAttribute('role') !== 'button' && !el.classList.contains('card')) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) return false;
+    if (r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) return false;
+    var cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
+    var x = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2)), y = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2));
+    var top = document.elementFromPoint(x, y);
+    return !!top && (top === el || el.contains(top) || top.contains(el));
+  }
+  function cands(){
+    var out = [], all = document.querySelectorAll(SEL);
+    for (var i = 0; i < all.length; i++) { if (usable(all[i])) out.push(all[i]); }
+    return out;
+  }
+  function pick(from, dir, list){
+    var fr = from.getBoundingClientRect(), fx = fr.left + fr.width / 2, fy = fr.top + fr.height / 2, best = null, bs = Infinity;
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i]; if (el === from || from.contains(el) || el.contains(from)) continue;
+      var r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = cx - fx, dy = cy - fy, prim, sec;
+      if (dir === 'r') { if (r.left < fr.right - 4 && dx <= 4) continue; prim = Math.max(0, r.left - fr.right); sec = Math.abs(dy); }
+      else if (dir === 'l') { if (r.right > fr.left + 4 && dx >= -4) continue; prim = Math.max(0, fr.left - r.right); sec = Math.abs(dy); }
+      else if (dir === 'd') { if (r.top < fr.bottom - 4 && dy <= 4) continue; prim = Math.max(0, r.top - fr.bottom); sec = Math.abs(dx); }
+      else { if (r.bottom > fr.top + 4 && dy >= -4) continue; prim = Math.max(0, fr.top - r.bottom); sec = Math.abs(dx); }
+      var sc = prim + sec * 2.2;
+      if (sc < bs) { bs = sc; best = el; }
+    }
+    return best;
+  }
+  function focusEl(el){
+    if (el.tabIndex < 0 && !el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    try { el.focus({preventScroll: true}); } catch (e) { el.focus(); }
+    try { el.scrollIntoView({block: 'nearest', inline: 'nearest'}); } catch (e) {}
+  }
+  document.addEventListener('keydown', function(e){
+    if (!isTV() || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey) return;
+    var a = document.activeElement;
+    if ((e.key === 'Enter' || e.key === ' ' || e.keyCode === 23) && a && a !== document.body && !typing(a)) {
+      var t = (a.tagName || '').toLowerCase();
+      if (t !== 'button' && t !== 'a' && t !== 'input' && t !== 'summary') { e.preventDefault(); a.click(); }
+      return;
+    }
+    var dir = DIRS[e.key]; if (!dir) return;
+    if (typing(a) && (dir === 'l' || dir === 'r')) return;
+    var list = cands(); if (!list.length) return;
+    if (!a || a === document.body || a === document.documentElement) { e.preventDefault(); focusEl(list[0]); return; }
+    var next = pick(a, dir, list);
+    if (next) { e.preventDefault(); focusEl(next); }
+  }, true);
+})();</script>
 </body>
 </html>
