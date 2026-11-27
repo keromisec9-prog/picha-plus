@@ -3334,6 +3334,19 @@ html.pp-cmt-on:not([data-theme="light"]) #ppBody .pp-col small{color:#555!import
   .bn-inner-tab{font-size:1.15rem!important;padding:.8rem 1.6rem!important;opacity:1!important}
   html:not([data-theme="light"]) .bn-inner-tab{color:#e6e6e6!important}
   .bn-inner-tab.active{color:var(--gold)!important;border-bottom:3px solid var(--gold)!important}
+  #categoryGrid.list-mode{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 22px;padding:.5rem 3vw 3rem!important}
+  #categoryGrid.list-mode>:not(.hist-row){grid-column:1/-1}
+  .hist-row{flex-direction:column!important;align-items:stretch!important;gap:.7rem!important;padding:0 0 .9rem!important;border-bottom:none!important;background:#161616;border-radius:12px}
+  .hist-row>div:first-child{width:100%}
+  .hist-row picture,.hist-row img{display:block;width:100%!important;height:auto!important}
+  .hist-row img{aspect-ratio:16/9;object-fit:cover;object-position:center 22%;border-radius:12px 12px 0 0!important}
+  .hist-row>div:first-child>div{border-radius:0!important}
+  .hist-row>div:nth-child(2){padding:0 110px 0 14px}
+  .hist-row>div:nth-child(2)>div:first-child{font-size:1.1rem!important}
+  .hist-row>button{position:absolute;bottom:12px}
+  .hist-row>button:nth-of-type(1){right:52px}
+  .hist-row>button:nth-of-type(2){right:10px}
+  .hist-row .history-menu{top:auto!important;bottom:56px;right:8px!important}
 }
 </style>
 </head>
@@ -7267,6 +7280,7 @@ function hideRecentSearches() {
 
 function _renderHistoryRow(m) {
   const title = esc(m.title);
+  const bd = (m.card && m.card.backdrop_path) ? `${TMDB_IMG}w500${m.card.backdrop_path}` : null;
   const poster = m.poster || (m.card?.poster_path ? `${TMDB_IMG}w300${m.card.poster_path}` : null);
   const pct = Math.round((m.prog.position / m.prog.duration) * 100);
   const isFinished = pct >= 95;
@@ -7281,10 +7295,10 @@ function _renderHistoryRow(m) {
       ? `playShortFromInfo(getItem(${registerItem(m.short)}))`
       : `handleCardPlay(getItem(${registerItem(m.card)}))`);
   return `
-    <div style="display:flex;align-items:center;gap:0.9rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
+    <div class="hist-row" style="display:flex;align-items:center;gap:0.9rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;">
       <div style="position:relative;flex-shrink:0;">
         ${poster
-          ? `<img src="${poster}" alt="${title}" loading="lazy" style="width:54px;height:78px;object-fit:cover;border-radius:5px;">`
+          ? `<picture>${bd ? `<source media="(min-width:960px) and (min-aspect-ratio:4/3)" srcset="${bd}">` : ''}<img src="${poster}" alt="${title}" loading="lazy" style="width:54px;height:78px;object-fit:cover;border-radius:5px;"></picture>`
           : `<div style="width:54px;height:78px;background:#1e1e1e;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">\ud83c\udfac</div>`}
         <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.2);border-radius:0 0 5px 5px;overflow:hidden;">
           <div style="height:100%;border-radius:2px;background:linear-gradient(90deg, var(--gold), #f5d97a);width:${pct}%;"></div>
