@@ -1706,7 +1706,7 @@ function putPart(st,url,blob,onp){
 }
 function busyHTML(st,slot){
   var why='';
-  if(st.paused)why=st.pauseWhy==='user'?'Paused':st.pauseWhy==='offline'?'Paused \u00b7 waiting for connection':st.pauseWhy==='net'?'Paused \u00b7 waiting for '+(st.needNet==='mobile'?'mobile data':'Wi-Fi'):'Paused \u00b7 reconnecting'+(st.lastErr?' ('+esc(String(st.lastErr).slice(0,70))+')':'');
+  if(st.paused)why=st.pauseWhy==='user'?'Paused':st.pauseWhy==='offline'?'Paused \u00b7 waiting for connection':st.pauseWhy==='net'?'Paused \u00b7 waiting for '+(st.needNet==='mobile'?'mobile data':'Wi-Fi'):'Paused \u00b7 reconnecting';
   var main=st.paused?'<button type="button" class="pill" data-act="uresume" data-slot="'+slot+'">Resume</button> ':(slot==='video'&&st.uploadId?'<button type="button" class="pill" data-act="upause" data-slot="'+slot+'">Pause</button> ':'');
   return '<div class="upn">'+esc(st.name)+'</div><div class="upb"><i style="width:'+st.pct+'%"></i></div><div class="upr"><span>'+st.pct+'%'+(why?' \u00b7 '+why:'')+'</span>'+main+'<button type="button" class="pill" data-act="ucancel" data-slot="'+slot+'">Cancel</button></div>';
 }
@@ -1765,7 +1765,6 @@ function upFile(slot,file,st){
       var m=(e&&e.message)||'';
       if(st.cancel)throw new Error('cancelled');
       if(e&&e.fatal)throw e;
-      st.lastErr=m;
       if(/^http 4/.test(m)&&(st.pc||0)>=4)throw e;
       if(m==='Could not finish upload'&&(st.pc||0)>=5)throw e;
       return pauseWait(slot,st).then(function(){return drive(r,initial)});
@@ -1794,7 +1793,6 @@ function upFile(slot,file,st){
     return fresh().catch(function(e){
       if(st.cancel)throw new Error('cancelled');
       if(e&&e.fatal)throw e;
-      st.lastErr=(e&&e.message)||String(e);
       return pauseWait(slot,st).then(freshLoop);
     });
   }
