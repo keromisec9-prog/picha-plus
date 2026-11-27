@@ -1960,7 +1960,7 @@ document.getElementById('libRoot').addEventListener('click',function(ev){
     var id=L.editId;L.editId=null;L.up={};openDetail(id);
   });
 });
-var ST={pending:['In review','rv'],approved:['Published','ok'],rejected:['Action required','no']};
+var ST={pending:['In review','rv'],approved:['Live','ok'],rejected:['Action required','no']};
 function renderList(){
   L.editId=null;
   var d=L.data,q=d.quota,n=d.titles.length;
@@ -2211,7 +2211,7 @@ function renderDetail(){
     h+='<div class="acts"><button class="btn gold" data-act="addep" data-id="'+t.id+'">+ Add episode</button></div>';
 
   }
-  h+='<div class="dz"><div class="dzt">'+IC.warn+'Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your published library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':IC.trash+(isS?'Delete series':'Delete movie'))+'</button></div>';
+  h+='<div class="dz"><div class="dzt">'+IC.warn+'Danger zone</div><p>Deleting this '+(isS?'series':'movie')+' removes it from your live library. This action may not be reversible.</p><button class="btn dzb" data-act="del" data-type="title" data-id="'+t.id+'">'+(L.armed==='title'+t.id?'Tap again to confirm':IC.trash+(isS?'Delete series':'Delete movie'))+'</button></div>';
   R(h);
   fitHero();
   if(live)loadPerf(t.id);
@@ -2224,7 +2224,7 @@ document.getElementById('libRoot').addEventListener('click',function(ev){
 });
 window.pfCards=function(ts){
   if(!ts||!ts.length)return '<p class="sub" style="margin:14px 2px">No titles yet.</p>';
-  var SM={pending:'In review',approved:'Published',rejected:'Action required'};
+  var SM={pending:'In review',approved:'Live',rejected:'Action required'};
   return ts.map(function(t){
     var isS=t.kind==='series',eps=t.episodes||[];
     var sub=isS?eps.length+' episode'+(eps.length===1?'':'s'):(t.genre?esc(t.genre):'Movie');
@@ -2754,7 +2754,7 @@ function fmtD(v){
       var ok=items.some(function(a){return a.status==='approved'})||!!(d.tier&&d.tier!=='free');
       window.PFROLE=(function(){var ap=items.filter(function(x){return x.status==='approved'})[0];var k=ap&&ap.types&&ap.types[0];return k?(window.ROLE_LBL||{})[k]||'':''})();PF.p=(r[2].body&&r[2].body.ok&&r[2].body.profile)||{};PF.ok=ok;var sb=(r[3]&&r[3].body)||{};PF.st={following:sb.following||0,followers:sb.followers||0,posts:ts.filter(function(t){return t.status==='approved'}).length};
       h.innerHTML=headHTML(PF.p,ok)+'<div id="boostBox"></div>';loadBoost();
-      l.innerHTML=pfCards(ts);shMine(l);if(0)l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Published'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
+      l.innerHTML=pfCards(ts);shMine(l);if(0)l.innerHTML=ts.length?ts.map(function(t){var z=({pending:['In review'],approved:['Live'],rejected:['Action required']})[t.status]||[t.status||''];return '<div class="qcard" style="display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-bottom:8px"><span>'+E(t.title||t.name||'Untitled')+'</span><span class="sub" style="margin:0">'+E(z[0])+'</span></div>'}).join(''):'<p class="sub">No titles yet. Add one from the Library tab.</p>';
       ab.innerHTML='<div class="qcard"><h3>About</h3><p class="sub" style="margin:0 0 14px">You can upload up to your free limits without partner approval. Verified partners can upload many more titles.</p>'+(ok?'':'<button class="btn gold" onclick="go(\'partner\')">Start a partnership</button>')+'</div>';
     }).catch(function(){l.innerHTML='<p class="sub">Could not load. Check your connection and try again.</p>'});
   };
@@ -2975,7 +2975,7 @@ function fmtD(v){
         +'<div class="pfst"><div><b>'+(m.following||0)+'</b><span>Following</span></div><div><b id="pubFers">'+PC.n+'</b><span>Followers</span></div><div><b>'+t.length+'</b><span>Titles</span></div></div></div></div>';
       h+='<div class="pubtabs"><button type="button" class="on" data-k="sh" onclick="pubTab(\'sh\')">Shorts</button><button type="button" data-k="mv" onclick="pubTab(\'mv\')">Movies &amp; Series</button><button type="button" data-k="ab" onclick="pubTab(\'ab\')">About</button></div>';
       var mv='';
-      if(!t.length)mv='<p class="sub">No published titles yet.</p>';
+      if(!t.length)mv='<p class="sub">No live titles yet.</p>';
       else{
         var f=t[0];
         mv+='<h3 class="dsec">All Movies &amp; Series</h3><div class="pgrid pub3">'+t.map(function(x){
