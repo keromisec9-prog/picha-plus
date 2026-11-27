@@ -1412,9 +1412,16 @@ function nav(id){
 window.show=function(id){_show(id);nav(id)};
 function setMode(m){L.mode=m;nav('v-lib')}
 
+var _slowAt=0;
+function slowToast(){var n=Date.now();if(n-_slowAt<20000)return;_slowAt=n;try{toast('Slow connection')}catch(e){}}
+function slowMeter(){
+  var t0=0,b0=0,tm=null;
+  function arm(){clearTimeout(tm);tm=setTimeout(slowToast,8000)}
+  return {p:function(l){var n=Date.now();if(!t0){t0=n;b0=l}arm();if(n-t0>=6000){if((l-b0)/((n-t0)/1000)<60*1024)slowToast();t0=n;b0=l}},d:function(){clearTimeout(tm)}};
+}
 function xput(st,url,blob,onp){return new Promise(function(res,rej){
-  var x=new XMLHttpRequest();st.xhr=x;x.open('PUT',url);
-  x.upload.onprogress=function(e){if(e.lengthComputable)onp(e.loaded)};
+  var x=new XMLHttpRequest(),m=slowMeter();st.xhr=x;x.open('PUT',url);x.onloadend=function(){m.d()};
+  x.upload.onprogress=function(e){if(e.lengthComputable){m.p(e.loaded);onp(e.loaded)}};
   x.onload=function(){if(x.status>=200&&x.status<300)res(x.getResponseHeader('ETag')||'');else rej(new Error('Upload failed ('+x.status+')'))};
   x.onerror=function(){rej(new Error('Connection problem'))};
   x.onabort=function(){rej(new Error('cancelled'))};
@@ -1696,7 +1703,7 @@ function putPart(st,url,blob,onp){
     var x=new XMLHttpRequest(),last=Date.now(),iv;
     st.xhr=x;
     x.open('PUT',url);
-    x.upload.onprogress=function(e){last=Date.now();onp(e.loaded)};
+    var m=slowMeter();x.onloadend=function(){m.d()};x.upload.onprogress=function(e){last=Date.now();m.p(e.loaded);onp(e.loaded)};
     x.onload=function(){clearInterval(iv);if(x.status>=200&&x.status<300){var et=x.getResponseHeader('ETag');res(et?et.replace(/"/g,''):null)}else rej(new Error('http '+x.status))};
     x.onerror=function(){clearInterval(iv);rej(new Error('network'))};
     x.onabort=function(){clearInterval(iv);rej(new Error('paused'))};
