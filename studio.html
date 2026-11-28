@@ -960,7 +960,7 @@ function wdDialog(o){
   var c=document.createElement('div');c.className='wdd-c';
   var t=document.createElement('div');t.className='wdd-t';t.textContent=o.title||'';c.appendChild(t);
   if(o.body){var bd=document.createElement('div');bd.className='wdd-b';bd.textContent=o.body;c.appendChild(bd)}
-  function close(){ov.classList.remove('on');setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov)},200)}
+  var po1=document.documentElement.style.overflow,po2=document.body.style.overflow;document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';function close(){ov.classList.remove('on');document.documentElement.style.overflow=po1;document.body.style.overflow=po2;setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov)},200)}
   if(o.options){
     var holder=document.createElement('div');holder.style.marginTop='4px';
     o.options.forEach(function(op){
@@ -974,7 +974,7 @@ function wdDialog(o){
     c.appendChild(holder);
   }
   if(o.ok){var k=document.createElement('button');k.type='button';k.className='wdd-ok';k.textContent=o.ok;k.onclick=close;c.appendChild(k)}
-  ov.onclick=function(e){if(e.target===ov)close()};
+  ov.onclick=function(e){if(e.target===ov)close()};ov.addEventListener('touchmove',function(e){e.preventDefault()},{passive:false});
   ov.appendChild(c);document.body.appendChild(ov);
   void ov.offsetWidth;ov.classList.add('on');
 }
