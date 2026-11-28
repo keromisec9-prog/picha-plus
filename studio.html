@@ -937,20 +937,20 @@ function ovChart(info){
   },30);
   return wrap;
 }
-var WD_MIN=5000;
+var WD_MIN=50000;
 function wdLbl(s){return s==='in_review'?'In review':s==='approved'?'Approved':s==='paid'?'Paid':s==='rejected'?'Rejected':String(s||'')}
 function earnWithdraw(host,d){
-  var wrap=earnMk('div','wd');wrap.style.marginTop='14px';host.appendChild(wrap);
-  function paint(items){
+  var wrap=earnMk('div','wd');wrap.style.marginTop='14px';host.appendChild(wrap);var curMin=WD_MIN;
+  function paint(items,min){curMin=Number(min)||WD_MIN;min=curMin;
     wrap.textContent='';
     var open=items.some(function(x){return x.status==='in_review'});
     var bal=Number(d.balance)||0;
     if(!open){
       var btn=earnMk('button','btn gold','Withdraw');btn.type='button';
-      if(bal<WD_MIN)btn.disabled=true;
+      if(bal<min)btn.disabled=true;
       btn.onclick=function(){form()};
       wrap.appendChild(btn);
-      if(bal<WD_MIN)wrap.appendChild(earnMk('div','sub','Minimum withdrawal is '+earnUgx(WD_MIN)+'.'));
+      if(bal<min)wrap.appendChild(earnMk('div','sub','Minimum withdrawal is '+earnUgx(min)+'.'));
     }
     items.forEach(function(x){
       var r=earnMk('div','ov-row');
@@ -969,7 +969,7 @@ function earnWithdraw(host,d){
     var nw=document.createElement('select');
     ['MTN','Airtel'].forEach(function(n){var o=document.createElement('option');o.value=n.toLowerCase();o.textContent=n;nw.appendChild(o)});
     var ph=document.createElement('input');ph.type='tel';ph.placeholder='e.g. 0771234567';
-    fld('Amount (UGX)',amt);fld('Mobile money network',nw);fld('Mobile money number',ph);
+    fld('Amount (UGX) \u00b7 minimum '+curMin.toLocaleString('en-US'),amt);fld('Mobile money network',nw);fld('Mobile money number',ph);
     var go=earnMk('button','btn gold','Request withdrawal');go.type='button';
     var cn=earnMk('button','btn','Cancel');cn.type='button';cn.style.marginTop='8px';
     wrap.appendChild(go);wrap.appendChild(cn);
@@ -985,7 +985,7 @@ function earnWithdraw(host,d){
   }
   function load(){
     if(window.__apiClear)window.__apiClear();
-    api('/studio/withdrawals').then(function(res){var b=res.body||{};paint(b.ok?(b.items||[]):[])}).catch(function(){paint([])});
+    api('/studio/withdrawals').then(function(res){var b=res.body||{};paint(b.ok?(b.items||[]):[],b.min)}).catch(function(){paint([])});
   }
   load();
 }
