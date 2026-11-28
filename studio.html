@@ -937,6 +937,58 @@ function ovChart(info){
   },30);
   return wrap;
 }
+var WD_MIN=5000;
+function wdLbl(s){return s==='in_review'?'In review':s==='approved'?'Approved':s==='paid'?'Paid':s==='rejected'?'Rejected':String(s||'')}
+function earnWithdraw(host,d){
+  var wrap=earnMk('div','wd');wrap.style.marginTop='14px';host.appendChild(wrap);
+  function paint(items){
+    wrap.textContent='';
+    var open=items.some(function(x){return x.status==='in_review'});
+    var bal=Number(d.balance)||0;
+    if(!open){
+      var btn=earnMk('button','btn gold','Withdraw');btn.type='button';
+      if(bal<WD_MIN)btn.disabled=true;
+      btn.onclick=function(){form()};
+      wrap.appendChild(btn);
+      if(bal<WD_MIN)wrap.appendChild(earnMk('div','sub','Minimum withdrawal is '+earnUgx(WD_MIN)+'.'));
+    }
+    items.forEach(function(x){
+      var r=earnMk('div','ov-row');
+      r.appendChild(earnMk('span',null,earnUgx(x.amount)+' \u00b7 '+x.network+' '+x.phone+' \u00b7 '+String(x.created||'').slice(0,10)));
+      var s=earnMk('b',null,wdLbl(x.status));
+      s.style.color=x.status==='paid'||x.status==='approved'?'#4cd47a':x.status==='rejected'?'#e5645a':'#eeb32a';
+      r.appendChild(s);
+      wrap.appendChild(r);
+      if(x.status==='rejected'&&x.note)wrap.appendChild(earnMk('div','sub',x.note));
+    });
+  }
+  function form(){
+    wrap.textContent='';
+    function fld(lbl,el){var w=earnMk('div','fld');w.appendChild(earnMk('label',null,lbl));w.appendChild(el);wrap.appendChild(w)}
+    var amt=document.createElement('input');amt.type='number';amt.inputMode='numeric';amt.value=String(Math.floor(Number(d.balance)||0));
+    var nw=document.createElement('select');
+    ['MTN','Airtel'].forEach(function(n){var o=document.createElement('option');o.value=n.toLowerCase();o.textContent=n;nw.appendChild(o)});
+    var ph=document.createElement('input');ph.type='tel';ph.placeholder='e.g. 0771234567';
+    fld('Amount (UGX)',amt);fld('Mobile money network',nw);fld('Mobile money number',ph);
+    var go=earnMk('button','btn gold','Request withdrawal');go.type='button';
+    var cn=earnMk('button','btn','Cancel');cn.type='button';cn.style.marginTop='8px';
+    wrap.appendChild(go);wrap.appendChild(cn);
+    cn.onclick=function(){load()};
+    go.onclick=function(){
+      go.disabled=true;
+      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:nw.value,phone:ph.value})}).then(function(res){
+        var b=res.body||{};
+        if(b.ok){toast('Withdrawal request sent');openEarn();return}
+        go.disabled=false;toast(b.error||'Could not send your request');
+      }).catch(function(){go.disabled=false;toast('Connection problem')});
+    };
+  }
+  function load(){
+    if(window.__apiClear)window.__apiClear();
+    api('/studio/withdrawals').then(function(res){var b=res.body||{};paint(b.ok?(b.items||[]):[])}).catch(function(){paint([])});
+  }
+  load();
+}
 function openEarn(){
   show('v-earn');
   var hd=document.querySelector('#v-earn h1, #v-earn h2');if(hd){hd.textContent='Creator Overview';hd.style.fontSize='22px'}
@@ -983,7 +1035,7 @@ function openEarn(){
     sc.appendChild(earnMk('div','sub','Amounts finalized from completed reporting periods.'));
     if(has){d.closed.forEach(function(m){var r=earnMk('div','ov-row');r.appendChild(earnMk('span',null,m.month+' \u00b7 '+earnDur(m.secs)));r.appendChild(earnMk('b',null,earnUgx(m.amount)));sc.appendChild(r)})}
     else sc.appendChild(earnMk('div','ov-row')).appendChild(earnMk('span',null,'No completed reporting periods yet.'));
-    box.appendChild(sc);
+    earnWithdraw(sc,d);box.appendChild(sc);
   }).catch(function(){box.textContent='';box.appendChild(earnMk('p','sub','Could not load your overview.'))});
 }
 function api(path,opt){
