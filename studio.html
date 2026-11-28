@@ -1034,7 +1034,7 @@ function earnWithdraw(host,d){
       s.style.color=x.status==='paid'||x.status==='approved'?'#4cd47a':x.status==='rejected'?'#e5645a':'#eeb32a';
       r.appendChild(s);
       wrap.appendChild(r);
-      if(x.status==='rejected'&&x.note)wrap.appendChild(earnMk('div','sub',x.note));
+      if(x.note)wrap.appendChild(earnMk('div','sub',x.note));
     });
   }
   function form(){
@@ -1193,7 +1193,7 @@ function openEarn(){
     var sc=earnMk('div','ov-card');
     var st=earnMk('div','ov-top');
     st.appendChild(ovLbl('ov-h','bank','Settled balance'));
-    st.appendChild(earnMk('div','ov-st'+(has?' ok':' off'),has?'Finalized':'None yet'));
+    if(has)st.appendChild(earnMk('div','ov-st ok','Finalized'));
     sc.appendChild(st);
     sc.appendChild(earnMk('div','ov-big',earnUgx(d.balance)));
     sc.appendChild(earnMk('div','sub','Amounts finalized from completed reporting periods.'));
