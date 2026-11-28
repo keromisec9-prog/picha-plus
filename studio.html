@@ -938,6 +938,35 @@ function ovChart(info){
   return wrap;
 }
 var WD_MIN=50000,WD_MAX=500000;
+var WD_ABROAD=false;
+var WD_COUNTRIES=[
+['UG','Uganda','256'],['KE','Kenya','254'],['RW','Rwanda','250'],['TZ','Tanzania','255'],
+['CD','DR Congo','243'],['SS','South Sudan','211'],['BI','Burundi','257'],['ET','Ethiopia','251'],
+['SO','Somalia','252'],['DJ','Djibouti','253'],['ZM','Zambia','260'],['ZW','Zimbabwe','263'],
+['NG','Nigeria','234'],['SN','Senegal','221'],['ZA','South Africa','27'],['SD','Sudan','249'],
+['CI','Ivory Coast','225'],['MW','Malawi','265'],['MG','Madagascar','261'],['ML','Mali','223'],
+['MZ','Mozambique','258'],['EG','Egypt','20'],['GA','Gabon','241'],['GM','Gambia','220'],
+['GH','Ghana','233'],['GW','Guinea-Bissau','245'],['GN','Guinea','224'],['BW','Botswana','267'],
+['BF','Burkina Faso','226'],['TD','Chad','235'],['CG','Congo','242'],['KM','Comoros','269'],
+['CM','Cameroon','237']
+];
+function wdFlag(iso){return String.fromCodePoint(0x1F1E6+iso.charCodeAt(0)-65,0x1F1E6+iso.charCodeAt(1)-65)}
+function wdParse(raw){
+  var s=String(raw||'').replace(/[^\d+]/g,'').replace(/(?!^)\+/g,'');
+  if(s.slice(0,2)==='00')s='+'+s.slice(2);
+  if(s[0]==='2')s='+'+s;
+  var c=null,nat='';
+  if(s[0]==='+'){
+    var d=s.slice(1);
+    for(var i=0;i<WD_COUNTRIES.length;i++){
+      if(d.indexOf(WD_COUNTRIES[i][2])===0){c=WD_COUNTRIES[i];nat=d.slice(c[2].length);break}
+    }
+  }else{c=WD_COUNTRIES[0];nat=s}
+  if(!c)return{iso:'',name:'',dial:'',national:'',e164:'',ok:false};
+  nat=nat.replace(/^0+/,'');
+  var ok=c[0]==='UG'?/^7\d{8}$/.test(nat):(nat.length>=7&&nat.length<=10);
+  return{iso:c[0],name:c[1],dial:c[2],national:nat,e164:c[2]+nat,ok:ok};
+}
 function wdLbl(s){return s==='in_review'?'In review':s==='approved'?'Approved':s==='paid'?'Paid':s==='rejected'?'Rejected':String(s||'')}
 function wdPill(m){
   var el=document.getElementById('wdPill');
@@ -1029,6 +1058,17 @@ function earnWithdraw(host,d){
     row('Amount (UGX) \u00b7 '+curMin.toLocaleString('en-US')+' to '+curMax.toLocaleString('en-US'),amt,hq);
     row('Mobile money network',nb);
     row('Mobile money number',ph);ph.parentNode.style.display='none';
+    var fl=document.createElement('span');
+    fl.style.cssText='position:absolute;right:14px;font-size:15px;pointer-events:none;color:#a2a2ad;display:none;white-space:nowrap';
+    ph.parentNode.style.position='relative';ph.parentNode.appendChild(fl);ph.style.paddingRight='96px';
+    ph.oninput=function(){
+      var v=ph.value.replace(/[^\d+\s\-()]/g,'');if(v!==ph.value)ph.value=v;
+      var p=wdParse(v);
+      if(p.iso&&v.replace(/\s/g,'').length>1){
+        fl.textContent=wdFlag(p.iso)+' +'+p.dial;
+        fl.style.top=(ph.offsetTop+ph.offsetHeight/2)+'px';fl.style.transform='translateY(-50%)';fl.style.display='';
+      }else fl.style.display='none';
+    };
     nb.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;text-align:left;cursor:pointer;background:#141414;color:#fff;border:1px solid rgba(238,179,42,.3);border-radius:14px;padding:0 16px;height:56px;font-size:16px';
     try{
       var cs=getComputedStyle(amt);
@@ -1050,7 +1090,7 @@ function earnWithdraw(host,d){
       if(v>(Number(d.balance)||0))return 'That is more than your available balance.';
       if(dayLeft!=null&&v>dayLeft)return 'You can only withdraw UGX '+dayLeft.toLocaleString('en-US')+' more today.';
       if(!netVal)return 'Select your mobile money network.';
-      if(!/^(\+?256|0)7\d{8}$/.test(ph.value.replace(/[\s\-()]/g,'')))return 'Enter a valid mobile money number';
+      var pp=wdParse(ph.value);if(!pp.ok)return 'Enter a valid mobile money number';if(pp.iso!=='UG'&&!WD_ABROAD)return 'Only Uganda numbers are supported for now.';
       return '';
     }
     amt.oninput=function(){var o=Number(amt.value)>curMax;amt.style.borderColor=o?'#e5645a':'';if(o&&!over)wdPill(chk());over=o};
@@ -1065,7 +1105,7 @@ function earnWithdraw(host,d){
       var T=window.__wdTries=(window.__wdTries||[]).filter(function(t){return now-t<60000});
       if(T.length>=3){wdPill('Too many attempts. Please wait a minute and try again.');return}
       T.push(now);
-      var pd=ph.value.replace(/[\s\-()]/g,'');pd='0'+pd.slice(-9);
+      var pd=wdParse(ph.value).e164;
       sending=true;go.disabled=true;go.textContent='Sending\u2026';
       api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:netVal,phone:pd})}).then(function(res){
         var b=res.body||{};
