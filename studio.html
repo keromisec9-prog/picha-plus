@@ -939,6 +939,17 @@ function ovChart(info){
 }
 var WD_MIN=50000;
 function wdLbl(s){return s==='in_review'?'In review':s==='approved'?'Approved':s==='paid'?'Paid':s==='rejected'?'Rejected':String(s||'')}
+function wdPill(m){
+  var el=document.getElementById('wdPill');
+  if(!el){
+    var css=document.createElement('style');
+    css.textContent='#wdPill{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 108px);transform:translate(-50%,-8px);opacity:0;pointer-events:none;z-index:99999;max-width:86vw;text-align:center;background:rgba(22,22,22,.96);color:#d9d9d9;border:1px solid rgba(238,179,42,.4);border-radius:20px;padding:8px 16px;font:700 12.5px/1.35 system-ui,-apple-system,Roboto,sans-serif;box-shadow:0 6px 22px rgba(0,0,0,.5);transition:opacity .2s,transform .2s}#wdPill.on{opacity:1;transform:translate(-50%,0)}.wdbtn{transition:transform .12s ease,filter .12s ease,opacity .2s ease}.wdbtn:active{transform:scale(.96);filter:brightness(1.12)}.wdbtn.wdoff,.wdbtn:disabled{opacity:.45;filter:grayscale(.5)}.wdbtn.wdoff:active,.wdbtn:disabled:active{transform:none;filter:grayscale(.5)}';
+    document.head.appendChild(css);
+    el=document.createElement('div');el.id='wdPill';document.body.appendChild(el);
+  }
+  el.textContent=m;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+  clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('on')},3200);
+}
 function earnWithdraw(host,d){
   var wrap=earnMk('div','wd');wrap.style.marginTop='14px';host.appendChild(wrap);var curMin=WD_MIN;
   function paint(items,min){curMin=Number(min)||WD_MIN;min=curMin;
@@ -947,10 +958,16 @@ function earnWithdraw(host,d){
     var bal=Number(d.balance)||0;
     if(!open){
       var btn=earnMk('button','btn gold','Withdraw');btn.type='button';
-      if(bal<min)btn.disabled=true;
-      btn.onclick=function(){form()};
+      btn.className+=' wdbtn'+(bal<min?' wdoff':'');
+      btn.onclick=function(){
+        var has=d.closed&&d.closed.length;
+        if(!has&&bal<=0){wdPill('No settled period yet. Earnings become withdrawable once a month closes.');return}
+        if(bal<=0){wdPill('No balance available to withdraw right now.');return}
+        if(bal<min){wdPill('Minimum withdrawal is '+earnUgx(min));return}
+        form();
+      };
       wrap.appendChild(btn);
-      if(bal<min)wrap.appendChild(earnMk('div','sub','Minimum withdrawal is '+earnUgx(min)+'.'));
+      
     }
     items.forEach(function(x){
       var r=earnMk('div','ov-row');
@@ -970,17 +987,17 @@ function earnWithdraw(host,d){
     ['MTN','Airtel'].forEach(function(n){var o=document.createElement('option');o.value=n.toLowerCase();o.textContent=n;nw.appendChild(o)});
     var ph=document.createElement('input');ph.type='tel';ph.placeholder='e.g. 0771234567';
     fld('Amount (UGX) \u00b7 minimum '+curMin.toLocaleString('en-US'),amt);fld('Mobile money network',nw);fld('Mobile money number',ph);
-    var go=earnMk('button','btn gold','Request withdrawal');go.type='button';
+    var go=earnMk('button','btn gold','Request withdrawal');go.type='button';go.className+=' wdbtn';
     var cn=earnMk('button','btn','Cancel');cn.type='button';cn.style.marginTop='8px';
     wrap.appendChild(go);wrap.appendChild(cn);
     cn.onclick=function(){load()};
     go.onclick=function(){
-      go.disabled=true;
+      go.disabled=true;go.textContent='Sending\u2026';
       api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:nw.value,phone:ph.value})}).then(function(res){
         var b=res.body||{};
-        if(b.ok){toast('Withdrawal request sent');openEarn();return}
-        go.disabled=false;toast(b.error||'Could not send your request');
-      }).catch(function(){go.disabled=false;toast('Connection problem')});
+        if(b.ok){wdPill('Withdrawal request sent');openEarn();return}
+        go.disabled=false;go.textContent='Request withdrawal';wdPill(b.error||'Could not send your request');
+      }).catch(function(){go.disabled=false;go.textContent='Request withdrawal';wdPill('Connection problem')});
     };
   }
   function load(){
