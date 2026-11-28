@@ -1058,22 +1058,43 @@ function earnWithdraw(host,d){
     row('Amount (UGX) \u00b7 '+curMin.toLocaleString('en-US')+' to '+curMax.toLocaleString('en-US'),amt,hq);
     row('Mobile money network',nb);
     row('Mobile money number',ph);ph.parentNode.style.display='none';
+    var phRow=ph.parentNode;
     var box=document.createElement('div');box.style.position='relative';
-    ph.parentNode.insertBefore(box,ph);box.appendChild(ph);
+    phRow.insertBefore(box,ph);box.appendChild(ph);
     var cb=document.createElement('button');cb.type='button';
-    cb.style.cssText='position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 12px 0 16px;background:none;border:0;border-right:1px solid rgba(255,255,255,.15);color:inherit;font-size:15px;cursor:pointer;width:auto;height:auto;min-width:0;white-space:nowrap';
-    box.appendChild(cb);ph.style.paddingLeft='116px';
+    cb.style.cssText='position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:0 12px;margin:0;background:none;border:0;border-right:1px solid rgba(255,255,255,.15);border-radius:0;color:inherit;font-size:15px;line-height:1.1;cursor:pointer;width:auto;height:auto;min-width:0;white-space:nowrap';
+    var ct=document.createElement('span');
+    var cv=document.createElement('span');cv.className='msr';cv.textContent='expand_more';
+    cv.style.cssText='font-size:20px;line-height:1;margin-top:-2px;transition:transform .15s';
+    cb.appendChild(ct);cb.appendChild(cv);box.appendChild(cb);
+    ph.style.paddingLeft='112px';
+    var lst=document.createElement('div');
+    lst.style.cssText='display:none;margin-top:8px;max-height:220px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#0f0f14;border:1px solid rgba(255,255,255,.12);border-radius:14px';
+    phRow.appendChild(lst);
+    var itemEls={};
+    function tog(open){lst.style.display=open?'block':'none';cv.style.transform=open?'rotate(180deg)':''}
     function setC(iso){
       var c=WD_COUNTRIES.filter(function(x){return x[0]===iso})[0]||WD_COUNTRIES[0];
-      cIso=c[0];cb.textContent=wdFlag(c[0])+' +'+c[2]+' \u25BE';
-      ph.placeholder=c[0]==='UG'?'e.g. 0700000001':'Phone number';
+      cIso=c[0];ct.textContent=wdFlag(c[0])+' +'+c[2];
+      ph.placeholder=c[0]==='UG'?'Enter number, e.g. 0700000001':'Enter number';
+      for(var k in itemEls)itemEls[k].style.color=(k===cIso?'#eeb32a':'#fff');
     }
+    WD_COUNTRIES.forEach(function(c){
+      var it=document.createElement('button');it.type='button';
+      it.style.cssText='display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;height:46px;min-width:0;margin:0;padding:0 14px;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.06);border-radius:0;color:#fff;font-size:15px;text-align:left;cursor:pointer';
+      var f=document.createElement('span');f.textContent=wdFlag(c[0]);f.style.fontSize='18px';
+      var n=document.createElement('span');n.textContent=c[1];n.style.flex='1';
+      var d=document.createElement('span');d.textContent='+'+c[2];d.style.opacity='.6';
+      it.appendChild(f);it.appendChild(n);it.appendChild(d);
+      it.onclick=function(){
+        if(/^(\+|00)/.test(ph.value.replace(/\s/g,'')))ph.value='';
+        setC(c[0]);tog(false);ph.focus();
+      };
+      lst.appendChild(it);itemEls[c[0]]=it;
+    });
     setC('UG');
-    cb.onclick=function(){
-      wdDialog({title:'Select country',value:cIso,
-        options:WD_COUNTRIES.map(function(c){return [c[0],wdFlag(c[0])+'  '+c[1]+'  +'+c[2]]}),
-        onPick:function(v){if(/^(\+|00)/.test(ph.value.replace(/\s/g,'')))ph.value='';setC(v)}});
-    };
+    cb.onclick=function(){tog(lst.style.display==='none')};
+    ph.onfocus=function(){tog(false)};
     ph.oninput=function(){
       var v=ph.value.replace(/[^\d+\s\-()]/g,'');if(v!==ph.value)ph.value=v;
       if(/^(\+|00|2)/.test(v.replace(/\s/g,''))){var p=wdParse(v,cIso);if(p.iso&&p.iso!==cIso)setC(p.iso)}
@@ -1104,7 +1125,7 @@ function earnWithdraw(host,d){
     }
     amt.oninput=function(){var o=Number(amt.value)>curMax;amt.style.borderColor=o?'#e5645a':'';if(o&&!over)wdPill(chk());over=o};
     hq.onclick=function(){wdDialog({title:'Why withdrawal limits?',body:'Every withdrawal is checked and paid by our team. To keep your earnings safe, one request can be up to UGX '+curMax.toLocaleString('en-US')+' and no more than UGX 1,000,000 can be withdrawn per day. If someone ever got into an account, they could not empty it in one go. Larger balances can be withdrawn across several requests, within the daily limit.',ok:'Got it'})};
-    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Select your mobile money network',options:[['mtn','MTN'],['airtel','Airtel']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l;nt.style.opacity='1';ph.parentNode.style.display=''}})};
+    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Select your mobile money network',options:[['mtn','MTN'],['airtel','Airtel']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l;nt.style.opacity='1';phRow.style.display=''}})};
     cn.onclick=function(){load()};
     go.onclick=function(){
       var now=Date.now();
