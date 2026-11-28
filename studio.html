@@ -1057,17 +1057,19 @@ function earnWithdraw(host,d){
     }
     row('Amount (UGX) \u00b7 '+curMin.toLocaleString('en-US')+' to '+curMax.toLocaleString('en-US'),amt,hq);
     row('Mobile money network',nb);
+    var oth=document.createElement('input');oth.type='text';oth.maxLength=30;oth.placeholder='e.g. Africell Money';
+    row('Network name',oth);var othRow=oth.parentNode;othRow.style.display='none';
     row('Mobile money number',ph);ph.parentNode.style.display='none';
     var phRow=ph.parentNode;
     var box=document.createElement('div');box.style.position='relative';
     phRow.insertBefore(box,ph);box.appendChild(ph);
     var cb=document.createElement('button');cb.type='button';
-    cb.style.cssText='position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:0 12px;margin:0;background:none;border:0;border-right:1px solid rgba(255,255,255,.15);border-radius:0;color:inherit;font-size:15px;line-height:1.1;cursor:pointer;width:auto;height:auto;min-width:0;white-space:nowrap';
+    cb.style.cssText='position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:7px;padding:0 12px;margin:0;background:none;border:0;border-right:1px solid rgba(255,255,255,.15);border-radius:0;color:inherit;font-size:15px;line-height:1.1;cursor:pointer;width:auto;height:auto;min-width:0;white-space:nowrap';
     var ct=document.createElement('span');
-    var cv=document.createElement('span');cv.className='msr';cv.textContent='expand_more';
-    cv.style.cssText='font-size:20px;line-height:1;margin-top:-2px;transition:transform .15s';
+    var cv=document.createElement('span');
+    cv.style.cssText='width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;opacity:.7;transition:transform .15s';
     cb.appendChild(ct);cb.appendChild(cv);box.appendChild(cb);
-    ph.style.paddingLeft='112px';
+    ph.style.paddingLeft='110px';
     var lst=document.createElement('div');
     lst.style.cssText='display:none;margin-top:8px;max-height:220px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#0f0f14;border:1px solid rgba(255,255,255,.12);border-radius:14px';
     phRow.appendChild(lst);
@@ -1076,7 +1078,7 @@ function earnWithdraw(host,d){
     function setC(iso){
       var c=WD_COUNTRIES.filter(function(x){return x[0]===iso})[0]||WD_COUNTRIES[0];
       cIso=c[0];ct.textContent=wdFlag(c[0])+' +'+c[2];
-      ph.placeholder=c[0]==='UG'?'Enter number, e.g. 0700000001':'Enter number';
+      ph.placeholder=c[0]==='UG'?'e.g. 0700000001':'Phone number';
       for(var k in itemEls)itemEls[k].style.color=(k===cIso?'#eeb32a':'#fff');
     }
     WD_COUNTRIES.forEach(function(c){
@@ -1120,12 +1122,13 @@ function earnWithdraw(host,d){
       if(v>(Number(d.balance)||0))return 'That is more than your available balance.';
       if(dayLeft!=null&&v>dayLeft)return 'You can only withdraw UGX '+dayLeft.toLocaleString('en-US')+' more today.';
       if(!netVal)return 'Select your mobile money network.';
+      if(netVal==='other'&&!/^[A-Za-z0-9][A-Za-z0-9 .&-]{1,29}$/.test(oth.value.trim().replace(/\s+/g,' ')))return 'Enter your mobile money network name.';
       var pp=wdParse(ph.value,cIso);if(!pp.ok)return 'Enter a valid mobile money number';if(pp.iso!=='UG'&&!WD_ABROAD)return 'Payouts outside Uganda are not available yet.';
       return '';
     }
     amt.oninput=function(){var o=Number(amt.value)>curMax;amt.style.borderColor=o?'#e5645a':'';if(o&&!over)wdPill(chk());over=o};
     hq.onclick=function(){wdDialog({title:'Why withdrawal limits?',body:'Every withdrawal is checked and paid by our team. To keep your earnings safe, one request can be up to UGX '+curMax.toLocaleString('en-US')+' and no more than UGX 1,000,000 can be withdrawn per day. If someone ever got into an account, they could not empty it in one go. Larger balances can be withdrawn across several requests, within the daily limit.',ok:'Got it'})};
-    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Select your mobile money network',options:[['mtn','MTN'],['airtel','Airtel']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l;nt.style.opacity='1';phRow.style.display=''}})};
+    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Select your mobile money network',options:[['mtn','MTN'],['airtel','Airtel'],['other','Other']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l;nt.style.opacity='1';phRow.style.display='';othRow.style.display=(v==='other'?'':'none')}})};
     cn.onclick=function(){load()};
     go.onclick=function(){
       var now=Date.now();
@@ -1137,7 +1140,7 @@ function earnWithdraw(host,d){
       T.push(now);
       var pd=wdParse(ph.value,cIso).e164;
       sending=true;go.disabled=true;go.textContent='Sending\u2026';
-      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:netVal,phone:pd})}).then(function(res){
+      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:netVal,networkName:(netVal==='other'?oth.value.trim().replace(/\s+/g,' '):''),phone:pd})}).then(function(res){
         var b=res.body||{};
         if(b.ok){wdPill('Withdrawal request sent');openEarn();return}
         sending=false;go.disabled=false;go.textContent='Request withdrawal';wdPill(b.error||'Could not send your request');
