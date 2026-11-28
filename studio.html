@@ -1010,11 +1010,11 @@ function earnWithdraw(host,d){
   }
   function form(){
     wrap.textContent='';
-    var netVal='mtn',over=false;
+    var netVal='',over=false,sending=false,lastTap=0;
     var amt=document.createElement('input');amt.type='number';amt.inputMode='numeric';amt.value=String(curMin);
-    var ph=document.createElement('input');ph.type='tel';ph.placeholder='e.g. 0771234567';
+    var ph=document.createElement('input');ph.type='tel';ph.placeholder='e.g. 0700000001';
     var nb=document.createElement('button');nb.type='button';
-    var nt=document.createElement('span');nt.textContent='MTN';
+    var nt=document.createElement('span');nt.textContent='Select your mobile money network';nt.style.opacity='.55';
     var ni=document.createElement('span');ni.className='msr';ni.textContent='expand_more';
     nb.appendChild(nt);nb.appendChild(ni);
     var hq=document.createElement('button');hq.type='button';hq.setAttribute('aria-label','Why withdrawal limits');
@@ -1028,7 +1028,7 @@ function earnWithdraw(host,d){
     }
     row('Amount (UGX) \u00b7 '+curMin.toLocaleString('en-US')+' to '+curMax.toLocaleString('en-US'),amt,hq);
     row('Mobile money network',nb);
-    row('Mobile money number',ph);
+    row('Mobile money number',ph);ph.parentNode.style.display='none';
     nb.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;text-align:left;cursor:pointer;background:#141414;color:#fff;border:1px solid rgba(238,179,42,.3);border-radius:14px;padding:0 16px;height:56px;font-size:16px';
     try{
       var cs=getComputedStyle(amt);
@@ -1049,20 +1049,29 @@ function earnWithdraw(host,d){
       if(v<curMin)return 'Minimum withdrawal is '+earnUgx(curMin);
       if(v>(Number(d.balance)||0))return 'That is more than your available balance.';
       if(dayLeft!=null&&v>dayLeft)return 'You can only withdraw UGX '+dayLeft.toLocaleString('en-US')+' more today.';
+      if(!netVal)return 'Select your mobile money network.';
+      if(!/^(\+?256|0)7\d{8}$/.test(ph.value.replace(/[\s\-()]/g,'')))return 'Enter a valid mobile money number';
       return '';
     }
     amt.oninput=function(){var o=Number(amt.value)>curMax;amt.style.borderColor=o?'#e5645a':'';if(o&&!over)wdPill(chk());over=o};
     hq.onclick=function(){wdDialog({title:'Why withdrawal limits?',body:'Every withdrawal is checked and paid by our team. To keep your earnings safe, one request can be up to UGX '+curMax.toLocaleString('en-US')+' and no more than UGX 1,000,000 can be withdrawn per day. If someone ever got into an account, they could not empty it in one go. Larger balances can be withdrawn across several requests, within the daily limit.',ok:'Got it'})};
-    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Mobile money network',options:[['mtn','MTN'],['airtel','Airtel']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l}})};
+    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Select your mobile money network',options:[['mtn','MTN'],['airtel','Airtel']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l;nt.style.opacity='1';ph.parentNode.style.display=''}})};
     cn.onclick=function(){load()};
     go.onclick=function(){
+      var now=Date.now();
+      if(sending||now-lastTap<1000)return;
+      lastTap=now;
       var m=chk();if(m){wdPill(m);return}
-      go.disabled=true;go.textContent='Sending\u2026';
-      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:netVal,phone:ph.value})}).then(function(res){
+      var T=window.__wdTries=(window.__wdTries||[]).filter(function(t){return now-t<60000});
+      if(T.length>=3){wdPill('Too many attempts. Please wait a minute and try again.');return}
+      T.push(now);
+      var pd=ph.value.replace(/[\s\-()]/g,'');pd='0'+pd.slice(-9);
+      sending=true;go.disabled=true;go.textContent='Sending\u2026';
+      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:netVal,phone:pd})}).then(function(res){
         var b=res.body||{};
         if(b.ok){wdPill('Withdrawal request sent');openEarn();return}
-        go.disabled=false;go.textContent='Request withdrawal';wdPill(b.error||'Could not send your request');
-      }).catch(function(){go.disabled=false;go.textContent='Request withdrawal';wdPill('Connection problem')});
+        sending=false;go.disabled=false;go.textContent='Request withdrawal';wdPill(b.error||'Could not send your request');
+      }).catch(function(){sending=false;go.disabled=false;go.textContent='Request withdrawal';wdPill('Connection problem')});
     };
   }
   function load(){
