@@ -1162,7 +1162,7 @@ function openEarn(){
     box.textContent='';
     var d=res.body||{};
     if(!d.ok){
-      box.appendChild(earnMk('p','sub','Could not load your overview.'));
+      box.appendChild(earnMk('p','sub','Could not load your overview.'+(d.dbg?' ['+d.dbg+']':'')));
       var b=earnMk('button','btn gold','Try again');b.onclick=openEarn;box.appendChild(b);return;
     }
     var info=ovInfo(d),mon=OV_MON[info.mo-1]||'';
