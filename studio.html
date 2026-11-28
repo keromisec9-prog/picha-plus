@@ -937,7 +937,7 @@ function ovChart(info){
   },30);
   return wrap;
 }
-var WD_MIN=50000;
+var WD_MIN=50000,WD_MAX=500000;
 function wdLbl(s){return s==='in_review'?'In review':s==='approved'?'Approved':s==='paid'?'Paid':s==='rejected'?'Rejected':String(s||'')}
 function wdPill(m){
   var el=document.getElementById('wdPill');
@@ -950,20 +950,52 @@ function wdPill(m){
   el.textContent=m;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
   clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('on')},3200);
 }
+function wdDialog(o){
+  if(!document.getElementById('wdDlgCss')){
+    var css=document.createElement('style');css.id='wdDlgCss';
+    css.textContent='.wdd{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99998;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .18s}.wdd.on{opacity:1}.wdd-c{width:100%;max-width:330px;box-sizing:border-box;background:#0f0f14;border:1px solid rgba(255,255,255,.1);border-radius:26px;padding:26px 22px 22px;text-align:center;color:#fff;transform:scale(.94);transition:transform .18s}.wdd.on .wdd-c{transform:scale(1)}.wdd-i{width:58px;height:58px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(238,179,42,.14);border:1px solid rgba(238,179,42,.4);color:#eeb32a}.wdd-i .msr{font-size:28px}.wdd-t{font:700 19px/1.25 system-ui,-apple-system,Roboto,sans-serif;margin:0 0 10px}.wdd-b{font:400 14px/1.5 system-ui,-apple-system,Roboto,sans-serif;color:#a2a2ad;margin:0 0 20px}.wdd-o{display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;height:52px;padding:0 16px;margin:0 0 10px;border-radius:14px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.18);font:600 15px system-ui,sans-serif;cursor:pointer}.wdd-o.sel{border-color:#eeb32a;background:rgba(238,179,42,.08)}.wdd-r{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box;display:flex;align-items:center;justify-content:center}.wdd-o.sel .wdd-r{border-color:#eeb32a}.wdd-o.sel .wdd-r:after{content:"";width:10px;height:10px;border-radius:50%;background:#eeb32a}.wdd-ok{width:100%;height:48px;border-radius:14px;border:0;background:#eeb32a;color:#111;font:700 15px system-ui,sans-serif;cursor:pointer;transition:transform .12s,filter .12s}.wdd-ok:active{transform:scale(.97);filter:brightness(1.1)}';
+    document.head.appendChild(css);
+  }
+  var ov=document.createElement('div');ov.className='wdd';
+  var c=document.createElement('div');c.className='wdd-c';
+  var ic=document.createElement('div');ic.className='wdd-i';
+  var is=document.createElement('span');is.className='msr';is.textContent=o.icon||'info';
+  ic.appendChild(is);c.appendChild(ic);
+  var t=document.createElement('div');t.className='wdd-t';t.textContent=o.title||'';c.appendChild(t);
+  if(o.body){var bd=document.createElement('div');bd.className='wdd-b';bd.textContent=o.body;c.appendChild(bd)}
+  function close(){ov.classList.remove('on');setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov)},200)}
+  if(o.options){
+    var holder=document.createElement('div');holder.style.marginTop='14px';
+    o.options.forEach(function(op){
+      var r=document.createElement('button');r.type='button';r.className='wdd-o'+(op[0]===o.value?' sel':'');
+      var l=document.createElement('span');l.textContent=op[1];
+      var dt=document.createElement('span');dt.className='wdd-r';
+      r.appendChild(l);r.appendChild(dt);
+      r.onclick=function(){if(o.onPick)o.onPick(op[0],op[1]);close()};
+      holder.appendChild(r);
+    });
+    c.appendChild(holder);
+  }
+  if(o.ok){var k=document.createElement('button');k.type='button';k.className='wdd-ok';k.textContent=o.ok;k.onclick=close;c.appendChild(k)}
+  ov.onclick=function(e){if(e.target===ov)close()};
+  ov.appendChild(c);document.body.appendChild(ov);
+  void ov.offsetWidth;ov.classList.add('on');
+}
 function earnWithdraw(host,d){
-  var wrap=earnMk('div','wd');wrap.style.marginTop='14px';host.appendChild(wrap);var curMin=WD_MIN;
+  var wrap=earnMk('div','wd');wrap.style.marginTop='14px';host.appendChild(wrap);var curMin=WD_MIN,curMax=WD_MAX,dayLeft=null;
   function paint(items,min){curMin=Number(min)||WD_MIN;min=curMin;
     wrap.textContent='';
     var open=items.some(function(x){return x.status==='in_review'});
     var bal=Number(d.balance)||0;
     if(!open){
       var btn=earnMk('button','btn gold','Withdraw');btn.type='button';
-      btn.className+=' wdbtn'+(bal<min?' wdoff':'');
+      btn.className+=' wdbtn'+((bal<min||(dayLeft!=null&&dayLeft<min))?' wdoff':'');
       btn.onclick=function(){
         var has=d.closed&&d.closed.length;
         if(!has&&bal<=0){wdPill('No settled period yet. Earnings become withdrawable once a month closes.');return}
         if(bal<=0){wdPill('No balance available to withdraw right now.');return}
         if(bal<min){wdPill('Minimum withdrawal is '+earnUgx(min));return}
+        if(dayLeft!=null&&dayLeft<min){wdPill('Daily withdrawal limit reached. You can withdraw again tomorrow.');return}
         form();
       };
       wrap.appendChild(btn);
@@ -981,19 +1013,55 @@ function earnWithdraw(host,d){
   }
   function form(){
     wrap.textContent='';
-    function fld(lbl,el){var w=earnMk('div','fld');w.appendChild(earnMk('label',null,lbl));w.appendChild(el);wrap.appendChild(w)}
-    var amt=document.createElement('input');amt.type='number';amt.inputMode='numeric';amt.value=String(Math.floor(Number(d.balance)||0));
-    var nw=document.createElement('select');
-    ['MTN','Airtel'].forEach(function(n){var o=document.createElement('option');o.value=n.toLowerCase();o.textContent=n;nw.appendChild(o)});
+    var netVal='mtn',over=false;
+    var amt=document.createElement('input');amt.type='number';amt.inputMode='numeric';amt.value=String(curMin);
     var ph=document.createElement('input');ph.type='tel';ph.placeholder='e.g. 0771234567';
-    fld('Amount (UGX) \u00b7 minimum '+curMin.toLocaleString('en-US'),amt);fld('Mobile money network',nw);fld('Mobile money number',ph);
+    var nb=document.createElement('button');nb.type='button';
+    var nt=document.createElement('span');nt.textContent='MTN';
+    var ni=document.createElement('span');ni.className='msr';ni.textContent='expand_more';
+    nb.appendChild(nt);nb.appendChild(ni);
+    var hq=document.createElement('button');hq.type='button';hq.setAttribute('aria-label','Why withdrawal limits');
+    hq.style.cssText='background:none;border:0;padding:0;margin:0;width:auto;height:auto;min-width:0;line-height:1;color:#eeb32a;cursor:pointer;display:inline-flex';
+    var hi=document.createElement('span');hi.className='msr';hi.style.fontSize='18px';hi.textContent='help';hq.appendChild(hi);
+    function row(lbl,el,extra){
+      var w=document.createElement('div');w.className='fld';
+      var l=document.createElement('label');
+      if(extra){l.style.cssText='display:flex;align-items:center;gap:6px';l.appendChild(document.createTextNode(lbl));l.appendChild(extra)}else l.textContent=lbl;
+      w.appendChild(l);w.appendChild(el);wrap.appendChild(w);
+    }
+    row('Amount (UGX) \u00b7 '+curMin.toLocaleString('en-US')+' to '+curMax.toLocaleString('en-US'),amt,hq);
+    row('Mobile money network',nb);
+    row('Mobile money number',ph);
+    nb.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;text-align:left;cursor:pointer;background:#141414;color:#fff;border:1px solid rgba(238,179,42,.3);border-radius:14px;padding:0 16px;height:56px;font-size:16px';
+    try{
+      var cs=getComputedStyle(amt);
+      nb.style.backgroundColor=cs.backgroundColor;nb.style.color=cs.color;
+      nb.style.border=cs.borderTopWidth+' '+cs.borderTopStyle+' '+cs.borderTopColor;
+      nb.style.borderRadius=cs.borderRadius;nb.style.padding=cs.padding;nb.style.height=cs.height;
+      nb.style.fontSize=cs.fontSize;nb.style.fontFamily=cs.fontFamily;nb.style.fontWeight=cs.fontWeight;
+    }catch(e){}
     var go=earnMk('button','btn gold','Request withdrawal');go.type='button';go.className+=' wdbtn';
-    var cn=earnMk('button','btn','Cancel');cn.type='button';cn.style.marginTop='8px';
-    wrap.appendChild(go);wrap.appendChild(cn);
+    var cn=earnMk('button','btn','Cancel');cn.type='button';cn.className+=' wdbtn';
+    go.style.cssText='width:100%;margin:0';cn.style.cssText='width:100%;margin:0';
+    var br=document.createElement('div');br.style.cssText='display:flex;flex-direction:column;gap:12px;margin-top:18px';
+    br.appendChild(go);br.appendChild(cn);wrap.appendChild(br);
+    function chk(){
+      var v=Number(amt.value);
+      if(!(v>0))return 'Enter an amount to withdraw.';
+      if(v>curMax)return 'Maximum is UGX '+curMax.toLocaleString('en-US')+' per withdrawal, to keep your earnings safe. Tap the ? to learn why.';
+      if(v<curMin)return 'Minimum withdrawal is '+earnUgx(curMin);
+      if(v>(Number(d.balance)||0))return 'That is more than your available balance.';
+      if(dayLeft!=null&&v>dayLeft)return 'You can only withdraw UGX '+dayLeft.toLocaleString('en-US')+' more today.';
+      return '';
+    }
+    amt.oninput=function(){var o=Number(amt.value)>curMax;amt.style.borderColor=o?'#e5645a':'';if(o&&!over)wdPill(chk());over=o};
+    hq.onclick=function(){wdDialog({icon:'help',title:'Why withdrawal limits?',body:'Every withdrawal is checked and paid by our team. To keep your earnings safe, one request can be up to UGX '+curMax.toLocaleString('en-US')+' and no more than UGX 1,000,000 can be withdrawn per day. If someone ever got into an account, they could not empty it in one go. Larger balances can be withdrawn across several requests, within the daily limit.',ok:'Got it'})};
+    nb.onclick=function(){wdDialog({icon:'smartphone',title:'Mobile money network',options:[['mtn','MTN'],['airtel','Airtel']],value:netVal,onPick:function(v,l){netVal=v;nt.textContent=l}})};
     cn.onclick=function(){load()};
     go.onclick=function(){
+      var m=chk();if(m){wdPill(m);return}
       go.disabled=true;go.textContent='Sending\u2026';
-      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:nw.value,phone:ph.value})}).then(function(res){
+      api('/studio/withdraw',{method:'POST',body:JSON.stringify({amount:Number(amt.value),network:netVal,phone:ph.value})}).then(function(res){
         var b=res.body||{};
         if(b.ok){wdPill('Withdrawal request sent');openEarn();return}
         go.disabled=false;go.textContent='Request withdrawal';wdPill(b.error||'Could not send your request');
@@ -1002,7 +1070,7 @@ function earnWithdraw(host,d){
   }
   function load(){
     if(window.__apiClear)window.__apiClear();
-    api('/studio/withdrawals').then(function(res){var b=res.body||{};paint(b.ok?(b.items||[]):[],b.min)}).catch(function(){paint([])});
+    api('/studio/withdrawals').then(function(res){var b=res.body||{};if(b.ok){curMax=Number(b.max)||WD_MAX;dayLeft=(b.dayLeft==null?null:Number(b.dayLeft))}paint(b.ok?(b.items||[]):[],b.min)}).catch(function(){paint([])});
   }
   load();
 }
